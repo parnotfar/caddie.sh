@@ -7,24 +7,24 @@
 source "$HOME/.caddie_modules"
 
 # Define caddie modules and their descriptions.
-# Each entry should be in the format "key:Description", where:
+# Each entry should be in the format "key|Description", where:
 #   - key:     The module name (used for sourcing ~/.caddie_<key>)
 #   - Description: A human-readable description for help output.
-# Example: "rust:Rust development tools" means the module "rust" will be loaded from ~/.caddie_rust,
+# Example: "rust|Rust development tools" means the module "rust" will be loaded from ~/.caddie_rust,
 #          and its description will be shown in help listings.
 CADDIE_MODULES=(
-    "core:Core caddie functions"
-    "python:Python environment management"
-    "rust:Rust development tools"
-    "ios:iOS development tools"
-    "cross:Cross-language features"
-    "cursor:Cursor IDE integration"
+    "core|Core caddie functions"
+    "python|Python environment management"
+    "rust|Rust development tools"
+    "ios|iOS development tools"
+    "cross|Cross-language features"
+    "cursor|Cursor IDE integration"
 )
 
 # Load all modules and register them
 for moddesc in "${CADDIE_MODULES[@]}"; do
-    module="${moddesc%%:*}"
-    desc="${moddesc#*:}"
+    module="${moddesc%%|*}"
+    desc="${moddesc#*|}"
     file="$HOME/.caddie_${module}"
     if [ -f "$file" ]; then
         source "$file"
@@ -37,7 +37,7 @@ done
 # Discover all available commands from all modules
 CADDIE_COMMANDS=()
 for moddesc in "${CADDIE_MODULES[@]}"; do
-    module="${moddesc%%:*}"
+    module="${moddesc%%|*}"
     if [ -n "$module" ]; then
         # Call module's registration function to get its commands
         if command -v "${module}_caddie_register" >/dev/null 2>&1; then
@@ -89,21 +89,22 @@ caddie() {
 }
 
 # Shared function to parse command registration format
-# Input: "module:command:function:description" or "command:function:description"
+# Input: "module:command|function|description" (pipe-separated for easy parsing)
 # Output: module, cmd_part, func_name, description, cmd_pattern
 parse_cmd_registration() {
     local cmd_info="$1"
     
-            # Standard format: "module:command:function:description" (4 colons)
-        # The command part can contain colons, so we need to extract it correctly
-        local module=$(echo "$cmd_info" | cut -d: -f1)
-        # Extract everything between module and function (which is the last colon)
-        local temp_after_module="${cmd_info#*:}"
-        local temp_before_func="${temp_after_module%:*}"
-        local func_name="${temp_before_func##*:}"
-        local cmd_part="${temp_before_func%:*}"
-        local description="${cmd_info##*:}"
-        local cmd_pattern="${module}:${cmd_part}"
+    # Split on pipe character for clean parsing (bash 3.2 compatible)
+    local module_cmd=$(echo "$cmd_info" | cut -d'|' -f1)
+    local func_name=$(echo "$cmd_info" | cut -d'|' -f2)
+    local description=$(echo "$cmd_info" | cut -d'|' -f3)
+    
+    # Split module:command to get module and command parts
+    local module="${module_cmd%%:*}"
+    local cmd_part="${module_cmd#*:}"
+    
+    # Build the command pattern for matching
+    local cmd_pattern="${module}:${cmd_part}"
     
     # Return values via global variables (bash 3.2 compatible)
     PARSED_MODULE="$module"

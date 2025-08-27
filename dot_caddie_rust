@@ -323,22 +323,22 @@ caddie_rust_component() {
 
 # Function to register Rust caddie commands
 rust_caddie_register() {
-    echo "rust:new:new:Create new Rust project"
-    echo "rust:build:build:Build current project"
-    echo "rust:run:run:Run current project"
-    echo "rust:test:test:Run tests"
-    echo "rust:check:check:Check without building"
-    echo "rust:clean:clean:Clean build artifacts"
-    echo "rust:update:update:Update dependencies"
-    echo "rust:add:add:Add dependency to Cargo.toml"
-    echo "rust:remove:remove:Remove dependency"
-    echo "rust:search:search:Search crates.io"
-    echo "rust:outdated:outdated:Show outdated dependencies"
-    echo "rust:audit:audit:Security audit"
-    echo "rust:toolchain:toolchain:Switch toolchain (stable/beta/nightly)"
-    echo "rust:target:target:Add compilation target"
-    echo "rust:component:component:Install component (clippy/rustfmt/etc)"
-    echo "rust:help:help:Show detailed Rust help"
+    echo "rust:new|caddie_rust_new|Create new Rust project"
+    echo "rust:build|caddie_rust_build|Build current project"
+    echo "rust:run|caddie_rust_run|Run current project"
+    echo "rust:test|caddie_rust_test|Run tests"
+    echo "rust:check|caddie_rust_check|Check without building"
+    echo "rust:clean|caddie_rust_clean|Clean build artifacts"
+    echo "rust:update|caddie_rust_update|Update dependencies"
+    echo "rust:add|caddie_rust_add|Add dependency to Cargo.toml"
+    echo "rust:remove|caddie_rust_remove|Remove dependency"
+    echo "rust:search|caddie_rust_search|Search crates.io"
+    echo "rust:outdated|caddie_rust_outdated|Show outdated dependencies"
+    echo "rust:audit|caddie_rust_audit|Security audit"
+    echo "rust:toolchain|caddie_rust_toolchain|Switch toolchain (stable/beta/nightly)"
+    echo "rust:target|caddie_rust_target|Add compilation target"
+    echo "rust:component|caddie_rust_component|Install component (clippy/rustfmt/etc)"
+    echo "rust:help|caddie_rust_help|Show detailed Rust help"
 }
 
 # Function to display Rust module help

@@ -265,19 +265,19 @@ caddie_ios_xcode_version() {
 
 # Function to register iOS caddie commands
 ios_caddie_register() {
-    echo "ios:setup:setup:Setup iOS development environment"
-    echo "ios:simulator:simulator:List available simulators"
-    echo "ios:device:device:List connected devices"
-    echo "ios:build:build:Build iOS project"
-    echo "ios:run:run:Run on simulator/device"
-    echo "ios:test:test:Run iOS tests"
-    echo "ios:archive:archive:Create archive for distribution"
-    echo "ios:clean:clean:Clean build artifacts"
-    echo "ios:pod:install:pod_install:Install CocoaPods dependencies"
-    echo "ios:pod:update:pod_update:Update CocoaPods dependencies"
-    echo "ios:swift:version:swift_version:Show Swift version"
-    echo "ios:xcode:version:xcode_version:Show Xcode version"
-    echo "ios:help:help:Show detailed iOS help"
+    echo "ios:setup|caddie_ios_setup|Setup iOS development environment"
+    echo "ios:simulator|caddie_ios_simulator|List available simulators"
+    echo "ios:device|caddie_ios_device|List connected devices"
+    echo "ios:build|caddie_ios_build|Build iOS project"
+    echo "ios:run|caddie_ios_run|Run on simulator/device"
+    echo "ios:test|caddie_ios_test|Run iOS tests"
+    echo "ios:archive|caddie_ios_archive|Create archive for distribution"
+    echo "ios:clean|caddie_ios_clean|Clean build artifacts"
+    echo "ios:pod:install|caddie_ios_pod_install|Install CocoaPods dependencies"
+    echo "ios:pod:update|caddie_ios_pod_update|Update CocoaPods dependencies"
+    echo "ios:swift:version|caddie_ios_swift_version|Show Swift version"
+    echo "ios:xcode:version|caddie_ios_xcode_version|Show Xcode version"
+    echo "ios:help|caddie_ios_help|Show detailed iOS help"
 }
 
 # Function to display iOS module help

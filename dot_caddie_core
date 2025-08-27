@@ -8,11 +8,11 @@ CADDIE_HOME_FILE="$HOME/.caddie_home"
 
 # Function to register core caddie commands
 core_caddie_register() {
-    # New modular format
-    echo "core:set:home:caddie_set_home:Set caddie home directory"
-    echo "core:get:home:caddie_get_home:Get current caddie home"
-    echo "core:reset:home:caddie_reset_home:Reset caddie home directory"
-    echo "core:help:caddie_core_help:Show core caddie help"
+    # New modular format using pipe separator
+    echo "core:set:home|caddie_set_home|Set caddie home directory"
+    echo "core:get:home|caddie_get_home|Get current caddie home"
+    echo "core:reset:home|caddie_reset_home|Reset caddie home directory"
+    echo "core:help|caddie_core_help|Show core caddie help"
 }
 
 # Function to display caddie help
@@ -28,8 +28,6 @@ caddie_help() {
     # Dynamically show loaded modules
     if caddie_module_help_loaded; then
         caddie_module_help_get
-    else
-        echo "  No additional modules loaded"
     fi
     
     echo ""
@@ -42,7 +40,7 @@ caddie_help() {
     if [ -n "$CADDIE_MODULE_HELP" ]; then
         echo "Available module help:"
         for moddesc in "${CADDIE_MODULES[@]}"; do
-            module="${moddesc%%:*}"
+            module="${moddesc%%|*}"
             if [ -n "$module" ]; then
                 echo "  caddie ${module}:help       Show detailed ${module} help"
             fi
@@ -56,7 +54,7 @@ caddie_help() {
         echo "  caddie core:set:home ~/projects/myproject  # Set caddie home directory"
     if [ -n "$CADDIE_MODULE_HELP" ]; then
         for moddesc in "${CADDIE_MODULES[@]}"; do
-            module="${moddesc%%:*}"
+            module="${moddesc%%|*}"
             case "$module" in
                 "python")
                     echo "  caddie python:create myenv"
