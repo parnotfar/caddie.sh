@@ -1,0 +1,595 @@
+alias bu='cd ..'
+alias c='clear'
+alias cdc='cd; clear'
+alias dir='ls -FH'
+alias evn='env'
+alias la='ll'
+alias ll='ls -laGFH'
+alias ls='ls -GFH'
+alias maek='make'
+alias amek='make'
+alias bim='vim'
+alias pcd='pushd'
+alias externalip='curl whatismyip.org'
+alias ss="source $HOME/.bashrc"
+alias shitory="history | sed -E 's/ *[0-9]+ *//g' | grep '$1' | grep -v '^s*his*tory' | sort | uniq 2> /dev/null"
+alias r=rails
+alias rsp4k='r s -p 4000'
+alias dud='cd .. && cd -'
+alias bud='dud'
+alias ud='dud'
+alias d='docker'
+alias dps='docker ps'
+alias dsp='docker system prune'
+alias di='docker images'
+alias dcb='docker compose build'
+alias dcu='docker compose up'
+alias dcd='docker compose down'
+alias bsl='brew services list'
+alias had='h app:deploy'
+
+# data-pipeline docker specific aliases
+alias cpr='ch pipeline run'
+alias cprr='ch pipeline rerun'
+alias cppr='ch pipeline prepare'
+alias cps='ch pipeline shell'
+alias cpt='ch pipeline test'
+
+# Coloring for LESS and man pages
+export LESS_TERMCAP_mb=$'\e[1;31m'     # begin bold
+export LESS_TERMCAP_md=$'\e[1;33m'     # begin blink
+export LESS_TERMCAP_so=$'\e[01;44;37m' # begin reverse video
+export LESS_TERMCAP_us=$'\e[01;37m'    # begin underline
+export LESS_TERMCAP_me=$'\e[0m'        # reset bold/blink
+export LESS_TERMCAP_se=$'\e[0m'        # reset reverse video
+export LESS_TERMCAP_ue=$'\e[0m'        # reset underline
+export GROFF_NO_SGR=1                  # for konsole and gnome-terminal
+
+export QCUSER='omehmood'
+export QCPSWD='Carrum@123'
+export QCHOST='carrum-healthqc.cigv1noav6eo.us-west-2.rds.amazonaws.com'
+
+function carrum-add-key() {
+  local carrum_key=$(ssh-add -l | grep -i $1)
+
+  if [ -z "$carrum_key" ]; then
+    ssh-add $HOME/.ssh/$1
+  fi
+}
+
+function carrum-test-sftp-server() {
+  if [ -f $HOME/.ssh/ch-nextgen.pem ]; then
+    carrum-add-key "ch-nextgen.pem"
+  fi
+  ssh ubuntu@test-sftp.carrumhealth.com
+}
+
+function restart-coreaudio() {
+  sudo kill $(ps ax | grep coreaudio | grep -v grep | cut -d' ' -f1)
+}
+  
+# Git shortcuts
+alias g='git'
+alias gst='git status'
+alias gl='git pull'
+alias gp='git push'
+alias ggfl='git push --force-with-lease'
+alias gd='git diff'
+alias gdv='git diff -w "$@" | mvim -'
+alias ga='git add'
+alias gaa='git add -A'
+alias gba='git branch -a'
+alias gc='git commit'
+alias gc!='git commit --amend'
+alias gca='git commit --all'
+alias gca!='git commit --all --amend'
+alias gcm='git commit --message'
+alias gdrop='git add .; git stash; git stash drop'
+alias gpop='git stash pop'
+alias gf='git fetch'
+alias gfp='git fetch -p'
+alias glo='git log --oneline'
+alias glgga='git log --graph --decorate --all'
+##
+# Git Branch Clean (gbcln):
+# Delete merged branches without forcing and ignore unmerged branch warnings
+alias gbcln='git branch -d $(git branch) &>/dev/null'
+alias gsp='git stash pop'
+alias gsc='git stash clear'
+
+declare -a GIT_BRANCH_LIST
+
+function set_terminal_tab_name() {
+  # Sets the tab name for the current tab in Terminal.app
+  # Takes in a single string as argument
+  # ex: set_terminal_tab_name 'an example tab name'
+  # https://apple.stackexchange.com/questions/364723/how-do-i-set-the-terminal-tab-title-via-command-line
+  echo -en "\033]1; ${1} \007"
+}
+
+# a method for listing branches to select from
+
+function git_branch_list() {
+  local bare=0
+  local i=0
+
+  GIT_BRANCH_LIST=( )
+
+  branches=$(( git branch -il & git branch -rl ) | sed -e 's/..//' -e 's|origin/||' -e 's|HEAD.*/||' | sort -u)
+
+  for b in ${branches}; do
+    GIT_BRANCH_LIST+=("${b}");
+
+    if [ $bare -eq 0 ]; then
+      echo "$i) $b"
+      let "i++"
+    else
+      echo "$b"
+    fi
+  done
+}
+
+# select a branch from a listing
+
+function git_set_branch_from_list() {
+  git_branch_list > /dev/null
+
+  local branch_count=${#GIT_BRANCH_LIST[@]}
+
+  case $branch_count in
+    0)
+      selection='q'
+      ;;
+    1)
+      selection=0
+      ;;
+    *)
+      git_branch_list
+      echo 'q) Quit'
+
+      echo
+      echo -n 'Enter selection: '
+      read selection
+
+      echo
+      ;;
+  esac
+
+  if [[ "${selection}" == 'q' ]]; then
+    return 0
+  fi
+
+  if [[ ${selection} -gt ${branch_count} ]]; then
+    ch-cli red 'Enter a valid number from the list'
+    return 1
+  fi
+
+  set_git_selected_branch "${GIT_BRANCH_LIST[$selection]}"
+}
+
+function set_git_selected_branch() {
+  export GIT_SELECTED_BRANCH=$1
+}
+
+function get_git_selected_branch() {
+  echo ${GIT_SELECTED_BRANCH}
+}
+
+function reset_git_selected_branch() {
+  export GIT_SELECTED_BRANCH=
+}
+
+function gco() {
+  local use_branch=$1
+
+  if [ ! -z "${use_branch}" ]; then
+    git checkout ${use_branch}
+    git pull
+    return $?
+  fi
+
+  git_set_branch_from_list
+
+  use_branch=$(get_git_selected_branch)
+
+  if [ -z "${use_branch}" ]; then
+    return 1
+  fi
+
+  git checkout ${use_branch}
+  git pull
+}
+
+export -f gco
+
+function __gco_completion() {
+  local cur prev branches
+  COMPREPLY=()
+
+  cur=${COMP_WORDS[COMP_CWORD]}
+  prev=${COMP_WORDS[COMP_CWORD-1]}
+  branches=`git branch | sed 's/[ *]*//g' | paste -sd' ' -`
+
+  COMPREPLY=( $(compgen -W "${branches}" -- ${cur}) )
+}
+
+complete -F __gco_completion gco
+
+function gnb() {
+  local branch=$1
+  local opt=$2
+  local desc=$3
+
+  if [[ -z "$1" ]] || [[ $1 =~ -h|--help ]]; then
+    echo "Usage: gnb branch-name [-d|--description branch-description]"
+    return 1
+  fi
+
+  git checkout -b $branch
+
+  if [[ $opt =~ -d|--description ]]; then
+    git config branch.${branch}.description "$desc"
+  fi
+
+  git push --set-upstream origin $branch
+}
+
+export -f gnb
+
+alias gmb='gnb "$@"'
+alias gcb='gnb "$@"'
+
+function gmm() {
+  local current_branch=$(git branch | grep '^*' | cut -d' ' -f2)
+  local mainline=$(basename $(git symbolic-ref --short refs/remotes/origin/HEAD))
+
+  if [[ "${current_branch}" == "${mainline}" ]]; then
+    echo "Cannot merge ${mainline} to ${mainline}"
+    return 1
+  fi
+
+  gco "${mainline}"
+  gl
+  gco "${current_branch}"
+  git merge "${mainline}"
+}
+ 
+export -f gmm
+
+function gcp() {
+  local message=$1
+ 
+  git commit -m "$message" && git push
+}
+ 
+export -f gcp
+
+function gacp() {
+  local message=$1
+ 
+  git add . && git commit -m "$message" && git push
+}
+ 
+export -f gacp
+
+function gcl() {
+  local repo=$1
+  local github_user=$2
+ 
+  if [ -z "$github_user" ]
+  then
+    github_user=$(git config --get github.user)
+  fi
+ 
+  git clone git@github.com:$github_user/$repo.git
+}
+
+export -f gcl
+
+function grb() {
+  local flag=$1
+
+  git rebase $flag
+}
+
+export -f grb
+
+function grba() {
+  git rebase --abort
+}
+
+export -f grba
+
+function grbc() {
+  git rebase --continue
+}
+
+export -f grbc
+
+function grbs() {
+  git rebase --skip
+}
+
+export -f grbs
+
+function grbi() {
+  local branch=$1
+
+  git rebase -i $branch
+}
+
+export -f grbi
+#
+# NPM aliases
+
+alias ni='npm install'
+alias nid='npm install --save-dev'
+alias ns='npm start'
+alias nr='npm run'
+alias nrl='npm run lint'
+alias nrlf='npm run --fix'
+alias nrt='npm run test'
+alias nrtu='npm run test -- --updateSnapshot' 
+alias nrtw='npm run test -- --watch' 
+
+# Handy functions
+function blanks() {
+  local default=5 
+  local limit=$1
+
+  if [ -z $limit ]; then
+    limit=$default
+  fi
+
+  for i in $(seq 1 $limit); do
+    echo
+  done
+}
+
+export -f blanks
+
+function path() {
+  echo $PATH | tr ':' "\n"
+}
+
+export -f path
+
+function bash-stats() {
+  history | awk '{print $2}' | awk 'BEGIN {FS="|"} {print $1}' | sort | uniq -c | sort -rn | head -30
+}
+
+export -f bash-stats
+ 
+function take() {
+  local use_dir=$1
+ 
+  if [ -z $use_dir ];
+  then
+    echo 'usage: take dir_to_create'
+    exit 1
+  fi
+ 
+  mkdir -p $use_dir
+  cd $use_dir
+}
+
+export -f take
+ 
+function latest-gemfile-versions() {
+  for g in $(grep -E '^.*> *[0-9\.]*' Gemfile | awk -F' ' '{print $2}' | sed -e "s/'//g" -e 's/,//'); do
+    installed_version=$(bundle info $g | grep '*' | sed 's/[^(]*(\([^)]*\))/\1/')
+    current_version=$(latest-gem $g | sed 's/[^(]*(\([^)]*\))/\1/' | awk '{print $1}')
+
+    color='red'
+    endcap="${installed_version} (${current_version})"
+
+    if [[ ${current_version} == ${installed_version} ]] || [ -z "${current_version}" ]; then
+      color='green'
+      endcap="${installed_version}"
+    fi
+
+    ch-cli $color "$(ch-marker-rpad "${g}" '.' 40) ${endcap}"
+  done
+}
+
+function latest-gem() {
+    PRVIFS="${IFS}"
+
+    results=$(gem list -ra $@)
+
+    IFS=$'\n'
+
+    for f in "${results}"; do
+      for g in "$@"; do
+        echo "${f}" | grep "^$g .*$" | awk '{printf("%s %s\n", $1, $2)}' | sed -e 's/,$/\)/g' -e 's/\([0-9]\)$/\1\)/g'
+      done
+    done
+
+    IFS="${PRVIFS}"
+}
+
+function lessdown() {
+  command -v pandoc || brew install pandoc
+
+  local mdfile="README.md"
+
+  if [ ! -z $1 ]; then
+    mdfile=$1
+  fi
+
+  pandoc -s -f markdown -t man $mdfile | groff -T utf8 -man | less
+}
+
+export -f lessdown
+
+alias readless="lessdown"
+
+function hg() {
+  local regex="$1"
+
+  history | grep -Ei "$regex"
+}
+
+export -f hg
+
+function bashy_functions() {
+  local repo=$1
+
+  if [ -z "$repo" ]; then
+    repo=$HOME/work/carrum/bashy
+  fi
+
+  command -v ack || brew install ack
+
+  ack --nocolor '^function' $repo
+}
+
+export -f 'bashy_functions'
+
+# a fancy way of selecting branches to delete from a list
+
+function gbd() {
+  if [ $# -gt 0 ]; then
+    git branch -d "$@"
+    return $?
+  fi
+
+  git_branch_list > /dev/null
+
+  local branch_count=${#GIT_BRANCH_LIST[@]}
+
+  case $branch_count in
+    0)
+      selection='q'
+      ;;
+    *)
+      git_branch_list
+      echo 'q) Quit'
+
+      echo
+      echo 'Separate selections by space when choosing to delete multiple branches'
+      echo
+      echo -n 'Enter selection(s): '
+      read selection
+
+      echo
+      ;;
+  esac
+
+  if [[ "${selection}" == 'q' ]]; then
+    return 0
+  fi
+
+  IFS=' ' read -a branches_to_delete <<< "${selection}"
+
+  for b in ${branches_to_delete[@]}; do
+    echo ${GIT_BRANCH_LIST[$b]}
+  done
+
+  echo
+  echo -n 'Delete the above branches (Y/n): '
+  read selection
+
+  echo
+
+  if [ -z "${selection}" ]; then
+    selection='Y'
+  fi
+
+  selection=$(echo $selection | tr [a-z] [A-Z])
+
+  if [[ "${selection}" != 'Y' ]]; then
+    return 1
+  fi
+
+  for b in ${branches_to_delete[@]}; do
+    git branch -d ${GIT_BRANCH_LIST[$b]}
+  done
+}
+
+export -f 'gbd'
+
+if [[ "$(uname -s)" == 'Darwin' ]]; then
+  if [ -d /opt/homebrew ]; then
+    eval $(/opt/homebrew/bin/brew shellenv)
+  elif [ -f /usr/local/bin/brew ]; then
+    eval $(/usr/local/bin/brew shellenv)
+  fi
+fi
+
+function gb() {
+  local desc
+  branches=`git branch | sed 's/[ *]*//g'`
+
+  for branch in $branches; do
+    output=$branch
+    current_branch=`git symbolic-ref --short HEAD`
+    desc=`git config branch.${branch}.description`
+
+    if [[ -n "$desc" ]]; then
+      output="$branch ($desc)"
+    fi
+
+    if [[ "$branch" == "$current_branch" ]]; then
+      ch-cli green "* ${output}"
+    else
+      echo -e "  $output"
+    fi
+  done
+}
+
+function __rake_completion() {
+  COMPREPLY=()
+
+  if [ ! -f 'Rakefile' ]; then
+    return 0
+  fi
+
+  local cur prev tasks
+
+  cur=${COMP_WORDS[COMP_CWORD]}
+  prev=${COMP_WORDS[COMP_CWORD-1]}
+
+  COMP_WORDBREAKS=${COMP_WORDBREAKS/\:/}
+
+  tasks=`rake -T | cut -d' ' -f2 | sed 's/\[.*/\[/g' | paste -sd' ' -`
+
+  COMPREPLY=( $(compgen -W "${tasks}" -- ${cur}) )
+}
+
+complete -F __rake_completion rake
+
+function __brew_completion() {
+  local cur prev options
+  COMPREPLY=()
+
+  cur=${COMP_WORDS[COMP_CWORD]}
+  prev=${COMP_WORDS[COMP_CWORD-1]}
+
+  case ${COMP_CWORD} in
+    1)
+      options='doctor info install list search services uninstall update upgrade'
+      ;;
+    2)
+      case ${prev} in
+        services)
+          options='list start stop restart'
+          ;;
+      esac
+      ;;
+    3)
+    case ${prev} in
+      start|stop|restart)
+        options=`brew services list | tail +2 | cut -d' ' -f1 | paste -sd' ' -`
+    esac
+      ;;
+    *)
+      options=''
+      ;;
+  esac
+
+  COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+}
+
+complete -F __brew_completion brew
+. "$HOME/.cargo/env"

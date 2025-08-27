@@ -1,0 +1,40 @@
+source ~/.bashrc
+
+source ~/.caddie_version
+
+source ~/.caddie_prompt.sh
+
+# Due to catalina switching to zsh
+export BASH_SILENCE_DEPRECATION_WARNING=1
+
+export PS1="\u@\h:\w> "
+export EDITOR=vim
+
+# override the default if customized by user
+if [ -f "$HOME/work" ]; then
+  echo "Caddie home is set to: $(cat $HOME/work)"
+  export CADDIE_HOME=$(cat $HOME/work)
+else
+  echo "Caddie home is not set"
+fi
+
+if [ ! -f "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh" ]; then
+  brew install bash-git-prompt
+fi
+
+if [ -f "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh" ]; then
+  source "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh"
+fi
+
+set_git_app_prompt
+
+if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
+  source "$HOME/.bash_profile-caddie-custom"
+fi
+
+if [ -f "$HOME/.bashrc-caddie-custom" ]; then
+  source "$HOME/.bashrc-caddie-custom"
+fi
+
+# Support for rust applications
+. "$HOME/.cargo/env"
