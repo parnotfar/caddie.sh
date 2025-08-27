@@ -8,9 +8,16 @@ CADDIE_HOME_FILE="$HOME/.caddie_home"
 
 # Function to register core caddie commands
 core_caddie_register() {
+    # New modular format
     echo "core:set:home:caddie_set_home:Set caddie home directory"
     echo "core:get:home:caddie_get_home:Get current caddie home"
     echo "core:reset:home:caddie_reset_home:Reset caddie home directory"
+    echo "core:help:caddie_core_help:Show core caddie help"
+    
+    # Backward compatibility - old format without module prefix
+    echo "set:home:caddie_set_home:Set caddie home directory"
+    echo "get:home:caddie_get_home:Get current caddie home"
+    echo "reset:home:caddie_reset_home:Reset caddie home directory"
 }
 
 # Function to display caddie help
@@ -41,7 +48,7 @@ caddie_help() {
         echo "Available module help:"
         for moddesc in "${CADDIE_MODULES[@]}"; do
             module="${moddesc%%:*}"
-            if [ -n "$module" ] && [ "$module" != "core" ]; then
+            if [ -n "$module" ]; then
                 echo "  caddie ${module}:help       Show detailed ${module} help"
             fi
         done
@@ -51,7 +58,8 @@ caddie_help() {
     
     echo ""
     echo "Quick Examples:"
-    echo "  caddie core:set:home ~/projects/myproject"
+    echo "  caddie set:home ~/projects/myproject    # Old format (backward compatible)"
+    echo "  caddie core:set:home ~/projects/myproject  # New format (modular)"
     if [ -n "$CADDIE_MODULE_HELP" ]; then
         for moddesc in "${CADDIE_MODULES[@]}"; do
             module="${moddesc%%:*}"
@@ -143,6 +151,24 @@ caddie_version() {
     fi
 }
 
+# Function to show core caddie help
+caddie_core_help() {
+    echo "Core Caddie Functions"
+    echo "===================="
+    echo ""
+    echo "Usage: caddie core:<command>"
+    echo ""
+    echo "Home Directory Management:"
+    echo "  set:home <path>     Set caddie home directory"
+    echo "  get:home            Get current caddie home"
+    echo "  reset:home          Reset caddie home directory"
+    echo ""
+    echo "Examples:"
+    echo "  caddie core:set:home ~/projects/myproject"
+    echo "  caddie core:get:home"
+    echo "  caddie core:reset:home"
+}
+
 # Main caddie function removed - now handled by dot_caddie
 
 # Auto-load caddie home on shell startup
@@ -159,3 +185,4 @@ export -f caddie_get_home
 export -f caddie_reset_home
 export -f caddie_help
 export -f caddie_version
+export -f caddie_core_help

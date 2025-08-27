@@ -53,34 +53,42 @@ caddie() {
     local command="$1"
     local args=("$@")
     
-    # Debug: Show what we're looking for
-    echo "DEBUG: Looking for command: '$command'"
-    echo "DEBUG: CADDIE_COMMANDS array has ${#CADDIE_COMMANDS[@]} entries"
+
     
     # Try to route to a module using dynamic command discovery
     for cmd_info in "${CADDIE_COMMANDS[@]}"; do
-        # Parse the format: "module:command:function:description"
-        # For "core:set:home:set_home:Set caddie home directory"
-        local module="${cmd_info%%:*}"
-        local temp_after_module="${cmd_info#*:}"
-        local temp_before_func="${temp_after_module%:*}"
-        local func_name="${temp_before_func##*:}"
-        local cmd_part="${temp_before_func%:*}"
-        local description="${cmd_info##*:}"
+        # Parse the format: "module:command:function:description" or "command:function:description"
+        local first_colon="${cmd_info%%:*}"
+        local after_first="${cmd_info#*:}"
+        local second_colon="${after_first%%:*}"
+        local after_second="${after_first#*:}"
+        local third_colon="${after_second%%:*}"
         
-        # Construct the full command pattern (e.g., "core:set:home")
-        local cmd_pattern="${module}:${cmd_part}"
-        
-        echo "DEBUG: Checking pattern '$cmd_pattern' against command '$command'"
+        # Check if this is a module:command:function:description format
+        if [[ "$after_second" == *:* ]]; then
+            # New format: "module:command:function:description"
+            local module="$first_colon"
+            # The command part is everything between module and function
+            local temp_after_module="${cmd_info#*:}"
+            local temp_before_func="${temp_after_module%:*}"
+            local func_name="${temp_before_func##*:}"
+            local cmd_part="${temp_before_func%:*}"
+            local description="${after_second#*:}"
+            local cmd_pattern="${module}:${cmd_part}"
+        else
+            # Old format: "command:function:description"
+            local module=""
+            local cmd_part="$first_colon"
+            local func_name="$second_colon"
+            local description="$after_second"
+            local cmd_pattern="$cmd_part"
+        fi
         
         if [ "$command" = "$cmd_pattern" ]; then
-            echo "DEBUG: MATCH FOUND! Pattern: '$cmd_pattern', Function: '$func_name'"
-            echo "DEBUG: Module: '$module', Function: '$func_name'"
-            
-                                    # Call the module's function with remaining arguments
-                        # Remove the first argument (the command) and pass the rest
-                        local remaining_args=("${args[@]:1}")
-                        eval "${func_name} \"\${remaining_args[@]}\""
+            # Call the module's function with remaining arguments
+            # Remove the first argument (the command) and pass the rest
+            local remaining_args=("${args[@]:1}")
+            eval "${func_name} \"\${remaining_args[@]}\""
             return 0
         fi
     done
@@ -115,14 +123,33 @@ _caddie_completion() {
     # Build available caddie commands dynamically from discovered commands
     local opts="help version --help -h --version -v"
     for cmd_info in "${CADDIE_COMMANDS[@]}"; do
-        # Parse the format: "module:command:function:description"
-        local module="${cmd_info%%:*}"
-        local temp_after_module="${cmd_info#*:}"
-        local temp_before_func="${temp_after_module%:*}"
-        local func_name="${temp_before_func##*:}"
-        local cmd_part="${temp_before_func%:*}"
-        local description="${cmd_info##*:}"
-        local cmd_pattern="${module}:${cmd_part}"
+        # Parse the format: "module:command:function:description" or "command:function:description"
+        local first_colon="${cmd_info%%:*}"
+        local after_first="${cmd_info#*:}"
+        local second_colon="${after_first%%:*}"
+        local after_second="${after_first#*:}"
+        local third_colon="${after_second%%:*}"
+        
+        # Check if this is a module:command:function:description format
+        if [[ "$after_second" == *:* ]]; then
+            # New format: "module:command:function:description"
+            local module="$first_colon"
+            # The command part is everything between module and function
+            local temp_after_module="${cmd_info#*:}"
+            local temp_before_func="${temp_after_module%:*}"
+            local func_name="${temp_before_func##*:}"
+            local cmd_part="${temp_before_func%:*}"
+            local description="${after_second#*:}"
+            local cmd_pattern="${module}:${cmd_part}"
+        else
+            # Old format: "command:function:description"
+            local module=""
+            local cmd_part="$first_colon"
+            local func_name="$second_colon"
+            local description="$after_second"
+            local cmd_pattern="$cmd_part"
+        fi
+        
         if [ -n "$cmd_pattern" ]; then
             opts="$opts $cmd_pattern"
         fi
