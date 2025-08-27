@@ -1,38 +1,142 @@
 #!/bin/bash
 
-# Caddie.sh - Main Entry Point
-# This file sources all the modular components and provides the main interface
+# Caddie.sh - Core Functions
+# This file contains the main caddie function and core functionality
 
-# Define caddie modules and their descriptions.
-# Each entry should be in the format "key:Description", where:
-#   - key:     The module name (used for sourcing ~/.caddie_<key>)
-#   - Description: A human-readable description for help output.
-# Example: "rust:Rust development tools" means the module "rust" will be loaded from ~/.caddie_rust,
-#          and its description will be shown in help listings.
-CADDIE_MODULES=(
-    "core:Core caddie functions"
-    "python:Python environment management"
-    "rust:Rust development tools"
-    "ios:iOS development tools"
-    "cross:Cross-language features"
-    "cursor:Cursor IDE integration"
-)
+# Default caddie home file location
+CADDIE_HOME_FILE="$HOME/.caddie_home"
 
-CADDIE_MODULE_HELP=""
-for moddesc in "${CADDIE_MODULES[@]}"; do
-    module="${moddesc%%:*}"
-    desc="${moddesc#*:}"
-    file="$HOME/.caddie_${module}"
-    if [ -f "$file" ]; then
-        source "$file"
-        CADDIE_MODULE_HELP="${CADDIE_MODULE_HELP}  ${module} -${desc}\n"
+# Function to display caddie help
+caddie_help() {
+    echo "Caddie.sh - Development Environment Manager"
+    echo "=========================================="
+    echo ""
+    echo "Usage: caddie <command>"
+    echo ""
+    echo "Command Categories:"
+    echo "  home                     Home directory management"
+    
+    # Dynamically show loaded modules
+    if [ -n "$CADDIE_MODULE_HELP" ]; then
+        echo -e "$CADDIE_MODULE_HELP"
     else
-        echo "Warning: ${desc} module not found at $file"
+        echo "  No additional modules loaded"
     fi
-done
-# Note: CADDIE_MODULE_HELP is now used in the help function to dynamically show loaded modules
+    
+    echo ""
+    echo "General Commands:"
+    echo "  help                     Show this overview"
+    echo "  version                  Show caddie version"
+    echo ""
+    echo "Detailed Help:"
+    # Dynamically generate help commands for loaded modules
+    if [ -n "$CADDIE_MODULE_HELP" ]; then
+        echo "Available module help:"
+        for moddesc in "${CADDIE_MODULES[@]}"; do
+            module="${moddesc%%:*}"
+            if [ -n "$module" ] && [ "$module" != "core" ]; then
+                echo "  caddie ${module}:help       Show detailed ${module} help"
+            fi
+        done
+    else
+        echo "  No additional modules available for detailed help"
+    fi
+    
+    echo ""
+    echo "Quick Examples:"
+    echo "  caddie set:home ~/projects/myproject"
+    if [ -n "$CADDIE_MODULE_HELP" ]; then
+        for moddesc in "${CADDIE_MODULES[@]}"; do
+            module="${moddesc%%:*}"
+            case "$module" in
+                "python")
+                    echo "  caddie python:create myenv"
+                    ;;
+                "rust")
+                    echo "  caddie rust:new myproject"
+                    ;;
+                "ios")
+                    echo "  caddie ios:setup"
+                    ;;
+                "cross")
+                    echo "  caddie env:status"
+                    ;;
+                "cursor")
+                    echo "  caddie cursor:detect"
+                    ;;
+            esac
+        done
+    fi
+    echo ""
+    echo "For detailed help on any category, use: caddie <category>:help"
+}
 
-# Main caddie function - dispatches to functions from modules
+# Function to set the caddie home directory
+caddie_set_home() {
+    local path="$1"
+    
+    if [ -z "$path" ]; then
+        echo "Error: Please provide a path for caddie home"
+        echo "Usage: caddie set:home <path>"
+        return 1
+    fi
+    
+    # Expand the path (handle ~, relative paths, etc.)
+    local expanded_path
+    expanded_path=$(eval echo "$path")
+    
+    # Check if the path exists
+    if [ ! -d "$expanded_path" ]; then
+        echo "Error: Directory '$expanded_path' does not exist"
+        return 1
+    fi
+    
+    # Get the absolute path
+    local absolute_path
+    absolute_path=$(cd "$expanded_path" && pwd)
+    
+    # Save the path to the caddie home file
+    echo "$absolute_path" > "$CADDIE_HOME_FILE"
+    
+    # Export the CADDIE_HOME variable
+    export CADDIE_HOME="$absolute_path"
+    
+    echo "✓ Caddie home directory set to: $absolute_path"
+}
+
+# Function to get the caddie home directory
+caddie_get_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        local caddie_home
+        caddie_home=$(cat "$CADDIE_HOME_FILE")
+        echo "Current caddie home: $caddie_home"
+    else
+        echo "No caddie home directory was set"
+    fi
+}
+
+# Function to reset the caddie home directory
+caddie_reset_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        rm "$CADDIE_HOME_FILE"
+        unset CADDIE_HOME
+        echo "✓ Caddie home directory has been reset"
+    else
+        echo "No caddie home directory was set"
+    fi
+}
+
+# Function to show caddie version
+caddie_version() {
+    if [ -f "$HOME/.caddie_version" ]; then
+        source "$HOME/.caddie_version"
+        echo "Caddie.sh version: $CADDIE_SH_VERSION"
+    else
+        echo "Caddie.sh version: unknown"
+    fi
+}
+
+# Main caddie function
 caddie() {
     local command="$1"
     
@@ -297,22 +401,6 @@ caddie() {
         "cursor:config:optimize")
             caddie_cursor_config_optimize
             ;;
-        # Help commands for modules
-        "python:help")
-            caddie_python_help
-            ;;
-        "rust:help")
-            caddie_rust_help
-            ;;
-        "ios:help")
-            caddie_ios_help
-            ;;
-        "cross:help")
-            caddie_cross_help
-            ;;
-        "cursor:help")
-            caddie_cursor_help
-            ;;
         # General commands
         "help"|"--help"|"-h")
             caddie_help
@@ -332,6 +420,11 @@ caddie() {
     esac
 }
 
+# Auto-load caddie home on shell startup
+if [ -f "$CADDIE_HOME_FILE" ]; then
+    export CADDIE_HOME=$(cat "$CADDIE_HOME_FILE")
+fi
+
 # Tab completion function for caddie command
 _caddie_completion() {
     local cur prev opts
@@ -340,7 +433,7 @@ _caddie_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Available caddie commands
-    opts="set:home get:home reset:home python:create python:activate python:deactivate python:list python:remove python:current python:install python:uninstall python:freeze python:sync python:upgrade python:outdated python:init python:test python:lint python:format python:help rust:new rust:build rust:run rust:test rust:check rust:clean rust:update rust:add rust:remove rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:help ios:setup ios:simulator ios:device ios:build ios:run ios:test ios:archive ios:clean ios:pod:install ios:pod:update ios:swift:version ios:xcode:version ios:help env:status env:setup env:reset env:backup template:list template:create build:all build:python build:rust build:ios deploy:docker deploy:local tools:install tools:setup tools:lint tools:format cross:help cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize cursor:help help version --help -h --version -v"
+    opts="set:home get:home reset:home python:create python:activate python:deactivate python:list python:remove python:current python:install python:uninstall python:freeze python:sync python:upgrade python:outdated python:init python:test python:lint python:format rust:new rust:build rust:run rust:test rust:check rust:clean rust:update rust:add rust:remove rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component ios:setup ios:simulator ios:device ios:build ios:run ios:test ios:archive ios:clean ios:pod:install ios:pod:update ios:swift:version ios:xcode:version env:status env:setup env:reset env:backup template:list template:create build:all build:python build:rust build:ios deploy:docker deploy:local tools:install tools:setup tools:lint tools:format cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize help version --help -h --version -v"
     
     # If we're completing the first argument (command)
     if [ ${COMP_CWORD} -eq 1 ]; then
@@ -535,7 +628,9 @@ complete -F _caddie_completion caddie
 
 # Export the caddie function so it's available in subshells
 export -f caddie
+export -f caddie_set_home
+export -f caddie_get_home
+export -f caddie_reset_home
+export -f caddie_help
+export -f caddie_version
 export -f _caddie_completion
-
-# Caddie is now ready to use!
-echo "✓ Caddie.sh loaded successfully with all modules"

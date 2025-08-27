@@ -90,7 +90,14 @@ install-dot: backup-existing ## Install dot files to home directory
 	@cp dot_caddie_prompt "$(HOME_DIR)/.caddie_prompt.sh" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_prompt.sh" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_prompt.sh" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing dot_caddie_version as ~/.caddie_version"
 	@cp dot_caddie_version "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_version" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_version" && exit 1)
-	@echo "$(YELLOW)  →$(NC) Installing dot_caddie as ~/.caddie.sh"
+	@echo "$(YELLOW)  →$(NC) Installing modular caddie files..."
+	@cp dot_caddie_core "$(HOME_DIR)/.caddie_core" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_core" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_core" && exit 1)
+	@cp dot_caddie_python "$(HOME_DIR)/.caddie_python" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_python" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_python" && exit 1)
+	@cp dot_caddie_rust "$(HOME_DIR)/.caddie_rust" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_rust" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_rust" && exit 1)
+	@cp dot_caddie_ios "$(HOME_DIR)/.caddie_ios" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_ios" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_ios" && exit 1)
+	@cp dot_caddie_cross "$(HOME_DIR)/.caddie_cross" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_cross" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_cross" && exit 1)
+	@cp dot_caddie_cursor "$(HOME_DIR)/.caddie_cursor" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_cursor" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_cursor" && exit 1)
+	@echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	@cp dot_caddie "$(HOME_DIR)/.caddie.sh" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie.sh" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie.sh" && exit 1)
 	@echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
@@ -212,6 +219,13 @@ uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or R
 	@if [ -f "$(HOME_DIR)/.caddie_prompt.sh" ]; then rm "$(HOME_DIR)/.caddie_prompt.sh" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_prompt.sh" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_prompt.sh"; else echo "$(YELLOW)    →$(NC) ~/.caddie_prompt.sh not found (already removed)"; fi
 	@echo "$(YELLOW)  →$(NC) Removing ~/.caddie_version"
 	@if [ -f "$(HOME_DIR)/.caddie_version" ]; then rm "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_version" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_version"; else echo "$(YELLOW)    →$(NC) ~/.caddie_version not found (already removed)"; fi
+	@echo "$(YELLOW)  →$(NC) Removing modular caddie files..."
+	@if [ -f "$(HOME_DIR)/.caddie_core" ]; then rm "$(HOME_DIR)/.caddie_core" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_core" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_core"; else echo "$(YELLOW)    →$(NC) ~/.caddie_core not found (already removed)"; fi
+	@if [ -f "$(HOME_DIR)/.caddie_python" ]; then rm "$(HOME_DIR)/.caddie_python" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_python" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_python"; else echo "$(YELLOW)    →$(NC) ~/.caddie_python not found (already removed)"; fi
+	@if [ -f "$(HOME_DIR)/.caddie_rust" ]; then rm "$(HOME_DIR)/.caddie_rust" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_rust" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_rust"; else echo "$(YELLOW)    →$(NC) ~/.caddie_rust not found (already removed)"; fi
+	@if [ -f "$(HOME_DIR)/.caddie_ios" ]; then rm "$(HOME_DIR)/.caddie_ios" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_ios" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_ios"; else echo "$(YELLOW)    →$(NC) ~/.caddie_ios not found (already removed)"; fi
+	@if [ -f "$(HOME_DIR)/.caddie_cross" ]; then rm "$(HOME_DIR)/.caddie_cross" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_cross" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_cross"; else echo "$(YELLOW)    →$(NC) ~/.caddie_cross not found (already removed)"; fi
+	@if [ -f "$(HOME_DIR)/.caddie_cursor" ]; then rm "$(HOME_DIR)/.caddie_cursor" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_cursor" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_cursor"; else echo "$(YELLOW)    →$(NC) ~/.caddie_cursor not found (already removed)"; fi
 	@echo "$(YELLOW)  →$(NC) Removing ~/.caddie.sh"
 	@if [ -f "$(HOME_DIR)/.caddie.sh" ]; then rm "$(HOME_DIR)/.caddie.sh" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie.sh" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie.sh"; else echo "$(YELLOW)    →$(NC) ~/.caddie.sh not found (already removed)"; fi
 	@echo "$(GREEN)✓$(NC) Uninstallation completed"
@@ -266,6 +280,37 @@ status: ## Check installation status
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_version"; \
 	else \
 		echo "$(RED)  ✗$(NC) ~/.caddie_version"; \
+	fi
+	@echo "$(CYAN)Caddie Modules:$(NC)"
+	@if [ -f "$(HOME_DIR)/.caddie_core" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_core"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_core"; \
+	fi
+	@if [ -f "$(HOME_DIR)/.caddie_python" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_python"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_python"; \
+	fi
+	@if [ -f "$(HOME_DIR)/.caddie_rust" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_rust"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_rust"; \
+	fi
+	@if [ -f "$(HOME_DIR)/.caddie_ios" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_ios"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_ios"; \
+	fi
+	@if [ -f "$(HOME_DIR)/.caddie_cross" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_cross"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_cross"; \
+	fi
+	@if [ -f "$(HOME_DIR)/.caddie_cursor" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_cursor"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_cursor"; \
 	fi
 	@if [ -f "$(HOME_DIR)/.caddie.sh" ]; then \
 		echo "$(GREEN)  ✓$(NC) ~/.caddie.sh"; \

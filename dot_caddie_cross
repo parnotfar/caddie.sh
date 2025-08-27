@@ -1,0 +1,935 @@
+#!/bin/bash
+
+# Caddie.sh - Cross-Language Features
+# This file contains cross-language development functions
+
+# Function to show all environment status
+caddie_env_status() {
+    echo "Development Environment Status"
+    echo "============================="
+    echo ""
+    
+    # Python status
+    echo "Python:"
+    if command -v python3 >/dev/null 2>&1; then
+        echo "  ✓ Python $(python3 --version | cut -d' ' -f2)"
+        if command -v pip >/dev/null 2>&1; then
+            echo "  ✓ pip $(pip --version | cut -d' ' -f2)"
+        fi
+        if [ -n "$VIRTUAL_ENV" ]; then
+            echo "  ✓ Virtual environment: $(basename $VIRTUAL_ENV)"
+        fi
+    else
+        echo "  ✗ Python not found"
+    fi
+    echo ""
+    
+    # Rust status
+    echo "Rust:"
+    if command -v rustc >/dev/null 2>&1; then
+        echo "  ✓ Rust $(rustc --version | cut -d' ' -f2)"
+        if command -v cargo >/dev/null 2>&1; then
+            echo "  ✓ Cargo $(cargo --version | cut -d' ' -f2)"
+        fi
+    else
+        echo "  ✗ Rust not found"
+    fi
+    echo ""
+    
+    # Node.js status
+    echo "Node.js:"
+    if command -v node >/dev/null 2>&1; then
+        echo "  ✓ Node.js $(node --version)"
+        if command -v npm >/dev/null 2>&1; then
+            echo "  ✓ npm $(npm --version)"
+        fi
+    else
+        echo "  ✗ Node.js not found"
+    fi
+    echo ""
+    
+    # iOS status
+    echo "iOS Development:"
+    if command -v xcodebuild >/dev/null 2>&1; then
+        echo "  ✓ Xcode $(xcodebuild -version | head -n1 | cut -d' ' -f2)"
+        if command -v swift >/dev/null 2>&1; then
+            echo "  ✓ Swift $(swift --version | head -n1 | cut -d' ' -f3)"
+        fi
+        if command -v pod >/dev/null 2>&1; then
+            echo "  ✓ CocoaPods $(pod --version)"
+        fi
+    else
+        echo "  ✗ Xcode not found"
+    fi
+    echo ""
+    
+    # Git status
+    echo "Git:"
+    if command -v git >/dev/null 2>&1; then
+        echo "  ✓ Git $(git --version | cut -d' ' -f3)"
+    else
+        echo "  ✗ Git not found"
+    fi
+    echo ""
+    
+    # Docker status
+    echo "Docker:"
+    if command -v docker >/dev/null 2>&1; then
+        echo "  ✓ Docker $(docker --version | cut -d' ' -f3 | cut -d',' -f1)"
+    else
+        echo "  ✗ Docker not found"
+    fi
+}
+
+# Function to setup development environment
+caddie_env_setup() {
+    echo "Setting up development environment..."
+    
+    # Check for Homebrew
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    
+    # Update Homebrew
+    echo "Updating Homebrew..."
+    brew update
+    
+    # Install common development tools
+    echo "Installing development tools..."
+    brew install git python3 node rust
+    
+    # Install Python virtualenv
+    echo "Installing Python virtualenv..."
+    pip3 install virtualenv
+    
+    # Install Node.js tools
+    echo "Installing Node.js tools..."
+    npm install -g npm@latest
+    
+    echo "✓ Development environment setup complete"
+}
+
+# Function to reset all environments
+caddie_env_reset() {
+    echo "Resetting all development environments..."
+    
+    # Deactivate Python virtual environment
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo "Deactivating Python virtual environment..."
+        deactivate
+    fi
+    
+    # Clean Rust build artifacts
+    if [ -f "Cargo.toml" ]; then
+        echo "Cleaning Rust build artifacts..."
+        cargo clean
+    fi
+    
+    # Clean Node.js node_modules
+    if [ -f "package.json" ]; then
+        echo "Removing Node.js dependencies..."
+        rm -rf node_modules/
+    fi
+    
+    # Clean iOS build artifacts
+    if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
+        echo "Cleaning iOS build artifacts..."
+        rm -rf build/
+    fi
+    
+    echo "✓ All environments reset"
+}
+
+# Function to backup current configurations
+caddie_env_backup() {
+    local backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
+    
+    echo "Creating backup in $backup_dir..."
+    mkdir -p "$backup_dir"
+    
+    # Backup Python virtual environments
+    if [ -d "$HOME/.virtualenvs" ]; then
+        echo "Backing up Python virtual environments..."
+        cp -r "$HOME/.virtualenvs" "$backup_dir/"
+    fi
+    
+    # Backup Rust toolchain
+    if [ -d "$HOME/.rustup" ]; then
+        echo "Backing up Rust toolchain..."
+        cp -r "$HOME/.rustup" "$backup_dir/"
+    fi
+    
+    # Backup Node.js global packages
+    if command -v npm >/dev/null 2>&1; then
+        echo "Backing up Node.js global packages..."
+        npm list -g --depth=0 > "$backup_dir/npm-global-packages.txt"
+    fi
+    
+    # Backup shell configurations
+    echo "Backing up shell configurations..."
+    cp "$HOME/.bashrc" "$backup_dir/" 2>/dev/null || true
+    cp "$HOME/.bash_profile" "$backup_dir/" 2>/dev/null || true
+    cp "$HOME/.zshrc" "$backup_dir/" 2>/dev/null || true
+    
+    echo "✓ Backup created: $backup_dir"
+}
+
+# Function to list available templates
+caddie_template_list() {
+    echo "Available Project Templates"
+    echo "=========================="
+    echo ""
+    echo "Web Development:"
+    echo "  web          - Full-stack web application"
+    echo "  api          - REST API with documentation"
+    echo ""
+    echo "Mobile Development:"
+    echo "  mobile       - Cross-platform mobile app"
+    echo "  app          - iOS app"
+    echo "  framework    - iOS framework"
+    echo "  extension    - iOS app extension"
+    echo ""
+    echo "Data & ML:"
+    echo "  data         - Data analysis project"
+    echo "  ml           - Machine learning project"
+    echo ""
+    echo "General:"
+    echo "  cli          - Command-line tool"
+    echo "  lib          - Library/package"
+    echo "  wasm         - WebAssembly project"
+    echo ""
+    echo "Usage: caddie template:create <type> <name>"
+}
+
+# Function to create project from template
+caddie_template_create() {
+    local template_type="$1"
+    local project_name="$2"
+    
+    if [ -z "$template_type" ] || [ -z "$project_name" ]; then
+        echo "Error: Please provide template type and project name"
+        echo "Usage: caddie template:create <type> <name>"
+        echo "Use 'caddie template:list' to see available templates"
+        return 1
+    fi
+    
+    if [ -d "$project_name" ]; then
+        echo "Error: Directory '$project_name' already exists"
+        return 1
+    fi
+    
+    echo "Creating $template_type project '$project_name'..."
+    
+    case "$template_type" in
+        "web")
+            caddie_template_web "$project_name"
+            ;;
+        "api")
+            caddie_template_api "$project_name"
+            ;;
+        "mobile")
+            caddie_template_mobile "$project_name"
+            ;;
+        "app")
+            caddie_template_ios_app "$project_name"
+            ;;
+        "framework")
+            caddie_template_ios_framework "$project_name"
+            ;;
+        "extension")
+            caddie_template_ios_extension "$project_name"
+            ;;
+        "data")
+            caddie_template_data "$project_name"
+            ;;
+        "ml")
+            caddie_template_ml "$project_name"
+            ;;
+        "cli")
+            caddie_template_cli "$project_name"
+            ;;
+        "lib")
+            caddie_template_lib "$project_name"
+            ;;
+        "wasm")
+            caddie_template_wasm "$project_name"
+            ;;
+        *)
+            echo "Error: Unknown template type '$template_type'"
+            echo "Use 'caddie template:list' to see available templates"
+            return 1
+            ;;
+    esac
+}
+
+# Template creation functions
+caddie_template_web() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create basic web structure
+    mkdir -p src/{components,pages,styles,utils}
+    mkdir -p public
+    mkdir -p tests
+    
+    # Create package.json
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "1.0.0",
+  "description": "A modern web application",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "jest",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "vite": "^4.0.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^2.0.0"
+  }
+}
+EOF
+    
+    # Create basic files
+    touch src/index.js
+    touch src/App.js
+    touch public/index.html
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ Web project '$name' created"
+}
+
+caddie_template_api() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create API structure
+    mkdir -p src/{controllers,models,routes,middleware}
+    mkdir -p tests
+    mkdir -p docs
+    
+    # Create package.json
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "1.0.0",
+  "description": "A REST API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "helmet": "^6.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^2.0.0"
+  }
+}
+EOF
+    
+    # Create basic files
+    touch src/server.js
+    touch src/routes/index.js
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ API project '$name' created"
+}
+
+caddie_template_mobile() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create React Native structure
+    mkdir -p src/{components,screens,navigation,services}
+    mkdir -p android
+    mkdir -p ios
+    
+    # Create package.json
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "1.0.0",
+  "description": "A React Native mobile app",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "0.72.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  }
+}
+EOF
+    
+    # Create basic files
+    touch index.js
+    touch src/App.js
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ Mobile project '$name' created"
+}
+
+caddie_template_ios_app() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create iOS app structure
+    mkdir -p "$name"{,Tests,UITests}
+    mkdir -p "$name/Resources"
+    
+    # Create basic files
+    touch "$name/AppDelegate.swift"
+    touch "$name/ViewController.swift"
+    touch "$name/Info.plist"
+    touch README.md
+    
+    echo "✓ iOS app '$name' created"
+}
+
+caddie_template_ios_framework() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create iOS framework structure
+    mkdir -p "$name"{,Tests}
+    mkdir -p "$name/Resources"
+    
+    # Create basic files
+    touch "$name/$name.swift"
+    touch "$name/Info.plist"
+    touch README.md
+    
+    echo "✓ iOS framework '$name' created"
+}
+
+caddie_template_ios_extension() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create iOS extension structure
+    mkdir -p "$name"{,Tests}
+    mkdir -p "$name/Resources"
+    
+    # Create basic files
+    touch "$name/ExtensionViewController.swift"
+    touch "$name/Info.plist"
+    touch README.md
+    
+    echo "✓ iOS extension '$name' created"
+}
+
+caddie_template_data() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create data analysis structure
+    mkdir -p {data,notebooks,src,reports}
+    mkdir -p data/{raw,processed}
+    
+    # Create requirements.txt
+    cat > requirements.txt << EOF
+pandas>=1.5.0
+numpy>=1.21.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+jupyter>=1.0.0
+scipy>=1.9.0
+EOF
+    
+    # Create basic files
+    touch notebooks/analysis.ipynb
+    touch src/data_processing.py
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ Data project '$name' created"
+}
+
+caddie_template_ml() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create ML structure
+    mkdir -p {data,models,src,notebooks,reports}
+    mkdir -p data/{raw,processed}
+    mkdir -p models/{trained,checkpoints}
+    
+    # Create requirements.txt
+    cat > requirements.txt << EOF
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.1.0
+tensorflow>=2.10.0
+torch>=1.12.0
+jupyter>=1.0.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+EOF
+    
+    # Create basic files
+    touch notebooks/experiments.ipynb
+    touch src/train.py
+    touch src/predict.py
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ ML project '$name' created"
+}
+
+caddie_template_cli() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create CLI structure
+    mkdir -p src
+    mkdir -p tests
+    
+    # Create package.json
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "1.0.0",
+  "description": "A command-line tool",
+  "main": "src/index.js",
+  "bin": {
+    "$name": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "commander": "^9.0.0",
+    "chalk": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  }
+}
+EOF
+    
+    # Create basic files
+    touch src/index.js
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ CLI project '$name' created"
+}
+
+caddie_template_lib() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create library structure
+    mkdir -p src
+    mkdir -p tests
+    mkdir -p docs
+    
+    # Create package.json
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "1.0.0",
+  "description": "A JavaScript library",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "jest",
+    "lint": "eslint src/",
+    "docs": "jsdoc src/ -d docs/"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "rollup": "^2.0.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "jsdoc": "^3.6.0"
+  }
+}
+EOF
+    
+    # Create basic files
+    touch src/index.js
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ Library project '$name' created"
+}
+
+caddie_template_wasm() {
+    local name="$1"
+    mkdir -p "$name"
+    cd "$name"
+    
+    # Create WebAssembly structure
+    mkdir -p src
+    mkdir -p tests
+    mkdir -p dist
+    
+    # Create package.json
+    cat > package.json << EOF
+{
+  "name": "$name",
+  "version": "1.0.0",
+  "description": "A WebAssembly project",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "wasm-pack build",
+    "test": "wasm-pack test",
+    "dev": "wasm-pack build --dev"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "wasm-pack": "^0.10.0"
+  }
+}
+EOF
+    
+    # Create Cargo.toml
+    cat > Cargo.toml << EOF
+[package]
+name = "$name"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+EOF
+    
+    # Create basic files
+    touch src/lib.rs
+    touch README.md
+    touch .gitignore
+    
+    echo "✓ WebAssembly project '$name' created"
+}
+
+# Build functions
+caddie_build_all() {
+    echo "Building all projects..."
+    
+    # Build Python
+    if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
+        echo "Building Python project..."
+        caddie_build_python
+    fi
+    
+    # Build Rust
+    if [ -f "Cargo.toml" ]; then
+        echo "Building Rust project..."
+        caddie_build_rust
+    fi
+    
+    # Build iOS
+    if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
+        echo "Building iOS project..."
+        caddie_build_ios
+    fi
+    
+    echo "✓ All projects built"
+}
+
+caddie_build_python() {
+    if [ -f "setup.py" ]; then
+        echo "Building Python package..."
+        python setup.py build
+    elif [ -f "pyproject.toml" ]; then
+        echo "Building Python package with build..."
+        python -m build
+    else
+        echo "No Python build configuration found"
+    fi
+}
+
+caddie_build_rust() {
+    if [ -f "Cargo.toml" ]; then
+        echo "Building Rust project..."
+        cargo build --release
+    else
+        echo "No Rust project found"
+    fi
+}
+
+caddie_build_ios() {
+    if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
+        echo "Building iOS project..."
+        caddie_ios_build
+    else
+        echo "No iOS project found"
+    fi
+}
+
+# Deployment functions
+caddie_deploy_docker() {
+    echo "Creating Docker deployment setup..."
+    
+    # Create Dockerfile
+    cat > Dockerfile << EOF
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+EOF
+    
+    # Create docker-compose.yml
+    cat > docker-compose.yml << EOF
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - .:/app
+      - /app/node_modules
+EOF
+    
+    echo "✓ Docker deployment setup created"
+}
+
+caddie_deploy_local() {
+    echo "Setting up local deployment..."
+    
+    # Create deployment script
+    cat > deploy.sh << 'EOF'
+#!/bin/bash
+
+echo "Deploying locally..."
+
+# Build the project
+npm run build
+
+# Start the application
+npm start
+EOF
+    
+    chmod +x deploy.sh
+    
+    echo "✓ Local deployment setup created"
+}
+
+# Tools functions
+caddie_tools_install() {
+    echo "Installing development tools..."
+    
+    # Install common tools
+    if command -v brew >/dev/null 2>&1; then
+        brew install git-lfs pre-commit
+    fi
+    
+    # Install Node.js tools
+    if command -v npm >/dev/null 2>&1; then
+        npm install -g eslint prettier jest
+    fi
+    
+    # Install Python tools
+    if command -v pip3 >/dev/null 2>&1; then
+        pip3 install black flake8 mypy pytest
+    fi
+    
+    echo "✓ Development tools installed"
+}
+
+caddie_tools_setup() {
+    echo "Setting up development tools..."
+    
+    # Setup git hooks
+    if [ -d ".git" ]; then
+        echo "Setting up git hooks..."
+        pre-commit install
+    fi
+    
+    # Setup linting
+    if [ -f "package.json" ]; then
+        echo "Setting up Node.js linting..."
+        npm install --save-dev eslint prettier
+    fi
+    
+    echo "✓ Development tools setup complete"
+}
+
+caddie_tools_lint() {
+    echo "Running all linters..."
+    
+    # Python linting
+    if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
+        echo "Running Python linters..."
+        if command -v flake8 >/dev/null 2>&1; then
+            flake8 src/ tests/
+        fi
+        if command -v mypy >/dev/null 2>&1; then
+            mypy src/
+        fi
+    fi
+    
+    # Node.js linting
+    if [ -f "package.json" ]; then
+        echo "Running Node.js linters..."
+        if command -v eslint >/dev/null 2>&1; then
+            eslint src/ tests/
+        fi
+    fi
+    
+    echo "✓ All linters completed"
+}
+
+caddie_tools_format() {
+    echo "Formatting all code..."
+    
+    # Python formatting
+    if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
+        echo "Formatting Python code..."
+        if command -v black >/dev/null 2>&1; then
+            black src/ tests/
+        fi
+    fi
+    
+    # Node.js formatting
+    if [ -f "package.json" ]; then
+        echo "Formatting Node.js code..."
+        if command -v prettier >/dev/null 2>&1; then
+            prettier --write src/ tests/
+        fi
+    fi
+    
+    echo "✓ All code formatted"
+}
+
+# Function to display cross-language module help
+caddie_cross_help() {
+    echo "Cross-Language Features & Templates"
+    echo "==================================="
+    echo ""
+    echo "Usage: caddie <command>"
+    echo ""
+    echo "Environment Management:"
+    echo "  env:status         Show all environment status"
+    echo "  env:setup          Setup development environment"
+    echo "  env:reset          Reset all environments"
+    echo "  env:backup         Backup current configurations"
+    echo ""
+    echo "Project Templates:"
+    echo "  template:list      List available templates"
+    echo "  template:create <type> <name>  Create from template"
+    echo ""
+    echo "Available Template Types:"
+    echo "  web                Full-stack web application"
+    echo "  api                REST API with documentation"
+    echo "  mobile             Cross-platform mobile app"
+    echo "  app                iOS app"
+    echo "  framework          iOS framework"
+    echo "  extension          iOS app extension"
+    echo "  data               Data analysis project"
+    echo "  ml                 Machine learning project"
+    echo "  cli                Command-line tool"
+    echo "  lib                Library/package"
+    echo "  wasm               WebAssembly project"
+    echo ""
+    echo "Build & Deploy:"
+    echo "  build:all          Build all projects"
+    echo "  build:python       Build Python package"
+    echo "  build:rust         Build Rust project"
+    echo "  build:ios          Build iOS project"
+    echo "  deploy:docker      Create Docker setup"
+    echo "  deploy:local       Local deployment"
+    echo ""
+    echo "Development Tools:"
+    echo "  tools:install      Install dev tools"
+    echo "  tools:setup        Setup git hooks, etc."
+    echo "  tools:lint         Run all linters"
+    echo "  tools:format       Format all code"
+    echo ""
+    echo "Examples:"
+    echo "  caddie template:create web myapp"
+    echo "  caddie template:create api myapi"
+    echo "  caddie env:status"
+    echo "  caddie build:all"
+    echo "  caddie tools:lint"
+}
+
+# Export cross-language functions
+export -f caddie_env_status
+export -f caddie_env_setup
+export -f caddie_env_reset
+export -f caddie_env_backup
+export -f caddie_template_list
+export -f caddie_template_create
+export -f caddie_template_web
+export -f caddie_template_api
+export -f caddie_template_mobile
+export -f caddie_template_ios_app
+export -f caddie_template_ios_framework
+export -f caddie_template_ios_extension
+export -f caddie_template_data
+export -f caddie_template_ml
+export -f caddie_template_cli
+export -f caddie_template_lib
+export -f caddie_template_wasm
+export -f caddie_build_all
+export -f caddie_build_python
+export -f caddie_build_rust
+export -f caddie_build_ios
+export -f caddie_deploy_docker
+export -f caddie_deploy_local
+export -f caddie_tools_install
+export -f caddie_tools_setup
+export -f caddie_tools_lint
+export -f caddie_tools_format
+export -f caddie_cross_help

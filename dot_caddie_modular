@@ -3,34 +3,42 @@
 # Caddie.sh - Main Entry Point
 # This file sources all the modular components and provides the main interface
 
-# Define caddie modules and their descriptions.
-# Each entry should be in the format "key:Description", where:
-#   - key:     The module name (used for sourcing ~/.caddie_<key>)
-#   - Description: A human-readable description for help output.
-# Example: "rust:Rust development tools" means the module "rust" will be loaded from ~/.caddie_rust,
-#          and its description will be shown in help listings.
-CADDIE_MODULES=(
-    "core:Core caddie functions"
-    "python:Python environment management"
-    "rust:Rust development tools"
-    "ios:iOS development tools"
-    "cross:Cross-language features"
-    "cursor:Cursor IDE integration"
-)
+# Source all caddie modules
+if [ -f "$HOME/.caddie_core" ]; then
+    source "$HOME/.caddie_core"
+else
+    echo "Warning: Core caddie module not found at $HOME/.caddie_core"
+fi
 
-CADDIE_MODULE_HELP=""
-for moddesc in "${CADDIE_MODULES[@]}"; do
-    module="${moddesc%%:*}"
-    desc="${moddesc#*:}"
-    file="$HOME/.caddie_${module}"
-    if [ -f "$file" ]; then
-        source "$file"
-        CADDIE_MODULE_HELP="${CADDIE_MODULE_HELP}  ${module} -${desc}\n"
-    else
-        echo "Warning: ${desc} module not found at $file"
-    fi
-done
-# Note: CADDIE_MODULE_HELP is now used in the help function to dynamically show loaded modules
+if [ -f "$HOME/.caddie_python" ]; then
+    source "$HOME/.caddie_python"
+else
+    echo "Warning: Python caddie module not found at $HOME/.caddie_python"
+fi
+
+if [ -f "$HOME/.caddie_rust" ]; then
+    source "$HOME/.caddie_rust"
+else
+    echo "Warning: Rust caddie module not found at $HOME/.caddie_rust"
+fi
+
+if [ -f "$HOME/.caddie_ios" ]; then
+    source "$HOME/.caddie_ios"
+else
+    echo "Warning: iOS caddie module not found at $HOME/.caddie_ios"
+fi
+
+if [ -f "$HOME/.caddie_cross" ]; then
+    source "$HOME/.caddie_cross"
+else
+    echo "Warning: Cross-language caddie module not found at $HOME/.caddie_cross"
+fi
+
+if [ -f "$HOME/.caddie_cursor" ]; then
+    source "$HOME/.caddie_cursor"
+else
+    echo "Warning: Cursor caddie module not found at $HOME/.caddie_cursor"
+fi
 
 # Main caddie function - dispatches to functions from modules
 caddie() {
@@ -297,22 +305,6 @@ caddie() {
         "cursor:config:optimize")
             caddie_cursor_config_optimize
             ;;
-        # Help commands for modules
-        "python:help")
-            caddie_python_help
-            ;;
-        "rust:help")
-            caddie_rust_help
-            ;;
-        "ios:help")
-            caddie_ios_help
-            ;;
-        "cross:help")
-            caddie_cross_help
-            ;;
-        "cursor:help")
-            caddie_cursor_help
-            ;;
         # General commands
         "help"|"--help"|"-h")
             caddie_help
@@ -340,7 +332,7 @@ _caddie_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Available caddie commands
-    opts="set:home get:home reset:home python:create python:activate python:deactivate python:list python:remove python:current python:install python:uninstall python:freeze python:sync python:upgrade python:outdated python:init python:test python:lint python:format python:help rust:new rust:build rust:run rust:test rust:check rust:clean rust:update rust:add rust:remove rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:help ios:setup ios:simulator ios:device ios:build ios:run ios:test ios:archive ios:clean ios:pod:install ios:pod:update ios:swift:version ios:xcode:version ios:help env:status env:setup env:reset env:backup template:list template:create build:all build:python build:rust build:ios deploy:docker deploy:local tools:install tools:setup tools:lint tools:format cross:help cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize cursor:help help version --help -h --version -v"
+    opts="set:home get:home reset:home python:create python:activate python:deactivate python:list python:remove python:current python:install python:uninstall python:freeze python:sync python:upgrade python:outdated python:init python:test python:lint python:format rust:new rust:build rust:run rust:test rust:check rust:clean rust:update rust:add rust:remove rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component ios:setup ios:simulator ios:device ios:build ios:run ios:test ios:archive ios:clean ios:pod:install ios:pod:update ios:swift:version ios:xcode:version env:status env:setup env:reset env:backup template:list template:create build:all build:python build:rust build:ios deploy:docker deploy:local tools:install tools:setup tools:lint tools:format cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize help version --help -h --version -v"
     
     # If we're completing the first argument (command)
     if [ ${COMP_CWORD} -eq 1 ]; then
