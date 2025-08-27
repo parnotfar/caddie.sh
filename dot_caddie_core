@@ -137,7 +137,7 @@ caddie_reset_home() {
 caddie_version() {
     if [ -f "$HOME/.caddie_version" ]; then
         source "$HOME/.caddie_version"
-        echo "Caddie.sh version: $CADDIE_SH_VERSION"
+        caddie_version_show
     else
         echo "Caddie.sh version: unknown"
     fi

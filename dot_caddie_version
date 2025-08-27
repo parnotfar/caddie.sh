@@ -1,1 +1,39 @@
-export CADDIE_SH_VERSION=1.0
+# Caddie.sh Version Management
+# This file provides encapsulated version management functions
+
+# Private version variable
+CADDIE_SH_VERSION="1.0"
+
+# Function to get the current version
+caddie_version_get() {
+    echo "$CADDIE_SH_VERSION"
+}
+
+# Function to set a new version
+caddie_version_set() {
+    local new_version="$1"
+    if [ -n "$new_version" ]; then
+        CADDIE_SH_VERSION="$new_version"
+        echo "✓ Caddie version set to: $CADDIE_SH_VERSION"
+    else
+        echo "Error: Please provide a version number"
+        return 1
+    fi
+}
+
+# Function to reset version to default
+caddie_version_reset() {
+    CADDIE_SH_VERSION="1.0"
+    echo "✓ Caddie version reset to: $CADDIE_SH_VERSION"
+}
+
+# Function to show current version
+caddie_version_show() {
+    echo "Caddie.sh version: $CADDIE_SH_VERSION"
+}
+
+# Export functions for external use
+export -f caddie_version_get
+export -f caddie_version_set
+export -f caddie_version_reset
+export -f caddie_version_show

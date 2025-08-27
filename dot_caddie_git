@@ -12,18 +12,11 @@ caddie_git_setup_prompt() {
     export PS1="\u@\h:\w> "
     export EDITOR=vim
     
-    # Install bash-git-prompt if not present
-    if [ ! -f "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh" ]; then
-        brew install bash-git-prompt
-    fi
+    # Note: We're using our custom colored prompt instead of bash-git-prompt
+    # This provides better control and consistent behavior
     
-    # Source bash-git-prompt if available
-    if [ -f "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh" ]; then
-        source "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh"
-    fi
-    
-    # Set up caddie git prompt
-    set_git_app_prompt
+    # Set up a simple custom prompt with caddie version and git info
+    export PS1='$(caddie_prompt)'
 }
 
 # Function to source custom files
