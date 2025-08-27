@@ -22,16 +22,9 @@ function set-git-branch-description-prompt() {
 }
 
 function set_git_app_prompt() {
-  GIT_PROMPT_START+='$(set_caddie_version_prompt)'
-  # GIT_PROMPT_START+='$(set_csv_function_prompt)'
-  # GIT_PROMPT_START+='$(set_heroku_app_prompt)'
-  # GIT_PROMPT_START+='$(set_carrum_health_app_prompt)'
-  # GIT_PROMPT_START+='$(set_carrum_health_pg_prompt)'
-  # GIT_PROMPT_START+='$(set-api-function-prompt)'
-  # GIT_PROMPT_START+='$(set-slack-message-prompt)'
-  # GIT_PROMPT_START+='$(set-ram-shell-prompt)'
-  export GIT_PROMPT_START+='$(gp_truncate_pwd)'
+  GIT_PROMPT_START='$(set_caddie_version_prompt)$(gp_truncate_pwd)'
+  export GIT_PROMPT_START
 
-  GIT_PROMPT_END='$(set-git-branch-description-prompt)'
-  export GIT_PROMPT_END+=' \n\[\033[0;37m\]$(date +%H:%M)\[\033[0;0m\] $ '
+  GIT_PROMPT_END='$(set-git-branch-description-prompt) \n\[\033[0;37m\]$(date +%H:%M)\[\033[0;0m\] $ '
+  export GIT_PROMPT_END
 }

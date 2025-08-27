@@ -1,0 +1,175 @@
+#!/bin/bash
+
+# Caddie.sh - A helpful development assistant
+# This file provides the main caddie function for managing development environments
+
+# Default caddie home file location
+CADDIE_HOME_FILE="$HOME/.caddie_home"
+
+# Function to display caddie help
+caddie_help() {
+    echo "Caddie.sh - Development Environment Manager"
+    echo "=========================================="
+    echo ""
+    echo "Usage: caddie <command>"
+    echo ""
+    echo "Commands:"
+    echo "  set:home <path>    Set the caddie home directory"
+    echo "  get:home          Display the current caddie home directory"
+    echo "  reset:home        Clear the caddie home directory"
+    echo "  help              Show this help message"
+    echo "  version           Show caddie version"
+    echo ""
+    echo "Examples:"
+    echo "  caddie set:home ~/projects/myproject"
+    echo "  caddie get:home"
+    echo "  caddie reset:home"
+}
+
+# Function to set the caddie home directory
+caddie_set_home() {
+    local path="$1"
+    
+    if [ -z "$path" ]; then
+        echo "Error: Please provide a path for caddie home"
+        echo "Usage: caddie set:home <path>"
+        return 1
+    fi
+    
+    # Expand the path (handle ~, relative paths, etc.)
+    local expanded_path
+    expanded_path=$(eval echo "$path")
+    
+    # Check if the path exists
+    if [ ! -d "$expanded_path" ]; then
+        echo "Error: Directory '$expanded_path' does not exist"
+        return 1
+    fi
+    
+    # Get the absolute path
+    local absolute_path
+    absolute_path=$(cd "$expanded_path" && pwd)
+    
+    # Save to file
+    echo "$absolute_path" > "$CADDIE_HOME_FILE"
+    
+    # Export the variable
+    export CADDIE_HOME="$absolute_path"
+    
+    echo "✓ Caddie home set to: $absolute_path"
+    echo "✓ CADDIE_HOME environment variable exported"
+}
+
+# Function to get the current caddie home directory
+caddie_get_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        local home_path
+        home_path=$(cat "$CADDIE_HOME_FILE")
+        echo "Current caddie home: $home_path"
+    else
+        echo "No caddie home directory set"
+        echo "Use 'caddie set:home <path>' to set one"
+    fi
+}
+
+# Function to reset the caddie home directory
+caddie_reset_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        local old_path
+        old_path=$(cat "$CADDIE_HOME_FILE")
+        # Do not remove $CADDIE_HOME_FILE; leave it so the home is auto-loaded on shell startup
+        unset CADDIE_HOME
+        echo "✓ Caddie home reset (was: $old_path)"
+    else
+        echo "No caddie home directory was set"
+    fi
+}
+
+# Function to show caddie version
+caddie_version() {
+    if [ -f "$HOME/.caddie_version" ]; then
+        source "$HOME/.caddie_version"
+        echo "Caddie.sh version: $CADDIE_SH_VERSION"
+    else
+        echo "Caddie.sh version: unknown"
+    fi
+}
+
+# Main caddie function
+caddie() {
+    local command="$1"
+    
+    case "$command" in
+        "set:home")
+            caddie_set_home "$2"
+            ;;
+        "get:home")
+            caddie_get_home
+            ;;
+        "reset:home")
+            caddie_reset_home
+            ;;
+        "help"|"--help"|"-h")
+            caddie_help
+            ;;
+        "version"|"--version"|"-v")
+            caddie_version
+            ;;
+        "")
+            echo "Caddie.sh - Development Environment Manager"
+            echo "Use 'caddie help' for available commands"
+            ;;
+        *)
+            echo "Error: Unknown command '$command'"
+            echo "Use 'caddie help' for available commands"
+            return 1
+            ;;
+    esac
+}
+
+# Auto-load caddie home on shell startup
+if [ -f "$CADDIE_HOME_FILE" ]; then
+    export CADDIE_HOME=$(cat "$CADDIE_HOME_FILE")
+fi
+
+# Tab completion function for caddie command
+_caddie_completion() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    # Available caddie commands
+    opts="set:home get:home reset:home help version --help -h --version -v"
+    
+    # If we're completing the first argument (command)
+    if [ ${COMP_CWORD} -eq 1 ]; then
+        # Use compgen to generate completions from our options
+        local IFS=$'\n'
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        return 0
+    fi
+    
+    # If we're completing the second argument for set:home
+    if [ "${prev}" = "set:home" ]; then
+        # Complete with directories
+        local IFS=$'\n'
+        COMPREPLY=( $(compgen -d -- "${cur}") )
+        return 0
+    fi
+    
+    return 0
+}
+
+# Clear any existing completion for caddie and register our completion function
+complete -r caddie 2>/dev/null || true
+complete -F _caddie_completion caddie
+
+# Export the caddie function so it's available in subshells
+export -f caddie
+export -f caddie_set_home
+export -f caddie_get_home
+export -f caddie_reset_home
+export -f caddie_help
+export -f caddie_version
+export -f _caddie_completion

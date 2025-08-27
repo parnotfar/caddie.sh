@@ -90,6 +90,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	@cp dot_caddie_prompt "$(HOME_DIR)/.caddie_prompt.sh" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_prompt.sh" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_prompt.sh" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing dot_caddie_version as ~/.caddie_version"
 	@cp dot_caddie_version "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_version" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_version" && exit 1)
+	@echo "$(YELLOW)  →$(NC) Installing dot_caddie as ~/.caddie.sh"
+	@cp dot_caddie "$(HOME_DIR)/.caddie.sh" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie.sh" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie.sh" && exit 1)
 	@echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
 setup-dev: setup-homebrew setup-python setup-rust ## Setup development environment (Homebrew, Python, Rust)
@@ -210,6 +212,8 @@ uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or R
 	@if [ -f "$(HOME_DIR)/.caddie_prompt.sh" ]; then rm "$(HOME_DIR)/.caddie_prompt.sh" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_prompt.sh" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_prompt.sh"; else echo "$(YELLOW)    →$(NC) ~/.caddie_prompt.sh not found (already removed)"; fi
 	@echo "$(YELLOW)  →$(NC) Removing ~/.caddie_version"
 	@if [ -f "$(HOME_DIR)/.caddie_version" ]; then rm "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_version" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_version"; else echo "$(YELLOW)    →$(NC) ~/.caddie_version not found (already removed)"; fi
+	@echo "$(YELLOW)  →$(NC) Removing ~/.caddie.sh"
+	@if [ -f "$(HOME_DIR)/.caddie.sh" ]; then rm "$(HOME_DIR)/.caddie.sh" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie.sh" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie.sh"; else echo "$(YELLOW)    →$(NC) ~/.caddie.sh not found (already removed)"; fi
 	@echo "$(GREEN)✓$(NC) Uninstallation completed"
 	@echo "$(YELLOW)⚠$(NC) Note: Homebrew, Python, and Rust installations were not removed"
 	@echo "$(CYAN)💡$(NC) Your original files are still backed up as .caddie-backup files"
@@ -262,6 +266,11 @@ status: ## Check installation status
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_version"; \
 	else \
 		echo "$(RED)  ✗$(NC) ~/.caddie_version"; \
+	fi
+	@if [ -f "$(HOME_DIR)/.caddie.sh" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie.sh"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie.sh"; \
 	fi
 	@echo ""
 	@echo "$(CYAN)Backups:$(NC)"
