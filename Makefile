@@ -302,6 +302,21 @@ status: ## Check installation status
 	else \
 		echo "$(RED)  ✗$(NC) Rust"; \
 	fi
+	@if command -v xcodebuild >/dev/null 2>&1; then \
+		echo "$(GREEN)  ✓$(NC) Xcode"; \
+	else \
+		echo "$(RED)  ✗$(NC) Xcode"; \
+	fi
+	@if command -v swift >/dev/null 2>&1; then \
+		echo "$(GREEN)  ✓$(NC) Swift"; \
+	else \
+		echo "$(RED)  ✗$(NC) Swift"; \
+	fi
+	@if command -v pod >/dev/null 2>&1; then \
+		echo "$(GREEN)  ✓$(NC) CocoaPods"; \
+	else \
+		echo "$(RED)  ✗$(NC) CocoaPods"; \
+	fi
 
 clean: ## Clean up any temporary files (currently none)
 	@echo "$(BLUE)🧹$(NC) Cleaning up..."

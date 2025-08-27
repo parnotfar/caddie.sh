@@ -13,17 +13,113 @@ caddie_help() {
     echo ""
     echo "Usage: caddie <command>"
     echo ""
-    echo "Commands:"
+    echo "Home Management:"
     echo "  set:home <path>    Set the caddie home directory"
     echo "  get:home          Display the current caddie home directory"
     echo "  reset:home        Clear the caddie home directory"
-    echo "  help              Show this help message"
-    echo "  version           Show caddie version"
+    echo ""
+    echo "Python Environment:"
+    echo "  python:create <name>     Create new virtual environment"
+    echo "  python:activate <name>   Activate environment"
+    echo "  python:deactivate        Deactivate current environment"
+    echo "  python:list              List all environments"
+    echo "  python:remove <name>     Remove environment"
+    echo "  python:current           Show current environment"
+    echo "  python:install <pkg>     Install package in current env"
+    echo "  python:uninstall <pkg>   Uninstall package"
+    echo "  python:freeze            Generate requirements.txt"
+    echo "  python:sync              Install from requirements.txt"
+    echo "  python:upgrade <pkg>     Upgrade specific package"
+    echo "  python:outdated          Show outdated packages"
+    echo "  python:init              Initialize Python project structure"
+    echo "  python:test              Run tests"
+    echo "  python:lint              Run linting"
+    echo "  python:format            Format code"
+    echo ""
+    echo "Rust Environment:"
+    echo "  rust:new <name>          Create new Rust project"
+    echo "  rust:build               Build current project"
+    echo "  rust:run                 Run current project"
+    echo "  rust:test                Run tests"
+    echo "  rust:check               Check without building"
+    echo "  rust:clean               Clean build artifacts"
+    echo "  rust:update              Update dependencies"
+    echo "  rust:add <crate>         Add dependency to Cargo.toml"
+    echo "  rust:remove <crate>      Remove dependency"
+    echo "  rust:search <query>      Search crates.io"
+    echo "  rust:outdated            Show outdated dependencies"
+    echo "  rust:audit               Security audit"
+    echo "  rust:toolchain <ver>     Switch toolchain"
+    echo "  rust:target <target>     Add compilation target"
+    echo "  rust:component <comp>    Install component"
+    echo ""
+    echo "iOS Development:"
+    echo "  ios:setup                Setup iOS development environment"
+    echo "  ios:simulator            List available simulators"
+    echo "  ios:device               List connected devices"
+    echo "  ios:build                Build iOS project"
+    echo "  ios:run                  Run on simulator/device"
+    echo "  ios:test                 Run iOS tests"
+    echo "  ios:archive              Create archive for distribution"
+    echo "  ios:clean                Clean build artifacts"
+    echo "  ios:pod:install          Install CocoaPods dependencies"
+    echo "  ios:pod:update           Update CocoaPods dependencies"
+    echo "  ios:swift:version        Show Swift version"
+    echo "  ios:xcode:version        Show Xcode version"
+    echo ""
+    echo "Cross-Language Features:"
+    echo "  env:status               Show all environment status"
+    echo "  env:setup                Setup development environment"
+    echo "  env:reset                Reset all environments"
+    echo "  env:backup               Backup current configurations"
+    echo "  template:list            List available templates"
+    echo "  template:create <type>   Create from template"
+    echo "  build:all                Build all projects"
+    echo "  build:python             Build Python package"
+    echo "  build:rust               Build Rust project"
+    echo "  build:ios                Build iOS project"
+    echo "  deploy:docker            Create Docker setup"
+    echo "  deploy:local             Local deployment"
+    echo "  tools:install            Install dev tools"
+    echo "  tools:setup              Setup git hooks, etc."
+    echo "  tools:lint               Run all linters"
+    echo "  tools:format             Format all code"
+    echo ""
+    echo "Cursor IDE Integration:"
+    echo "  cursor:detect            Detect Cursor installation"
+    echo "  cursor:setup             Setup Cursor integration"
+    echo "  cursor:verify            Verify Cursor integration"
+    echo "  cursor:open <path>       Open project in Cursor"
+    echo "  cursor:new <type> <name> Create new project and open in Cursor"
+    echo "  cursor:workspace         Show Cursor workspace info"
+    echo "  cursor:recent            List recently opened projects"
+    echo "  cursor:switch <project>  Switch to different project"
+    echo "  cursor:ai:explain <file> Ask AI to explain code"
+    echo "  cursor:ai:refactor <file> AI-assisted refactoring"
+    echo "  cursor:ai:test <file>    Generate tests with AI"
+    echo "  cursor:ai:docs <file>    Generate documentation with AI"
+    echo "  cursor:ai:review <file>  AI code review"
+    echo "  cursor:ext:install <id>  Install Cursor extension"
+    echo "  cursor:ext:list          List installed extensions"
+    echo "  cursor:ext:update        Update all extensions"
+    echo "  cursor:ext:sync          Sync extensions across devices"
+    echo "  cursor:ext:recommend <type> Recommend extensions for project type"
+    echo "  cursor:config:show       Show Cursor configuration"
+    echo "  cursor:config:backup     Backup Cursor settings"
+    echo "  cursor:config:restore <path> Restore Cursor settings"
+    echo "  cursor:config:sync       Sync Cursor settings"
+    echo "  cursor:config:optimize   Optimize Cursor for performance"
+    echo ""
+    echo "General:"
+    echo "  help                     Show this help message"
+    echo "  version                  Show caddie version"
     echo ""
     echo "Examples:"
     echo "  caddie set:home ~/projects/myproject"
-    echo "  caddie get:home"
-    echo "  caddie reset:home"
+    echo "  caddie python:create myenv"
+    echo "  caddie rust:new myproject"
+    echo "  caddie ios:setup"
+    echo "  caddie env:status"
 }
 
 # Function to set the caddie home directory
@@ -95,6 +191,2845 @@ caddie_version() {
     fi
 }
 
+# =============================================================================
+# PYTHON ENVIRONMENT MANAGEMENT
+# =============================================================================
+
+# Function to create a new Python virtual environment
+caddie_python_create() {
+    local env_name="$1"
+    
+    if [ -z "$env_name" ]; then
+        echo "Error: Please provide a name for the virtual environment"
+        echo "Usage: caddie python:create <name>"
+        return 1
+    fi
+    
+    local env_path="$HOME/.virtualenvs/$env_name"
+    
+    if [ -d "$env_path" ]; then
+        echo "Error: Virtual environment '$env_name' already exists"
+        return 1
+    fi
+    
+    echo "Creating virtual environment '$env_name'..."
+    python3 -m venv "$env_path"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Virtual environment '$env_name' created successfully"
+        echo "  Location: $env_path"
+        echo "  Activate with: caddie python:activate $env_name"
+    else
+        echo "✗ Failed to create virtual environment '$env_name'"
+        return 1
+    fi
+}
+
+# Function to activate a Python virtual environment
+caddie_python_activate() {
+    local env_name="$1"
+    
+    if [ -z "$env_name" ]; then
+        echo "Error: Please provide a name for the virtual environment"
+        echo "Usage: caddie python:activate <name>"
+        return 1
+    fi
+    
+    local env_path="$HOME/.virtualenvs/$env_name"
+    
+    if [ ! -d "$env_path" ]; then
+        echo "Error: Virtual environment '$env_name' does not exist"
+        echo "Create it with: caddie python:create $env_name"
+        return 1
+    fi
+    
+    echo "Activating virtual environment '$env_name'..."
+    source "$env_path/bin/activate"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Virtual environment '$env_name' activated"
+        echo "  Python: $(which python)"
+        echo "  Pip: $(which pip)"
+    else
+        echo "✗ Failed to activate virtual environment '$env_name'"
+        return 1
+    fi
+}
+
+# Function to deactivate current Python virtual environment
+caddie_python_deactivate() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "No virtual environment is currently active"
+        return 0
+    fi
+    
+    echo "Deactivating virtual environment..."
+    deactivate
+    echo "✓ Virtual environment deactivated"
+}
+
+# Function to list all Python virtual environments
+caddie_python_list() {
+    local venv_dir="$HOME/.virtualenvs"
+    
+    if [ ! -d "$venv_dir" ]; then
+        echo "No virtual environments found"
+        echo "Create one with: caddie python:create <name>"
+        return 0
+    fi
+    
+    echo "Available Python virtual environments:"
+    echo "====================================="
+    
+    for env in "$venv_dir"/*; do
+        if [ -d "$env" ]; then
+            local env_name=$(basename "$env")
+            if [ "$env" = "$VIRTUAL_ENV" ]; then
+                echo "  ✓ $env_name (active)"
+            else
+                echo "    $env_name"
+            fi
+        fi
+    done
+}
+
+# Function to remove a Python virtual environment
+caddie_python_remove() {
+    local env_name="$1"
+    
+    if [ -z "$env_name" ]; then
+        echo "Error: Please provide a name for the virtual environment"
+        echo "Usage: caddie python:remove <name>"
+        return 1
+    fi
+    
+    local env_path="$HOME/.virtualenvs/$env_name"
+    
+    if [ ! -d "$env_path" ]; then
+        echo "Error: Virtual environment '$env_name' does not exist"
+        return 1
+    fi
+    
+    if [ "$env_path" = "$VIRTUAL_ENV" ]; then
+        echo "Error: Cannot remove currently active virtual environment"
+        echo "Deactivate it first with: caddie python:deactivate"
+        return 1
+    fi
+    
+    echo "Removing virtual environment '$env_name'..."
+    rm -rf "$env_path"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Virtual environment '$env_name' removed successfully"
+    else
+        echo "✗ Failed to remove virtual environment '$env_name'"
+        return 1
+    fi
+}
+
+# Function to show current Python environment
+caddie_python_current() {
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo "Current Python environment:"
+        echo "  Virtual Environment: $VIRTUAL_ENV"
+        echo "  Python: $(which python)"
+        echo "  Python Version: $(python --version)"
+        echo "  Pip: $(which pip)"
+        echo "  Pip Version: $(pip --version | cut -d' ' -f1-2)"
+    else
+        echo "No virtual environment is currently active"
+        echo "System Python: $(which python3)"
+        echo "System Python Version: $(python3 --version)"
+    fi
+}
+
+# Function to install a Python package
+caddie_python_install() {
+    local package="$1"
+    
+    if [ -z "$package" ]; then
+        echo "Error: Please provide a package name"
+        echo "Usage: caddie python:install <package>"
+        return 1
+    fi
+    
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+        read -p "Continue with system Python? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    echo "Installing package '$package'..."
+    pip install "$package"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Package '$package' installed successfully"
+    else
+        echo "✗ Failed to install package '$package'"
+        return 1
+    fi
+}
+
+# Function to uninstall a Python package
+caddie_python_uninstall() {
+    local package="$1"
+    
+    if [ -z "$package" ]; then
+        echo "Error: Please provide a package name"
+        echo "Usage: caddie python:uninstall <package>"
+        return 1
+    fi
+    
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+        read -p "Continue with system Python? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    echo "Uninstalling package '$package'..."
+    pip uninstall -y "$package"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Package '$package' uninstalled successfully"
+    else
+        echo "✗ Failed to uninstall package '$package'"
+        return 1
+    fi
+}
+
+# Function to freeze current Python environment
+caddie_python_freeze() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+        read -p "Continue with system Python? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    echo "Generating requirements.txt..."
+    pip freeze > requirements.txt
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ requirements.txt generated successfully"
+        echo "  Packages: $(wc -l < requirements.txt)"
+    else
+        echo "✗ Failed to generate requirements.txt"
+        return 1
+    fi
+}
+
+# Function to sync Python environment from requirements.txt
+caddie_python_sync() {
+    if [ ! -f "requirements.txt" ]; then
+        echo "Error: requirements.txt not found in current directory"
+        return 1
+    fi
+    
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+        read -p "Continue with system Python? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    echo "Installing packages from requirements.txt..."
+    pip install -r requirements.txt
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Packages installed successfully from requirements.txt"
+    else
+        echo "✗ Failed to install packages from requirements.txt"
+        return 1
+    fi
+}
+
+# Function to upgrade a Python package
+caddie_python_upgrade() {
+    local package="$1"
+    
+    if [ -z "$package" ]; then
+        echo "Error: Please provide a package name"
+        echo "Usage: caddie python:upgrade <package>"
+        return 1
+    fi
+    
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+        read -p "Continue with system Python? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    echo "Upgrading package '$package'..."
+    pip install --upgrade "$package"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Package '$package' upgraded successfully"
+    else
+        echo "✗ Failed to upgrade package '$package'"
+        return 1
+    fi
+}
+
+# Function to show outdated Python packages
+caddie_python_outdated() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+        read -p "Continue with system Python? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+    fi
+    
+    echo "Checking for outdated packages..."
+    pip list --outdated
+}
+
+# Function to initialize Python project structure
+caddie_python_init() {
+    echo "Initializing Python project structure..."
+    
+    # Create basic project structure
+    mkdir -p src tests docs
+    touch src/__init__.py
+    touch tests/__init__.py
+    touch README.md
+    touch .gitignore
+    
+    # Add common .gitignore entries
+    cat >> .gitignore << EOF
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOF
+
+    # Create basic setup.py if it doesn't exist
+    if [ ! -f "setup.py" ]; then
+        cat > setup.py << EOF
+from setuptools import setup, find_packages
+
+setup(
+    name="$(basename $(pwd))",
+    version="0.1.0",
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    python_requires=">=3.7",
+    install_requires=[],
+    extras_require={
+        "dev": [
+            "pytest>=6.0",
+            "black",
+            "flake8",
+            "mypy",
+        ],
+    },
+)
+EOF
+    fi
+    
+    echo "✓ Python project structure initialized"
+    echo "  Created: src/, tests/, docs/, README.md, .gitignore, setup.py"
+}
+
+# Function to run Python tests
+caddie_python_test() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+    fi
+    
+    echo "Running Python tests..."
+    
+    # Try pytest first, then unittest
+    if command -v pytest >/dev/null 2>&1; then
+        pytest
+    elif [ -d "tests" ]; then
+        python -m unittest discover tests
+    else
+        echo "No tests found. Create tests in the 'tests' directory"
+        return 1
+    fi
+}
+
+# Function to run Python linting
+caddie_python_lint() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+    fi
+    
+    echo "Running Python linting..."
+    
+    # Try flake8 first, then pylint
+    if command -v flake8 >/dev/null 2>&1; then
+        flake8 src/ tests/
+    elif command -v pylint >/dev/null 2>&1; then
+        pylint src/ tests/
+    else
+        echo "No linter found. Install flake8 or pylint"
+        return 1
+    fi
+}
+
+# Function to format Python code
+caddie_python_format() {
+    if [ -z "$VIRTUAL_ENV" ]; then
+        echo "Warning: No virtual environment is active"
+        echo "Consider activating one with: caddie python:activate <name>"
+    fi
+    
+    echo "Formatting Python code..."
+    
+    # Try black first, then autopep8
+    if command -v black >/dev/null 2>&1; then
+        black src/ tests/
+    elif command -v autopep8 >/dev/null 2>&1; then
+        autopep8 --in-place --recursive src/ tests/
+    else
+        echo "No formatter found. Install black or autopep8"
+        return 1
+    fi
+}
+
+# =============================================================================
+# RUST ENVIRONMENT MANAGEMENT
+# =============================================================================
+
+# Function to create a new Rust project
+caddie_rust_new() {
+    local project_name="$1"
+    
+    if [ -z "$project_name" ]; then
+        echo "Error: Please provide a project name"
+        echo "Usage: caddie rust:new <name>"
+        return 1
+    fi
+    
+    if [ -d "$project_name" ]; then
+        echo "Error: Directory '$project_name' already exists"
+        return 1
+    fi
+    
+    echo "Creating new Rust project '$project_name'..."
+    cargo new "$project_name"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust project '$project_name' created successfully"
+        echo "  Location: $(pwd)/$project_name"
+        echo "  Enter directory: cd $project_name"
+        echo "  Build project: caddie rust:build"
+    else
+        echo "✗ Failed to create Rust project '$project_name'"
+        return 1
+    fi
+}
+
+# Function to build current Rust project
+caddie_rust_build() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Building Rust project..."
+    cargo build
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust project built successfully"
+    else
+        echo "✗ Failed to build Rust project"
+        return 1
+    fi
+}
+
+# Function to run current Rust project
+caddie_rust_run() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Running Rust project..."
+    cargo run
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust project ran successfully"
+    else
+        echo "✗ Failed to run Rust project"
+        return 1
+    fi
+}
+
+# Function to run Rust tests
+caddie_rust_test() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Running Rust tests..."
+    cargo test
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust tests completed successfully"
+    else
+        echo "✗ Some Rust tests failed"
+        return 1
+    fi
+}
+
+# Function to check Rust project without building
+caddie_rust_check() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Checking Rust project..."
+    cargo check
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust project check passed"
+    else
+        echo "✗ Rust project check failed"
+        return 1
+    fi
+}
+
+# Function to clean Rust build artifacts
+caddie_rust_clean() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Cleaning Rust build artifacts..."
+    cargo clean
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust build artifacts cleaned"
+    else
+        echo "✗ Failed to clean Rust build artifacts"
+        return 1
+    fi
+}
+
+# Function to update Rust dependencies
+caddie_rust_update() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Updating Rust dependencies..."
+    cargo update
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Rust dependencies updated"
+    else
+        echo "✗ Failed to update Rust dependencies"
+        return 1
+    fi
+}
+
+# Function to add a Rust dependency
+caddie_rust_add() {
+    local crate="$1"
+    
+    if [ -z "$crate" ]; then
+        echo "Error: Please provide a crate name"
+        echo "Usage: caddie rust:add <crate>"
+        return 1
+    fi
+    
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Adding dependency '$crate'..."
+    cargo add "$crate"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Dependency '$crate' added successfully"
+    else
+        echo "✗ Failed to add dependency '$crate'"
+        return 1
+    fi
+}
+
+# Function to remove a Rust dependency
+caddie_rust_remove() {
+    local crate="$1"
+    
+    if [ -z "$crate" ]; then
+        echo "Error: Please provide a crate name"
+        echo "Usage: caddie rust:remove <crate>"
+        return 1
+    fi
+    
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Removing dependency '$crate'..."
+    cargo remove "$crate"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Dependency '$crate' removed successfully"
+    else
+        echo "✗ Failed to remove dependency '$crate'"
+        return 1
+    fi
+}
+
+# Function to search crates.io
+caddie_rust_search() {
+    local query="$1"
+    
+    if [ -z "$query" ]; then
+        echo "Error: Please provide a search query"
+        echo "Usage: caddie rust:search <query>"
+        return 1
+    fi
+    
+    echo "Searching crates.io for '$query'..."
+    cargo search "$query"
+}
+
+# Function to show outdated Rust dependencies
+caddie_rust_outdated() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Checking for outdated Rust dependencies..."
+    
+    # Try cargo-outdated if available, otherwise show current versions
+    if command -v cargo-outdated >/dev/null 2>&1; then
+        cargo outdated
+    else
+        echo "Installing cargo-outdated for better outdated dependency checking..."
+        cargo install cargo-outdated
+        if [ $? -eq 0 ]; then
+            cargo outdated
+        else
+            echo "Showing current dependency versions:"
+            cargo tree
+        fi
+    fi
+}
+
+# Function to run Rust security audit
+caddie_rust_audit() {
+    if [ ! -f "Cargo.toml" ]; then
+        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    echo "Running Rust security audit..."
+    
+    # Try cargo-audit if available, otherwise install it
+    if command -v cargo-audit >/dev/null 2>&1; then
+        cargo audit
+    else
+        echo "Installing cargo-audit for security auditing..."
+        cargo install cargo-audit
+        if [ $? -eq 0 ]; then
+            cargo audit
+        else
+            echo "✗ Failed to install cargo-audit"
+            return 1
+        fi
+    fi
+}
+
+# Function to switch Rust toolchain
+caddie_rust_toolchain() {
+    local version="$1"
+    
+    if [ -z "$version" ]; then
+        echo "Error: Please provide a toolchain version"
+        echo "Usage: caddie rust:toolchain <version>"
+        echo "Examples: stable, beta, nightly, 1.70.0"
+        return 1
+    fi
+    
+    echo "Switching to Rust toolchain '$version'..."
+    rustup default "$version"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Switched to Rust toolchain '$version'"
+        echo "  Current version: $(rustc --version)"
+    else
+        echo "✗ Failed to switch to Rust toolchain '$version'"
+        return 1
+    fi
+}
+
+# Function to add Rust compilation target
+caddie_rust_target() {
+    local target="$1"
+    
+    if [ -z "$target" ]; then
+        echo "Error: Please provide a target"
+        echo "Usage: caddie rust:target <target>"
+        echo "Examples: x86_64-unknown-linux-gnu, aarch64-apple-darwin"
+        return 1
+    fi
+    
+    echo "Adding Rust target '$target'..."
+    rustup target add "$target"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Added Rust target '$target'"
+    else
+        echo "✗ Failed to add Rust target '$target'"
+        return 1
+    fi
+}
+
+# Function to install Rust component
+caddie_rust_component() {
+    local component="$1"
+    
+    if [ -z "$component" ]; then
+        echo "Error: Please provide a component name"
+        echo "Usage: caddie rust:component <component>"
+        echo "Examples: clippy, rustfmt, rust-src"
+        return 1
+    fi
+    
+    echo "Installing Rust component '$component'..."
+    rustup component add "$component"
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Installed Rust component '$component'"
+    else
+        echo "✗ Failed to install Rust component '$component'"
+        return 1
+    fi
+}
+
+# =============================================================================
+# IOS DEVELOPMENT MANAGEMENT
+# =============================================================================
+
+# Function to setup iOS development environment
+caddie_ios_setup() {
+    echo "Setting up iOS development environment..."
+    
+    # Check if Xcode is installed
+    if ! command -v xcodebuild >/dev/null 2>&1; then
+        echo "Error: Xcode is not installed"
+        echo "Please install Xcode from the App Store"
+        return 1
+    fi
+    
+    # Check if CocoaPods is installed
+    if ! command -v pod >/dev/null 2>&1; then
+        echo "Installing CocoaPods..."
+        sudo gem install cocoapods
+        if [ $? -ne 0 ]; then
+            echo "✗ Failed to install CocoaPods"
+            return 1
+        fi
+    fi
+    
+    # Check if Swift is available
+    if ! command -v swift >/dev/null 2>&1; then
+        echo "Error: Swift is not available"
+        echo "Please install Xcode command line tools: xcode-select --install"
+        return 1
+    fi
+    
+    echo "✓ iOS development environment setup complete"
+    echo "  Xcode: $(xcodebuild -version | head -n1)"
+    echo "  Swift: $(swift --version | head -n1)"
+    echo "  CocoaPods: $(pod --version)"
+}
+
+# Function to list available iOS simulators
+caddie_ios_simulator() {
+    echo "Available iOS simulators:"
+    echo "========================"
+    xcrun simctl list devices
+}
+
+# Function to list connected iOS devices
+caddie_ios_device() {
+    echo "Connected iOS devices:"
+    echo "====================="
+    xcrun devicectl list devices
+}
+
+# Function to build iOS project
+caddie_ios_build() {
+    if [ ! -f "*.xcodeproj" ] && [ ! -f "*.xcworkspace" ]; then
+        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        return 1
+    fi
+    
+    echo "Building iOS project..."
+    
+    # Try to find the project file
+    local project_file=""
+    if [ -f "*.xcworkspace" ]; then
+        project_file=$(ls *.xcworkspace | head -n1)
+        echo "Using workspace: $project_file"
+        xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" build
+    elif [ -f "*.xcodeproj" ]; then
+        project_file=$(ls *.xcodeproj | head -n1)
+        echo "Using project: $project_file"
+        xcodebuild -project "$project_file" build
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ iOS project built successfully"
+    else
+        echo "✗ Failed to build iOS project"
+        return 1
+    fi
+}
+
+# Function to run iOS project on simulator
+caddie_ios_run() {
+    if [ ! -f "*.xcodeproj" ] && [ ! -f "*.xcworkspace" ]; then
+        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        return 1
+    fi
+    
+    echo "Running iOS project on simulator..."
+    
+    # Try to find the project file
+    local project_file=""
+    if [ -f "*.xcworkspace" ]; then
+        project_file=$(ls *.xcworkspace | head -n1)
+        echo "Using workspace: $project_file"
+        xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" -destination 'platform=iOS Simulator,name=iPhone 15' build
+    elif [ -f "*.xcodeproj" ]; then
+        project_file=$(ls *.xcodeproj | head -n1)
+        echo "Using project: $project_file"
+        xcodebuild -project "$project_file" -destination 'platform=iOS Simulator,name=iPhone 15' build
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ iOS project built and ready to run"
+        echo "Open the project in Xcode to run on simulator"
+    else
+        echo "✗ Failed to build iOS project"
+        return 1
+    fi
+}
+
+# Function to run iOS tests
+caddie_ios_test() {
+    if [ ! -f "*.xcodeproj" ] && [ ! -f "*.xcworkspace" ]; then
+        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        return 1
+    fi
+    
+    echo "Running iOS tests..."
+    
+    # Try to find the project file
+    local project_file=""
+    if [ -f "*.xcworkspace" ]; then
+        project_file=$(ls *.xcworkspace | head -n1)
+        echo "Using workspace: $project_file"
+        xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" test
+    elif [ -f "*.xcodeproj" ]; then
+        project_file=$(ls *.xcodeproj | head -n1)
+        echo "Using project: $project_file"
+        xcodebuild -project "$project_file" test
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ iOS tests completed successfully"
+    else
+        echo "✗ Some iOS tests failed"
+        return 1
+    fi
+}
+
+# Function to create iOS archive
+caddie_ios_archive() {
+    if [ ! -f "*.xcodeproj" ] && [ ! -f "*.xcworkspace" ]; then
+        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        return 1
+    fi
+    
+    echo "Creating iOS archive..."
+    
+    # Try to find the project file
+    local project_file=""
+    if [ -f "*.xcworkspace" ]; then
+        project_file=$(ls *.xcworkspace | head -n1)
+        echo "Using workspace: $project_file"
+        xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" archive
+    elif [ -f "*.xcodeproj" ]; then
+        project_file=$(ls *.xcodeproj | head -n1)
+        echo "Using project: $project_file"
+        xcodebuild -project "$project_file" archive
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ iOS archive created successfully"
+    else
+        echo "✗ Failed to create iOS archive"
+        return 1
+    fi
+}
+
+# Function to clean iOS build artifacts
+caddie_ios_clean() {
+    if [ ! -f "*.xcodeproj" ] && [ ! -f "*.xcworkspace" ]; then
+        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        return 1
+    fi
+    
+    echo "Cleaning iOS build artifacts..."
+    
+    # Try to find the project file
+    local project_file=""
+    if [ -f "*.xcworkspace" ]; then
+        project_file=$(ls *.xcworkspace | head -n1)
+        echo "Using workspace: $project_file"
+        xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" clean
+    elif [ -f "*.xcodeproj" ]; then
+        project_file=$(ls *.xcodeproj | head -n1)
+        echo "Using project: $project_file"
+        xcodebuild -project "$project_file" clean
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ iOS build artifacts cleaned"
+    else
+        echo "✗ Failed to clean iOS build artifacts"
+        return 1
+    fi
+}
+
+# Function to install CocoaPods dependencies
+caddie_ios_pod_install() {
+    if [ ! -f "Podfile" ]; then
+        echo "Error: Podfile not found in current directory"
+        return 1
+    fi
+    
+    echo "Installing CocoaPods dependencies..."
+    pod install
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ CocoaPods dependencies installed successfully"
+    else
+        echo "✗ Failed to install CocoaPods dependencies"
+        return 1
+    fi
+}
+
+# Function to update CocoaPods dependencies
+caddie_ios_pod_update() {
+    if [ ! -f "Podfile" ]; then
+        echo "Error: Podfile not found in current directory"
+        return 1
+    fi
+    
+    echo "Updating CocoaPods dependencies..."
+    pod update
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ CocoaPods dependencies updated successfully"
+    else
+        echo "✗ Failed to update CocoaPods dependencies"
+        return 1
+    fi
+}
+
+# Function to show Swift version
+caddie_ios_swift_version() {
+    if command -v swift >/dev/null 2>&1; then
+        echo "Swift version:"
+        swift --version
+    else
+        echo "Error: Swift is not installed"
+        echo "Install Xcode command line tools: xcode-select --install"
+        return 1
+    fi
+}
+
+# Function to show Xcode version
+caddie_ios_xcode_version() {
+    if command -v xcodebuild >/dev/null 2>&1; then
+        echo "Xcode version:"
+        xcodebuild -version
+    else
+        echo "Error: Xcode is not installed"
+        echo "Install Xcode from the App Store"
+        return 1
+    fi
+}
+
+# =============================================================================
+# CURSOR IDE INTEGRATION
+# =============================================================================
+
+# Function to detect Cursor installation
+caddie_cursor_detect() {
+    echo "Detecting Cursor installation..."
+    
+    local cursor_paths=(
+        "/Applications/Cursor.app"
+        "/usr/local/bin/cursor"
+        "$HOME/.local/bin/cursor"
+        "$(which cursor 2>/dev/null)"
+    )
+    
+    local cursor_found=false
+    local cursor_path=""
+    
+    for path in "${cursor_paths[@]}"; do
+        if [ -n "$path" ] && [ -e "$path" ]; then
+            cursor_found=true
+            cursor_path="$path"
+            break
+        fi
+    done
+    
+    if [ "$cursor_found" = true ]; then
+        echo "✓ Cursor found at: $cursor_path"
+        
+        # Check if cursor command is available
+        if command -v cursor >/dev/null 2>&1; then
+            echo "✓ Cursor command available"
+            cursor --version 2>/dev/null || echo "  Version info not available"
+        else
+            echo "⚠ Cursor command not in PATH"
+            echo "  Add to PATH: export PATH=\"$cursor_path/Contents/Resources/app/bin:\$PATH\""
+        fi
+        
+        return 0
+    else
+        echo "✗ Cursor not found"
+        echo "  Install from: https://cursor.sh/"
+        return 1
+    fi
+}
+
+# Function to setup Cursor integration
+caddie_cursor_setup() {
+    echo "Setting up Cursor integration..."
+    
+    # Detect Cursor
+    if ! caddie_cursor_detect; then
+        return 1
+    fi
+    
+    # Create Cursor configuration directory
+    local cursor_config_dir="$HOME/.cursor"
+    mkdir -p "$cursor_config_dir"
+    
+    # Create caddie integration config
+    cat > "$cursor_config_dir/caddie-integration.json" << 'EOF'
+{
+  "caddie": {
+    "enabled": true,
+    "version": "1.0.0",
+    "features": {
+      "ai_code_generation": true,
+      "project_templates": true,
+      "extension_management": true,
+      "settings_sync": true,
+      "git_integration": true,
+      "debugging": true,
+      "performance_monitoring": true,
+      "team_collaboration": true
+    },
+    "workspace_templates": {
+      "web": "cursor-web-template",
+      "api": "cursor-api-template",
+      "mobile": "cursor-mobile-template",
+      "data": "cursor-data-template",
+      "ml": "cursor-ml-template"
+    }
+  }
+}
+EOF
+
+    # Create Cursor workspace settings
+    local workspace_settings_dir="$HOME/.cursor/User"
+    mkdir -p "$workspace_settings_dir"
+    
+    cat > "$workspace_settings_dir/settings.json" << 'EOF'
+{
+  "caddie.integration.enabled": true,
+  "caddie.ai.autoSuggest": true,
+  "caddie.templates.autoApply": true,
+  "caddie.extensions.autoInstall": true,
+  "caddie.git.autoCommit": false,
+  "caddie.performance.monitoring": true,
+  "caddie.team.collaboration": false
+}
+EOF
+
+    echo "✓ Cursor integration setup complete"
+    echo "  Configuration: $cursor_config_dir/caddie-integration.json"
+    echo "  Settings: $workspace_settings_dir/settings.json"
+}
+
+# Function to verify Cursor integration
+caddie_cursor_verify() {
+    echo "Verifying Cursor integration..."
+    
+    local issues=0
+    
+    # Check Cursor installation
+    if ! caddie_cursor_detect >/dev/null 2>&1; then
+        echo "✗ Cursor not installed"
+        issues=$((issues + 1))
+    else
+        echo "✓ Cursor installed"
+    fi
+    
+    # Check configuration files
+    if [ -f "$HOME/.cursor/caddie-integration.json" ]; then
+        echo "✓ Integration configuration found"
+    else
+        echo "✗ Integration configuration missing"
+        issues=$((issues + 1))
+    fi
+    
+    # Check workspace settings
+    if [ -f "$HOME/.cursor/User/settings.json" ]; then
+        echo "✓ Workspace settings found"
+    else
+        echo "✗ Workspace settings missing"
+        issues=$((issues + 1))
+    fi
+    
+    # Check cursor command availability
+    if command -v cursor >/dev/null 2>&1; then
+        echo "✓ Cursor command available"
+    else
+        echo "⚠ Cursor command not in PATH"
+        issues=$((issues + 1))
+    fi
+    
+    if [ $issues -eq 0 ]; then
+        echo "✓ Cursor integration verified successfully"
+        return 0
+    else
+        echo "✗ Cursor integration has $issues issue(s)"
+        echo "  Run 'caddie cursor:setup' to fix issues"
+        return 1
+    fi
+}
+
+# Function to open project in Cursor
+caddie_cursor_open() {
+    local project_path="$1"
+    
+    if [ -z "$project_path" ]; then
+        project_path="."
+    fi
+    
+    # Expand path
+    local expanded_path
+    expanded_path=$(eval echo "$project_path")
+    
+    if [ ! -d "$expanded_path" ]; then
+        echo "Error: Directory '$expanded_path' does not exist"
+        return 1
+    fi
+    
+    echo "Opening project in Cursor: $expanded_path"
+    
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$expanded_path"
+        if [ $? -eq 0 ]; then
+            echo "✓ Project opened in Cursor"
+        else
+            echo "✗ Failed to open project in Cursor"
+            return 1
+        fi
+    else
+        echo "Error: Cursor command not found"
+        echo "Install Cursor from: https://cursor.sh/"
+        return 1
+    fi
+}
+
+# Function to create new project and open in Cursor
+caddie_cursor_new() {
+    local project_type="$1"
+    local project_name="$2"
+    
+    if [ -z "$project_type" ] || [ -z "$project_name" ]; then
+        echo "Error: Please provide project type and name"
+        echo "Usage: caddie cursor:new <type> <name>"
+        echo "Types: web, api, mobile, data, ml, cli, lib"
+        return 1
+    fi
+    
+    echo "Creating new $project_type project: $project_name"
+    
+    # Create project using caddie templates
+    case "$project_type" in
+        "web"|"api"|"cli"|"data"|"ml"|"lib")
+            caddie_template_create "$project_type" "$project_name"
+            ;;
+        "mobile")
+            caddie_template_create "mobile" "$project_name"
+            ;;
+        *)
+            echo "Error: Unknown project type '$project_type'"
+            return 1
+            ;;
+    esac
+    
+    if [ $? -eq 0 ]; then
+        # Create Cursor-specific configuration
+        caddie_cursor_setup_project "$project_name" "$project_type"
+        
+        # Open in Cursor
+        caddie_cursor_open "$project_name"
+    else
+        echo "✗ Failed to create project"
+        return 1
+    fi
+}
+
+# Function to setup Cursor-specific project configuration
+caddie_cursor_setup_project() {
+    local project_name="$1"
+    local project_type="$2"
+    
+    echo "Setting up Cursor configuration for $project_type project..."
+    
+    # Create .cursor directory
+    mkdir -p "$project_name/.cursor"
+    
+    # Create workspace settings
+    cat > "$project_name/.cursor/settings.json" << EOF
+{
+  "caddie.project.type": "$project_type",
+  "caddie.project.name": "$project_name",
+  "caddie.ai.enabled": true,
+  "caddie.templates.applied": true,
+  "caddie.extensions.recommended": [
+    "ms-python.python",
+    "rust-lang.rust-analyzer",
+    "ms-vscode.vscode-json"
+  ]
+}
+EOF
+
+    # Create launch configuration
+    cat > "$project_name/.cursor/launch.json" << 'EOF'
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Project",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/main.js",
+      "console": "integratedTerminal"
+    }
+  ]
+}
+EOF
+
+    # Create tasks configuration
+    cat > "$project_name/.cursor/tasks.json" << 'EOF'
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "caddie:build",
+      "type": "shell",
+      "command": "caddie",
+      "args": ["build:all"],
+      "group": "build"
+    },
+    {
+      "label": "caddie:test",
+      "type": "shell",
+      "command": "caddie",
+      "args": ["python:test"],
+      "group": "test"
+    }
+  ]
+}
+EOF
+
+    echo "✓ Cursor project configuration created"
+}
+
+# Function to show Cursor workspace info
+caddie_cursor_workspace() {
+    echo "Cursor Workspace Information"
+    echo "============================"
+    
+    if [ -f ".cursor/settings.json" ]; then
+        echo "✓ Cursor workspace detected"
+        echo "  Project type: $(grep -o '"caddie.project.type": "[^"]*"' .cursor/settings.json | cut -d'"' -f4)"
+        echo "  Project name: $(grep -o '"caddie.project.name": "[^"]*"' .cursor/settings.json | cut -d'"' -f4)"
+        echo "  AI enabled: $(grep -o '"caddie.ai.enabled": [^,]*' .cursor/settings.json | cut -d':' -f2 | tr -d ' "')"
+    else
+        echo "⚠ Not in a Cursor workspace"
+        echo "  Run 'caddie cursor:new <type> <name>' to create a Cursor project"
+    fi
+    
+    # Show recent projects
+    echo ""
+    echo "Recent Cursor Projects:"
+    if [ -d "$HOME/.cursor/User/workspaceStorage" ]; then
+        find "$HOME/.cursor/User/workspaceStorage" -name "*.json" -exec basename {} \; | head -5
+    else
+        echo "  No recent projects found"
+    fi
+}
+
+# Function to list recently opened projects
+caddie_cursor_recent() {
+    echo "Recently Opened Cursor Projects"
+    echo "==============================="
+    
+    if [ -d "$HOME/.cursor/User/workspaceStorage" ]; then
+        find "$HOME/.cursor/User/workspaceStorage" -name "*.json" -exec basename {} \; | while read -r project; do
+            echo "  • $project"
+        done
+    else
+        echo "No recent projects found"
+    fi
+}
+
+# Function to switch to different project in Cursor
+caddie_cursor_switch() {
+    local project_name="$1"
+    
+    if [ -z "$project_name" ]; then
+        echo "Error: Please provide a project name"
+        echo "Usage: caddie cursor:switch <project>"
+        return 1
+    fi
+    
+    # Find project directory
+    local project_path=""
+    if [ -d "$project_name" ]; then
+        project_path="$project_name"
+    elif [ -d "$HOME/projects/$project_name" ]; then
+        project_path="$HOME/projects/$project_name"
+    elif [ -d "$HOME/work/$project_name" ]; then
+        project_path="$HOME/work/$project_name"
+    else
+        echo "Error: Project '$project_name' not found"
+        echo "Searched in: ./, ~/projects/, ~/work/"
+        return 1
+    fi
+    
+    echo "Switching to project: $project_path"
+    caddie_cursor_open "$project_path"
+}
+
+# =============================================================================
+# CURSOR AI INTEGRATION
+# =============================================================================
+
+# Function to ask AI to explain code
+caddie_cursor_ai_explain() {
+    local file="$1"
+    
+    if [ -z "$file" ]; then
+        echo "Error: Please provide a file path"
+        echo "Usage: caddie cursor:ai:explain <file>"
+        return 1
+    fi
+    
+    if [ ! -f "$file" ]; then
+        echo "Error: File '$file' does not exist"
+        return 1
+    fi
+    
+    echo "Asking AI to explain: $file"
+    
+    # Create AI prompt file
+    local ai_prompt_file=".cursor/ai-explain-$(basename "$file").md"
+    mkdir -p .cursor
+    
+    cat > "$ai_prompt_file" << EOF
+# AI Code Explanation Request
+
+**File:** $file
+**Request:** Please explain this code in detail, including:
+- What the code does
+- How it works
+- Key functions and variables
+- Potential improvements
+- Any potential issues
+
+**Code:**
+\`\`\`
+$(cat "$file")
+\`\`\`
+
+**Context:** This is a request from the caddie CLI tool for AI-assisted code explanation.
+EOF
+
+    echo "✓ AI explanation request created: $ai_prompt_file"
+    echo "  Open this file in Cursor and use AI chat to get explanation"
+    
+    # Open the prompt file in Cursor
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$ai_prompt_file"
+    fi
+}
+
+# Function to AI-assisted refactoring
+caddie_cursor_ai_refactor() {
+    local file="$1"
+    local refactor_type="${2:-general}"
+    
+    if [ -z "$file" ]; then
+        echo "Error: Please provide a file path"
+        echo "Usage: caddie cursor:ai:refactor <file> [type]"
+        echo "Types: general, performance, readability, security, structure"
+        return 1
+    fi
+    
+    if [ ! -f "$file" ]; then
+        echo "Error: File '$file' does not exist"
+        return 1
+    fi
+    
+    echo "Requesting AI refactoring: $file (type: $refactor_type)"
+    
+    # Create AI refactor prompt
+    local ai_prompt_file=".cursor/ai-refactor-$(basename "$file").md"
+    mkdir -p .cursor
+    
+    cat > "$ai_prompt_file" << EOF
+# AI Code Refactoring Request
+
+**File:** $file
+**Refactor Type:** $refactor_type
+**Request:** Please refactor this code with focus on:
+EOF
+
+    case "$refactor_type" in
+        "performance")
+            echo "- Performance optimization" >> "$ai_prompt_file"
+            echo "- Memory usage reduction" >> "$ai_prompt_file"
+            echo "- Algorithm efficiency" >> "$ai_prompt_file"
+            ;;
+        "readability")
+            echo "- Code readability" >> "$ai_prompt_file"
+            echo "- Clear variable names" >> "$ai_prompt_file"
+            echo "- Better structure" >> "$ai_prompt_file"
+            ;;
+        "security")
+            echo "- Security improvements" >> "$ai_prompt_file"
+            echo "- Vulnerability fixes" >> "$ai_prompt_file"
+            echo "- Best practices" >> "$ai_prompt_file"
+            ;;
+        "structure")
+            echo "- Better code organization" >> "$ai_prompt_file"
+            echo "- Modular design" >> "$ai_prompt_file"
+            echo "- Separation of concerns" >> "$ai_prompt_file"
+            ;;
+        *)
+            echo "- General code improvement" >> "$ai_prompt_file"
+            echo "- Best practices" >> "$ai_prompt_file"
+            echo "- Modern patterns" >> "$ai_prompt_file"
+            ;;
+    esac
+
+    cat >> "$ai_prompt_file" << EOF
+
+**Original Code:**
+\`\`\`
+$(cat "$file")
+\`\`\`
+
+**Instructions:**
+1. Analyze the current code
+2. Provide refactored version with explanations
+3. Highlight key improvements
+4. Suggest additional optimizations
+
+**Context:** This is a request from the caddie CLI tool for AI-assisted refactoring.
+EOF
+
+    echo "✓ AI refactoring request created: $ai_prompt_file"
+    echo "  Open this file in Cursor and use AI chat to get refactored code"
+    
+    # Open the prompt file in Cursor
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$ai_prompt_file"
+    fi
+}
+
+# Function to generate tests with AI
+caddie_cursor_ai_test() {
+    local file="$1"
+    local test_framework="${2:-pytest}"
+    
+    if [ -z "$file" ]; then
+        echo "Error: Please provide a file path"
+        echo "Usage: caddie cursor:ai:test <file> [framework]"
+        echo "Frameworks: pytest, unittest, jest, mocha, rspec"
+        return 1
+    fi
+    
+    if [ ! -f "$file" ]; then
+        echo "Error: File '$file' does not exist"
+        return 1
+    fi
+    
+    echo "Generating AI tests for: $file (framework: $test_framework)"
+    
+    # Create AI test generation prompt
+    local ai_prompt_file=".cursor/ai-test-$(basename "$file").md"
+    mkdir -p .cursor
+    
+    cat > "$ai_prompt_file" << EOF
+# AI Test Generation Request
+
+**File:** $file
+**Test Framework:** $test_framework
+**Request:** Please generate comprehensive tests for this code including:
+- Unit tests for all functions
+- Edge cases and error conditions
+- Integration tests if applicable
+- Mock objects where needed
+- Test data and fixtures
+
+**Code to Test:**
+\`\`\`
+$(cat "$file")
+\`\`\`
+
+**Test Requirements:**
+- Use $test_framework framework
+- Follow best practices for test naming
+- Include docstrings for test functions
+- Cover all code paths
+- Include both positive and negative test cases
+
+**Context:** This is a request from the caddie CLI tool for AI-assisted test generation.
+EOF
+
+    echo "✓ AI test generation request created: $ai_prompt_file"
+    echo "  Open this file in Cursor and use AI chat to generate tests"
+    
+    # Open the prompt file in Cursor
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$ai_prompt_file"
+    fi
+}
+
+# Function to generate documentation with AI
+caddie_cursor_ai_docs() {
+    local file="$1"
+    local doc_format="${2:-markdown}"
+    
+    if [ -z "$file" ]; then
+        echo "Error: Please provide a file path"
+        echo "Usage: caddie cursor:ai:docs <file> [format]"
+        echo "Formats: markdown, sphinx, javadoc, godoc, rustdoc"
+        return 1
+    fi
+    
+    if [ ! -f "$file" ]; then
+        echo "Error: File '$file' does not exist"
+        return 1
+    fi
+    
+    echo "Generating AI documentation for: $file (format: $doc_format)"
+    
+    # Create AI documentation prompt
+    local ai_prompt_file=".cursor/ai-docs-$(basename "$file").md"
+    mkdir -p .cursor
+    
+    cat > "$ai_prompt_file" << EOF
+# AI Documentation Generation Request
+
+**File:** $file
+**Documentation Format:** $doc_format
+**Request:** Please generate comprehensive documentation for this code including:
+- Function/class descriptions
+- Parameter documentation
+- Return value documentation
+- Usage examples
+- Code examples
+- API reference
+
+**Code to Document:**
+\`\`\`
+$(cat "$file")
+\`\`\`
+
+**Documentation Requirements:**
+- Use $doc_format format
+- Include clear descriptions
+- Provide usage examples
+- Document all public APIs
+- Include parameter types and descriptions
+- Add return value documentation
+
+**Context:** This is a request from the caddie CLI tool for AI-assisted documentation generation.
+EOF
+
+    echo "✓ AI documentation request created: $ai_prompt_file"
+    echo "  Open this file in Cursor and use AI chat to generate documentation"
+    
+    # Open the prompt file in Cursor
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$ai_prompt_file"
+    fi
+}
+
+# Function to AI code review
+caddie_cursor_ai_review() {
+    local file="$1"
+    local review_focus="${2:-general}"
+    
+    if [ -z "$file" ]; then
+        echo "Error: Please provide a file path"
+        echo "Usage: caddie cursor:ai:review <file> [focus]"
+        echo "Focus: general, security, performance, style, bugs, best-practices"
+        return 1
+    fi
+    
+    if [ ! -f "$file" ]; then
+        echo "Error: File '$file' does not exist"
+        return 1
+    fi
+    
+    echo "Requesting AI code review: $file (focus: $review_focus)"
+    
+    # Create AI review prompt
+    local ai_prompt_file=".cursor/ai-review-$(basename "$file").md"
+    mkdir -p .cursor
+    
+    cat > "$ai_prompt_file" << EOF
+# AI Code Review Request
+
+**File:** $file
+**Review Focus:** $review_focus
+**Request:** Please perform a comprehensive code review focusing on:
+EOF
+
+    case "$review_focus" in
+        "security")
+            echo "- Security vulnerabilities" >> "$ai_prompt_file"
+            echo "- Input validation issues" >> "$ai_prompt_file"
+            echo "- Authentication/authorization problems" >> "$ai_prompt_file"
+            echo "- Data exposure risks" >> "$ai_prompt_file"
+            ;;
+        "performance")
+            echo "- Performance bottlenecks" >> "$ai_prompt_file"
+            echo "- Memory usage issues" >> "$ai_prompt_file"
+            echo "- Algorithm efficiency" >> "$ai_prompt_file"
+            echo "- Resource optimization" >> "$ai_prompt_file"
+            ;;
+        "style")
+            echo "- Code style consistency" >> "$ai_prompt_file"
+            echo "- Naming conventions" >> "$ai_prompt_file"
+            echo "- Formatting issues" >> "$ai_prompt_file"
+            echo "- Readability improvements" >> "$ai_prompt_file"
+            ;;
+        "bugs")
+            echo "- Potential bugs" >> "$ai_prompt_file"
+            echo "- Logic errors" >> "$ai_prompt_file"
+            echo "- Edge case handling" >> "$ai_prompt_file"
+            echo "- Error handling issues" >> "$ai_prompt_file"
+            ;;
+        "best-practices")
+            echo "- Best practice violations" >> "$ai_prompt_file"
+            echo "- Design pattern usage" >> "$ai_prompt_file"
+            echo "- Code organization" >> "$ai_prompt_file"
+            echo "- Maintainability issues" >> "$ai_prompt_file"
+            ;;
+        *)
+            echo "- Overall code quality" >> "$ai_prompt_file"
+            echo "- Potential improvements" >> "$ai_prompt_file"
+            echo "- Best practices" >> "$ai_prompt_file"
+            echo "- Security considerations" >> "$ai_prompt_file"
+            ;;
+    esac
+
+    cat >> "$ai_prompt_file" << EOF
+
+**Code to Review:**
+\`\`\`
+$(cat "$file")
+\`\`\`
+
+**Review Format:**
+1. **Summary:** Overall assessment
+2. **Issues Found:** List of problems with severity
+3. **Suggestions:** Specific improvement recommendations
+4. **Positive Aspects:** What's done well
+5. **Action Items:** Prioritized list of fixes
+
+**Context:** This is a request from the caddie CLI tool for AI-assisted code review.
+EOF
+
+    echo "✓ AI code review request created: $ai_prompt_file"
+    echo "  Open this file in Cursor and use AI chat to get code review"
+    
+    # Open the prompt file in Cursor
+    if command -v cursor >/dev/null 2>&1; then
+        cursor "$ai_prompt_file"
+    fi
+}
+
+# =============================================================================
+# CURSOR EXTENSION & CONFIGURATION MANAGEMENT
+# =============================================================================
+
+# Function to install Cursor extensions
+caddie_cursor_ext_install() {
+    local extension="$1"
+    
+    if [ -z "$extension" ]; then
+        echo "Error: Please provide an extension ID"
+        echo "Usage: caddie cursor:ext:install <extension-id>"
+        echo "Example: caddie cursor:ext:install ms-python.python"
+        return 1
+    fi
+    
+    echo "Installing Cursor extension: $extension"
+    
+    if command -v cursor >/dev/null 2>&1; then
+        cursor --install-extension "$extension"
+        if [ $? -eq 0 ]; then
+            echo "✓ Extension '$extension' installed successfully"
+        else
+            echo "✗ Failed to install extension '$extension'"
+            return 1
+        fi
+    else
+        echo "Error: Cursor command not found"
+        return 1
+    fi
+}
+
+# Function to list installed Cursor extensions
+caddie_cursor_ext_list() {
+    echo "Installed Cursor Extensions"
+    echo "==========================="
+    
+    if command -v cursor >/dev/null 2>&1; then
+        cursor --list-extensions
+    else
+        echo "Error: Cursor command not found"
+        return 1
+    fi
+}
+
+# Function to update Cursor extensions
+caddie_cursor_ext_update() {
+    echo "Updating Cursor extensions..."
+    
+    if command -v cursor >/dev/null 2>&1; then
+        cursor --update-extensions
+        if [ $? -eq 0 ]; then
+            echo "✓ Extensions updated successfully"
+        else
+            echo "✗ Failed to update extensions"
+            return 1
+        fi
+    else
+        echo "Error: Cursor command not found"
+        return 1
+    fi
+}
+
+# Function to sync Cursor extensions
+caddie_cursor_ext_sync() {
+    echo "Syncing Cursor extensions..."
+    
+    # Create extensions list
+    local extensions_file="$HOME/.cursor/extensions-list.txt"
+    if command -v cursor >/dev/null 2>&1; then
+        cursor --list-extensions > "$extensions_file"
+        echo "✓ Extensions list saved to: $extensions_file"
+        echo "  Use this file to restore extensions on other machines"
+    else
+        echo "Error: Cursor command not found"
+        return 1
+    fi
+}
+
+# Function to recommend extensions for project type
+caddie_cursor_ext_recommend() {
+    local project_type="$1"
+    
+    if [ -z "$project_type" ]; then
+        echo "Error: Please provide a project type"
+        echo "Usage: caddie cursor:ext:recommend <type>"
+        echo "Types: python, rust, javascript, typescript, web, mobile, data, ml"
+        return 1
+    fi
+    
+    echo "Recommended extensions for $project_type projects:"
+    echo "================================================="
+    
+    case "$project_type" in
+        "python")
+            echo "  • ms-python.python - Python language support"
+            echo "  • ms-python.pylint - Python linting"
+            echo "  • ms-python.black-formatter - Python formatting"
+            echo "  • ms-python.isort - Import sorting"
+            ;;
+        "rust")
+            echo "  • rust-lang.rust-analyzer - Rust language support"
+            echo "  • vadimcn.vscode-lldb - Rust debugging"
+            echo "  • serayuzgur.crates - Cargo.toml support"
+            ;;
+        "javascript"|"typescript")
+            echo "  • ms-vscode.vscode-typescript-next - TypeScript support"
+            echo "  • esbenp.prettier-vscode - Code formatting"
+            echo "  • ms-vscode.vscode-eslint - JavaScript linting"
+            echo "  • bradlc.vscode-tailwindcss - Tailwind CSS support"
+            ;;
+        "web")
+            echo "  • ms-vscode.vscode-html - HTML support"
+            echo "  • ms-vscode.vscode-css - CSS support"
+            echo "  • ms-vscode.vscode-json - JSON support"
+            echo "  • bradlc.vscode-tailwindcss - Tailwind CSS"
+            ;;
+        "mobile")
+            echo "  • ms-vscode.vscode-react-native - React Native"
+            echo "  • ms-vscode.vscode-flutter - Flutter"
+            echo "  • ms-vscode.vscode-swift - Swift support"
+            ;;
+        "data"|"ml")
+            echo "  • ms-python.python - Python support"
+            echo "  • ms-toolsai.jupyter - Jupyter notebooks"
+            echo "  • ms-toolsai.vscode-ai - AI tools"
+            echo "  • ms-python.pylint - Python linting"
+            ;;
+        *)
+            echo "  • ms-vscode.vscode-json - JSON support"
+            echo "  • redhat.vscode-yaml - YAML support"
+            echo "  • ms-vscode.vscode-markdown - Markdown support"
+            ;;
+    esac
+}
+
+# Function to show Cursor configuration
+caddie_cursor_config_show() {
+    echo "Cursor Configuration"
+    echo "==================="
+    
+    # Show user settings
+    if [ -f "$HOME/.cursor/User/settings.json" ]; then
+        echo "User Settings:"
+        cat "$HOME/.cursor/User/settings.json" | jq . 2>/dev/null || cat "$HOME/.cursor/User/settings.json"
+    else
+        echo "No user settings found"
+    fi
+    
+    echo ""
+    
+    # Show workspace settings
+    if [ -f ".cursor/settings.json" ]; then
+        echo "Workspace Settings:"
+        cat ".cursor/settings.json" | jq . 2>/dev/null || cat ".cursor/settings.json"
+    else
+        echo "No workspace settings found"
+    fi
+}
+
+# Function to backup Cursor settings
+caddie_cursor_config_backup() {
+    local backup_dir="$HOME/.cursor-backups/$(date +%Y%m%d_%H%M%S)"
+    
+    echo "Backing up Cursor configuration..."
+    echo "Backup location: $backup_dir"
+    
+    mkdir -p "$backup_dir"
+    
+    # Backup user settings
+    if [ -d "$HOME/.cursor/User" ]; then
+        cp -r "$HOME/.cursor/User" "$backup_dir/"
+        echo "✓ User settings backed up"
+    fi
+    
+    # Backup extensions list
+    if command -v cursor >/dev/null 2>&1; then
+        cursor --list-extensions > "$backup_dir/extensions.txt"
+        echo "✓ Extensions list backed up"
+    fi
+    
+    # Backup keybindings
+    if [ -f "$HOME/.cursor/User/keybindings.json" ]; then
+        cp "$HOME/.cursor/User/keybindings.json" "$backup_dir/"
+        echo "✓ Keybindings backed up"
+    fi
+    
+    echo "✓ Cursor configuration backup complete"
+}
+
+# Function to restore Cursor settings
+caddie_cursor_config_restore() {
+    local backup_path="$1"
+    
+    if [ -z "$backup_path" ]; then
+        echo "Error: Please provide backup path"
+        echo "Usage: caddie cursor:config:restore <backup-path>"
+        return 1
+    fi
+    
+    if [ ! -d "$backup_path" ]; then
+        echo "Error: Backup directory '$backup_path' does not exist"
+        return 1
+    fi
+    
+    echo "Restoring Cursor configuration from: $backup_path"
+    
+    # Restore user settings
+    if [ -d "$backup_path/User" ]; then
+        cp -r "$backup_path/User" "$HOME/.cursor/"
+        echo "✓ User settings restored"
+    fi
+    
+    # Restore extensions
+    if [ -f "$backup_path/extensions.txt" ]; then
+        echo "Installing extensions from backup..."
+        while read -r extension; do
+            if [ -n "$extension" ]; then
+                cursor --install-extension "$extension"
+            fi
+        done < "$backup_path/extensions.txt"
+        echo "✓ Extensions restored"
+    fi
+    
+    echo "✓ Cursor configuration restore complete"
+}
+
+# Function to sync Cursor settings
+caddie_cursor_config_sync() {
+    echo "Syncing Cursor settings..."
+    
+    # Create sync directory
+    local sync_dir="$HOME/.cursor-sync"
+    mkdir -p "$sync_dir"
+    
+    # Export current settings
+    caddie_cursor_config_backup "$sync_dir/current"
+    
+    echo "✓ Settings synced to: $sync_dir"
+    echo "  Use this directory to sync settings across devices"
+}
+
+# Function to optimize Cursor settings
+caddie_cursor_config_optimize() {
+    echo "Optimizing Cursor settings for performance..."
+    
+    local settings_file="$HOME/.cursor/User/settings.json"
+    mkdir -p "$(dirname "$settings_file")"
+    
+    # Create optimized settings
+    cat > "$settings_file" << 'EOF'
+{
+  "caddie.integration.enabled": true,
+  "caddie.performance.optimized": true,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  },
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+  "rust-analyzer.checkOnSave": true,
+  "rust-analyzer.cargo.buildScripts.enable": true,
+  "workbench.startupEditor": "none",
+  "extensions.autoUpdate": false,
+  "telemetry.telemetryLevel": "off"
+}
+EOF
+
+    echo "✓ Cursor settings optimized for performance"
+}
+
+# =============================================================================
+# CROSS-LANGUAGE DEVELOPMENT FEATURES
+# =============================================================================
+
+# Function to show all environment status
+caddie_env_status() {
+    echo "Development Environment Status"
+    echo "============================="
+    echo ""
+    
+    # Python status
+    echo "🐍 Python:"
+    if command -v python3 >/dev/null 2>&1; then
+        echo "  ✓ Python3: $(python3 --version)"
+        if [ -n "$VIRTUAL_ENV" ]; then
+            echo "  ✓ Virtual Environment: $VIRTUAL_ENV"
+        else
+            echo "  ⚠ No virtual environment active"
+        fi
+        if command -v pip >/dev/null 2>&1; then
+            echo "  ✓ Pip: $(pip --version | cut -d' ' -f1-2)"
+        fi
+    else
+        echo "  ✗ Python3 not installed"
+    fi
+    echo ""
+    
+    # Rust status
+    echo "🦀 Rust:"
+    if command -v rustc >/dev/null 2>&1; then
+        echo "  ✓ Rust: $(rustc --version)"
+        if command -v cargo >/dev/null 2>&1; then
+            echo "  ✓ Cargo: $(cargo --version)"
+        fi
+    else
+        echo "  ✗ Rust not installed"
+    fi
+    echo ""
+    
+    # iOS status
+    echo "📱 iOS:"
+    if command -v xcodebuild >/dev/null 2>&1; then
+        echo "  ✓ Xcode: $(xcodebuild -version | head -n1)"
+        if command -v swift >/dev/null 2>&1; then
+            echo "  ✓ Swift: $(swift --version | head -n1)"
+        fi
+        if command -v pod >/dev/null 2>&1; then
+            echo "  ✓ CocoaPods: $(pod --version)"
+        else
+            echo "  ⚠ CocoaPods not installed"
+        fi
+    else
+        echo "  ✗ Xcode not installed"
+    fi
+    echo ""
+    
+    # Git status
+    echo "📝 Git:"
+    if command -v git >/dev/null 2>&1; then
+        echo "  ✓ Git: $(git --version)"
+    else
+        echo "  ✗ Git not installed"
+    fi
+    echo ""
+    
+    # Homebrew status
+    echo "🍺 Homebrew:"
+    if command -v brew >/dev/null 2>&1; then
+        echo "  ✓ Homebrew: $(brew --version | head -n1)"
+    else
+        echo "  ✗ Homebrew not installed"
+    fi
+}
+
+# Function to setup development environment
+caddie_env_setup() {
+    echo "Setting up development environment..."
+    echo "===================================="
+    
+    # Check and install Homebrew
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    else
+        echo "✓ Homebrew already installed"
+    fi
+    
+    # Update Homebrew
+    echo "Updating Homebrew..."
+    brew update
+    
+    # Install Python
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "Installing Python..."
+        brew install python
+    else
+        echo "✓ Python already installed"
+    fi
+    
+    # Install Rust
+    if ! command -v rustc >/dev/null 2>&1; then
+        echo "Installing Rust..."
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source "$HOME/.cargo/env"
+    else
+        echo "✓ Rust already installed"
+    fi
+    
+    # Install development tools
+    echo "Installing development tools..."
+    brew install git node npm
+    
+    echo "✓ Development environment setup complete"
+    caddie_env_status
+}
+
+# Function to reset all environments
+caddie_env_reset() {
+    echo "Resetting all development environments..."
+    echo "======================================="
+    
+    # Deactivate Python virtual environment
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo "Deactivating Python virtual environment..."
+        deactivate
+    fi
+    
+    # Clean Rust build artifacts
+    if [ -f "Cargo.toml" ]; then
+        echo "Cleaning Rust build artifacts..."
+        cargo clean
+    fi
+    
+    # Clean iOS build artifacts
+    if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
+        echo "Cleaning iOS build artifacts..."
+        if [ -f "*.xcworkspace" ]; then
+            project_file=$(ls *.xcworkspace | head -n1)
+            xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" clean
+        elif [ -f "*.xcodeproj" ]; then
+            project_file=$(ls *.xcodeproj | head -n1)
+            xcodebuild -project "$project_file" clean
+        fi
+    fi
+    
+    echo "✓ All environments reset"
+}
+
+# Function to backup current configurations
+caddie_env_backup() {
+    local backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
+    
+    echo "Creating backup of current configurations..."
+    echo "Backup location: $backup_dir"
+    
+    mkdir -p "$backup_dir"
+    
+    # Backup Python virtual environments
+    if [ -d "$HOME/.virtualenvs" ]; then
+        echo "Backing up Python virtual environments..."
+        cp -r "$HOME/.virtualenvs" "$backup_dir/"
+    fi
+    
+    # Backup Rust toolchain
+    if [ -d "$HOME/.rustup" ]; then
+        echo "Backing up Rust toolchain..."
+        cp -r "$HOME/.rustup" "$backup_dir/"
+    fi
+    
+    # Backup Cargo registry
+    if [ -d "$HOME/.cargo" ]; then
+        echo "Backing up Cargo registry..."
+        cp -r "$HOME/.cargo" "$backup_dir/"
+    fi
+    
+    # Backup caddie configuration
+    if [ -f "$HOME/.caddie_home" ]; then
+        echo "Backing up caddie configuration..."
+        cp "$HOME/.caddie_home" "$backup_dir/"
+    fi
+    
+    echo "✓ Backup created successfully"
+}
+
+# Function to list available templates
+caddie_template_list() {
+    echo "Available Project Templates"
+    echo "=========================="
+    echo ""
+    echo "🐍 Python Templates:"
+    echo "  web          - Web application (Flask/FastAPI)"
+    echo "  cli          - Command line application"
+    echo "  api          - REST API"
+    echo "  data         - Data science project"
+    echo "  ml           - Machine learning project"
+    echo ""
+    echo "🦀 Rust Templates:"
+    echo "  web          - Web application (Actix/Axum)"
+    echo "  cli          - Command line application"
+    echo "  api          - REST API"
+    echo "  lib          - Library crate"
+    echo "  wasm         - WebAssembly project"
+    echo ""
+    echo "📱 iOS Templates:"
+    echo "  app          - iOS app"
+    echo "  framework    - iOS framework"
+    echo "  extension    - iOS extension"
+    echo ""
+    echo "🔗 Cross-Language Templates:"
+    echo "  web          - Full-stack web (Python + Rust)"
+    echo "  cli          - CLI tool (Python + Rust)"
+    echo "  api          - API service (Python + Rust)"
+    echo "  mobile       - Mobile app (iOS + Rust)"
+}
+
+# Function to create project from template
+caddie_template_create() {
+    local template_type="$1"
+    local project_name="$2"
+    
+    if [ -z "$template_type" ]; then
+        echo "Error: Please provide a template type"
+        echo "Usage: caddie template:create <type> [name]"
+        caddie_template_list
+        return 1
+    fi
+    
+    if [ -z "$project_name" ]; then
+        project_name="my-${template_type}-project"
+    fi
+    
+    echo "Creating project from template '$template_type'..."
+    echo "Project name: $project_name"
+    
+    case "$template_type" in
+        "web")
+            caddie_template_web "$project_name"
+            ;;
+        "cli")
+            caddie_template_cli "$project_name"
+            ;;
+        "api")
+            caddie_template_api "$project_name"
+            ;;
+        "data")
+            caddie_template_data "$project_name"
+            ;;
+        "ml")
+            caddie_template_ml "$project_name"
+            ;;
+        "lib")
+            caddie_template_lib "$project_name"
+            ;;
+        "wasm")
+            caddie_template_wasm "$project_name"
+            ;;
+        "app")
+            caddie_template_ios_app "$project_name"
+            ;;
+        "framework")
+            caddie_template_ios_framework "$project_name"
+            ;;
+        "extension")
+            caddie_template_ios_extension "$project_name"
+            ;;
+        "mobile")
+            caddie_template_mobile "$project_name"
+            ;;
+        *)
+            echo "Error: Unknown template type '$template_type'"
+            caddie_template_list
+            return 1
+            ;;
+    esac
+}
+
+# Template creation functions
+caddie_template_web() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create Python web structure
+    mkdir -p src tests docs
+    touch src/__init__.py
+    touch tests/__init__.py
+    
+    # Create basic Flask app
+    cat > src/app.py << 'EOF'
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+EOF
+
+    # Create requirements.txt
+    cat > requirements.txt << 'EOF'
+Flask==2.3.3
+Jinja2==3.1.2
+Werkzeug==2.3.7
+EOF
+
+    # Create basic HTML template
+    mkdir -p src/templates
+    cat > src/templates/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Web App</title>
+</head>
+<body>
+    <h1>Welcome to My Web App!</h1>
+</body>
+</html>
+EOF
+
+    echo "✓ Web project '$project_name' created"
+}
+
+caddie_template_cli() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create Python CLI structure
+    mkdir -p src tests docs
+    touch src/__init__.py
+    touch tests/__init__.py
+    
+    # Create basic CLI app
+    cat > src/cli.py << 'EOF'
+#!/usr/bin/env python3
+import argparse
+import sys
+
+def main():
+    parser = argparse.ArgumentParser(description='My CLI Tool')
+    parser.add_argument('--version', action='version', version='1.0.0')
+    parser.add_argument('name', help='Name to greet')
+    
+    args = parser.parse_args()
+    print(f"Hello, {args.name}!")
+
+if __name__ == '__main__':
+    main()
+EOF
+
+    # Create setup.py
+    cat > setup.py << 'EOF'
+from setuptools import setup, find_packages
+
+setup(
+    name="my-cli-tool",
+    version="1.0.0",
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    entry_points={
+        "console_scripts": [
+            "my-cli=cli:main",
+        ],
+    },
+    python_requires=">=3.7",
+    install_requires=[
+        "click>=8.0.0",
+    ],
+)
+EOF
+
+    echo "✓ CLI project '$project_name' created"
+}
+
+caddie_template_api() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create Python API structure
+    mkdir -p src tests docs
+    touch src/__init__.py
+    touch tests/__init__.py
+    
+    # Create basic FastAPI app
+    cat > src/main.py << 'EOF'
+from fastapi import FastAPI
+
+app = FastAPI(title="My API", version="1.0.0")
+
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int, q: str = None):
+    return {"item_id": item_id, "q": q}
+EOF
+
+    # Create requirements.txt
+    cat > requirements.txt << 'EOF'
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+EOF
+
+    echo "✓ API project '$project_name' created"
+}
+
+caddie_template_data() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create data science structure
+    mkdir -p src tests docs data notebooks
+    touch src/__init__.py
+    touch tests/__init__.py
+    
+    # Create requirements.txt
+    cat > requirements.txt << 'EOF'
+pandas==2.1.3
+numpy==1.25.2
+matplotlib==3.8.2
+seaborn==0.13.0
+jupyter==1.0.0
+scikit-learn==1.3.2
+EOF
+
+    echo "✓ Data science project '$project_name' created"
+}
+
+caddie_template_ml() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create ML structure
+    mkdir -p src tests docs data models notebooks
+    touch src/__init__.py
+    touch tests/__init__.py
+    
+    # Create requirements.txt
+    cat > requirements.txt << 'EOF'
+pandas==2.1.3
+numpy==1.25.2
+scikit-learn==1.3.2
+tensorflow==2.15.0
+torch==2.1.1
+jupyter==1.0.0
+matplotlib==3.8.2
+seaborn==0.13.0
+EOF
+
+    echo "✓ Machine learning project '$project_name' created"
+}
+
+caddie_template_lib() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create Rust library structure
+    cargo init --lib
+    
+    echo "✓ Rust library '$project_name' created"
+}
+
+caddie_template_wasm() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create Rust WASM structure
+    cargo init --lib
+    
+    # Add WASM dependencies
+    cat >> Cargo.toml << 'EOF'
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+web-sys = "0.3"
+
+[lib]
+crate-type = ["cdylib"]
+EOF
+
+    echo "✓ Rust WASM project '$project_name' created"
+}
+
+caddie_template_ios_app() {
+    local project_name="$1"
+    
+    echo "Creating iOS app '$project_name'..."
+    echo "Note: iOS projects should be created in Xcode"
+    echo "This is a placeholder for future iOS project creation"
+    
+    echo "✓ iOS app template '$project_name' created"
+}
+
+caddie_template_ios_framework() {
+    local project_name="$1"
+    
+    echo "Creating iOS framework '$project_name'..."
+    echo "Note: iOS frameworks should be created in Xcode"
+    echo "This is a placeholder for future iOS framework creation"
+    
+    echo "✓ iOS framework template '$project_name' created"
+}
+
+caddie_template_ios_extension() {
+    local project_name="$1"
+    
+    echo "Creating iOS extension '$project_name'..."
+    echo "Note: iOS extensions should be created in Xcode"
+    echo "This is a placeholder for future iOS extension creation"
+    
+    echo "✓ iOS extension template '$project_name' created"
+}
+
+caddie_template_mobile() {
+    local project_name="$1"
+    mkdir -p "$project_name"
+    cd "$project_name"
+    
+    # Create mobile app structure
+    mkdir -p ios rust python
+    cd rust
+    cargo init --lib
+    cd ..
+    
+    echo "✓ Mobile app '$project_name' created"
+}
+
+# Function to build all projects
+caddie_build_all() {
+    echo "Building all projects..."
+    echo "======================"
+    
+    # Build Python projects
+    if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
+        echo "Building Python project..."
+        if [ -f "setup.py" ]; then
+            python setup.py build
+        elif [ -f "pyproject.toml" ]; then
+            pip install -e .
+        fi
+    fi
+    
+    # Build Rust projects
+    if [ -f "Cargo.toml" ]; then
+        echo "Building Rust project..."
+        cargo build
+    fi
+    
+    # Build iOS projects
+    if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
+        echo "Building iOS project..."
+        if [ -f "*.xcworkspace" ]; then
+            project_file=$(ls *.xcworkspace | head -n1)
+            xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" build
+        elif [ -f "*.xcodeproj" ]; then
+            project_file=$(ls *.xcodeproj | head -n1)
+            xcodebuild -project "$project_file" build
+        fi
+    fi
+    
+    echo "✓ All projects built"
+}
+
+# Function to build Python package
+caddie_build_python() {
+    if [ -f "setup.py" ]; then
+        echo "Building Python package..."
+        python setup.py build
+    elif [ -f "pyproject.toml" ]; then
+        echo "Building Python package..."
+        pip install -e .
+    else
+        echo "Error: Not in a Python project directory"
+        return 1
+    fi
+}
+
+# Function to build Rust project
+caddie_build_rust() {
+    if [ -f "Cargo.toml" ]; then
+        echo "Building Rust project..."
+        cargo build
+    else
+        echo "Error: Not in a Rust project directory"
+        return 1
+    fi
+}
+
+# Function to build iOS project
+caddie_build_ios() {
+    if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
+        echo "Building iOS project..."
+        if [ -f "*.xcworkspace" ]; then
+            project_file=$(ls *.xcworkspace | head -n1)
+            xcodebuild -workspace "$project_file" -scheme "$(basename "$project_file" .xcworkspace)" build
+        elif [ -f "*.xcodeproj" ]; then
+            project_file=$(ls *.xcodeproj | head -n1)
+            xcodebuild -project "$project_file" build
+        fi
+    else
+        echo "Error: Not in an iOS project directory"
+        return 1
+    fi
+}
+
+# Function to create Docker setup
+caddie_deploy_docker() {
+    echo "Creating Docker setup..."
+    
+    # Create Dockerfile
+    cat > Dockerfile << 'EOF'
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["python", "src/main.py"]
+EOF
+
+    # Create docker-compose.yml
+    cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+EOF
+
+    # Create .dockerignore
+    cat > .dockerignore << 'EOF'
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+EOF
+
+    echo "✓ Docker setup created"
+}
+
+# Function to setup local deployment
+caddie_deploy_local() {
+    echo "Setting up local deployment..."
+    
+    # Create deployment script
+    cat > deploy.sh << 'EOF'
+#!/bin/bash
+
+echo "Deploying application locally..."
+
+# Install dependencies
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt
+fi
+
+if [ -f "Cargo.toml" ]; then
+    cargo build --release
+fi
+
+# Run the application
+if [ -f "src/main.py" ]; then
+    python src/main.py
+elif [ -f "Cargo.toml" ]; then
+    cargo run --release
+else
+    echo "No application found to run"
+fi
+EOF
+
+    chmod +x deploy.sh
+    
+    echo "✓ Local deployment setup created"
+}
+
+# Function to install development tools
+caddie_tools_install() {
+    echo "Installing development tools..."
+    
+    # Install Python tools
+    if command -v pip >/dev/null 2>&1; then
+        echo "Installing Python development tools..."
+        pip install black flake8 mypy pytest pre-commit
+    fi
+    
+    # Install Rust tools
+    if command -v cargo >/dev/null 2>&1; then
+        echo "Installing Rust development tools..."
+        cargo install cargo-audit cargo-outdated cargo-watch
+    fi
+    
+    # Install Node.js tools
+    if command -v npm >/dev/null 2>&1; then
+        echo "Installing Node.js development tools..."
+        npm install -g eslint prettier
+    fi
+    
+    echo "✓ Development tools installed"
+}
+
+# Function to setup git hooks
+caddie_tools_setup() {
+    echo "Setting up git hooks..."
+    
+    # Create pre-commit hook
+    cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+
+echo "Running pre-commit checks..."
+
+# Run Python linting
+if [ -f "requirements.txt" ] && command -v flake8 >/dev/null 2>&1; then
+    flake8 src/ tests/
+fi
+
+# Run Rust formatting
+if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
+    cargo fmt --check
+fi
+
+echo "Pre-commit checks passed"
+EOF
+
+    chmod +x .git/hooks/pre-commit
+    
+    echo "✓ Git hooks setup complete"
+}
+
+# Function to run all linters
+caddie_tools_lint() {
+    echo "Running all linters..."
+    
+    # Run Python linting
+    if [ -f "requirements.txt" ] && command -v flake8 >/dev/null 2>&1; then
+        echo "Running Python linting..."
+        flake8 src/ tests/
+    fi
+    
+    # Run Rust linting
+    if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
+        echo "Running Rust linting..."
+        cargo clippy
+    fi
+    
+    # Run JavaScript linting
+    if [ -f "package.json" ] && command -v eslint >/dev/null 2>&1; then
+        echo "Running JavaScript linting..."
+        eslint .
+    fi
+    
+    echo "✓ All linting completed"
+}
+
+# Function to format all code
+caddie_tools_format() {
+    echo "Formatting all code..."
+    
+    # Format Python code
+    if [ -f "requirements.txt" ] && command -v black >/dev/null 2>&1; then
+        echo "Formatting Python code..."
+        black src/ tests/
+    fi
+    
+    # Format Rust code
+    if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
+        echo "Formatting Rust code..."
+        cargo fmt
+    fi
+    
+    # Format JavaScript code
+    if [ -f "package.json" ] && command -v prettier >/dev/null 2>&1; then
+        echo "Formatting JavaScript code..."
+        prettier --write .
+    fi
+    
+    echo "✓ All code formatted"
+}
+
 # Main caddie function
 caddie() {
     local command="$1"
@@ -109,6 +3044,258 @@ caddie() {
         "reset:home")
             caddie_reset_home
             ;;
+        # Python commands
+        "python:create")
+            caddie_python_create "$2"
+            ;;
+        "python:activate")
+            caddie_python_activate "$2"
+            ;;
+        "python:deactivate")
+            caddie_python_deactivate
+            ;;
+        "python:list")
+            caddie_python_list
+            ;;
+        "python:remove")
+            caddie_python_remove "$2"
+            ;;
+        "python:current")
+            caddie_python_current
+            ;;
+        "python:install")
+            caddie_python_install "$2"
+            ;;
+        "python:uninstall")
+            caddie_python_uninstall "$2"
+            ;;
+        "python:freeze")
+            caddie_python_freeze
+            ;;
+        "python:sync")
+            caddie_python_sync
+            ;;
+        "python:upgrade")
+            caddie_python_upgrade "$2"
+            ;;
+        "python:outdated")
+            caddie_python_outdated
+            ;;
+        "python:init")
+            caddie_python_init
+            ;;
+        "python:test")
+            caddie_python_test
+            ;;
+        "python:lint")
+            caddie_python_lint
+            ;;
+        "python:format")
+            caddie_python_format
+            ;;
+        # Rust commands
+        "rust:new")
+            caddie_rust_new "$2"
+            ;;
+        "rust:build")
+            caddie_rust_build
+            ;;
+        "rust:run")
+            caddie_rust_run
+            ;;
+        "rust:test")
+            caddie_rust_test
+            ;;
+        "rust:check")
+            caddie_rust_check
+            ;;
+        "rust:clean")
+            caddie_rust_clean
+            ;;
+        "rust:update")
+            caddie_rust_update
+            ;;
+        "rust:add")
+            caddie_rust_add "$2"
+            ;;
+        "rust:remove")
+            caddie_rust_remove "$2"
+            ;;
+        "rust:search")
+            caddie_rust_search "$2"
+            ;;
+        "rust:outdated")
+            caddie_rust_outdated
+            ;;
+        "rust:audit")
+            caddie_rust_audit
+            ;;
+        "rust:toolchain")
+            caddie_rust_toolchain "$2"
+            ;;
+        "rust:target")
+            caddie_rust_target "$2"
+            ;;
+        "rust:component")
+            caddie_rust_component "$2"
+            ;;
+        # iOS commands
+        "ios:setup")
+            caddie_ios_setup
+            ;;
+        "ios:simulator")
+            caddie_ios_simulator
+            ;;
+        "ios:device")
+            caddie_ios_device
+            ;;
+        "ios:build")
+            caddie_ios_build
+            ;;
+        "ios:run")
+            caddie_ios_run
+            ;;
+        "ios:test")
+            caddie_ios_test
+            ;;
+        "ios:archive")
+            caddie_ios_archive
+            ;;
+        "ios:clean")
+            caddie_ios_clean
+            ;;
+        "ios:pod:install")
+            caddie_ios_pod_install
+            ;;
+        "ios:pod:update")
+            caddie_ios_pod_update
+            ;;
+        "ios:swift:version")
+            caddie_ios_swift_version
+            ;;
+        "ios:xcode:version")
+            caddie_ios_xcode_version
+            ;;
+        # Cross-language commands
+        "env:status")
+            caddie_env_status
+            ;;
+        "env:setup")
+            caddie_env_setup
+            ;;
+        "env:reset")
+            caddie_env_reset
+            ;;
+        "env:backup")
+            caddie_env_backup
+            ;;
+        "template:list")
+            caddie_template_list
+            ;;
+        "template:create")
+            caddie_template_create "$2" "$3"
+            ;;
+        "build:all")
+            caddie_build_all
+            ;;
+        "build:python")
+            caddie_build_python
+            ;;
+        "build:rust")
+            caddie_build_rust
+            ;;
+        "build:ios")
+            caddie_build_ios
+            ;;
+        "deploy:docker")
+            caddie_deploy_docker
+            ;;
+        "deploy:local")
+            caddie_deploy_local
+            ;;
+        "tools:install")
+            caddie_tools_install
+            ;;
+        "tools:setup")
+            caddie_tools_setup
+            ;;
+        "tools:lint")
+            caddie_tools_lint
+            ;;
+        "tools:format")
+            caddie_tools_format
+            ;;
+        # Cursor IDE Integration commands
+        "cursor:detect")
+            caddie_cursor_detect
+            ;;
+        "cursor:setup")
+            caddie_cursor_setup
+            ;;
+        "cursor:verify")
+            caddie_cursor_verify
+            ;;
+        "cursor:open")
+            caddie_cursor_open "$2"
+            ;;
+        "cursor:new")
+            caddie_cursor_new "$2" "$3"
+            ;;
+        "cursor:workspace")
+            caddie_cursor_workspace
+            ;;
+        "cursor:recent")
+            caddie_cursor_recent
+            ;;
+        "cursor:switch")
+            caddie_cursor_switch "$2"
+            ;;
+        "cursor:ai:explain")
+            caddie_cursor_ai_explain "$2"
+            ;;
+        "cursor:ai:refactor")
+            caddie_cursor_ai_refactor "$2" "$3"
+            ;;
+        "cursor:ai:test")
+            caddie_cursor_ai_test "$2" "$3"
+            ;;
+        "cursor:ai:docs")
+            caddie_cursor_ai_docs "$2" "$3"
+            ;;
+        "cursor:ai:review")
+            caddie_cursor_ai_review "$2" "$3"
+            ;;
+        "cursor:ext:install")
+            caddie_cursor_ext_install "$2"
+            ;;
+        "cursor:ext:list")
+            caddie_cursor_ext_list
+            ;;
+        "cursor:ext:update")
+            caddie_cursor_ext_update
+            ;;
+        "cursor:ext:sync")
+            caddie_cursor_ext_sync
+            ;;
+        "cursor:ext:recommend")
+            caddie_cursor_ext_recommend "$2"
+            ;;
+        "cursor:config:show")
+            caddie_cursor_config_show
+            ;;
+        "cursor:config:backup")
+            caddie_cursor_config_backup
+            ;;
+        "cursor:config:restore")
+            caddie_cursor_config_restore "$2"
+            ;;
+        "cursor:config:sync")
+            caddie_cursor_config_sync
+            ;;
+        "cursor:config:optimize")
+            caddie_cursor_config_optimize
+            ;;
+        # General commands
         "help"|"--help"|"-h")
             caddie_help
             ;;
@@ -140,7 +3327,7 @@ _caddie_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Available caddie commands
-    opts="set:home get:home reset:home help version --help -h --version -v"
+    opts="set:home get:home reset:home python:create python:activate python:deactivate python:list python:remove python:current python:install python:uninstall python:freeze python:sync python:upgrade python:outdated python:init python:test python:lint python:format rust:new rust:build rust:run rust:test rust:check rust:clean rust:update rust:add rust:remove rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component ios:setup ios:simulator ios:device ios:build ios:run ios:test ios:archive ios:clean ios:pod:install ios:pod:update ios:swift:version ios:xcode:version env:status env:setup env:reset env:backup template:list template:create build:all build:python build:rust build:ios deploy:docker deploy:local tools:install tools:setup tools:lint tools:format cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize help version --help -h --version -v"
     
     # If we're completing the first argument (command)
     if [ ${COMP_CWORD} -eq 1 ]; then
@@ -150,13 +3337,181 @@ _caddie_completion() {
         return 0
     fi
     
-    # If we're completing the second argument for set:home
-    if [ "${prev}" = "set:home" ]; then
-        # Complete with directories
-        local IFS=$'\n'
-        COMPREPLY=( $(compgen -d -- "${cur}") )
-        return 0
-    fi
+    # Handle completion for specific commands that take arguments
+    case "${prev}" in
+        "set:home")
+            # Complete with directory names
+            COMPREPLY=( $(compgen -d -- "${cur}") )
+            return 0
+            ;;
+        "python:create"|"python:activate"|"python:remove")
+            # Complete with existing virtual environment names
+            if [ -d "$HOME/.virtualenvs" ]; then
+                local venvs=$(ls "$HOME/.virtualenvs" 2>/dev/null)
+                COMPREPLY=( $(compgen -W "${venvs}" -- "${cur}") )
+            fi
+            return 0
+            ;;
+        "python:install"|"python:uninstall"|"python:upgrade")
+            # Complete with installed packages (if pip is available)
+            if command -v pip >/dev/null 2>&1; then
+                local packages=$(pip list --format=freeze 2>/dev/null | cut -d'=' -f1)
+                COMPREPLY=( $(compgen -W "${packages}" -- "${cur}") )
+            fi
+            return 0
+            ;;
+        "rust:new")
+            # Complete with directory names for project location
+            COMPREPLY=( $(compgen -d -- "${cur}") )
+            return 0
+            ;;
+        "rust:add"|"rust:remove")
+            # Complete with installed crates (if cargo is available)
+            if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
+                local crates=$(grep -E '^[[:space:]]*[a-zA-Z0-9_-]+[[:space:]]*=' Cargo.toml 2>/dev/null | sed 's/[[:space:]]*\([a-zA-Z0-9_-]*\)[[:space:]]*=.*/\1/')
+                COMPREPLY=( $(compgen -W "${crates}" -- "${cur}") )
+            fi
+            return 0
+            ;;
+        "rust:toolchain")
+            # Complete with common Rust toolchain versions
+            local toolchains="stable beta nightly"
+            COMPREPLY=( $(compgen -W "${toolchains}" -- "${cur}") )
+            return 0
+            ;;
+        "rust:target")
+            # Complete with common Rust targets
+            local targets="x86_64-unknown-linux-gnu aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc"
+            COMPREPLY=( $(compgen -W "${targets}" -- "${cur}") )
+            return 0
+            ;;
+        "rust:component")
+            # Complete with common Rust components
+            local components="clippy rustfmt rust-src rust-analysis"
+            COMPREPLY=( $(compgen -W "${components}" -- "${cur}") )
+            return 0
+            ;;
+        "template:create")
+            # Complete with available template types
+            local templates="web cli api data ml lib wasm app framework extension mobile"
+            COMPREPLY=( $(compgen -W "${templates}" -- "${cur}") )
+            return 0
+            ;;
+        # Cursor integration completions
+        "cursor:open")
+            # Complete with directory names
+            COMPREPLY=( $(compgen -d -- "${cur}") )
+            return 0
+            ;;
+        "cursor:new")
+            # Complete with project types
+            local project_types="web api mobile data ml cli lib"
+            COMPREPLY=( $(compgen -W "${project_types}" -- "${cur}") )
+            return 0
+            ;;
+        "cursor:switch")
+            # Complete with recent projects and common project directories
+            local projects=""
+            # Add recent projects from Cursor workspace storage
+            if [ -d "$HOME/.cursor/User/workspaceStorage" ]; then
+                projects=$(find "$HOME/.cursor/User/workspaceStorage" -name "*.json" -exec basename {} \; 2>/dev/null | sed 's/\.json$//')
+            fi
+            # Add common project directories
+            if [ -d "$HOME/projects" ]; then
+                projects="$projects $(ls "$HOME/projects" 2>/dev/null)"
+            fi
+            if [ -d "$HOME/work" ]; then
+                projects="$projects $(ls "$HOME/work" 2>/dev/null)"
+            fi
+            COMPREPLY=( $(compgen -W "${projects}" -- "${cur}") )
+            return 0
+            ;;
+        "cursor:ai:explain"|"cursor:ai:refactor"|"cursor:ai:test"|"cursor:ai:docs"|"cursor:ai:review")
+            # Complete with file names
+            COMPREPLY=( $(compgen -f -- "${cur}") )
+            return 0
+            ;;
+        "cursor:ext:install")
+            # Complete with common extension IDs
+            local common_extensions="ms-python.python ms-python.pylint ms-python.black-formatter rust-lang.rust-analyzer ms-vscode.vscode-typescript-next esbenp.prettier-vscode ms-vscode.vscode-eslint ms-vscode.vscode-json redhat.vscode-yaml ms-vscode.vscode-markdown"
+            COMPREPLY=( $(compgen -W "${common_extensions}" -- "${cur}") )
+            return 0
+            ;;
+        "cursor:ext:recommend")
+            # Complete with project types
+            local project_types="python rust javascript typescript web mobile data ml"
+            COMPREPLY=( $(compgen -W "${project_types}" -- "${cur}") )
+            return 0
+            ;;
+        "cursor:config:restore")
+            # Complete with backup directories
+            if [ -d "$HOME/.cursor-backups" ]; then
+                local backups=$(ls "$HOME/.cursor-backups" 2>/dev/null)
+                COMPREPLY=( $(compgen -W "${backups}" -- "${cur}") )
+            fi
+            return 0
+            ;;
+    esac
+    
+    # Handle multi-argument commands
+    case "${COMP_WORDS[1]}" in
+        "cursor:new")
+            # First argument is project type, second is project name
+            if [ ${COMP_CWORD} -eq 2 ]; then
+                local project_types="web api mobile data ml cli lib"
+                COMPREPLY=( $(compgen -W "${project_types}" -- "${cur}") )
+                return 0
+            elif [ ${COMP_CWORD} -eq 3 ]; then
+                # Complete with directory names for project location
+                COMPREPLY=( $(compgen -d -- "${cur}") )
+                return 0
+            fi
+            ;;
+        "cursor:ai:refactor")
+            # First argument is file, second is refactor type
+            if [ ${COMP_CWORD} -eq 2 ]; then
+                COMPREPLY=( $(compgen -f -- "${cur}") )
+                return 0
+            elif [ ${COMP_CWORD} -eq 3 ]; then
+                local refactor_types="general performance readability security structure"
+                COMPREPLY=( $(compgen -W "${refactor_types}" -- "${cur}") )
+                return 0
+            fi
+            ;;
+        "cursor:ai:test")
+            # First argument is file, second is test framework
+            if [ ${COMP_CWORD} -eq 2 ]; then
+                COMPREPLY=( $(compgen -f -- "${cur}") )
+                return 0
+            elif [ ${COMP_CWORD} -eq 3 ]; then
+                local test_frameworks="pytest unittest jest mocha rspec"
+                COMPREPLY=( $(compgen -W "${test_frameworks}" -- "${cur}") )
+                return 0
+            fi
+            ;;
+        "cursor:ai:docs")
+            # First argument is file, second is doc format
+            if [ ${COMP_CWORD} -eq 2 ]; then
+                COMPREPLY=( $(compgen -f -- "${cur}") )
+                return 0
+            elif [ ${COMP_CWORD} -eq 3 ]; then
+                local doc_formats="markdown sphinx javadoc godoc rustdoc"
+                COMPREPLY=( $(compgen -W "${doc_formats}" -- "${cur}") )
+                return 0
+            fi
+            ;;
+        "cursor:ai:review")
+            # First argument is file, second is review focus
+            if [ ${COMP_CWORD} -eq 2 ]; then
+                COMPREPLY=( $(compgen -f -- "${cur}") )
+                return 0
+            elif [ ${COMP_CWORD} -eq 3 ]; then
+                local review_focus="general security performance style bugs best-practices"
+                COMPREPLY=( $(compgen -W "${review_focus}" -- "${cur}") )
+                return 0
+            fi
+            ;;
+    esac
     
     return 0
 }

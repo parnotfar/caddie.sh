@@ -1,11 +1,3 @@
-# source "${HOME}/.ruby_warning_prompt.sh"
-# source "${HOME}/.csv_prompt.sh"
-# source "${HOME}/.h_prompt.sh"
-# source "${HOME}/.ch_prompt.sh"
-# source "${HOME}/.pg_prompt.sh"
-# source "${HOME}/.s_prompt.sh"
-# source "${HOME}/.ram_shell_prompt.sh"
-
 function set_caddie_version_prompt() {
   echo "[$(echoc ${Blue} Caddie-${CADDIE_SH_VERSION})] "
 }
