@@ -3,8 +3,26 @@
 # Caddie.sh - Rust Environment Management
 # This file contains all Rust-related functions
 
+
+
+# Function to load Rust environment
+caddie_rust_load_env() {
+    if [ -f "$HOME/.cargo/env" ]; then
+        . "$HOME/.cargo/env"
+    else
+        echo "Error: Rust environment not found at ~/.cargo/env"
+        echo "  Please install Rust first: https://rustup.rs/"
+        return 1
+    fi
+}
+
+# Source Rust environment when module is loaded
+caddie_rust_load_env
+
 # Function to create a new Rust project
 caddie_rust_new() {
+    caddie_rust_load_env
+    
     local project_name="$1"
     
     if [ -z "$project_name" ]; then
@@ -34,6 +52,8 @@ caddie_rust_new() {
 
 # Function to build current Rust project
 caddie_rust_build() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -41,17 +61,13 @@ caddie_rust_build() {
     
     echo "Building Rust project..."
     cargo build
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust project built successfully"
-    else
-        echo "✗ Failed to build Rust project"
-        return 1
-    fi
+    echo "✓ Rust project built successfully"
 }
 
 # Function to run current Rust project
 caddie_rust_run() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -59,17 +75,13 @@ caddie_rust_run() {
     
     echo "Running Rust project..."
     cargo run
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust project ran successfully"
-    else
-        echo "✗ Failed to run Rust project"
-        return 1
-    fi
+    echo "✓ Rust project ran successfully"
 }
 
 # Function to run Rust tests
 caddie_rust_test() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -77,17 +89,13 @@ caddie_rust_test() {
     
     echo "Running Rust tests..."
     cargo test
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust tests completed successfully"
-    else
-        echo "✗ Some Rust tests failed"
-        return 1
-    fi
+    echo "✓ Rust tests completed successfully"
 }
 
 # Function to check Rust project without building
 caddie_rust_check() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -95,17 +103,13 @@ caddie_rust_check() {
     
     echo "Checking Rust project..."
     cargo check
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust project check passed"
-    else
-        echo "✗ Rust project check failed"
-        return 1
-    fi
+    echo "✓ Rust project check passed"
 }
 
 # Function to clean Rust build artifacts
 caddie_rust_clean() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -113,17 +117,13 @@ caddie_rust_clean() {
     
     echo "Cleaning Rust build artifacts..."
     cargo clean
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust build artifacts cleaned"
-    else
-        echo "✗ Failed to clean Rust build artifacts"
-        return 1
-    fi
+    echo "✓ Rust build artifacts cleaned"
 }
 
 # Function to update Rust dependencies
 caddie_rust_update() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -131,17 +131,13 @@ caddie_rust_update() {
     
     echo "Updating Rust dependencies..."
     cargo update
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust dependencies updated"
-    else
-        echo "✗ Failed to update Rust dependencies"
-        return 1
-    fi
+    echo "✓ Rust dependencies updated"
 }
 
 # Function to add a Rust dependency
 caddie_rust_add() {
+    caddie_rust_load_env
+    
     local crate="$1"
     
     if [ -z "$crate" ]; then
@@ -157,17 +153,13 @@ caddie_rust_add() {
     
     echo "Adding dependency '$crate'..."
     cargo add "$crate"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Dependency '$crate' added successfully"
-    else
-        echo "✗ Failed to add dependency '$crate'"
-        return 1
-    fi
+    echo "✓ Dependency '$crate' added successfully"
 }
 
 # Function to remove a Rust dependency
 caddie_rust_remove() {
+    caddie_rust_load_env
+    
     local crate="$1"
     
     if [ -z "$crate" ]; then
@@ -183,17 +175,13 @@ caddie_rust_remove() {
     
     echo "Removing dependency '$crate'..."
     cargo remove "$crate"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Dependency '$crate' removed successfully"
-    else
-        echo "✗ Failed to remove dependency '$crate'"
-        return 1
-    fi
+    echo "✓ Dependency '$crate' removed successfully"
 }
 
 # Function to search crates.io
 caddie_rust_search() {
+    caddie_rust_load_env
+    
     local query="$1"
     
     if [ -z "$query" ]; then
@@ -208,6 +196,8 @@ caddie_rust_search() {
 
 # Function to show outdated Rust dependencies
 caddie_rust_outdated() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -221,17 +211,14 @@ caddie_rust_outdated() {
     else
         echo "Installing cargo-outdated for better outdated dependency checking..."
         cargo install cargo-outdated
-        if [ $? -eq 0 ]; then
-            cargo outdated
-        else
-            echo "Showing current dependency versions:"
-            cargo tree
-        fi
+        cargo outdated
     fi
 }
 
 # Function to run Rust security audit
 caddie_rust_audit() {
+    caddie_rust_load_env
+    
     if [ ! -f "Cargo.toml" ]; then
         echo "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
@@ -245,17 +232,15 @@ caddie_rust_audit() {
     else
         echo "Installing cargo-audit for security auditing..."
         cargo install cargo-audit
-        if [ $? -eq 0 ]; then
-            cargo audit
-        else
-            echo "✗ Failed to install cargo-audit"
-            return 1
-        fi
+        cargo audit
     fi
 }
 
 # Function to switch Rust toolchain
 caddie_rust_toolchain() {
+    # Load Rust environment
+    caddie_rust_load_env
+    
     local version="$1"
     
     if [ -z "$version" ]; then
@@ -267,18 +252,15 @@ caddie_rust_toolchain() {
     
     echo "Switching to Rust toolchain '$version'..."
     rustup default "$version"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Switched to Rust toolchain '$version'"
-        echo "  Current version: $(rustc --version)"
-    else
-        echo "✗ Failed to switch to Rust toolchain '$version'"
-        return 1
-    fi
+    echo "✓ Switched to Rust toolchain '$version'"
+    echo "  Current version: $(rustc --version)"
 }
 
 # Function to add Rust compilation target
 caddie_rust_target() {
+    # Load Rust environment
+    caddie_rust_load_env
+    
     local target="$1"
     
     if [ -z "$target" ]; then
@@ -290,17 +272,14 @@ caddie_rust_target() {
     
     echo "Adding Rust target '$target'..."
     rustup target add "$target"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Added Rust target '$target'"
-    else
-        echo "✗ Failed to add Rust target '$target'"
-        return 1
-    fi
+    echo "✓ Added Rust target '$target'"
 }
 
 # Function to install Rust component
 caddie_rust_component() {
+    # Load Rust environment
+    caddie_rust_load_env
+    
     local component="$1"
     
     if [ -z "$component" ]; then
@@ -312,13 +291,7 @@ caddie_rust_component() {
     
     echo "Installing Rust component '$component'..."
     rustup component add "$component"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Installed Rust component '$component'"
-    else
-        echo "✗ Failed to install Rust component '$component'"
-        return 1
-    fi
+    echo "✓ Installed Rust component '$component'"
 }
 
 # Function to register Rust caddie commands
@@ -378,6 +351,7 @@ caddie_rust_help() {
 }
 
 # Export Rust functions
+export -f caddie_rust_load_env
 export -f rust_caddie_register
 export -f caddie_rust_new
 export -f caddie_rust_build

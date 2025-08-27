@@ -98,6 +98,7 @@ install-dot: backup-existing ## Install dot files to home directory
 	@cp dot_caddie_ios "$(HOME_DIR)/.caddie_ios" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_ios" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_ios" && exit 1)
 	@cp dot_caddie_cross "$(HOME_DIR)/.caddie_cross" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_cross" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_cross" && exit 1)
 	@cp dot_caddie_cursor "$(HOME_DIR)/.caddie_cursor" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_cursor" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_cursor" && exit 1)
+	@cp dot_caddie_git "$(HOME_DIR)/.caddie_git" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_git" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_git" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	@cp dot_caddie "$(HOME_DIR)/.caddie.sh" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie.sh" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie.sh" && exit 1)
 	@echo "$(GREEN)✓$(NC) All dot files installed successfully"

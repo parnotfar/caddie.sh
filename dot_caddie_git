@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Caddie.sh - Git Prompt and Custom File Management
+# This file handles git prompt setup and custom file sourcing
+
+# Function to setup bash-git-prompt
+caddie_git_setup_prompt() {
+    # Due to catalina switching to zsh
+    export BASH_SILENCE_DEPRECATION_WARNING=1
+    
+    # Set basic prompt
+    export PS1="\u@\h:\w> "
+    export EDITOR=vim
+    
+    # Install bash-git-prompt if not present
+    if [ ! -f "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh" ]; then
+        brew install bash-git-prompt
+    fi
+    
+    # Source bash-git-prompt if available
+    if [ -f "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh" ]; then
+        source "$(brew --prefix)/opt/bash-git-prompt/share/gitprompt.sh"
+    fi
+    
+    # Set up caddie git prompt
+    set_git_app_prompt
+}
+
+# Function to source custom files
+caddie_source_custom_files() {
+    # Source custom bash profile additions
+    if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
+        source "$HOME/.bash_profile-caddie-custom"
+    fi
+    
+    # Source custom bashrc additions
+    if [ -f "$HOME/.bashrc-caddie-custom" ]; then
+        source "$HOME/.bashrc-caddie-custom"
+    fi
+}
+
+# Auto-setup when sourced
+caddie_git_setup_prompt
+caddie_source_custom_files
+
+# Export functions for external use
+export -f caddie_git_setup_prompt
+export -f caddie_source_custom_files

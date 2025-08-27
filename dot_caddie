@@ -3,8 +3,17 @@
 # Caddie.sh - Main Entry Point
 # This file sources all the modular components and provides the main interface
 
+# Exit immediately on any error for robust error handling
+set -e
+
 # Source the module management system first
 source "$HOME/.caddie_modules"
+
+# Source the prompt system
+source "$HOME/.caddie_prompt.sh"
+
+# Source the git prompt and custom file management
+source "$HOME/.caddie_git"
 
 # Define caddie modules and their descriptions.
 # Each entry should be in the format "key|Description", where:
@@ -36,6 +45,7 @@ done
 
 # Discover all available commands from all modules
 CADDIE_COMMANDS=()
+
 for moddesc in "${CADDIE_MODULES[@]}"; do
     module="${moddesc%%|*}"
     if [ -n "$module" ]; then
@@ -134,6 +144,7 @@ _caddie_completion() {
     
     # Build available caddie commands dynamically from discovered commands
     local opts="help version --help -h --version -v"
+
     for cmd_info in "${CADDIE_COMMANDS[@]}"; do
         parse_cmd_registration "$cmd_info"
         if [ -n "$PARSED_CMD_PATTERN" ]; then
