@@ -758,6 +758,34 @@ EOF
     echo "✓ Cursor configuration optimized for performance"
 }
 
+# Function to register Cursor caddie commands
+cursor_caddie_register() {
+    echo "cursor:detect:caddie_cursor_detect:Detect Cursor installation"
+    echo "cursor:setup:caddie_cursor_setup:Setup Cursor integration"
+    echo "cursor:verify:caddie_cursor_verify:Verify Cursor integration"
+    echo "cursor:open:caddie_cursor_open:Open project in Cursor"
+    echo "cursor:new:caddie_cursor_new:Create new project and open in Cursor"
+    echo "cursor:workspace:caddie_cursor_workspace:Show Cursor workspace info"
+    echo "cursor:recent:caddie_cursor_recent:List recently opened projects"
+    echo "cursor:switch:caddie_cursor_switch:Switch to different project"
+    echo "cursor:ai:explain:caddie_cursor_ai_explain:Ask AI to explain code"
+    echo "cursor:ai:refactor:caddie_cursor_ai_refactor:AI-assisted refactoring"
+    echo "cursor:ai:test:caddie_cursor_ai_test:Generate tests with AI"
+    echo "cursor:ai:docs:caddie_cursor_ai_docs:Generate documentation with AI"
+    echo "cursor:ai:review:caddie_cursor_ai_review:AI code review"
+    echo "cursor:ext:install:caddie_cursor_ext_install:Install Cursor extension"
+    echo "cursor:ext:list:caddie_cursor_ext_list:List installed extensions"
+    echo "cursor:ext:update:caddie_cursor_ext_update:Update all extensions"
+    echo "cursor:ext:sync:caddie_cursor_ext_sync:Sync extensions across devices"
+    echo "cursor:ext:recommend:caddie_cursor_ext_recommend:Recommend extensions for project type"
+    echo "cursor:config:show:caddie_cursor_config_show:Show Cursor configuration"
+    echo "cursor:config:backup:caddie_cursor_config_backup:Backup Cursor settings"
+    echo "cursor:config:restore:caddie_cursor_config_restore:Restore Cursor settings"
+    echo "cursor:config:sync:caddie_cursor_config_sync:Sync Cursor settings"
+    echo "cursor:config:optimize:caddie_cursor_config_optimize:Optimize Cursor for performance"
+    echo "cursor:help:caddie_cursor_help:Show detailed Cursor help"
+}
+
 # Function to display Cursor module help
 caddie_cursor_help() {
     echo "Cursor IDE Integration"
@@ -807,8 +835,8 @@ caddie_cursor_help() {
 }
 
 # Export Cursor functions
+export -f cursor_caddie_register
 export -f caddie_cursor_detect
-export -f caddie_cursor_setup
 export -f caddie_cursor_verify
 export -f caddie_cursor_open
 export -f caddie_cursor_new

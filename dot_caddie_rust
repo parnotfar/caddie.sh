@@ -321,6 +321,26 @@ caddie_rust_component() {
     fi
 }
 
+# Function to register Rust caddie commands
+rust_caddie_register() {
+    echo "rust:new:new:Create new Rust project"
+    echo "rust:build:build:Build current project"
+    echo "rust:run:run:Run current project"
+    echo "rust:test:test:Run tests"
+    echo "rust:check:check:Check without building"
+    echo "rust:clean:clean:Clean build artifacts"
+    echo "rust:update:update:Update dependencies"
+    echo "rust:add:add:Add dependency to Cargo.toml"
+    echo "rust:remove:remove:Remove dependency"
+    echo "rust:search:search:Search crates.io"
+    echo "rust:outdated:outdated:Show outdated dependencies"
+    echo "rust:audit:audit:Security audit"
+    echo "rust:toolchain:toolchain:Switch toolchain (stable/beta/nightly)"
+    echo "rust:target:target:Add compilation target"
+    echo "rust:component:component:Install component (clippy/rustfmt/etc)"
+    echo "rust:help:help:Show detailed Rust help"
+}
+
 # Function to display Rust module help
 caddie_rust_help() {
     echo "Rust Development Tools"
@@ -358,6 +378,7 @@ caddie_rust_help() {
 }
 
 # Export Rust functions
+export -f rust_caddie_register
 export -f caddie_rust_new
 export -f caddie_rust_build
 export -f caddie_rust_run

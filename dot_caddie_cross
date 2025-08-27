@@ -852,6 +852,27 @@ caddie_tools_format() {
     echo "✓ All code formatted"
 }
 
+# Function to register cross-language caddie commands
+cross_caddie_register() {
+    echo "env:status:env_status:Show all environment status"
+    echo "env:setup:env_setup:Setup development environment"
+    echo "env:reset:env_reset:Reset all environments"
+    echo "env:backup:env_backup:Backup current configurations"
+    echo "template:list:template_list:List available templates"
+    echo "template:create:template_create:Create from template"
+    echo "build:all:build_all:Build all projects"
+    echo "build:python:build_python:Build Python package"
+    echo "build:rust:build_rust:Build Rust project"
+    echo "build:ios:build_ios:Build iOS project"
+    echo "deploy:docker:deploy_docker:Create Docker setup"
+    echo "deploy:local:deploy_local:Local deployment"
+    echo "tools:install:tools_install:Install dev tools"
+    echo "tools:setup:tools_setup:Setup git hooks, etc."
+    echo "tools:lint:tools_lint:Run all linters"
+    echo "tools:format:tools_format:Format all code"
+    echo "cross:help:help:Show detailed cross-language help"
+}
+
 # Function to display cross-language module help
 caddie_cross_help() {
     echo "Cross-Language Features & Templates"
@@ -905,6 +926,7 @@ caddie_cross_help() {
 }
 
 # Export cross-language functions
+export -f cross_caddie_register
 export -f caddie_env_status
 export -f caddie_env_setup
 export -f caddie_env_reset

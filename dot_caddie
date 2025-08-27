@@ -32,288 +32,61 @@ for moddesc in "${CADDIE_MODULES[@]}"; do
 done
 # Note: CADDIE_MODULE_HELP is now used in the help function to dynamically show loaded modules
 
-# Main caddie function - dispatches to functions from modules
+# Discover all available commands from all modules
+CADDIE_COMMANDS=()
+for moddesc in "${CADDIE_MODULES[@]}"; do
+    module="${moddesc%%:*}"
+    if [ -n "$module" ]; then
+        # Call module's registration function to get its commands
+        if command -v "${module}_caddie_register" >/dev/null 2>&1; then
+            while IFS= read -r cmd_info; do
+                if [ -n "$cmd_info" ]; then
+                    CADDIE_COMMANDS+=("$cmd_info")
+                fi
+            done < <("${module}_caddie_register")
+        fi
+    fi
+done
+
+# Main caddie function - dynamically routes commands to modules
 caddie() {
     local command="$1"
+    local args=("$@")
     
+    # Debug: Show what we're looking for
+    echo "DEBUG: Looking for command: '$command'"
+    echo "DEBUG: CADDIE_COMMANDS array has ${#CADDIE_COMMANDS[@]} entries"
+    
+    # Try to route to a module using dynamic command discovery
+    for cmd_info in "${CADDIE_COMMANDS[@]}"; do
+        # Parse the format: "module:command:function:description"
+        # For "core:set:home:set_home:Set caddie home directory"
+        local module="${cmd_info%%:*}"
+        local temp_after_module="${cmd_info#*:}"
+        local temp_before_func="${temp_after_module%:*}"
+        local func_name="${temp_before_func##*:}"
+        local cmd_part="${temp_before_func%:*}"
+        local description="${cmd_info##*:}"
+        
+        # Construct the full command pattern (e.g., "core:set:home")
+        local cmd_pattern="${module}:${cmd_part}"
+        
+        echo "DEBUG: Checking pattern '$cmd_pattern' against command '$command'"
+        
+        if [ "$command" = "$cmd_pattern" ]; then
+            echo "DEBUG: MATCH FOUND! Pattern: '$cmd_pattern', Function: '$func_name'"
+            echo "DEBUG: Module: '$module', Function: '$func_name'"
+            
+                                    # Call the module's function with remaining arguments
+                        # Remove the first argument (the command) and pass the rest
+                        local remaining_args=("${args[@]:1}")
+                        eval "${func_name} \"\${remaining_args[@]}\""
+            return 0
+        fi
+    done
+    
+    # Handle core commands and errors
     case "$command" in
-        "set:home")
-            caddie_set_home "$2"
-            ;;
-        "get:home")
-            caddie_get_home
-            ;;
-        "reset:home")
-            caddie_reset_home
-            ;;
-        # Python commands
-        "python:create")
-            caddie_python_create "$2"
-            ;;
-        "python:activate")
-            caddie_python_activate "$2"
-            ;;
-        "python:deactivate")
-            caddie_python_deactivate
-            ;;
-        "python:list")
-            caddie_python_list
-            ;;
-        "python:remove")
-            caddie_python_remove "$2"
-            ;;
-        "python:current")
-            caddie_python_current
-            ;;
-        "python:install")
-            caddie_python_install "$2"
-            ;;
-        "python:uninstall")
-            caddie_python_uninstall "$2"
-            ;;
-        "python:freeze")
-            caddie_python_freeze
-            ;;
-        "python:sync")
-            caddie_python_sync
-            ;;
-        "python:upgrade")
-            caddie_python_upgrade "$2"
-            ;;
-        "python:outdated")
-            caddie_python_outdated
-            ;;
-        "python:init")
-            caddie_python_init
-            ;;
-        "python:test")
-            caddie_python_test
-            ;;
-        "python:lint")
-            caddie_python_lint
-            ;;
-        "python:format")
-            caddie_python_format
-            ;;
-        # Rust commands
-        "rust:new")
-            caddie_rust_new "$2"
-            ;;
-        "rust:build")
-            caddie_rust_build
-            ;;
-        "rust:run")
-            caddie_rust_run
-            ;;
-        "rust:test")
-            caddie_rust_test
-            ;;
-        "rust:check")
-            caddie_rust_check
-            ;;
-        "rust:clean")
-            caddie_rust_clean
-            ;;
-        "rust:update")
-            caddie_rust_update
-            ;;
-        "rust:add")
-            caddie_rust_add "$2"
-            ;;
-        "rust:remove")
-            caddie_rust_remove "$2"
-            ;;
-        "rust:search")
-            caddie_rust_search "$2"
-            ;;
-        "rust:outdated")
-            caddie_rust_outdated
-            ;;
-        "rust:audit")
-            caddie_rust_audit
-            ;;
-        "rust:toolchain")
-            caddie_rust_toolchain "$2"
-            ;;
-        "rust:target")
-            caddie_rust_target "$2"
-            ;;
-        "rust:component")
-            caddie_rust_component "$2"
-            ;;
-        # iOS commands
-        "ios:setup")
-            caddie_ios_setup
-            ;;
-        "ios:simulator")
-            caddie_ios_simulator
-            ;;
-        "ios:device")
-            caddie_ios_device
-            ;;
-        "ios:build")
-            caddie_ios_build
-            ;;
-        "ios:run")
-            caddie_ios_run
-            ;;
-        "ios:test")
-            caddie_ios_test
-            ;;
-        "ios:archive")
-            caddie_ios_archive
-            ;;
-        "ios:clean")
-            caddie_ios_clean
-            ;;
-        "ios:pod:install")
-            caddie_ios_pod_install
-            ;;
-        "ios:pod:update")
-            caddie_ios_pod_update
-            ;;
-        "ios:swift:version")
-            caddie_ios_swift_version
-            ;;
-        "ios:xcode:version")
-            caddie_ios_xcode_version
-            ;;
-        # Cross-language commands
-        "env:status")
-            caddie_env_status
-            ;;
-        "env:setup")
-            caddie_env_setup
-            ;;
-        "env:reset")
-            caddie_env_reset
-            ;;
-        "env:backup")
-            caddie_env_backup
-            ;;
-        "template:list")
-            caddie_template_list
-            ;;
-        "template:create")
-            caddie_template_create "$2" "$3"
-            ;;
-        "build:all")
-            caddie_build_all
-            ;;
-        "build:python")
-            caddie_build_python
-            ;;
-        "build:rust")
-            caddie_build_rust
-            ;;
-        "build:ios")
-            caddie_build_ios
-            ;;
-        "deploy:docker")
-            caddie_deploy_docker
-            ;;
-        "deploy:local")
-            caddie_deploy_local
-            ;;
-        "tools:install")
-            caddie_tools_install
-            ;;
-        "tools:setup")
-            caddie_tools_setup
-            ;;
-        "tools:lint")
-            caddie_tools_lint
-            ;;
-        "tools:format")
-            caddie_tools_format
-            ;;
-        # Cursor IDE Integration commands
-        "cursor:detect")
-            caddie_cursor_detect
-            ;;
-        "cursor:setup")
-            caddie_cursor_setup
-            ;;
-        "cursor:verify")
-            caddie_cursor_verify
-            ;;
-        "cursor:open")
-            caddie_cursor_open "$2"
-            ;;
-        "cursor:new")
-            caddie_cursor_new "$2" "$3"
-            ;;
-        "cursor:workspace")
-            caddie_cursor_workspace
-            ;;
-        "cursor:recent")
-            caddie_cursor_recent
-            ;;
-        "cursor:switch")
-            caddie_cursor_switch "$2"
-            ;;
-        "cursor:ai:explain")
-            caddie_cursor_ai_explain "$2"
-            ;;
-        "cursor:ai:refactor")
-            caddie_cursor_ai_refactor "$2" "$3"
-            ;;
-        "cursor:ai:test")
-            caddie_cursor_ai_test "$2" "$3"
-            ;;
-        "cursor:ai:docs")
-            caddie_cursor_ai_docs "$2" "$3"
-            ;;
-        "cursor:ai:review")
-            caddie_cursor_ai_review "$2" "$3"
-            ;;
-        "cursor:ext:install")
-            caddie_cursor_ext_install "$2"
-            ;;
-        "cursor:ext:list")
-            caddie_cursor_ext_list
-            ;;
-        "cursor:ext:update")
-            caddie_cursor_ext_update
-            ;;
-        "cursor:ext:sync")
-            caddie_cursor_ext_sync
-            ;;
-        "cursor:ext:recommend")
-            caddie_cursor_ext_recommend "$2"
-            ;;
-        "cursor:config:show")
-            caddie_cursor_config_show
-            ;;
-        "cursor:config:backup")
-            caddie_cursor_config_backup
-            ;;
-        "cursor:config:restore")
-            caddie_cursor_config_restore "$2"
-            ;;
-        "cursor:config:sync")
-            caddie_cursor_config_sync
-            ;;
-        "cursor:config:optimize")
-            caddie_cursor_config_optimize
-            ;;
-        # Help commands for modules
-        "python:help")
-            caddie_python_help
-            ;;
-        "rust:help")
-            caddie_rust_help
-            ;;
-        "ios:help")
-            caddie_ios_help
-            ;;
-        "cross:help")
-            caddie_cross_help
-            ;;
-        "cursor:help")
-            caddie_cursor_help
-            ;;
-        # General commands
         "help"|"--help"|"-h")
             caddie_help
             ;;
@@ -339,8 +112,21 @@ _caddie_completion() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
-    # Available caddie commands
-    opts="set:home get:home reset:home python:create python:activate python:deactivate python:list python:remove python:current python:install python:uninstall python:freeze python:sync python:upgrade python:outdated python:init python:test python:lint python:format python:help rust:new rust:build rust:run rust:test rust:check rust:clean rust:update rust:add rust:remove rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:help ios:setup ios:simulator ios:device ios:build ios:run ios:test ios:archive ios:clean ios:pod:install ios:pod:update ios:swift:version ios:xcode:version ios:help env:status env:setup env:reset env:backup template:list template:create build:all build:python build:rust build:ios deploy:docker deploy:local tools:install tools:setup tools:lint tools:format cross:help cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize cursor:help help version --help -h --version -v"
+    # Build available caddie commands dynamically from discovered commands
+    local opts="help version --help -h --version -v"
+    for cmd_info in "${CADDIE_COMMANDS[@]}"; do
+        # Parse the format: "module:command:function:description"
+        local module="${cmd_info%%:*}"
+        local temp_after_module="${cmd_info#*:}"
+        local temp_before_func="${temp_after_module%:*}"
+        local func_name="${temp_before_func##*:}"
+        local cmd_part="${temp_before_func%:*}"
+        local description="${cmd_info##*:}"
+        local cmd_pattern="${module}:${cmd_part}"
+        if [ -n "$cmd_pattern" ]; then
+            opts="$opts $cmd_pattern"
+        fi
+    done
     
     # If we're completing the first argument (command)
     if [ ${COMP_CWORD} -eq 1 ]; then
@@ -352,7 +138,7 @@ _caddie_completion() {
     
     # Handle completion for specific commands that take arguments
     case "${prev}" in
-        "set:home")
+        "core:set:home")
             # Complete with directory names
             COMPREPLY=( $(compgen -d -- "${cur}") )
             return 0
@@ -404,7 +190,7 @@ _caddie_completion() {
             COMPREPLY=( $(compgen -W "${components}" -- "${cur}") )
             return 0
             ;;
-        "template:create")
+        "cross:template:create")
             # Complete with available template types
             local templates="web cli api data ml lib wasm app framework extension mobile"
             COMPREPLY=( $(compgen -W "${templates}" -- "${cur}") )

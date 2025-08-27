@@ -455,6 +455,27 @@ caddie_python_format() {
     fi
 }
 
+# Function to register Python caddie commands
+python_caddie_register() {
+    echo "python:create:caddie_python_create:Create new virtual environment"
+    echo "python:activate:caddie_python_activate:Activate environment"
+    echo "python:deactivate:caddie_python_deactivate:Deactivate current environment"
+    echo "python:list:caddie_python_list:List all environments"
+    echo "python:remove:caddie_python_remove:Remove environment"
+    echo "python:current:caddie_python_current:Show current environment"
+    echo "python:install:caddie_python_install:Install package in current env"
+    echo "python:uninstall:caddie_python_uninstall:Uninstall package"
+    echo "python:freeze:caddie_python_freeze:Generate requirements.txt"
+    echo "python:sync:caddie_python_sync:Install from requirements.txt"
+    echo "python:upgrade:caddie_python_upgrade:Upgrade specific package"
+    echo "python:outdated:caddie_python_outdated:Show outdated packages"
+    echo "python:init:caddie_python_init:Initialize Python project structure"
+    echo "python:test:caddie_python_test:Run tests"
+    echo "python:lint:caddie_python_lint:Run linting"
+    echo "python:format:caddie_python_format:Format code"
+    echo "python:help:caddie_python_help:Show detailed Python help"
+}
+
 # Function to display Python module help
 caddie_python_help() {
     echo "Python Environment Management"
@@ -493,6 +514,7 @@ caddie_python_help() {
 }
 
 # Export Python functions
+export -f python_caddie_register
 export -f caddie_python_create
 export -f caddie_python_activate
 export -f caddie_python_deactivate
