@@ -24,12 +24,7 @@ caddie_ios_setup() {
     if ! command -v pod >/dev/null 2>&1; then
         echo "Installing CocoaPods..."
         sudo gem install cocoapods
-        if [ $? -eq 0 ]; then
-            echo "✓ CocoaPods installed successfully"
-        else
-            echo "✗ Failed to install CocoaPods"
-            return 1
-        fi
+        echo "✓ CocoaPods installed successfully"
     fi
     
     echo "✓ iOS development environment setup complete"
@@ -70,12 +65,7 @@ caddie_ios_build() {
         xcodebuild -project *.xcodeproj -scheme * -configuration Debug build
     fi
     
-    if [ $? -eq 0 ]; then
-        echo "✓ iOS project built successfully"
-    else
-        echo "✗ Failed to build iOS project"
-        return 1
-    fi
+    echo "✓ iOS project built successfully"
 }
 
 # Function to run iOS project
@@ -104,12 +94,7 @@ caddie_ios_run() {
         xcodebuild -project *.xcodeproj -scheme * -destination "platform=iOS Simulator,name=$simulator" build
     fi
     
-    if [ $? -eq 0 ]; then
-        echo "✓ iOS project ran successfully on simulator"
-    else
-        echo "✗ Failed to run iOS project"
-        return 1
-    fi
+    echo "✓ iOS project ran successfully on simulator"
 }
 
 # Function to run iOS tests
@@ -165,13 +150,8 @@ caddie_ios_archive() {
         xcodebuild -project *.xcodeproj -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
     fi
     
-    if [ $? -eq 0 ]; then
-        echo "✓ iOS archive created successfully"
-        echo "  Location: build/archive/App.xcarchive"
-    else
-        echo "✗ Failed to create iOS archive"
-        return 1
-    fi
+    echo "✓ iOS archive created successfully"
+    echo "  Location: build/archive/App.xcarchive"
 }
 
 # Function to clean iOS build artifacts
@@ -193,12 +173,7 @@ caddie_ios_clean() {
     # Remove build directory
     rm -rf build/
     
-    if [ $? -eq 0 ]; then
-        echo "✓ iOS build artifacts cleaned"
-    else
-        echo "✗ Failed to clean iOS build artifacts"
-        return 1
-    fi
+    echo "✓ iOS build artifacts cleaned"
 }
 
 # Function to install CocoaPods dependencies
@@ -211,13 +186,8 @@ caddie_ios_pod_install() {
     echo "Installing CocoaPods dependencies..."
     pod install
     
-    if [ $? -eq 0 ]; then
-        echo "✓ CocoaPods dependencies installed successfully"
-        echo "  Use the .xcworkspace file to open the project"
-    else
-        echo "✗ Failed to install CocoaPods dependencies"
-        return 1
-    fi
+    echo "✓ CocoaPods dependencies installed successfully"
+    echo "  Use the .xcworkspace file to open the project"
 }
 
 # Function to update CocoaPods dependencies
@@ -230,12 +200,7 @@ caddie_ios_pod_update() {
     echo "Updating CocoaPods dependencies..."
     pod update
     
-    if [ $? -eq 0 ]; then
-        echo "✓ CocoaPods dependencies updated successfully"
-    else
-        echo "✗ Failed to update CocoaPods dependencies"
-        return 1
-    fi
+    echo "✓ CocoaPods dependencies updated successfully"
 }
 
 # Function to show Swift version

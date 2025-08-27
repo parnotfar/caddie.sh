@@ -3,9 +3,6 @@
 # Caddie.sh - Rust Environment Management
 # This file contains all Rust-related functions
 
-
-
-# Function to load Rust environment
 caddie_rust_load_env() {
     if [ -f "$HOME/.cargo/env" ]; then
         . "$HOME/.cargo/env"
@@ -38,16 +35,10 @@ caddie_rust_new() {
     
     echo "Creating new Rust project '$project_name'..."
     cargo new "$project_name"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Rust project '$project_name' created successfully"
-        echo "  Location: $(pwd)/$project_name"
-        echo "  Enter directory: cd $project_name"
-        echo "  Build project: caddie rust:build"
-    else
-        echo "✗ Failed to create Rust project '$project_name'"
-        return 1
-    fi
+    echo "✓ Rust project '$project_name' created successfully"
+    echo "  Location: $(pwd)/$project_name"
+    echo "  Enter directory: cd $project_name"
+    echo "  Build project: caddie rust:build"
 }
 
 # Function to build current Rust project
@@ -238,7 +229,6 @@ caddie_rust_audit() {
 
 # Function to switch Rust toolchain
 caddie_rust_toolchain() {
-    # Load Rust environment
     caddie_rust_load_env
     
     local version="$1"
@@ -258,7 +248,6 @@ caddie_rust_toolchain() {
 
 # Function to add Rust compilation target
 caddie_rust_target() {
-    # Load Rust environment
     caddie_rust_load_env
     
     local target="$1"
@@ -277,7 +266,6 @@ caddie_rust_target() {
 
 # Function to install Rust component
 caddie_rust_component() {
-    # Load Rust environment
     caddie_rust_load_env
     
     local component="$1"

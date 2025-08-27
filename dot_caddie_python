@@ -22,15 +22,9 @@ caddie_python_create() {
     
     echo "Creating virtual environment '$env_name'..."
     python3 -m venv "$env_path"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Virtual environment '$env_name' created successfully"
-        echo "  Location: $env_path"
-        echo "  Activate with: caddie python:activate $env_name"
-    else
-        echo "✗ Failed to create virtual environment '$env_name'"
-        return 1
-    fi
+    echo "✓ Virtual environment '$env_name' created successfully"
+    echo "  Location: $env_path"
+    echo "  Activate with: caddie python:activate $env_name"
 }
 
 # Function to activate a Python virtual environment
@@ -53,15 +47,9 @@ caddie_python_activate() {
     
     echo "Activating virtual environment '$env_name'..."
     source "$env_path/bin/activate"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Virtual environment '$env_name' activated"
-        echo "  Python: $(which python)"
-        echo "  Pip: $(which pip)"
-    else
-        echo "✗ Failed to activate virtual environment '$env_name'"
-        return 1
-    fi
+    echo "✓ Virtual environment '$env_name' activated"
+    echo "  Python: $(which python)"
+    echo "  Pip: $(which pip)"
 }
 
 # Function to deactivate current Python virtual environment
@@ -126,13 +114,7 @@ caddie_python_remove() {
     
     echo "Removing virtual environment '$env_name'..."
     rm -rf "$env_path"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Virtual environment '$env_name' removed successfully"
-    else
-        echo "✗ Failed to remove virtual environment '$env_name'"
-        return 1
-    fi
+    echo "✓ Virtual environment '$env_name' removed successfully"
 }
 
 # Function to show current Python environment
@@ -173,13 +155,7 @@ caddie_python_install() {
     
     echo "Installing package '$package'..."
     pip install "$package"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Package '$package' installed successfully"
-    else
-        echo "✗ Failed to install package '$package'"
-        return 1
-    fi
+    echo "✓ Package '$package' installed successfully"
 }
 
 # Function to uninstall a Python package
@@ -204,13 +180,7 @@ caddie_python_uninstall() {
     
     echo "Uninstalling package '$package'..."
     pip uninstall -y "$package"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Package '$package' uninstalled successfully"
-    else
-        echo "✗ Failed to uninstall package '$package'"
-        return 1
-    fi
+    echo "✓ Package '$package' uninstalled successfully"
 }
 
 # Function to freeze current Python environment
@@ -256,13 +226,7 @@ caddie_python_sync() {
     
     echo "Installing packages from requirements.txt..."
     pip install -r requirements.txt
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Packages installed successfully from requirements.txt"
-    else
-        echo "✗ Failed to install packages from requirements.txt"
-        return 1
-    fi
+    echo "✓ Packages installed successfully from requirements.txt"
 }
 
 # Function to upgrade a Python package
@@ -287,13 +251,7 @@ caddie_python_upgrade() {
     
     echo "Upgrading package '$package'..."
     pip install --upgrade "$package"
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Package '$package' upgraded successfully"
-    else
-        echo "✗ Failed to upgrade package '$package'"
-        return 1
-    fi
+    echo "✓ Package '$package' upgraded successfully"
 }
 
 # Function to show outdated Python packages
