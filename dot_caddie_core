@@ -13,8 +13,6 @@ core_caddie_register() {
     echo "core:get:home:caddie_get_home:Get current caddie home"
     echo "core:reset:home:caddie_reset_home:Reset caddie home directory"
     echo "core:help:caddie_core_help:Show core caddie help"
-    
-    
 }
 
 # Function to display caddie help
@@ -28,8 +26,8 @@ caddie_help() {
     echo "  home                     Home directory management"
     
     # Dynamically show loaded modules
-    if [ -n "$CADDIE_MODULE_HELP" ]; then
-        echo -e "$CADDIE_MODULE_HELP"
+    if caddie_module_help_loaded; then
+        caddie_module_help_get
     else
         echo "  No additional modules loaded"
     fi

@@ -91,6 +91,7 @@ install-dot: backup-existing ## Install dot files to home directory
 	@echo "$(YELLOW)  →$(NC) Installing dot_caddie_version as ~/.caddie_version"
 	@cp dot_caddie_version "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_version" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_version" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing modular caddie files..."
+	@cp dot_caddie_modules "$(HOME_DIR)/.caddie_modules" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules" && exit 1)
 	@cp dot_caddie_core "$(HOME_DIR)/.caddie_core" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_core" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_core" && exit 1)
 	@cp dot_caddie_python "$(HOME_DIR)/.caddie_python" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_python" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_python" && exit 1)
 	@cp dot_caddie_rust "$(HOME_DIR)/.caddie_rust" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_rust" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_rust" && exit 1)
@@ -220,6 +221,7 @@ uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or R
 	@echo "$(YELLOW)  →$(NC) Removing ~/.caddie_version"
 	@if [ -f "$(HOME_DIR)/.caddie_version" ]; then rm "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_version" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_version"; else echo "$(YELLOW)    →$(NC) ~/.caddie_version not found (already removed)"; fi
 	@echo "$(YELLOW)  →$(NC) Removing modular caddie files..."
+	@if [ -f "$(HOME_DIR)/.caddie_modules" ]; then rm "$(HOME_DIR)/.caddie_modules" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_modules" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_modules"; else echo "$(YELLOW)    →$(NC) ~/.caddie_modules not found (already removed)"; fi
 	@if [ -f "$(HOME_DIR)/.caddie_core" ]; then rm "$(HOME_DIR)/.caddie_core" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_core" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_core"; else echo "$(YELLOW)    →$(NC) ~/.caddie_core not found (already removed)"; fi
 	@if [ -f "$(HOME_DIR)/.caddie_python" ]; then rm "$(HOME_DIR)/.caddie_python" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_python" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_python"; else echo "$(YELLOW)    →$(NC) ~/.caddie_python not found (already removed)"; fi
 	@if [ -f "$(HOME_DIR)/.caddie_rust" ]; then rm "$(HOME_DIR)/.caddie_rust" && echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_rust" || echo "$(RED)    ✗$(NC) Failed to remove ~/.caddie_rust"; else echo "$(YELLOW)    →$(NC) ~/.caddie_rust not found (already removed)"; fi
@@ -282,6 +284,11 @@ status: ## Check installation status
 		echo "$(RED)  ✗$(NC) ~/.caddie_version"; \
 	fi
 	@echo "$(CYAN)Caddie Modules:$(NC)"
+	@if [ -f "$(HOME_DIR)/.caddie_modules" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_modules"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_modules"; \
+	fi
 	@if [ -f "$(HOME_DIR)/.caddie_core" ]; then \
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_core"; \
 	else \

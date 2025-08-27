@@ -3,6 +3,9 @@
 # Caddie.sh - Main Entry Point
 # This file sources all the modular components and provides the main interface
 
+# Source the module management system first
+source "$HOME/.caddie_modules"
+
 # Define caddie modules and their descriptions.
 # Each entry should be in the format "key:Description", where:
 #   - key:     The module name (used for sourcing ~/.caddie_<key>)
@@ -18,19 +21,18 @@ CADDIE_MODULES=(
     "cursor:Cursor IDE integration"
 )
 
-CADDIE_MODULE_HELP=""
+# Load all modules and register them
 for moddesc in "${CADDIE_MODULES[@]}"; do
     module="${moddesc%%:*}"
     desc="${moddesc#*:}"
     file="$HOME/.caddie_${module}"
     if [ -f "$file" ]; then
         source "$file"
-        CADDIE_MODULE_HELP="${CADDIE_MODULE_HELP}  ${module} -${desc}\n"
+        caddie_module_help_register "$module" "$desc"
     else
         echo "Warning: ${desc} module not found at $file"
     fi
 done
-# Note: CADDIE_MODULE_HELP is now used in the help function to dynamically show loaded modules
 
 # Discover all available commands from all modules
 CADDIE_COMMANDS=()
