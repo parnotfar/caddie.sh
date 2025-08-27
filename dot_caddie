@@ -53,42 +53,15 @@ caddie() {
     local command="$1"
     local args=("$@")
     
-
-    
     # Try to route to a module using dynamic command discovery
     for cmd_info in "${CADDIE_COMMANDS[@]}"; do
-        # Parse the format: "module:command:function:description" or "command:function:description"
-        local first_colon="${cmd_info%%:*}"
-        local after_first="${cmd_info#*:}"
-        local second_colon="${after_first%%:*}"
-        local after_second="${after_first#*:}"
-        local third_colon="${after_second%%:*}"
+        parse_cmd_registration "$cmd_info"
         
-        # Check if this is a module:command:function:description format
-        if [[ "$after_second" == *:* ]]; then
-            # New format: "module:command:function:description"
-            local module="$first_colon"
-            # The command part is everything between module and function
-            local temp_after_module="${cmd_info#*:}"
-            local temp_before_func="${temp_after_module%:*}"
-            local func_name="${temp_before_func##*:}"
-            local cmd_part="${temp_before_func%:*}"
-            local description="${after_second#*:}"
-            local cmd_pattern="${module}:${cmd_part}"
-        else
-            # Old format: "command:function:description"
-            local module=""
-            local cmd_part="$first_colon"
-            local func_name="$second_colon"
-            local description="$after_second"
-            local cmd_pattern="$cmd_part"
-        fi
-        
-        if [ "$command" = "$cmd_pattern" ]; then
+        if [ "$command" = "$PARSED_CMD_PATTERN" ]; then
             # Call the module's function with remaining arguments
             # Remove the first argument (the command) and pass the rest
             local remaining_args=("${args[@]:1}")
-            eval "${func_name} \"\${remaining_args[@]}\""
+            eval "${PARSED_FUNC_NAME} \"\${remaining_args[@]}\""
             return 0
         fi
     done
@@ -113,50 +86,60 @@ caddie() {
     esac
 }
 
+# Shared function to parse command registration format
+# Input: "module:command:function:description" or "command:function:description"
+# Output: module, cmd_part, func_name, description, cmd_pattern
+parse_cmd_registration() {
+    local cmd_info="$1"
+    
+            # Standard format: "module:command:function:description" (4 colons)
+        # The command part can contain colons, so we need to extract it correctly
+        local module=$(echo "$cmd_info" | cut -d: -f1)
+        # Extract everything between module and function (which is the last colon)
+        local temp_after_module="${cmd_info#*:}"
+        local temp_before_func="${temp_after_module%:*}"
+        local func_name="${temp_before_func##*:}"
+        local cmd_part="${temp_before_func%:*}"
+        local description="${cmd_info##*:}"
+        local cmd_pattern="${module}:${cmd_part}"
+    
+    # Return values via global variables (bash 3.2 compatible)
+    PARSED_MODULE="$module"
+    PARSED_CMD_PART="$cmd_part"
+    PARSED_FUNC_NAME="$func_name"
+    PARSED_DESCRIPTION="$description"
+    PARSED_CMD_PATTERN="$cmd_pattern"
+}
+
 # Tab completion function for caddie command
 _caddie_completion() {
     local cur prev opts
     COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    # Safely access COMP_WORDS array elements
+    if [ -n "$COMP_CWORD" ] && [ ${COMP_CWORD} -ge 0 ] && [ ${COMP_CWORD} -lt ${#COMP_WORDS[@]} ]; then
+        cur="${COMP_WORDS[COMP_CWORD]}"
+    else
+        cur=""
+    fi
+    
+    if [ -n "$COMP_CWORD" ] && [ ${COMP_CWORD} -ge 1 ] && [ ${COMP_CWORD} -lt ${#COMP_WORDS[@]} ]; then
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+    else
+        prev=""
+    fi
     
     # Build available caddie commands dynamically from discovered commands
     local opts="help version --help -h --version -v"
     for cmd_info in "${CADDIE_COMMANDS[@]}"; do
-        # Parse the format: "module:command:function:description" or "command:function:description"
-        local first_colon="${cmd_info%%:*}"
-        local after_first="${cmd_info#*:}"
-        local second_colon="${after_first%%:*}"
-        local after_second="${after_first#*:}"
-        local third_colon="${after_second%%:*}"
-        
-        # Check if this is a module:command:function:description format
-        if [[ "$after_second" == *:* ]]; then
-            # New format: "module:command:function:description"
-            local module="$first_colon"
-            # The command part is everything between module and function
-            local temp_after_module="${cmd_info#*:}"
-            local temp_before_func="${temp_after_module%:*}"
-            local func_name="${temp_before_func##*:}"
-            local cmd_part="${temp_before_func%:*}"
-            local description="${after_second#*:}"
-            local cmd_pattern="${module}:${cmd_part}"
-        else
-            # Old format: "command:function:description"
-            local module=""
-            local cmd_part="$first_colon"
-            local func_name="$second_colon"
-            local description="$after_second"
-            local cmd_pattern="$cmd_part"
-        fi
-        
-        if [ -n "$cmd_pattern" ]; then
-            opts="$opts $cmd_pattern"
+        parse_cmd_registration "$cmd_info"
+        if [ -n "$PARSED_CMD_PATTERN" ]; then
+            opts="$opts $PARSED_CMD_PATTERN"
         fi
     done
     
     # If we're completing the first argument (command)
-    if [ ${COMP_CWORD} -eq 1 ]; then
+    if [ -n "$COMP_CWORD" ] && [ ${COMP_CWORD} -eq 1 ]; then
         # Use compgen to generate completions from our options
         local IFS=$'\n'
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -280,7 +263,11 @@ _caddie_completion() {
     esac
     
     # Handle multi-argument commands
-    case "${COMP_WORDS[1]}" in
+    local first_arg=""
+    if [ ${#COMP_WORDS[@]} -ge 2 ]; then
+        first_arg="${COMP_WORDS[1]}"
+    fi
+    case "${first_arg}" in
         "cursor:new")
             # First argument is project type, second is project name
             if [ ${COMP_CWORD} -eq 2 ]; then

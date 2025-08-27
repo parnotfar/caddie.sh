@@ -14,10 +14,7 @@ core_caddie_register() {
     echo "core:reset:home:caddie_reset_home:Reset caddie home directory"
     echo "core:help:caddie_core_help:Show core caddie help"
     
-    # Backward compatibility - old format without module prefix
-    echo "set:home:caddie_set_home:Set caddie home directory"
-    echo "get:home:caddie_get_home:Get current caddie home"
-    echo "reset:home:caddie_reset_home:Reset caddie home directory"
+    
 }
 
 # Function to display caddie help
@@ -57,9 +54,8 @@ caddie_help() {
     fi
     
     echo ""
-    echo "Quick Examples:"
-    echo "  caddie set:home ~/projects/myproject    # Old format (backward compatible)"
-    echo "  caddie core:set:home ~/projects/myproject  # New format (modular)"
+            echo "Quick Examples:"
+        echo "  caddie core:set:home ~/projects/myproject  # Set caddie home directory"
     if [ -n "$CADDIE_MODULE_HELP" ]; then
         for moddesc in "${CADDIE_MODULES[@]}"; do
             module="${moddesc%%:*}"
