@@ -3,23 +3,6 @@
 # Caddie.sh - Git Prompt and Custom File Management
 # This file handles git prompt setup and custom file sourcing
 
-# Main registration function for git module
-git_register() {
-    git_help_register
-    git_commands_register
-}
-
-# Register help information
-git_help_register() {
-    caddie_help_append "git" "Git prompt and custom file management"
-}
-
-# Register commands
-git_commands_register() {
-    caddie_commands_append "git:setup|caddie_git_setup_prompt|Setup Git prompt and custom files"
-    caddie_commands_append "git:source|caddie_source_custom_files|Source custom bash files"
-}
-
 # Function to setup bash-git-prompt
 caddie_git_setup_prompt() {
     # Due to catalina switching to zsh
@@ -40,14 +23,12 @@ caddie_git_setup_prompt() {
 caddie_source_custom_files() {
     # Source custom bash profile additions
     if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
-        # shellcheck disable=SC1091
         source "$HOME/.bash_profile-caddie-custom"
     fi
     
     # Source custom bashrc additions
-    if [ -f "$HOME/.bashrc-custom" ]; then
-        # shellcheck disable=SC1091
-        source "$HOME/.bashrc-custom"
+    if [ -f "$HOME/.bashrc-caddie-custom" ]; then
+        source "$HOME/.bashrc-caddie-custom"
     fi
 }
 

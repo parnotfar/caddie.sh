@@ -40,7 +40,6 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
     find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null | while IFS= read -r -d '' module_file; do
         if [ -f "$module_file" ]; then
             # Extract module name from filename
-            local module
             module=$(caddie_extract_module_name "$module_file")
             
             echo "Loading module: $module"
@@ -91,6 +90,17 @@ function caddie_help() {
     echo "Detailed Help:"
     echo "  Use 'caddie <module>:help' for detailed information on any module"
     echo
+}
+
+# Function to show caddie version
+function caddie_version() {
+    if [ -f "$HOME/.caddie_version" ]; then
+        # shellcheck disable=SC1091
+        source "$HOME/.caddie_version"
+        echo "Caddie.sh version: $CADDIE_SH_VERSION"
+    else
+        echo "Caddie.sh version: unknown"
+    fi
 }
 
 # Main caddie function - directly executes commands
@@ -374,6 +384,7 @@ function _caddie_completion() {
 # Export the caddie function and helper functions so they're available in subshells
 export -f caddie
 export -f caddie_help
+export -f caddie_version
 export -f caddie_extract_module_name
 
 # Set up tab completion if available (bash 4.0+)

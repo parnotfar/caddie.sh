@@ -295,7 +295,7 @@ caddie_ios_help() {
 }
 
 # Export iOS functions
-export -f ios_caddie_register
+export -f ios_register
 export -f caddie_ios_setup
 export -f caddie_ios_simulator
 export -f caddie_ios_device

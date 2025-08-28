@@ -352,7 +352,7 @@ caddie_rust_help() {
 
 # Export Rust functions
 export -f caddie_rust_load_env
-export -f rust_caddie_register
+export -f rust_register
 export -f caddie_rust_new
 export -f caddie_rust_build
 export -f caddie_rust_run

@@ -611,7 +611,7 @@ caddie_ruby_version() {
 }
 
 # Export Ruby functions
-export -f ruby_caddie_register
+export -f ruby_register
 export -f caddie_ruby_setup
 export -f caddie_ruby_install
 export -f caddie_ruby_use

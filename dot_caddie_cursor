@@ -853,7 +853,7 @@ caddie_cursor_help() {
 }
 
 # Export Cursor functions
-export -f cursor_caddie_register
+export -f cursor_register
 export -f caddie_cursor_detect
 export -f caddie_cursor_verify
 export -f caddie_cursor_open

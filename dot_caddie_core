@@ -83,17 +83,6 @@ caddie_reset_home() {
     fi
 }
 
-# Function to show caddie version
-caddie_version() {
-    if [ -f "$HOME/.caddie_version" ]; then
-        # shellcheck disable=SC1091
-        source "$HOME/.caddie_version"
-        caddie_version_show
-    else
-        echo "Caddie.sh version: unknown"
-    fi
-}
-
 # Function to show core caddie help
 caddie_core_help() {
     echo "Core Caddie Functions"
@@ -116,7 +105,6 @@ caddie_core_help() {
 
 # Auto-load caddie home on shell startup
 if [ -f "$CADDIE_HOME_FILE" ]; then
-    local caddie_home
     caddie_home=$(cat "$CADDIE_HOME_FILE")
     export CADDIE_HOME="$caddie_home"
 fi
@@ -124,9 +112,8 @@ fi
 # Tab completion function removed - now handled by dot_caddie
 
 # Export core functions
-export -f core_caddie_register
+export -f core_register
 export -f caddie_set_home
 export -f caddie_get_home
 export -f caddie_reset_home
-export -f caddie_version
 export -f caddie_core_help

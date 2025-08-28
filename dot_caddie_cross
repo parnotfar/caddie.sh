@@ -938,7 +938,7 @@ caddie_cross_help() {
 }
 
 # Export cross-language functions
-export -f cross_caddie_register
+export -f cross_register
 export -f caddie_env_status
 export -f caddie_env_setup
 export -f caddie_env_reset

@@ -485,7 +485,7 @@ caddie_python_help() {
 }
 
 # Export Python functions
-export -f python_caddie_register
+export -f python_register
 export -f caddie_python_create
 export -f caddie_python_activate
 export -f caddie_python_deactivate

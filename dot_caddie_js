@@ -623,7 +623,7 @@ caddie_js_version() {
 }
 
 # Export JavaScript functions
-export -f js_caddie_register
+export -f js_register
 export -f caddie_js_setup
 export -f caddie_js_install
 export -f caddie_js_use
