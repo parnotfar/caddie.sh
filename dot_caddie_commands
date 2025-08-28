@@ -19,6 +19,11 @@ caddie_commands_get() {
     echo "${CADDIE_COMMANDS[@]}"
 }
 
+# Get the count of commands in the array
+caddie_commands_count() {
+    echo "${#CADDIE_COMMANDS[@]}"
+}
+
 # Reset the commands array to empty
 caddie_commands_reset() {
     CADDIE_COMMANDS=()
@@ -27,4 +32,5 @@ caddie_commands_reset() {
 # Export functions for external use
 export -f caddie_commands_append
 export -f caddie_commands_get
+export -f caddie_commands_count
 export -f caddie_commands_reset

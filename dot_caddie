@@ -36,24 +36,55 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
     caddie_commands_reset
     caddie_help_reset
     
-    # Use find with while read for better robustness (handles spaces in filenames)
-    find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null | while IFS= read -r -d '' module_file; do
+    echo "=== DEBUG: Starting module loading process ==="
+    echo "CADDIE_MODULES_DIR: $CADDIE_MODULES_DIR"
+    
+    # Use a different approach to avoid subshell issues with while read
+    # Store module files in an array first, then iterate
+    module_files=()
+    while IFS= read -r -d '' file; do
+        module_files+=("$file")
+    done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
+    
+    # Now iterate over the array (no subshell)
+    for module_file in "${module_files[@]}"; do
         if [ -f "$module_file" ]; then
             # Extract module name from filename
             module=$(caddie_extract_module_name "$module_file")
             
             echo "Loading module: $module"
+            echo "  Module file: $module_file"
             # shellcheck disable=SC1090
             source "$module_file"
             
             # Call the module's register function
             if command -v "${module}_register" >/dev/null 2>&1; then
                 echo "  ✓ Registered $module module"
+                echo "  DEBUG: Calling ${module}_register function"
                 "${module}_register"
+                echo "  DEBUG: After ${module}_register, commands count: $(caddie_commands_count)"
+                echo "  DEBUG: After ${module}_register, help count: $(caddie_help_count)"
+                echo "  DEBUG: Current commands: [$(caddie_commands_get)]"
+                echo "  DEBUG: Current help: [$(caddie_help_get)]"
             else
                 echo "  ⚠ Module $module missing register function"
+                echo "  DEBUG: Available functions: $(declare -F | grep "${module}_" || echo "None found")"
             fi
         fi
+    done
+    
+    echo "=== DEBUG: Module loading complete ==="
+    echo "Final commands count: $(caddie_commands_count)"
+    echo "Final help count: $(caddie_help_count)"
+    echo "Final commands array contents: [$(caddie_commands_get)]"
+    echo "Final help array contents: [$(caddie_help_get)]"
+    echo "All registered commands:"
+    caddie_commands_get | while IFS= read -r cmd; do
+        echo "  $cmd"
+    done
+    echo "All registered help:"
+    caddie_help_get | while IFS= read -r help; do
+        echo "  $help"
     done
 else
     echo "Warning: ~/.caddie_modules directory not found"
@@ -63,6 +94,10 @@ fi
 
 # Function to display caddie help
 function caddie_help() {
+    echo "=== DEBUG: caddie_help function called ==="
+    echo "DEBUG: Current commands count: $(caddie_commands_count)"
+    echo "DEBUG: Current help count: $(caddie_help_count)"
+    
     echo "Caddie.sh - Development Environment Manager"
     echo "=========================================="
     echo ""
@@ -72,15 +107,10 @@ function caddie_help() {
     echo "  home                     Home directory management"
     
     # Display the loaded modules help information
-    local loaded_modules
-    loaded_modules=$(caddie_help_get)
-
-    if [ -n "$loaded_modules" ]; then
-        echo "Available modules:"
-        for help_info in $loaded_modules; do
-            echo "$help_info" | sed 's/^/  /;s/|/ - /'
-        done
-    fi
+    local loaded_modules=$(caddie_help_get)
+    
+    echo "Available modules:"
+    IFS=$'\n'; for f in $(caddie_help_get); do echo "  $f" | sed 's/|/ - /'; done
     
     echo
     echo "General Commands:"
@@ -108,6 +138,12 @@ function caddie() {
     local command="$1"
     shift 2>/dev/null || true  # Remove first argument, handle case where no args
     
+    echo "=== DEBUG: caddie function called ==="
+    echo "DEBUG: command='$command'"
+    echo "DEBUG: remaining args='$*'"
+    echo "DEBUG: Current commands count: $(caddie_commands_count)"
+    echo "DEBUG: Current help count: $(caddie_help_count)"
+    
     # Handle built-in commands first
     case "$command" in
         "help"|"--help"|"-h")
@@ -134,14 +170,22 @@ function caddie() {
         cmd_pattern=$(echo "$cmd_info" | cut -d'|' -f1)
         func_name=$(echo "$cmd_info" | cut -d'|' -f2)
         
+        echo "DEBUG: Checking cmd_info='$cmd_info'"
+        echo "DEBUG:  - cmd_pattern='$cmd_pattern'"
+        echo "DEBUG:  - func_name='$func_name'"
+        echo "DEBUG:  - comparing with command='$command'"
+        
         if [ "$cmd_pattern" = "$command" ]; then
+            echo "DEBUG: Found matching command!"
             # Found the command, execute it with remaining arguments
             if [ -n "$func_name" ] && command -v "$func_name" >/dev/null 2>&1; then
+                echo "DEBUG: Executing function '$func_name' with args: $*"
                 eval "$func_name \"\$@\""
                 found=true
                 break
             else
                 echo "Error: Function '$func_name' not found for command '$command'"
+                echo "DEBUG: command -v '$func_name' returned: $(command -v "$func_name" 2>&1 || echo "not found")"
                 return 1
             fi
         fi
@@ -150,6 +194,7 @@ function caddie() {
     if [ "$found" = false ]; then
         echo "Error: Unknown command '$command'"
         echo "Use 'caddie help' to see available commands"
+        echo "DEBUG: Command not found in registered commands"
         return 1
     fi
 }

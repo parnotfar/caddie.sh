@@ -17,7 +17,12 @@ caddie_help_append() {
 
 # Get all help information from the array
 caddie_help_get() {
-    echo "${CADDIE_MODULE_HELP[@]}"
+    printf '%s\n' "${CADDIE_MODULE_HELP[@]}"
+}
+
+# Get the count of help entries in the array
+caddie_help_count() {
+    echo "${#CADDIE_MODULE_HELP[@]}"
 }
 
 # Reset the help array to empty
@@ -28,4 +33,5 @@ caddie_help_reset() {
 # Export functions for external use
 export -f caddie_help_append
 export -f caddie_help_get
+export -f caddie_help_count
 export -f caddie_help_reset
