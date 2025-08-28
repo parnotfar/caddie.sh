@@ -1,0 +1,285 @@
+# Installation Guide
+
+This guide covers all the ways to install and set up Caddie.sh on your macOS system.
+
+## Prerequisites
+
+### System Requirements
+
+- **Operating System**: macOS 10.15 (Catalina) or later
+- **Architecture**: Intel (x86_64) or Apple Silicon (ARM64)
+- **Shell**: Bash 4.0 or later (latest version recommended)
+- **Package Manager**: Homebrew (will be installed automatically if missing)
+
+### Pre-Installation Checklist
+
+- [ ] Ensure you have administrator privileges
+- [ ] Check that you're using Bash (not Zsh as default)
+- [ ] Verify you have at least 100MB of free disk space
+- [ ] Ensure you have a stable internet connection
+
+## Installation Methods
+
+### Method 1: Quick Install (Recommended)
+
+The fastest way to get started with Caddie.sh:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/caddie.sh.git
+cd caddie.sh
+
+# Run the full installer
+make install
+```
+
+This will:
+- Install all required dependencies (Homebrew, Python, Rust)
+- Set up your shell environment
+- Install all Caddie.sh modules
+- Configure your system for development
+
+### Method 2: Minimal Install
+
+If you only want the core Caddie.sh functionality without development tools:
+
+```bash
+# Clone and install dot files only
+git clone https://github.com/yourusername/caddie.sh.git
+cd caddie.sh
+make install-dot
+```
+
+### Method 3: Development Tools Only
+
+If you already have Caddie.sh installed but want to add development tools:
+
+```bash
+cd caddie.sh
+make setup-dev
+```
+
+## Installation Process
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/caddie.sh.git
+cd caddie.sh
+```
+
+### Step 2: Run the Installer
+
+```bash
+make install
+```
+
+The installer will:
+
+1. **Check Prerequisites**: Verify your system meets requirements
+2. **Backup Existing Files**: Create backups of your current shell configuration
+3. **Install Dependencies**: Set up Homebrew, Python, and Rust
+4. **Install Caddie.sh**: Copy all necessary files to your home directory
+5. **Configure Shell**: Update your bash profile and bashrc
+6. **Verify Installation**: Test that everything is working correctly
+
+### Step 3: Activate the Environment
+
+After installation, you need to activate the new environment:
+
+```bash
+# Option 1: Restart your terminal
+# Option 2: Source the profile manually
+source ~/.bash_profile
+```
+
+### Step 4: Verify Installation
+
+```bash
+# Check Caddie.sh version
+caddie --version
+
+# Get help
+caddie help
+
+# Test a module
+caddie python:create test-env
+```
+
+## Post-Installation Setup
+
+### First-Time Configuration
+
+1. **Set Project Home Directory** (Optional):
+   ```bash
+   caddie core:set:home ~/projects
+   ```
+
+2. **Enable Debug Mode** (Optional):
+   ```bash
+   caddie core:debug on
+   ```
+
+3. **Customize Shell Prompt** (Optional):
+   ```bash
+   # Edit the prompt file
+   nano ~/.caddie_prompt.sh
+   ```
+
+### Environment Variables
+
+The installer sets up these environment variables:
+
+- `CADDIE_HOME`: Your project directory (if set)
+- `CADDIE_DEBUG`: Debug mode flag (0 or 1)
+- `CADDIE_MODULES_DIR`: Modules directory location
+
+## Troubleshooting
+
+### Common Issues
+
+#### Issue: "Command not found: caddie"
+
+**Solution**: The shell profile hasn't been sourced. Run:
+```bash
+source ~/.bash_profile
+```
+
+#### Issue: "Permission denied" during installation
+
+**Solution**: Ensure you have write permissions to your home directory:
+```bash
+ls -la ~/
+```
+
+#### Issue: Homebrew installation fails
+
+**Solution**: Install Homebrew manually first:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+#### Issue: Python/Rust installation fails
+
+**Solution**: Check your internet connection and try again:
+```bash
+make setup-dev
+```
+
+### Debug Mode
+
+If you're experiencing issues, enable debug mode:
+
+```bash
+caddie core:debug on
+# Then run the failing command to see detailed output
+```
+
+### Logs and Diagnostics
+
+Check these files for troubleshooting information:
+
+- `~/.caddie_debug`: Debug configuration
+- `~/.bash_profile.caddie-backup`: Your original bash profile
+- `~/.bashrc.caddie-backup`: Your original bashrc
+
+## Uninstallation
+
+### Complete Removal
+
+To completely remove Caddie.sh:
+
+```bash
+cd caddie.sh
+make uninstall
+```
+
+This will:
+- Remove all Caddie.sh files
+- Restore your original shell configuration
+- Keep your development tools (Homebrew, Python, Rust)
+
+### Partial Removal
+
+To remove specific components:
+
+```bash
+# Remove only Caddie.sh (keep dev tools)
+make install-dot
+# Then manually remove ~/.caddie* files
+
+# Remove only development tools
+# Manually uninstall Homebrew, Python, Rust
+```
+
+## Updating
+
+### Update Caddie.sh
+
+```bash
+cd caddie.sh
+git pull origin main
+make install-dot
+```
+
+### Update Development Tools
+
+```bash
+cd caddie.sh
+make setup-dev
+```
+
+## Advanced Configuration
+
+### Custom Installation Directory
+
+To install Caddie.sh to a custom location:
+
+```bash
+# Set custom home directory
+export HOME_DIR=/custom/path
+make install
+```
+
+### Module Selection
+
+To install only specific modules:
+
+```bash
+# Install core and Python only
+make install-dot
+# Then manually copy desired module files
+```
+
+### Network Configuration
+
+If you're behind a corporate firewall:
+
+```bash
+# Set proxy for Homebrew
+export http_proxy=http://proxy.company.com:8080
+export https_proxy=http://proxy.company.com:8080
+make install
+```
+
+## Support
+
+If you encounter issues not covered in this guide:
+
+1. **Check the [Troubleshooting Guide](troubleshooting.md)**
+2. **Search [GitHub Issues](https://github.com/yourusername/caddie.sh/issues)**
+3. **Create a new issue** with detailed information
+4. **Join our [Discussions](https://github.com/yourusername/caddie.sh/discussions)**
+
+## Next Steps
+
+After successful installation:
+
+1. **Read the [User Guide](user-guide.md)** to learn how to use Caddie.sh
+2. **Explore [Module Documentation](modules/)** for detailed feature information
+3. **Check [Configuration](configuration.md)** for customization options
+4. **Join the community** and share your experience!
+
+---
+
+*Happy coding with Caddie.sh! 🏌️‍♂️*

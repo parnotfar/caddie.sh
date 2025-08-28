@@ -1,0 +1,617 @@
+# User Guide
+
+Welcome to Caddie.sh! This guide will help you get the most out of your development environment manager.
+
+## Getting Started
+
+### First Steps
+
+After installation, Caddie.sh is ready to use. Here's how to get started:
+
+```bash
+# Check that Caddie.sh is working
+caddie --version
+
+# Get an overview of available commands
+caddie help
+
+# See what modules are available
+caddie help
+```
+
+### Understanding the Command Structure
+
+Caddie.sh uses a simple, intuitive command structure:
+
+```bash
+caddie <module>:<command> [arguments]
+```
+
+**Examples:**
+- `caddie python:create myproject` - Create a Python virtual environment
+- `caddie rust:new myapp` - Create a new Rust project
+- `caddie core:debug on` - Enable debug mode
+
+## Core Concepts
+
+### Modules
+
+Caddie.sh is built around modules, each handling a specific development area:
+
+- **`core`**: Basic functions, debug system, and home directory management
+- **`python`**: Python environment and package management
+- **`rust`**: Rust development tools and project management
+- **`ruby`**: Ruby environment with RVM integration
+- **`js`**: JavaScript/Node.js tools and NVM management
+- **`ios`**: iOS development tools and Xcode integration
+- **`cross`**: Multi-language project templates and tools
+- **`cursor`**: IDE integration and AI-powered development
+- **`git`**: Enhanced git workflows and shortcuts
+
+### Data Structures
+
+Caddie.sh uses internal data structures to manage:
+
+- **Commands**: Available commands across all modules
+- **Help**: Module descriptions and help text
+- **Modules**: Loaded module information
+- **Debug**: Debug system configuration
+
+## Essential Commands
+
+### Getting Help
+
+```bash
+# General help
+caddie help
+
+# Module-specific help
+caddie python:help
+caddie rust:help
+
+# Command help
+caddie core:help
+```
+
+### Debug System
+
+```bash
+# Enable debug output
+caddie core:debug on
+
+# Disable debug output
+caddie core:debug off
+
+# Check debug status
+caddie core:debug status
+
+# Toggle debug mode
+caddie core:debug toggle
+```
+
+### Home Directory Management
+
+```bash
+# Set your project home directory
+caddie core:set:home ~/my-projects
+
+# Check current home directory
+caddie core:get:home
+
+# Reset to default
+caddie core:reset:home
+```
+
+## Module Usage
+
+### Python Development
+
+#### Virtual Environment Management
+
+```bash
+# Create a new virtual environment
+caddie python:create myproject
+
+# Activate an environment
+caddie python:activate myproject
+
+# Deactivate current environment
+caddie python:deactivate
+
+# List all environments
+caddie python:list
+
+# Remove an environment
+caddie python:remove myproject
+```
+
+#### Package Management
+
+```bash
+# Install a package
+caddie python:install requests
+
+# Uninstall a package
+caddie python:uninstall requests
+
+# Generate requirements.txt
+caddie python:freeze
+
+# Install from requirements.txt
+caddie python:sync
+
+# Check for outdated packages
+caddie python:outdated
+```
+
+#### Project Management
+
+```bash
+# Initialize project structure
+caddie python:init
+
+# Run tests
+caddie python:test
+
+# Run linting
+caddie python:lint
+
+# Format code
+caddie python:format
+```
+
+### Rust Development
+
+#### Project Management
+
+```bash
+# Create new project
+caddie rust:new myapp
+
+# Build project
+caddie rust:build
+
+# Run project
+caddie rust:run
+
+# Run tests
+caddie rust:test
+
+# Check code without building
+caddie rust:check
+```
+
+#### Dependency Management
+
+```bash
+# Add dependency
+caddie rust:add serde
+
+# Remove dependency
+caddie rust:remove serde
+
+# Update dependencies
+caddie rust:update
+
+# Search crates
+caddie rust:search json
+```
+
+#### Toolchain Management
+
+```bash
+# Switch toolchain
+caddie rust:toolchain nightly
+
+# Add target
+caddie rust:target x86_64-unknown-linux-gnu
+
+# Install component
+caddie rust:component clippy
+```
+
+### Ruby Development
+
+#### Environment Management
+
+```bash
+# Install Ruby version
+caddie ruby:install 3.2.0
+
+# Use specific version
+caddie ruby:use 3.2.0
+
+# Set default version
+caddie ruby:default 3.2.0
+
+# List installed versions
+caddie ruby:list
+```
+
+#### Gem Management
+
+```bash
+# Install gem
+caddie ruby:gem install rails
+
+# Uninstall gem
+caddie ruby:gem uninstall rails
+
+# Update gems
+caddie ruby:gem update
+
+# List installed gems
+caddie ruby:gem list
+```
+
+### JavaScript/Node.js Development
+
+#### Version Management
+
+```bash
+# Install Node.js version
+caddie js:install 18.16.0
+
+# Use specific version
+caddie js:use 18.16.0
+
+# Set default version
+caddie js:default 18.16.0
+
+# List installed versions
+caddie js:list
+```
+
+#### Package Management
+
+```bash
+# Install package globally
+caddie js:install-global yarn
+
+# Install package locally
+caddie js:install-local express
+
+# Update packages
+caddie js:update
+
+# Run npm scripts
+caddie js:run dev
+```
+
+### iOS Development
+
+#### Xcode Integration
+
+```bash
+# Check Xcode installation
+caddie ios:check
+
+# Install Xcode command line tools
+caddie ios:install-cli
+
+# Open project in Xcode
+caddie ios:open MyApp.xcodeproj
+
+# Build project
+caddie ios:build MyApp
+```
+
+#### Development Tools
+
+```bash
+# Install iOS Simulator
+caddie ios:simulator
+
+# List available simulators
+caddie ios:simulators
+
+# Run on simulator
+caddie ios:run-simulator MyApp
+```
+
+### Cross-Language Development
+
+#### Project Templates
+
+```bash
+# Create web project
+caddie cross:web mywebapp
+
+# Create API project
+caddie cross:api myapi
+
+# Create full-stack project
+caddie cross:fullstack myapp
+
+# Create microservice
+caddie cross:microservice userservice
+```
+
+#### Docker Integration
+
+```bash
+# Create Dockerfile
+caddie cross:docker python
+
+# Create docker-compose
+caddie cross:compose
+
+# Build and run
+caddie cross:docker-build
+```
+
+### Cursor IDE Integration
+
+#### Project Management
+
+```bash
+# Open project in Cursor
+caddie cursor:open ~/my-project
+
+# Create new project
+caddie cursor:new python myapp
+
+# Switch between projects
+caddie cursor:switch project2
+```
+
+#### AI-Powered Development
+
+```bash
+# Explain code
+caddie cursor:ai:explain src/main.py
+
+# Refactor code
+caddie cursor:ai:refactor src/utils.py
+
+# Generate tests
+caddie cursor:ai:test src/models.py
+
+# Code review
+caddie cursor:ai:review src/
+```
+
+#### Extension Management
+
+```bash
+# Install extension
+caddie cursor:ext:install ms-python.python
+
+# List extensions
+caddie cursor:ext:list
+
+# Update extensions
+caddie cursor:ext:update
+
+# Sync extensions
+caddie cursor:ext:sync
+```
+
+## Advanced Usage
+
+### Customization
+
+#### Shell Prompt
+
+Customize your shell prompt by editing `~/.caddie_prompt.sh`:
+
+```bash
+# Edit the prompt file
+nano ~/.caddie_prompt.sh
+
+# Reload the prompt
+source ~/.caddie_prompt.sh
+```
+
+#### Environment Variables
+
+Set custom environment variables:
+
+```bash
+# Add to your ~/.bash_profile
+export CADDIE_CUSTOM_VAR="value"
+export CADDIE_DEBUG=1
+```
+
+#### Module Configuration
+
+Some modules support configuration files:
+
+```bash
+# Python configuration
+~/.caddie_python_config
+
+# Rust configuration
+~/.caddie_rust_config
+```
+
+### Automation
+
+#### Scripts
+
+Create scripts that use Caddie.sh:
+
+```bash
+#!/bin/bash
+# setup-dev.sh
+
+# Set up development environment
+caddie python:create venv
+caddie python:activate venv
+caddie python:install -r requirements.txt
+caddie rust:new backend
+caddie cursor:open .
+```
+
+#### CI/CD Integration
+
+Use Caddie.sh in your CI/CD pipelines:
+
+```yaml
+# .github/workflows/setup.yml
+- name: Setup Development Environment
+  run: |
+    git clone https://github.com/yourusername/caddie.sh.git
+    cd caddie.sh
+    make install-dot
+    source ~/.bash_profile
+    caddie python:create ci-env
+    caddie python:activate ci-env
+```
+
+### Troubleshooting
+
+#### Debug Mode
+
+Enable debug mode to see what's happening:
+
+```bash
+caddie core:debug on
+# Run your command
+caddie python:create test
+# Check debug output
+caddie core:debug off
+```
+
+#### Common Issues
+
+**Command not found:**
+```bash
+source ~/.bash_profile
+```
+
+**Permission denied:**
+```bash
+ls -la ~/
+chmod 755 ~/
+```
+
+**Module not loading:**
+```bash
+ls -la ~/.caddie_modules/
+caddie core:debug on
+caddie help
+```
+
+## Best Practices
+
+### Project Organization
+
+1. **Use consistent naming**: Follow your team's conventions
+2. **Set project home**: `caddie core:set:home ~/projects`
+3. **Use virtual environments**: Always create isolated environments
+4. **Version control**: Keep your Caddie.sh configuration in version control
+
+### Environment Management
+
+1. **One environment per project**: Avoid conflicts
+2. **Regular updates**: Keep tools and packages current
+3. **Cleanup**: Remove unused environments and packages
+4. **Documentation**: Document your setup process
+
+### Performance
+
+1. **Lazy loading**: Modules load only when needed
+2. **Efficient commands**: Use specific commands rather than general ones
+3. **Debug off**: Keep debug mode off in production
+4. **Regular maintenance**: Clean up old files and environments
+
+## Integration with Other Tools
+
+### Version Control
+
+Caddie.sh works seamlessly with Git:
+
+```bash
+# Initialize git repository
+git init
+
+# Create .gitignore
+caddie python:init  # Creates Python .gitignore
+caddie rust:new .    # Creates Rust .gitignore
+
+# Commit your setup
+git add .
+git commit -m "Initial project setup with Caddie.sh"
+```
+
+### Package Managers
+
+Integrate with language-specific package managers:
+
+```bash
+# Python: pip + requirements.txt
+caddie python:freeze > requirements.txt
+caddie python:sync
+
+# Rust: Cargo.toml
+caddie rust:add serde
+caddie rust:build
+
+# Node.js: package.json
+caddie js:install-local express
+npm run dev
+```
+
+### IDEs and Editors
+
+Caddie.sh enhances your development workflow:
+
+```bash
+# Open in Cursor
+caddie cursor:open .
+
+# Open in VS Code
+code .
+
+# Open in Vim
+vim .
+```
+
+## Getting Help
+
+### Built-in Help
+
+```bash
+# General help
+caddie help
+
+# Module help
+caddie python:help
+
+# Command help
+caddie core:help
+```
+
+### External Resources
+
+- **GitHub Issues**: Report bugs and request features
+- **GitHub Discussions**: Ask questions and share tips
+- **Documentation**: Check the [docs directory](modules/) for detailed information
+- **Community**: Join our community channels
+
+### Contributing
+
+Found a bug or want to add a feature?
+
+1. **Fork the repository**
+2. **Create a feature branch**
+3. **Make your changes**
+4. **Add tests** (when applicable)
+5. **Submit a pull request**
+
+## Next Steps
+
+Now that you're familiar with Caddie.sh:
+
+1. **Explore modules**: Try different commands and features
+2. **Customize your environment**: Set up your preferred configuration
+3. **Create projects**: Use Caddie.sh to scaffold new projects
+4. **Share your experience**: Help others in the community
+5. **Contribute**: Add new features or improve existing ones
+
+---
+
+*Happy coding with Caddie.sh! 🏌️‍♂️*
+
+For more detailed information, check out the [Module Documentation](modules/) and [Configuration Guide](configuration.md).
