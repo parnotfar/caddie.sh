@@ -2,26 +2,26 @@
 
 > **The Ultimate Development Environment Manager for macOS**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![macOS](https://img.shields.io/badge/macOS-10.15+-blue.svg)](https://www.apple.com/macos/)
 [![Bash](https://img.shields.io/badge/Bash-4.0+-green.svg)](https://www.gnu.org/software/bash/)
 
 Caddie.sh is a powerful, modular shell script that transforms your macOS terminal into a comprehensive development environment. Think of it as your personal caddie on the golf course of development - always ready with the right tools, environment setup, and shortcuts to make your coding experience smooth and efficient.
 
-## ✨ Features
+## Features
 
-- 🚀 **One-Command Setup**: Complete development environment installation in minutes
-- 🧩 **Modular Architecture**: Pick and choose the tools you need
-- 🐍 **Python Management**: Virtual environments, package management, and project scaffolding
-- 🦀 **Rust Development**: Cargo integration, toolchain management, and project templates
-- 💎 **Ruby Environment**: RVM integration and gem management
-- 🟨 **JavaScript/Node.js**: NVM integration and package management
-- 📱 **iOS Development**: Xcode integration and development tools
-- 🎯 **Cross-Platform**: Multi-language project templates and tools
-- 🖥️ **IDE Integration**: Cursor IDE integration with AI-powered development
-- 🔧 **Git Integration**: Enhanced git workflows and shortcuts
-- 🐛 **Debug System**: Built-in debugging and logging capabilities
-- 🎨 **Customizable Prompts**: Beautiful, informative shell prompts
+- **One-Command Setup**: Complete development environment installation in minutes
+- **Modular Architecture**: Pick and choose the tools you need
+- **Python Management**: Virtual environments, package management, and project scaffolding
+- **Rust Development**: Cargo integration, toolchain management, and project templates
+- **Ruby Environment**: RVM integration and gem management
+- **JavaScript/Node.js**: NVM integration and package management
+- **iOS Development**: Xcode integration and development tools
+- **Cross-Platform**: Multi-language project templates and tools
+- **IDE Integration**: Cursor IDE integration with AI-powered development
+- **Git Integration**: Enhanced git workflows and shortcuts
+- **Debug System**: Built-in debugging and logging capabilities
+- **Customizable Prompts**: Beautiful, informative shell prompts
 
 ## 🚀 Quick Start
 
@@ -35,7 +35,7 @@ Caddie.sh is a powerful, modular shell script that transforms your macOS termina
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/caddie.sh.git
+git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 
 # Run the installer
@@ -55,7 +55,7 @@ caddie --version
 caddie help
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **[Installation Guide](docs/installation.md)** - Detailed setup instructions
 - **[User Guide](docs/user-guide.md)** - How to use caddie.sh effectively
@@ -76,7 +76,7 @@ caddie help
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 
-## 🎯 Use Cases
+## Use Cases
 
 ### For Developers
 - **Quick Environment Setup**: Get a new development machine ready in minutes
@@ -113,7 +113,7 @@ caddie.sh/
 └── dot_caddie_*            # Additional modules...
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -134,7 +134,7 @@ caddie core:set:home ~/my-projects
 # Edit ~/.caddie_prompt.sh
 ```
 
-## 🚀 Examples
+## Examples
 
 ### Python Development
 
@@ -170,7 +170,7 @@ caddie cursor:open ~/my-project
 caddie cursor:ai:explain src/main.rs
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](docs/contributing.md) for details.
 
@@ -178,7 +178,7 @@ We welcome contributions! Please see our [Contributing Guide](docs/contributing.
 
 ```bash
 # Clone and setup development environment
-git clone https://github.com/yourusername/caddie.sh.git
+git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 
 # Install development dependencies
@@ -195,11 +195,11 @@ make test
 - Include comprehensive error handling
 - Add debug statements for troubleshooting
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Homebrew**: For package management infrastructure
 - **RVM**: For Ruby version management
@@ -207,16 +207,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Rustup**: For Rust toolchain management
 - **Cursor**: For AI-powered development tools
 
-## 📞 Support
+## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/caddie.sh/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/caddie.sh/discussions)
-- **Wiki**: [Project Wiki](https://github.com/yourusername/caddie.sh/wiki)
+- **Issues**: [GitHub Issues](https://github.com/parnotfar/caddie.sh/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/parnotfar/caddie.sh/discussions)
+- **Wiki**: [Project Wiki](https://github.com/parnotfar/caddie.sh/wiki)
 
-## 🗺️ Roadmap
+## Roadmap
 
-- [ ] **v1.1**: Additional language support (Go, Java, C++)
-- [ ] **v1.2**: Docker integration and containerization
+- [ ] **v1.1**: Docker integration and containerization
+- [ ] **v1.2**: Additional language support (Go, Java, C++)
 - [ ] **v1.3**: Cloud development tools (AWS, GCP, Azure)
 - [ ] **v1.4**: Team collaboration features
 - [ ] **v2.0**: Cross-platform support (Linux, Windows)

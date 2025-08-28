@@ -6,116 +6,34 @@ This guide covers all the ways to customize and configure Caddie.sh to match you
 
 Caddie.sh is designed to be highly configurable while maintaining sensible defaults. You can customize:
 
-- **Shell Prompt**: Colors, information display, and formatting
 - **Environment Variables**: Debug settings, paths, and preferences
 - **Module Behavior**: Language-specific configurations
 - **Shell Integration**: Bash profile and bashrc customization
+- **Shell Prompt**: Basic customization (advanced features planned)
 
-## Shell Prompt Customization
+## Shell Prompt (Future Feature)
 
-### Location
+> **Note**: Advanced prompt customization is planned for future releases. Currently, Caddie.sh provides a basic informative prompt that shows essential development information.
 
-The shell prompt configuration is stored in `~/.caddie_prompt.sh` and is automatically sourced when you start a new shell.
+### Current Prompt Features
 
-### Basic Customization
+The current prompt automatically displays:
+- Current directory
+- Git branch and status (when in a git repository)
+- Python virtual environment (when active)
+- Basic system information
 
-Edit the prompt file to customize your shell prompt:
+### Future Customization Options
 
-```bash
-# Edit the prompt file
-nano ~/.caddie_prompt.sh
+In upcoming releases, you'll be able to:
+- Customize colors and formatting
+- Choose which information to display
+- Create custom prompt layouts
+- Save and share prompt configurations
 
-# Or use your preferred editor
-code ~/.caddie_prompt.sh
-```
+### Current Customization
 
-### Prompt Components
-
-The default prompt includes several components that you can customize:
-
-#### Git Information
-```bash
-# Show git branch and status
-if git rev-parse --git-dir > /dev/null 2>&1; then
-    local branch=$(git branch --show-current 2>/dev/null)
-    local status=""
-    
-    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-        status="*"  # Uncommitted changes
-    fi
-    
-    echo "git:${branch}${status}"
-fi
-```
-
-#### Python Virtual Environment
-```bash
-# Show active Python environment
-if [ -n "$VIRTUAL_ENV" ]; then
-    local env_name=$(basename "$VIRTUAL_ENV")
-    echo "py:${env_name}"
-fi
-```
-
-#### Current Directory
-```bash
-# Show current directory (truncated if too long)
-local dir=$(pwd | sed "s|^$HOME|~|")
-if [ ${#dir} -gt 30 ]; then
-    dir="...${dir: -27}"
-fi
-echo "$dir"
-```
-
-### Color Customization
-
-You can customize the colors used in your prompt:
-
-```bash
-# Define color variables
-local RED='\[\033[0;31m\]'
-local GREEN='\[\033[0;32m\]'
-local YELLOW='\[\033[1;33m\]'
-local BLUE='\[\033[0;34m\]'
-local PURPLE='\[\033[0;35m\]'
-local CYAN='\[\033[0;36m\]'
-local WHITE='\[\033[1;37m\]'
-local NC='\[\033[0m\]'  # No Color
-
-# Use colors in your prompt
-PS1="${GREEN}\u${NC}@${BLUE}\h${NC}:${YELLOW}\w${NC}\$ "
-```
-
-### Custom Prompt Examples
-
-#### Minimal Prompt
-```bash
-# Simple, clean prompt
-PS1='\w\$ '
-```
-
-#### Informative Prompt
-```bash
-# Show user, host, directory, and git info
-PS1='\[\033[1;32m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]$(git_prompt_info)\$ '
-```
-
-#### Professional Prompt
-```bash
-# Professional development prompt
-PS1='\[\033[1;36m\]\t\[\033[0m\] \[\033[1;32m\]\u\[\033[0m\]@\[\033[1;33m\]\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\[\033[1;35m\]$(git_prompt_info)\[\033[0m\]\n\$ '
-```
-
-### Reloading the Prompt
-
-After making changes to your prompt, reload it:
-
-```bash
-# Reload the prompt
-source ~/.caddie_prompt.sh
-
-# Or restart your terminal
-```
+For now, you can make basic changes by editing `~/.caddie_prompt.sh`, but this is considered a developer detail and may change in future versions.
 
 ## Environment Variables
 

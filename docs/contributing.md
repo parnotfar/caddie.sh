@@ -78,8 +78,46 @@ We use a simple branch strategy:
 - **`bugfix/*`**: Bug fix branches
 - **`hotfix/*`**: Critical bug fixes
 
+### Future Development Workflow Commands
+
+We're planning to add core Caddie.sh functions to streamline development workflows:
+
+```bash
+# Quick development setup
+caddie core:dev:setup                    # Setup development environment
+caddie core:dev:branch feature-name      # Create and switch to feature branch
+caddie core:dev:commit "message"         # Add, commit, and push changes
+caddie core:dev:pr                       # Create pull request
+caddie core:dev:sync                     # Sync with upstream main
+caddie core:dev:cleanup                  # Clean up feature branches
+
+# Project management
+caddie core:dev:test                     # Run all tests
+caddie core:dev:lint                     # Run linting
+caddie core:dev:format                   # Format code
+caddie core:dev:build                    # Build project
+caddie core:dev:release                  # Prepare release
+```
+
+#### Benefits of These Commands
+
+- **Standardization**: Consistent workflow across all contributors
+- **Automation**: Reduce manual steps and potential errors
+- **Integration**: Seamless integration with existing Caddie.sh modules
+- **Learning**: Easier onboarding for new contributors
+- **Efficiency**: Faster development cycles with fewer mistakes
+
+#### Integration with Existing Modules
+
+These development commands would integrate with your existing modules:
+- **Python**: `caddie core:dev:test` would run `caddie python:test`
+- **Rust**: `caddie core:dev:build` would run `caddie rust:build`
+- **Git**: `caddie core:dev:commit` would use git module functions
+- **Cross-language**: `caddie core:dev:lint` would detect and run appropriate linters
+
 ### Creating a Feature Branch
 
+#### Traditional Git Commands
 ```bash
 # Ensure you're on main and up to date
 git checkout main
@@ -97,6 +135,26 @@ git commit -m "feat: add new feature description"
 
 # Push to your fork
 git push origin feature/your-feature-name
+```
+
+#### Using Caddie.sh (if git module is available)
+```bash
+# Ensure you're on main and up to date
+caddie git:checkout main
+caddie git:pull upstream main
+
+# Create and switch to feature branch
+caddie git:checkout -b feature/your-feature-name
+
+# Make your changes
+# ... edit files ...
+
+# Commit your changes
+caddie git:add .
+caddie git:commit "feat: add new feature description"
+
+# Push to your fork
+caddie git:push origin feature/your-feature-name
 ```
 
 ### Commit Message Format

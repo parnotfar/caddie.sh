@@ -26,7 +26,7 @@ The fastest way to get started with Caddie.sh:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/caddie.sh.git
+git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 
 # Run the full installer
@@ -45,7 +45,7 @@ If you only want the core Caddie.sh functionality without development tools:
 
 ```bash
 # Clone and install dot files only
-git clone https://github.com/yourusername/caddie.sh.git
+git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 make install-dot
 ```
@@ -64,7 +64,7 @@ make setup-dev
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/caddie.sh.git
+git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 ```
 
@@ -267,9 +267,9 @@ make install
 If you encounter issues not covered in this guide:
 
 1. **Check the [Troubleshooting Guide](troubleshooting.md)**
-2. **Search [GitHub Issues](https://github.com/yourusername/caddie.sh/issues)**
+2. **Search [GitHub Issues](https://github.com/parnotfar/caddie.sh/issues)**
 3. **Create a new issue** with detailed information
-4. **Join our [Discussions](https://github.com/yourusername/caddie.sh/discussions)**
+4. **Join our [Discussions](https://github.com/parnotfar/caddie.sh/discussions)**
 
 ## Next Steps
 

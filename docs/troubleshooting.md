@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide helps you resolve common issues with Caddie.sh. If you encounter a problem not covered here, please check the [GitHub Issues](https://github.com/yourusername/caddie.sh/issues) or create a new one.
+This guide helps you resolve common issues with Caddie.sh. If you encounter a problem not covered here, please check the [GitHub Issues](https://github.com/parnotfar/caddie.sh/issues) or create a new one.
 
 ## Quick Diagnosis
 
@@ -669,8 +669,8 @@ make install
 
 ### Where to Get Help
 
-1. **GitHub Issues**: [Create an issue](https://github.com/yourusername/caddie.sh/issues)
-2. **GitHub Discussions**: [Start a discussion](https://github.com/yourusername/caddie.sh/discussions)
+1. **GitHub Issues**: [Create an issue](https://github.com/parnotfar/caddie.sh/issues)
+2. **GitHub Discussions**: [Start a discussion](https://github.com/parnotfar/caddie.sh/discussions)
 3. **Documentation**: Check the [docs directory](../)
 4. **Community**: Engage with other users
 
