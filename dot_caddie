@@ -10,6 +10,7 @@ set -e
 source "$HOME/.caddie_version"
 source "$HOME/.caddie_prompt.sh"
 source "$HOME/.caddie_git"
+source "$HOME/.caddie_debug"
 
 # Auto-discover caddie modules from ~/.caddie_modules/ directory
 # Each module file should have functions named <module>_caddie_register and <module>_help_register
@@ -18,6 +19,7 @@ CADDIE_MODULES_DIR="$HOME/.caddie_modules"
 # Source data structure files
 source "$HOME/.caddie_data/.caddie_commands"
 source "$HOME/.caddie_data/.caddie_help"
+source "$HOME/.caddie_data/.caddie_modules"
 
 # Helper function to extract module name from filename
 function caddie_extract_module_name() {
@@ -31,13 +33,13 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
     caddie_commands_reset
     caddie_help_reset
     
-    echo "=== DEBUG: Starting module loading process ==="
-    echo "CADDIE_MODULES_DIR: $CADDIE_MODULES_DIR"
+    caddie_debug "=== Starting module loading process ==="
+    caddie_debug "CADDIE_MODULES_DIR: $CADDIE_MODULES_DIR"
     
     # Use a different approach to avoid subshell issues with while read
     # Store module files in an array first, then iterate
     module_files=()
-    modules=()
+    caddie_modules_reset
 
     while IFS= read -r -d '' file; do
         source "$file"
@@ -45,14 +47,14 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
         module_name=$(caddie_extract_module_name "$file")
 
         module_files+=("$file")
-        modules+=("$module_name")
+        caddie_modules_append "$module_name"
     done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
     
-    echo "=== DEBUG: Module loading complete ==="
-    echo "Final commands count: $(caddie_commands_count)"
-    echo "Final help count: $(caddie_help_count)"
-    echo "Final commands array contents: [$(caddie_commands_get)]"
-    echo "Final help array contents: [$(caddie_help_get)]"
+    caddie_debug "=== Module loading complete ==="
+    caddie_debug "Final commands count: $(caddie_commands_count)"
+    caddie_debug "Final help count: $(caddie_help_count)"
+    caddie_debug "Final commands array contents: [$(caddie_commands_get)]"
+    caddie_debug "Final help array contents: [$(caddie_help_get)]"
 else
     echo "Warning: ~/.caddie_modules directory not found"
 fi
@@ -61,9 +63,9 @@ fi
 
 # Function to display caddie help
 function caddie_help() {
-    echo "=== DEBUG: caddie_help function called ==="
-    echo "DEBUG: Current commands count: $(caddie_commands_count)"
-    echo "DEBUG: Current help count: $(caddie_help_count)"
+    caddie_debug "=== caddie_help function called ==="
+    caddie_debug "Current commands count: $(caddie_commands_count)"
+    caddie_debug "Current help count: $(caddie_help_count)"
     
     echo "Caddie.sh - Development Environment Manager"
     echo "=========================================="
@@ -74,7 +76,7 @@ function caddie_help() {
     echo "  home                     Home directory management"
     
     echo "Available modules:"
-    for m in ${modules[@]}; do
+    for m in $(caddie_modules_get); do
         description_function="caddie_${m}_description"
         printf "  %-10s %s\n" "$m" "$(eval "$description_function")"
     done
@@ -106,11 +108,11 @@ function caddie() {
 
     shift  # Remove first argument (the command); safe in bash, no need for OPTIND here
 
-    echo "=== DEBUG: caddie function called ==="
-    echo "DEBUG: command='$command'"
-    echo "DEBUG: remaining args='$*'"
-    echo "DEBUG: Current commands count: $(caddie_commands_count)"
-    echo "DEBUG: Current help count: $(caddie_help_count)"
+    caddie_debug "=== caddie function called ==="
+    caddie_debug "command='$command'"
+    caddie_debug "remaining args='$*'"
+    caddie_debug "Current commands count: $(caddie_commands_count)"
+    caddie_debug "Current help count: $(caddie_help_count)"
     
     # Handle built-in commands first
     case "$command" in
@@ -132,7 +134,7 @@ function caddie() {
     local function_name="caddie_${command//:/_}"
     
     if command -v "$function_name" >/dev/null 2>&1; then
-        echo "DEBUG: Found function '$function_name', executing with args: $*"
+        caddie_debug "Found function '$function_name', executing with args: $*"
         eval "$function_name \"\$@\""
     else
         echo "Error: Unknown command '$command'"

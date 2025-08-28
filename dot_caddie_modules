@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Caddie Modules Data Structure
+# This file manages the global CADDIE_MODULES array and provides methods for manipulation
+
+# Global modules array
+CADDIE_MODULES=()
+
+# Add a module to the modules array
+function caddie_modules_append() {
+    local module_name="$1"
+
+    if [ -n "$module_name" ]; then
+        CADDIE_MODULES+=("$module_name")
+    fi
+}
+
+# Get all modules from the array
+function caddie_modules_get() {
+    printf '%s\n' "${CADDIE_MODULES[@]}"
+}
+
+# Get the count of modules in the array
+function caddie_modules_count() {
+    printf '%s\n' "${#CADDIE_MODULES[@]}"
+}
+
+# Reset the modules array to empty
+function caddie_modules_reset() {
+    CADDIE_MODULES=()
+}
+
+# Export functions for external use
+export -f caddie_modules_append
+export -f caddie_modules_get
+export -f caddie_modules_count
+export -f caddie_modules_reset
+
+# Export the modules array
+export CADDIE_MODULES

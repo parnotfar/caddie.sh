@@ -7,7 +7,7 @@
 CADDIE_HOME_FILE="$HOME/.caddie_home"
 
 # Function to set the caddie home directory
-caddie_core_set_home() {
+function caddie_core_set_home() {
     local path="$1"
     
     if [ -z "$path" ]; then
@@ -37,7 +37,7 @@ caddie_core_set_home() {
 }
 
 # Function to get the caddie home directory
-caddie_core_get_home() {
+function caddie_core_get_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
         local caddie_home=$(cat "$CADDIE_HOME_FILE")
 
@@ -48,7 +48,7 @@ caddie_core_get_home() {
 }
 
 # Function to reset the caddie home directory
-caddie_core_reset_home() {
+function caddie_core_reset_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
         rm "$CADDIE_HOME_FILE"
         unset CADDIE_HOME
@@ -58,17 +58,53 @@ caddie_core_reset_home() {
     fi
 }
 
+# Function to handle debug commands
+function caddie_core_debug() {
+    local action="$1"
+    
+    case "$action" in
+        "on")
+            caddie_debug_on
+            echo "✓ Debug mode enabled"
+            ;;
+        "off")
+            caddie_debug_off
+            echo "✓ Debug mode disabled"
+            ;;
+        "toggle")
+            caddie_debug_toggle
+            echo "✓ Debug mode toggled to: $(caddie_debug_status)"
+            ;;
+        "status")
+            echo "Debug mode is: $(caddie_debug_status)"
+            ;;
+        *)
+            echo "Error: Invalid debug action '$action'"
+            echo "Usage: caddie core:debug <on|off|toggle|status>"
+            return 1
+            ;;
+    esac
+}
+
+
+
 # Function to show core caddie help
-caddie_core_help() {
+function caddie_core_help() {
     echo "Core Caddie Functions"
     echo "===================="
     echo ""
     echo "Usage: caddie core:<command>"
     echo ""
     echo "Home Directory Management:"
-    echo "  set:home <path>     Set caddie home directory"
-    echo "  get:home            Get current caddie home"
-    echo "  reset:home          Reset caddie home directory"
+echo "  set:home <path>     Set caddie home directory"
+echo "  get:home            Get current caddie home"
+echo "  reset:home          Reset caddie home directory"
+echo ""
+echo "Debug Management:"
+echo "  debug:on            Enable debug output"
+echo "  debug:off           Disable debug output"
+echo "  debug:toggle        Toggle debug output"
+echo "  debug:status        Show debug status"
     echo ""
     echo "Examples:"
     echo "  caddie core:set:home ~/projects/myproject"
@@ -77,7 +113,7 @@ caddie_core_help() {
 }
 
 function caddie_core_description() {
-    echo 'core - Core Caddie Functions'
+    echo 'Core Caddie Functions'
 }
 
 # Auto-load caddie home on shell startup
@@ -92,3 +128,4 @@ export -f caddie_core_get_home
 export -f caddie_core_reset_home
 export -f caddie_core_help
 export -f caddie_core_description
+export -f caddie_core_debug
