@@ -7,6 +7,10 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
 - **[Installation Guide](installation.md)** - Complete setup instructions
 - **[User Guide](user-guide.md)** - How to use Caddie.sh effectively
 
+## 🚀 Launch & Community
+
+- **[Launch Plan](launch-plan.md)** - Comprehensive open-source launch strategy and checklist
+
 ## Core Documentation
 
 - **[Configuration Guide](configuration.md)** - Customize your environment
@@ -55,8 +59,8 @@ caddie core:help
 
 ## Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/yourusername/caddie.sh/issues)
-- **GitHub Discussions**: [Ask questions and share tips](https://github.com/yourusername/caddie.sh/discussions)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/parnotfar/caddie.sh/issues)
+- **GitHub Discussions**: [Ask questions and share tips](https://github.com/parnotfar/caddie.sh/discussions)
 - **Documentation**: Check this directory for detailed information
 
 ## Contributing

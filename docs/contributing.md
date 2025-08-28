@@ -39,7 +39,7 @@ Caddie.sh is an open-source project that aims to make development environment ma
    ```bash
    # Go to GitHub and fork the repository
    # Then clone your fork
-   git clone https://github.com/yourusername/caddie.sh.git
+   git clone https://github.com/parnotfar/caddie.sh.git
    cd caddie.sh
    ```
 
@@ -294,42 +294,33 @@ Each module should follow this structure:
 # Module Name
 # Brief description of what the module does
 
-# Function to register commands with the main system
-function caddie_module_caddie_register() {
-    caddie_commands_append "module:command1"
-    caddie_commands_append "module:command2"
-}
-
-# Function to register help text
-function caddie_module_help_register() {
-    caddie_help_append "module:command1"
-    caddie_help_append "module:command2"
-}
-
 # Function to provide module description
 function caddie_module_description() {
     echo 'Brief description of the module'
 }
 
+function caddie_module_help() {
+    echo 'foo - Performs foo task'
+    echo 'bar - Performs bar task'
+}
+
 # Main command functions
-function caddie_module_command1() {
+function caddie_module_foo() {
     local argument="$1"
     
     # Implementation
 }
 
-function caddie_module_command2() {
+function caddie_module_bar() {
     local argument="$1"
     
     # Implementation
 }
 
 # Export functions
-export -f caddie_module_caddie_register
-export -f caddie_module_help_register
 export -f caddie_module_description
-export -f caddie_module_command1
-export -f caddie_module_command2
+export -f caddie_module_foo
+export -f caddie_module_bar
 ```
 
 #### Command Naming Convention

@@ -451,7 +451,7 @@ Use Caddie.sh in your CI/CD pipelines:
 # .github/workflows/setup.yml
 - name: Setup Development Environment
   run: |
-    git clone https://github.com/yourusername/caddie.sh.git
+    git clone https://github.com/parnotfar/caddie.sh.git
     cd caddie.sh
     make install-dot
     source ~/.bash_profile

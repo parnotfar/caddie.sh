@@ -63,6 +63,7 @@ caddie help
 - **[Configuration](docs/configuration.md)** - Customizing your environment
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 - **[Contributing](docs/contributing.md)** - How to contribute to the project
+- **[Launch Plan](docs/launch-plan.md)** - Open-source launch strategy and checklist
 
 ### Module Documentation
 
@@ -225,4 +226,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the developer community**
 
-*Caddie.sh - Because every developer deserves a great caddie on the course of coding.*
+*Caddie.sh – Because every developer, DevOps engineer, and data engineer deserves a great caddie on the course of building, deploying, and innovating.*
