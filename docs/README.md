@@ -65,4 +65,4 @@ We welcome contributions! See our [Contributing Guide](contributing.md) for deta
 
 ---
 
-*Happy coding with Caddie.sh! 🏌️‍♂️*
+*Happy building, analyzing, deploying, and growing with Caddie.sh! 🏌️‍♂️*
