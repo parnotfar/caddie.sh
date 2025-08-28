@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Caddie Commands Data Structure
+# This file manages the global CADDIE_COMMANDS array and provides methods for manipulation
+
+# Global commands array
+CADDIE_COMMANDS=()
+
+# Add a command to the commands array
+caddie_commands_append() {
+    local cmd_info="$1"
+    if [ -n "$cmd_info" ]; then
+        CADDIE_COMMANDS+=("$cmd_info")
+    fi
+}
+
+# Get all commands from the array
+caddie_commands_get() {
+    echo "${CADDIE_COMMANDS[@]}"
+}
+
+# Reset the commands array to empty
+caddie_commands_reset() {
+    CADDIE_COMMANDS=()
+}
+
+# Export functions for external use
+export -f caddie_commands_append
+export -f caddie_commands_get
+export -f caddie_commands_reset

@@ -6,140 +6,159 @@
 # Exit immediately on any error for robust error handling
 set -e
 
-# Source the module management system first
-source "$HOME/.caddie_modules"
-
-# Source the version information
+# Source the dependent files
+# shellcheck disable=SC1091
 source "$HOME/.caddie_version"
-
-# Source the prompt system
+# shellcheck disable=SC1091
 source "$HOME/.caddie_prompt.sh"
-
-# Source the git prompt and custom file management
+# shellcheck disable=SC1091
 source "$HOME/.caddie_git"
 
-# Define caddie modules and their descriptions.
-# Each entry should be in the format "key|Description", where:
-#   - key:     The module name (used for sourcing ~/.caddie_<key>)
-#   - Description: A human-readable description for help output.
-# Example: "rust|Rust development tools" means the module "rust" will be loaded from ~/.caddie_rust,
-#          and its description will be shown in help listings.
-CADDIE_MODULES=(
-    "core|Core caddie functions"
-    "python|Python environment management"
-    "rust|Rust development tools"
-    "ios|iOS development tools"
-    "cross|Cross-language features"
-    "cursor|Cursor IDE integration"
-)
+# Auto-discover caddie modules from ~/.caddie_modules/ directory
+# Each module file should have functions named <module>_caddie_register and <module>_help_register
+CADDIE_MODULES_DIR="$HOME/.caddie_modules"
+
+# Source data structure files
+# shellcheck disable=SC1091
+source "$HOME/.caddie_data/.caddie_commands"
+# shellcheck disable=SC1091
+source "$HOME/.caddie_data/.caddie_help"
+
+# Helper function to extract module name from filename
+function caddie_extract_module_name() {
+    local filename="$1"
+    basename "$filename" | sed 's/^\.caddie_//'
+}
 
 # Load all modules and register them
-for moddesc in "${CADDIE_MODULES[@]}"; do
-    module="${moddesc%%|*}"
-    desc="${moddesc#*|}"
-    file="$HOME/.caddie_${module}"
-    if [ -f "$file" ]; then
-        source "$file"
-        caddie_module_help_register "$module" "$desc"
-    else
-        echo "Warning: ${desc} module not found at $file"
-    fi
-done
-
-# Discover all available commands from all modules
-CADDIE_COMMANDS=()
-
-for moddesc in "${CADDIE_MODULES[@]}"; do
-    module="${moddesc%%|*}"
-    if [ -n "$module" ]; then
-        # Call module's registration function to get its commands
-        if command -v "${module}_caddie_register" >/dev/null 2>&1; then
-            while IFS= read -r cmd_info; do
-                if [ -n "$cmd_info" ]; then
-                    CADDIE_COMMANDS+=("$cmd_info")
-                fi
-            done < <("${module}_caddie_register")
-        fi
-    fi
-done
-
-# Main caddie function - dynamically routes commands to modules
-caddie() {
-    local command="$1"
-    local args=("$@")
+if [ -d "$CADDIE_MODULES_DIR" ]; then
+    # Reset arrays before loading
+    caddie_commands_reset
+    caddie_help_reset
     
-    # Try to route to a module using dynamic command discovery
-    for cmd_info in "${CADDIE_COMMANDS[@]}"; do
-        parse_cmd_registration "$cmd_info"
-        
-        if [ "$command" = "$PARSED_CMD_PATTERN" ]; then
-            # Call the module's function with remaining arguments
-            # Remove the first argument (the command) and pass the rest
-            local remaining_args=("${args[@]:1}")
-            eval "${PARSED_FUNC_NAME} \"\${remaining_args[@]}\""
-            return 0
+    # Use find with while read for better robustness (handles spaces in filenames)
+    find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null | while IFS= read -r -d '' module_file; do
+        if [ -f "$module_file" ]; then
+            # Extract module name from filename
+            local module
+            module=$(caddie_extract_module_name "$module_file")
+            
+            echo "Loading module: $module"
+            # shellcheck disable=SC1090
+            source "$module_file"
+            
+            # Call the module's register function
+            if command -v "${module}_register" >/dev/null 2>&1; then
+                echo "  ✓ Registered $module module"
+                "${module}_register"
+            else
+                echo "  ⚠ Module $module missing register function"
+            fi
         fi
     done
+else
+    echo "Warning: ~/.caddie_modules directory not found"
+fi
+
+# Commands are now discovered during module loading, no need for separate discovery loop
+
+# Function to display caddie help
+function caddie_help() {
+    echo "Caddie.sh - Development Environment Manager"
+    echo "=========================================="
+    echo ""
+    echo "Usage: caddie <command>"
+    echo ""
+    echo "Command Categories:"
+    echo "  home                     Home directory management"
     
-    # Handle core commands and errors
+    # Display the loaded modules help information
+    local loaded_modules
+    loaded_modules=$(caddie_help_get)
+
+    if [ -n "$loaded_modules" ]; then
+        echo "Available modules:"
+        for help_info in $loaded_modules; do
+            echo "$help_info" | sed 's/^/  /;s/|/ - /'
+        done
+    fi
+    
+    echo
+    echo "General Commands:"
+    echo "  help                     Show this overview"
+    echo "  version                  Show caddie version"
+    echo
+    echo "Detailed Help:"
+    echo "  Use 'caddie <module>:help' for detailed information on any module"
+    echo
+}
+
+# Main caddie function - directly executes commands
+function caddie() {
+    local command="$1"
+    shift 2>/dev/null || true  # Remove first argument, handle case where no args
+    
+    # Handle built-in commands first
     case "$command" in
         "help"|"--help"|"-h")
             caddie_help
+            return 0
             ;;
         "version"|"--version"|"-v")
             caddie_version
+            return 0
             ;;
         "")
-            echo "Caddie.sh - Development Environment Manager"
-            echo "Use 'caddie help' for available commands"
-            ;;
-        *)
-            echo "Error: Unknown command '$command'"
-            echo "Use 'caddie help' for available commands"
-            return 1
+            caddie_help
+            return 0
             ;;
     esac
+    
+    # Try to find and execute the command from registered commands
+    local found=false
+
+    for cmd_info in $(caddie_commands_get); do
+        # Extract the command pattern (module:command) and function name
+        local cmd_pattern
+        local func_name
+        cmd_pattern=$(echo "$cmd_info" | cut -d'|' -f1)
+        func_name=$(echo "$cmd_info" | cut -d'|' -f2)
+        
+        if [ "$cmd_pattern" = "$command" ]; then
+            # Found the command, execute it with remaining arguments
+            if [ -n "$func_name" ] && command -v "$func_name" >/dev/null 2>&1; then
+                eval "$func_name \"\$@\""
+                found=true
+                break
+            else
+                echo "Error: Function '$func_name' not found for command '$command'"
+                return 1
+            fi
+        fi
+    done
+    
+    if [ "$found" = false ]; then
+        echo "Error: Unknown command '$command'"
+        echo "Use 'caddie help' to see available commands"
+        return 1
+    fi
 }
 
-# Shared function to parse command registration format
-# Input: "module:command|function|description" (pipe-separated for easy parsing)
-# Output: module, cmd_part, func_name, description, cmd_pattern
-parse_cmd_registration() {
-    local cmd_info="$1"
-    
-    # Split on pipe character for clean parsing (bash 3.2 compatible)
-    local module_cmd=$(echo "$cmd_info" | cut -d'|' -f1)
-    local func_name=$(echo "$cmd_info" | cut -d'|' -f2)
-    local description=$(echo "$cmd_info" | cut -d'|' -f3)
-    
-    # Split module:command to get module and command parts
-    local module="${module_cmd%%:*}"
-    local cmd_part="${module_cmd#*:}"
-    
-    # Build the command pattern for matching
-    local cmd_pattern="${module}:${cmd_part}"
-    
-    # Return values via global variables (bash 3.2 compatible)
-    PARSED_MODULE="$module"
-    PARSED_CMD_PART="$cmd_part"
-    PARSED_FUNC_NAME="$func_name"
-    PARSED_DESCRIPTION="$description"
-    PARSED_CMD_PATTERN="$cmd_pattern"
-}
+
 
 # Tab completion function for caddie command
-_caddie_completion() {
+function _caddie_completion() {
     local cur prev opts
     COMPREPLY=()
     
     # Safely access COMP_WORDS array elements
-    if [ -n "$COMP_CWORD" ] && [ ${COMP_CWORD} -ge 0 ] && [ ${COMP_CWORD} -lt ${#COMP_WORDS[@]} ]; then
+    if [ -n "$COMP_CWORD" ] && [ "${COMP_CWORD}" -ge 0 ] && [ "${COMP_CWORD}" -lt ${#COMP_WORDS[@]} ]; then
         cur="${COMP_WORDS[COMP_CWORD]}"
     else
         cur=""
     fi
     
-    if [ -n "$COMP_CWORD" ] && [ ${COMP_CWORD} -ge 1 ] && [ ${COMP_CWORD} -lt ${#COMP_WORDS[@]} ]; then
+    if [ -n "$COMP_CWORD" ] && [ "${COMP_CWORD}" -ge 1 ] && [ "${COMP_CWORD}" -lt ${#COMP_WORDS[@]} ]; then
         prev="${COMP_WORDS[COMP_CWORD-1]}"
     else
         prev=""
@@ -148,18 +167,20 @@ _caddie_completion() {
     # Build available caddie commands dynamically from discovered commands
     local opts="help version --help -h --version -v"
 
-    for cmd_info in "${CADDIE_COMMANDS[@]}"; do
-        parse_cmd_registration "$cmd_info"
-        if [ -n "$PARSED_CMD_PATTERN" ]; then
-            opts="$opts $PARSED_CMD_PATTERN"
+    for cmd_info in $(caddie_commands_get); do
+        # Extract just the command pattern (module:command) for completion
+        local cmd_pattern
+        cmd_pattern=$(echo "$cmd_info" | cut -d'|' -f1)
+        if [ -n "$cmd_pattern" ]; then
+            opts="$opts $cmd_pattern"
         fi
     done
     
     # If we're completing the first argument (command)
-    if [ -n "$COMP_CWORD" ] && [ ${COMP_CWORD} -eq 1 ]; then
+    if [ -n "$COMP_CWORD" ] && [ "${COMP_CWORD}" -eq 1 ]; then
         # Use compgen to generate completions from our options
         local IFS=$'\n'
-        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+        mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
         return 0
     fi
     
@@ -167,72 +188,75 @@ _caddie_completion() {
     case "${prev}" in
         "core:set:home")
             # Complete with directory names
-            COMPREPLY=( $(compgen -d -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
             return 0
             ;;
         "python:create"|"python:activate"|"python:remove")
             # Complete with existing virtual environment names
             if [ -d "$HOME/.virtualenvs" ]; then
-                local venvs=$(ls "$HOME/.virtualenvs" 2>/dev/null)
-                COMPREPLY=( $(compgen -W "${venvs}" -- "${cur}") )
+                local venvs
+                venvs=$(ls "$HOME/.virtualenvs" 2>/dev/null)
+                mapfile -t COMPREPLY < <(compgen -W "${venvs}" -- "${cur}")
             fi
             return 0
             ;;
         "python:install"|"python:uninstall"|"python:upgrade")
             # Complete with installed packages (if pip is available)
             if command -v pip >/dev/null 2>&1; then
-                local packages=$(pip list --format=freeze 2>/dev/null | cut -d'=' -f1)
-                COMPREPLY=( $(compgen -W "${packages}" -- "${cur}") )
+                local packages
+                packages=$(pip list --format=freeze 2>/dev/null | cut -d'=' -f1)
+                mapfile -t COMPREPLY < <(compgen -W "${packages}" -- "${cur}")
             fi
             return 0
             ;;
         "rust:new")
             # Complete with directory names for project location
-            COMPREPLY=( $(compgen -d -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
             return 0
             ;;
         "rust:add"|"rust:remove")
             # Complete with installed crates (if cargo is available)
             if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
-                local crates=$(grep -E '^[[:space:]]*[a-zA-Z0-9_-]+[[:space:]]*=' Cargo.toml 2>/dev/null | sed 's/[[:space:]]*\([a-zA-Z0-9_-]*\)[[:space:]]*=.*/\1/')
-                COMPREPLY=( $(compgen -W "${crates}" -- "${cur}") )
+                local crates
+                crates=$(grep -E '^[[:space:]]*[a-zA-Z0-9_-]+[[:space:]]*=' Cargo.toml 2>/dev/null | sed 's/[[:space:]]*\([a-zA-Z0-9_-]*\)[[:space:]]*=.*/\1/')
+                mapfile -t COMPREPLY < <(compgen -W "${crates}" -- "${cur}")
             fi
             return 0
             ;;
         "rust:toolchain")
             # Complete with common Rust toolchain versions
             local toolchains="stable beta nightly"
-            COMPREPLY=( $(compgen -W "${toolchains}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${toolchains}" -- "${cur}")
             return 0
             ;;
         "rust:target")
             # Complete with common Rust targets
             local targets="x86_64-unknown-linux-gnu aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc"
-            COMPREPLY=( $(compgen -W "${targets}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${targets}" -- "${cur}")
             return 0
             ;;
         "rust:component")
             # Complete with common Rust components
             local components="clippy rustfmt rust-src rust-analysis"
-            COMPREPLY=( $(compgen -W "${components}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${components}" -- "${cur}")
             return 0
             ;;
         "cross:template:create")
             # Complete with available template types
             local templates="web cli api data ml lib wasm app framework extension mobile"
-            COMPREPLY=( $(compgen -W "${templates}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${templates}" -- "${cur}")
             return 0
             ;;
         # Cursor integration completions
         "cursor:open")
             # Complete with directory names
-            COMPREPLY=( $(compgen -d -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
             return 0
             ;;
         "cursor:new")
             # Complete with project types
             local project_types="web api mobile data ml cli lib"
-            COMPREPLY=( $(compgen -W "${project_types}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${project_types}" -- "${cur}")
             return 0
             ;;
         "cursor:switch")
@@ -249,31 +273,32 @@ _caddie_completion() {
             if [ -d "$HOME/work" ]; then
                 projects="$projects $(ls "$HOME/work" 2>/dev/null)"
             fi
-            COMPREPLY=( $(compgen -W "${projects}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${projects}" -- "${cur}")
             return 0
             ;;
         "cursor:ai:explain"|"cursor:ai:refactor"|"cursor:ai:test"|"cursor:ai:docs"|"cursor:ai:review")
             # Complete with file names
-            COMPREPLY=( $(compgen -f -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
             return 0
             ;;
         "cursor:ext:install")
             # Complete with common extension IDs
             local common_extensions="ms-python.python ms-python.pylint ms-python.black-formatter rust-lang.rust-analyzer ms-vscode.vscode-typescript-next esbenp.prettier-vscode ms-vscode.vscode-eslint ms-vscode.vscode-json redhat.vscode-yaml ms-vscode.vscode-markdown"
-            COMPREPLY=( $(compgen -W "${common_extensions}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${common_extensions}" -- "${cur}")
             return 0
             ;;
         "cursor:ext:recommend")
             # Complete with project types
             local project_types="python rust javascript typescript web mobile data ml"
-            COMPREPLY=( $(compgen -W "${project_types}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${project_types}" -- "${cur}")
             return 0
             ;;
         "cursor:config:restore")
             # Complete with backup directories
             if [ -d "$HOME/.cursor-backups" ]; then
-                local backups=$(ls "$HOME/.cursor-backups" 2>/dev/null)
-                COMPREPLY=( $(compgen -W "${backups}" -- "${cur}") )
+                local backups
+                backups=$(ls "$HOME/.cursor-backups" 2>/dev/null)
+                mapfile -t COMPREPLY < <(compgen -W "${backups}" -- "${cur}")
             fi
             return 0
             ;;
@@ -287,57 +312,57 @@ _caddie_completion() {
     case "${first_arg}" in
         "cursor:new")
             # First argument is project type, second is project name
-            if [ ${COMP_CWORD} -eq 2 ]; then
+            if [ "${COMP_CWORD}" -eq 2 ]; then
                 local project_types="web api mobile data ml cli lib"
-                COMPREPLY=( $(compgen -W "${project_types}" -- "${cur}") )
+                mapfile -t COMPREPLY < <(compgen -W "${project_types}" -- "${cur}")
                 return 0
-            elif [ ${COMP_CWORD} -eq 3 ]; then
+            elif [ "${COMP_CWORD}" -eq 3 ]; then
                 # Complete with directory names for project location
-                COMPREPLY=( $(compgen -d -- "${cur}") )
+                mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
                 return 0
             fi
             ;;
         "cursor:ai:refactor")
             # First argument is file, second is refactor type
-            if [ ${COMP_CWORD} -eq 2 ]; then
-                COMPREPLY=( $(compgen -f -- "${cur}") )
+            if [ "${COMP_CWORD}" -eq 2 ]; then
+                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
                 return 0
-            elif [ ${COMP_CWORD} -eq 3 ]; then
+            elif [ "${COMP_CWORD}" -eq 3 ]; then
                 local refactor_types="general performance readability security structure"
-                COMPREPLY=( $(compgen -W "${refactor_types}" -- "${cur}") )
+                mapfile -t COMPREPLY < <(compgen -W "${refactor_types}" -- "${cur}")
                 return 0
             fi
             ;;
         "cursor:ai:test")
             # First argument is file, second is test framework
-            if [ ${COMP_CWORD} -eq 2 ]; then
-                COMPREPLY=( $(compgen -f -- "${cur}") )
+            if [ "${COMP_CWORD}" -eq 2 ]; then
+                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
                 return 0
-            elif [ ${COMP_CWORD} -eq 3 ]; then
+            elif [ "${COMP_CWORD}" -eq 3 ]; then
                 local test_frameworks="pytest unittest jest mocha rspec"
-                COMPREPLY=( $(compgen -W "${test_frameworks}" -- "${cur}") )
+                mapfile -t COMPREPLY < <(compgen -W "${test_frameworks}" -- "${cur}")
                 return 0
             fi
             ;;
         "cursor:ai:docs")
             # First argument is file, second is doc format
-            if [ ${COMP_CWORD} -eq 2 ]; then
-                COMPREPLY=( $(compgen -f -- "${cur}") )
+            if [ "${COMP_CWORD}" -eq 2 ]; then
+                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
                 return 0
-            elif [ ${COMP_CWORD} -eq 3 ]; then
+            elif [ "${COMP_CWORD}" -eq 3 ]; then
                 local doc_formats="markdown sphinx javadoc godoc rustdoc"
-                COMPREPLY=( $(compgen -W "${doc_formats}" -- "${cur}") )
+                mapfile -t COMPREPLY < <(compgen -W "${doc_formats}" -- "${cur}")
                 return 0
             fi
             ;;
         "cursor:ai:review")
             # First argument is file, second is review focus
-            if [ ${COMP_CWORD} -eq 2 ]; then
-                COMPREPLY=( $(compgen -f -- "${cur}") )
+            if [ "${COMP_CWORD}" -eq 2 ]; then
+                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
                 return 0
-            elif [ ${COMP_CWORD} -eq 3 ]; then
+            elif [ "${COMP_CWORD}" -eq 3 ]; then
                 local review_focus="general security performance style bugs best-practices"
-                COMPREPLY=( $(compgen -W "${review_focus}" -- "${cur}") )
+                mapfile -t COMPREPLY < <(compgen -W "${review_focus}" -- "${cur}")
                 return 0
             fi
             ;;
@@ -346,13 +371,21 @@ _caddie_completion() {
     return 0
 }
 
-# Clear any existing completion for caddie and register our completion function
-complete -r caddie 2>/dev/null || true
-complete -F _caddie_completion caddie
-
-# Export the caddie function so it's available in subshells
+# Export the caddie function and helper functions so they're available in subshells
 export -f caddie
-export -f _caddie_completion
+export -f caddie_help
+export -f caddie_extract_module_name
+
+# Set up tab completion if available (bash 4.0+)
+if command -v complete >/dev/null 2>&1; then
+    # Clear any existing completion for caddie and register our completion function
+    complete -r caddie 2>/dev/null || true
+    complete -F _caddie_completion caddie
+    export -f _caddie_completion
+    echo "  ✓ Tab completion enabled"
+else
+    echo "  ⚠ Tab completion not available (bash 3.2 detected)"
+fi
 
 # Caddie is now ready to use!
 echo "✓ Caddie.sh loaded successfully with all modules"

@@ -1,0 +1,642 @@
+#!/bin/bash
+
+# Caddie.sh - Ruby Environment Management (RVM-based)
+# This file provides Ruby development environment management using RVM
+
+# Function to register Ruby caddie commands
+# Main registration function for ruby module
+ruby_register() {
+    ruby_help_register
+    ruby_commands_register
+}
+
+# Register help information
+ruby_help_register() {
+    caddie_help_append "ruby" "Ruby environment management with RVM"
+}
+
+# Register commands
+ruby_commands_register() {
+    caddie_commands_append "ruby:setup|caddie_ruby_setup|Setup Ruby development environment with RVM"
+    caddie_commands_append "ruby:install|caddie_ruby_install|Install specific Ruby version"
+    caddie_commands_append "ruby:use|caddie_ruby_use|Switch to specific Ruby version"
+    caddie_commands_append "ruby:list|caddie_ruby_list|List installed Ruby versions"
+    caddie_commands_append "ruby:current|caddie_ruby_current|Show current Ruby version"
+    caddie_commands_append "ruby:gemset:create|caddie_ruby_gemset_create|Create new gemset"
+    caddie_commands_append "ruby:gemset:use|caddie_ruby_gemset_use|Switch to specific gemset"
+    caddie_commands_append "ruby:gemset:list|caddie_ruby_gemset_list|List available gemsets"
+    caddie_commands_append "ruby:gemset:delete|caddie_ruby_gemset_delete|Delete gemset"
+    caddie_commands_append "ruby:gem:install|caddie_ruby_gem_install|Install Ruby gem"
+    caddie_commands_append "ruby:gem:uninstall|caddie_ruby_gem_uninstall|Uninstall Ruby gem"
+    caddie_commands_append "ruby:gem:list|caddie_ruby_gem_list|List installed gems"
+    caddie_commands_append "ruby:gem:update|caddie_ruby_gem_update|Update Ruby gem"
+    caddie_commands_append "ruby:gem:outdated|caddie_ruby_gem_outdated|Show outdated gems"
+    caddie_commands_append "ruby:project:init|caddie_ruby_project_init|Initialize Ruby project structure"
+    caddie_commands_append "ruby:project:test|caddie_ruby_project_test|Run Ruby tests"
+    caddie_commands_append "ruby:project:build|caddie_ruby_project_build|Build Ruby project"
+    caddie_commands_append "ruby:project:serve|caddie_ruby_project_serve|Serve Ruby web application"
+    caddie_commands_append "ruby:bundler:install|caddie_ruby_bundler_install|Install Bundler dependencies"
+    caddie_commands_append "ruby:bundler:update|caddie_ruby_bundler_update|Update Bundler dependencies"
+    caddie_commands_append "ruby:bundler:exec|caddie_ruby_bundler_exec|Execute command with Bundler"
+    caddie_commands_append "ruby:rails:new|caddie_ruby_rails_new|Create new Rails application"
+    caddie_commands_append "ruby:rails:server|caddie_ruby_rails_server|Start Rails server"
+    caddie_commands_append "ruby:rails:console|caddie_ruby_rails_console|Start Rails console"
+    caddie_commands_append "ruby:rails:generate|caddie_ruby_rails_generate|Generate Rails component"
+    caddie_commands_append "ruby:rails:migrate|caddie_ruby_rails_migrate|Run Rails migrations"
+    caddie_commands_append "ruby:rails:routes|caddie_ruby_rails_routes|Show Rails routes"
+    caddie_commands_append "ruby:version|caddie_ruby_version|Show Ruby and RVM version information"
+}
+
+# Function to setup Ruby development environment
+caddie_ruby_setup() {
+    echo "Setting up Ruby development environment..."
+    
+    # Check if RVM is installed
+    if ! command -v rvm >/dev/null 2>&1; then
+        echo "Installing RVM..."
+        curl -sSL https://get.rvm.io | bash -s stable
+        
+        # Source RVM
+        # shellcheck disable=SC1091
+        source "$HOME/.rvm/scripts/rvm"
+        
+        if ! command -v rvm >/dev/null 2>&1; then
+            echo "✗ Failed to install RVM"
+            return 1
+        fi
+    else
+        echo "✓ RVM already installed"
+    fi
+    
+    # Install latest stable Ruby
+    echo "Installing latest stable Ruby..."
+    
+    if rvm install ruby --latest; then
+        echo "✓ Ruby installed successfully"
+        rvm use ruby --default
+        echo "✓ Ruby set as default"
+    else
+        echo "✗ Failed to install Ruby"
+        return 1
+    fi
+    
+    # Install essential gems
+    echo "Installing essential gems..."
+    gem install bundler rails rake rspec pry
+    
+    echo "✓ Ruby development environment setup complete"
+    caddie_ruby_version
+}
+
+# Function to install specific Ruby version
+caddie_ruby_install() {
+    local version="$1"
+    
+    if [ -z "$version" ]; then
+        echo "Error: Please provide a Ruby version"
+        echo "Usage: caddie ruby:install <version>"
+        echo "Examples: 3.2.2, 3.1.4, 3.0.6"
+        return 1
+    fi
+    
+    echo "Installing Ruby $version..."
+    
+    if rvm install "ruby-$version"; then
+        echo "✓ Ruby $version installed successfully"
+        echo "Use 'caddie ruby:use $version' to switch to it"
+    else
+        echo "✗ Failed to install Ruby $version"
+        return 1
+    fi
+}
+
+# Function to switch to specific Ruby version
+caddie_ruby_use() {
+    local version="$1"
+    
+    if [ -z "$version" ]; then
+        echo "Error: Please provide a Ruby version"
+        echo "Usage: caddie ruby:use <version>"
+        return 1
+    fi
+    
+    echo "Switching to Ruby $version..."
+    
+    if rvm use "ruby-$version"; then
+        echo "✓ Switched to Ruby $version"
+        echo "Current Ruby: $(ruby --version)"
+        echo "Current Gem: $(gem --version)"
+    else
+        echo "✗ Failed to switch to Ruby $version"
+        return 1
+    fi
+}
+
+# Function to list installed Ruby versions
+caddie_ruby_list() {
+    echo "Installed Ruby versions:"
+    echo "======================="
+    rvm list
+    echo ""
+    echo "Current version: $(ruby --version)"
+}
+
+# Function to show current Ruby version
+caddie_ruby_current() {
+    echo "Current Ruby Environment:"
+    echo "========================"
+    echo "Ruby: $(ruby --version)"
+    echo "Gem: $(gem --version)"
+    echo "RVM: $(rvm --version)"
+    echo "Gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
+}
+
+# Function to create new gemset
+caddie_ruby_gemset_create() {
+    local gemset_name="$1"
+    
+    if [ -z "$gemset_name" ]; then
+        echo "Error: Please provide a gemset name"
+        echo "Usage: caddie ruby:gemset:create <name>"
+        return 1
+    fi
+    
+    echo "Creating gemset '$gemset_name'..."
+    
+    if rvm gemset create "$gemset_name"; then
+        echo "✓ Gemset '$gemset_name' created successfully"
+        echo "Use 'caddie ruby:gemset:use $gemset_name' to switch to it"
+    else
+        echo "✗ Failed to create gemset '$gemset_name'"
+        return 1
+    fi
+}
+
+# Function to switch to specific gemset
+caddie_ruby_gemset_use() {
+    local gemset_name="$1"
+    
+    if [ -z "$gemset_name" ]; then
+        echo "Error: Please provide a gemset name"
+        echo "Usage: caddie ruby:gemset:use <name>"
+        return 1
+    fi
+    
+    echo "Switching to gemset '$gemset_name'..."
+    
+    if rvm gemset use "$gemset_name"; then
+        echo "✓ Switched to gemset '$gemset_name'"
+        echo "Current gemset: $(rvm gemset name)"
+    else
+        echo "✗ Failed to switch to gemset '$gemset_name'"
+        return 1
+    fi
+}
+
+# Function to list available gemsets
+caddie_ruby_gemset_list() {
+    echo "Available gemsets:"
+    echo "=================="
+    rvm gemset list
+}
+
+# Function to delete gemset
+caddie_ruby_gemset_delete() {
+    local gemset_name="$1"
+    
+    if [ -z "$gemset_name" ]; then
+        echo "Error: Please provide a gemset name"
+        echo "Usage: caddie ruby:gemset:delete <name>"
+        return 1
+    fi
+    
+    echo "Deleting gemset '$gemset_name'..."
+    
+    if rvm gemset delete "$gemset_name"; then
+        echo "✓ Gemset '$gemset_name' deleted successfully"
+    else
+        echo "✗ Failed to delete gemset '$gemset_name'"
+        return 1
+    fi
+}
+
+# Function to install Ruby gem
+caddie_ruby_gem_install() {
+    local gem_name="$1"
+    
+    if [ -z "$gem_name" ]; then
+        echo "Error: Please provide a gem name"
+        echo "Usage: caddie ruby:gem:install <gem>"
+        return 1
+    fi
+    
+    echo "Installing gem '$gem_name'..."
+    
+    if gem install "$gem_name"; then
+        echo "✓ Gem '$gem_name' installed successfully"
+    else
+        echo "✗ Failed to install gem '$gem_name'"
+        return 1
+    fi
+}
+
+# Function to uninstall Ruby gem
+caddie_ruby_gem_uninstall() {
+    local gem_name="$1"
+    
+    if [ -z "$gem_name" ]; then
+        echo "Error: Please provide a gem name"
+        echo "Usage: caddie ruby:gem:uninstall <gem>"
+        return 1
+    fi
+    
+    echo "Uninstalling gem '$gem_name'..."
+    
+    if gem uninstall "$gem_name"; then
+        echo "✓ Gem '$gem_name' uninstalled successfully"
+    else
+        echo "✗ Failed to uninstall gem '$gem_name'"
+        return 1
+    fi
+}
+
+# Function to list installed gems
+caddie_ruby_gem_list() {
+    echo "Installed gems:"
+    echo "==============="
+    gem list
+}
+
+# Function to update Ruby gem
+caddie_ruby_gem_update() {
+    local gem_name="$1"
+    
+    if [ -z "$gem_name" ]; then
+        echo "Error: Please provide a gem name"
+        echo "Usage: caddie ruby:gem:update <gem>"
+        return 1
+    fi
+    
+    echo "Updating gem '$gem_name'..."
+    
+    if gem update "$gem_name"; then
+        echo "✓ Gem '$gem_name' updated successfully"
+    else
+        echo "✗ Failed to update gem '$gem_name'"
+        return 1
+    fi
+}
+
+# Function to show outdated gems
+caddie_ruby_gem_outdated() {
+    echo "Outdated gems:"
+    echo "=============="
+    gem outdated
+}
+
+# Function to initialize Ruby project structure
+caddie_ruby_project_init() {
+    local project_name="$1"
+    
+    if [ -z "$project_name" ]; then
+        project_name="my-ruby-project"
+    fi
+    
+    echo "Initializing Ruby project: $project_name"
+    
+    mkdir -p "$project_name"
+    cd "$project_name" || exit
+    
+    # Create basic project structure
+    mkdir -p lib spec bin
+    touch "lib/$(echo "$project_name" | tr '-' '_').rb"
+    touch spec/spec_helper.rb
+    touch "bin/$(echo "$project_name" | tr '-' '_')"
+    touch Gemfile
+    touch README.md
+    touch .gitignore
+    
+    # Create basic Gemfile
+    cat > Gemfile << 'EOF'
+source 'https://rubygems.org'
+
+gem 'rake'
+gem 'rspec'
+gem 'pry'
+
+group :development do
+  gem 'rubocop'
+  gem 'yard'
+end
+EOF
+
+    # Create basic .gitignore
+    cat > .gitignore << 'EOF'
+# Ruby
+*.gem
+*.rbc
+/.config
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/reports/
+/spec/examples.txt
+/test/tmp/
+/test/version_tmp/
+/tmp/
+
+# Bundler
+/.bundle/
+/vendor/bundle
+/lib/bundler/man/
+
+# RVM
+/.ruby-version
+/.ruby-gemset
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOF
+
+    # Create basic Rakefile
+    cat > Rakefile << 'EOF'
+require 'rspec/core/rake_task'
+
+RSpec::Core::RakeTask.new(:spec)
+
+task default: :spec
+EOF
+
+    echo "✓ Ruby project '$project_name' initialized"
+    echo "  Created: lib/, spec/, bin/, Gemfile, README.md, .gitignore, Rakefile"
+}
+
+# Function to run Ruby tests
+caddie_ruby_project_test() {
+    if [ ! -f "Gemfile" ]; then
+        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        return 1
+    fi
+    
+    echo "Running Ruby tests..."
+    
+    if [ -f "Rakefile" ]; then
+        bundle exec rake spec
+    elif [ -d "spec" ]; then
+        bundle exec rspec
+    else
+        echo "No tests found. Create tests in the 'spec' directory"
+        return 1
+    fi
+}
+
+# Function to build Ruby project
+caddie_ruby_project_build() {
+    if [ ! -f "Gemfile" ]; then
+        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        return 1
+    fi
+    
+    echo "Building Ruby project..."
+    
+    # Install dependencies
+    bundle install
+    
+    # Run tests
+    if [ -d "spec" ]; then
+        bundle exec rspec
+    fi
+    
+    echo "✓ Ruby project built successfully"
+}
+
+# Function to serve Ruby web application
+caddie_ruby_project_serve() {
+    if [ ! -f "Gemfile" ]; then
+        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        return 1
+    fi
+    
+    echo "Starting Ruby web application..."
+    
+    # Check if it's a Rails app
+    if [ -f "config/application.rb" ]; then
+        echo "Detected Rails application"
+        bundle exec rails server
+    elif [ -f "config.ru" ]; then
+        echo "Detected Rack application"
+        bundle exec rackup
+    elif [ -f "app.rb" ]; then
+        echo "Detected Sinatra application"
+        bundle exec ruby app.rb
+    else
+        echo "No web application detected"
+        return 1
+    fi
+}
+
+# Function to install Bundler dependencies
+caddie_ruby_bundler_install() {
+    if [ ! -f "Gemfile" ]; then
+        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        return 1
+    fi
+    
+    echo "Installing Bundler dependencies..."
+    
+    if bundle install; then
+        echo "✓ Dependencies installed successfully"
+    else
+        echo "✗ Failed to install dependencies"
+        return 1
+    fi
+}
+
+# Function to update Bundler dependencies
+caddie_ruby_bundler_update() {
+    if [ ! -f "Gemfile" ]; then
+        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        return 1
+    fi
+    
+    echo "Updating Bundler dependencies..."
+    
+    if bundle update; then
+        echo "✓ Dependencies updated successfully"
+    else
+        echo "✗ Failed to update dependencies"
+        return 1
+    fi
+}
+
+# Function to execute command with Bundler
+caddie_ruby_bundler_exec() {
+    local command="$1"
+    
+    if [ -z "$command" ]; then
+        echo "Error: Please provide a command to execute"
+        echo "Usage: caddie ruby:bundler:exec <command>"
+        return 1
+    fi
+    
+    if [ ! -f "Gemfile" ]; then
+        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        return 1
+    fi
+    
+    echo "Executing with Bundler: $command"
+    bundle exec "$command"
+}
+
+# Function to create new Rails application
+caddie_ruby_rails_new() {
+    local app_name="$1"
+    
+    if [ -z "$app_name" ]; then
+        echo "Error: Please provide an application name"
+        echo "Usage: caddie ruby:rails:new <app-name>"
+        return 1
+    fi
+    
+    echo "Creating new Rails application: $app_name"
+    
+    # Check if Rails is installed
+    if ! gem list rails -i >/dev/null 2>&1; then
+        echo "Installing Rails..."
+        gem install rails
+    fi
+    
+    # Create new Rails app
+    
+    if rails new "$app_name"; then
+        echo "✓ Rails application '$app_name' created successfully"
+        echo "  Enter directory: cd $app_name"
+        echo "  Start server: caddie ruby:rails:server"
+    else
+        echo "✗ Failed to create Rails application"
+        return 1
+    fi
+}
+
+# Function to start Rails server
+caddie_ruby_rails_server() {
+    if [ ! -f "config/application.rb" ]; then
+        echo "Error: Not in a Rails application directory"
+        return 1
+    fi
+    
+    echo "Starting Rails server..."
+    bundle exec rails server
+}
+
+# Function to start Rails console
+caddie_ruby_rails_console() {
+    if [ ! -f "config/application.rb" ]; then
+        echo "Error: Not in a Rails application directory"
+        return 1
+    fi
+    
+    echo "Starting Rails console..."
+    bundle exec rails console
+}
+
+# Function to generate Rails component
+caddie_ruby_rails_generate() {
+    local generator="$1"
+    local name="$2"
+    
+    if [ -z "$generator" ] || [ -z "$name" ]; then
+        echo "Error: Please provide generator and name"
+        echo "Usage: caddie ruby:rails:generate <generator> <name>"
+        echo "Examples: model User, controller Users, scaffold Post"
+        return 1
+    fi
+    
+    if [ ! -f "config/application.rb" ]; then
+        echo "Error: Not in a Rails application directory"
+        return 1
+    fi
+    
+    echo "Generating Rails component: $generator $name"
+    bundle exec rails generate "$generator" "$name"
+}
+
+# Function to run Rails migrations
+caddie_ruby_rails_migrate() {
+    if [ ! -f "config/application.rb" ]; then
+        echo "Error: Not in a Rails application directory"
+        return 1
+    fi
+    
+    echo "Running Rails migrations..."
+    bundle exec rails db:migrate
+}
+
+# Function to show Rails routes
+caddie_ruby_rails_routes() {
+    if [ ! -f "config/application.rb" ]; then
+        echo "Error: Not in a Rails application directory"
+        return 1
+    fi
+    
+    echo "Rails routes:"
+    echo "============="
+    bundle exec rails routes
+}
+
+# Function to show Ruby and RVM version information
+caddie_ruby_version() {
+    echo "Ruby Environment Information"
+    echo "============================"
+    echo "Ruby: $(ruby --version)"
+    echo "Gem: $(gem --version)"
+    echo "RVM: $(rvm --version)"
+    echo "Bundler: $(bundle --version 2>/dev/null || echo 'not installed')"
+    echo "Rails: $(rails --version 2>/dev/null || echo 'not installed')"
+    echo "Current gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
+}
+
+# Export Ruby functions
+export -f ruby_caddie_register
+export -f caddie_ruby_setup
+export -f caddie_ruby_install
+export -f caddie_ruby_use
+export -f caddie_ruby_list
+export -f caddie_ruby_current
+export -f caddie_ruby_gemset_create
+export -f caddie_ruby_gemset_use
+export -f caddie_ruby_gemset_list
+export -f caddie_ruby_gemset_delete
+export -f caddie_ruby_gem_install
+export -f caddie_ruby_gem_uninstall
+export -f caddie_ruby_gem_list
+export -f caddie_ruby_gem_update
+export -f caddie_ruby_gem_outdated
+export -f caddie_ruby_project_init
+export -f caddie_ruby_project_test
+export -f caddie_ruby_project_build
+export -f caddie_ruby_project_serve
+export -f caddie_ruby_bundler_install
+export -f caddie_ruby_bundler_update
+export -f caddie_ruby_bundler_exec
+export -f caddie_ruby_rails_new
+export -f caddie_ruby_rails_server
+export -f caddie_ruby_rails_console
+export -f caddie_ruby_rails_generate
+export -f caddie_ruby_rails_migrate
+export -f caddie_ruby_rails_routes
+export -f caddie_ruby_version

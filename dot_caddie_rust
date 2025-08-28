@@ -5,7 +5,8 @@
 
 caddie_rust_load_env() {
     if [ -f "$HOME/.cargo/env" ]; then
-        . "$HOME/.cargo/env"
+        # shellcheck disable=SC1091
+        source "$HOME/.cargo/env"
     else
         echo "Error: Rust environment not found at ~/.cargo/env"
         echo "  Please install Rust first: https://rustup.rs/"
@@ -282,24 +283,35 @@ caddie_rust_component() {
     echo "✓ Installed Rust component '$component'"
 }
 
-# Function to register Rust caddie commands
-rust_caddie_register() {
-    echo "rust:new|caddie_rust_new|Create new Rust project"
-    echo "rust:build|caddie_rust_build|Build current project"
-    echo "rust:run|caddie_rust_run|Run current project"
-    echo "rust:test|caddie_rust_test|Run tests"
-    echo "rust:check|caddie_rust_check|Check without building"
-    echo "rust:clean|caddie_rust_clean|Clean build artifacts"
-    echo "rust:update|caddie_rust_update|Update dependencies"
-    echo "rust:add|caddie_rust_add|Add dependency to Cargo.toml"
-    echo "rust:remove|caddie_rust_remove|Remove dependency"
-    echo "rust:search|caddie_rust_search|Search crates.io"
-    echo "rust:outdated|caddie_rust_outdated|Show outdated dependencies"
-    echo "rust:audit|caddie_rust_audit|Security audit"
-    echo "rust:toolchain|caddie_rust_toolchain|Switch toolchain (stable/beta/nightly)"
-    echo "rust:target|caddie_rust_target|Add compilation target"
-    echo "rust:component|caddie_rust_component|Install component (clippy/rustfmt/etc)"
-    echo "rust:help|caddie_rust_help|Show detailed Rust help"
+# Main registration function for rust module
+rust_register() {
+    rust_help_register
+    rust_commands_register
+}
+
+# Register help information
+rust_help_register() {
+    caddie_help_append "rust" "Rust development tools"
+}
+
+# Register commands
+rust_commands_register() {
+    caddie_commands_append "rust:new|caddie_rust_new|Create new Rust project"
+    caddie_commands_append "rust:build|caddie_rust_build|Build current project"
+    caddie_commands_append "rust:run|caddie_rust_run|Run current project"
+    caddie_commands_append "rust:test|caddie_rust_test|Run tests"
+    caddie_commands_append "rust:check|caddie_rust_check|Check without building"
+    caddie_commands_append "rust:clean|caddie_rust_clean|Clean build artifacts"
+    caddie_commands_append "rust:update|caddie_rust_update|Update dependencies"
+    caddie_commands_append "rust:add|caddie_rust_add|Add dependency to Cargo.toml"
+    caddie_commands_append "rust:remove|caddie_rust_remove|Remove dependency"
+    caddie_commands_append "rust:search|caddie_rust_search|Search crates.io"
+    caddie_commands_append "rust:outdated|caddie_rust_outdated|Show outdated dependencies"
+    caddie_commands_append "rust:audit|caddie_rust_audit|Security audit"
+    caddie_commands_append "rust:toolchain|caddie_rust_toolchain|Switch toolchain (stable/beta/nightly)"
+    caddie_commands_append "rust:target|caddie_rust_target|Add compilation target"
+    caddie_commands_append "rust:component|caddie_rust_component|Install component (clippy/rustfmt/etc)"
+    caddie_commands_append "rust:help|caddie_rust_help|Show detailed Rust help"
 }
 
 # Function to display Rust module help

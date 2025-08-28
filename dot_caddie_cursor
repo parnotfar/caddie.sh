@@ -150,7 +150,7 @@ caddie_cursor_new() {
     # Create project using template
     caddie_template_create "$project_type" "$project_name"
     
-    if [ $? -eq 0 ]; then
+    if caddie_template_create "$project_type" "$project_name"; then
         # Setup Cursor-specific configuration
         caddie_cursor_setup_project "$project_name" "$project_type"
         
@@ -314,7 +314,8 @@ caddie_cursor_ai_explain() {
     
     echo "Asking AI to explain: $file"
     
-    local ai_prompt_file=".cursor/ai-explain-$(basename "$file").md"
+    local ai_prompt_file
+    ai_prompt_file=".cursor/ai-explain-$(basename "$file").md"
     mkdir -p .cursor
     
     cat > "$ai_prompt_file" << EOF
@@ -362,7 +363,8 @@ caddie_cursor_ai_refactor() {
     
     echo "Asking AI to refactor: $file (type: $refactor_type)"
     
-    local ai_prompt_file=".cursor/ai-refactor-$(basename "$file").md"
+    local ai_prompt_file
+    ai_prompt_file=".cursor/ai-refactor-$(basename "$file").md"
     mkdir -p .cursor
     
     cat > "$ai_prompt_file" << EOF
@@ -411,7 +413,8 @@ caddie_cursor_ai_test() {
     
     echo "Asking AI to generate tests for: $file (framework: $test_framework)"
     
-    local ai_prompt_file=".cursor/ai-test-$(basename "$file").md"
+    local ai_prompt_file
+    ai_prompt_file=".cursor/ai-test-$(basename "$file").md"
     mkdir -p .cursor
     
     cat > "$ai_prompt_file" << EOF
@@ -460,7 +463,8 @@ caddie_cursor_ai_docs() {
     
     echo "Asking AI to generate documentation for: $file (format: $doc_format)"
     
-    local ai_prompt_file=".cursor/ai-docs-$(basename "$file").md"
+    local ai_prompt_file
+    ai_prompt_file=".cursor/ai-docs-$(basename "$file").md"
     mkdir -p .cursor
     
     cat > "$ai_prompt_file" << EOF
@@ -509,7 +513,8 @@ caddie_cursor_ai_review() {
     
     echo "Asking AI to review: $file (focus: $review_focus)"
     
-    local ai_prompt_file=".cursor/ai-review-$(basename "$file").md"
+    local ai_prompt_file
+    ai_prompt_file=".cursor/ai-review-$(basename "$file").md"
     mkdir -p .cursor
     
     cat > "$ai_prompt_file" << EOF
@@ -668,7 +673,8 @@ caddie_cursor_config_show() {
 }
 
 caddie_cursor_config_backup() {
-    local backup_dir="$HOME/.cursor-backups/$(date +%Y%m%d_%H%M%S)"
+    local backup_dir
+    backup_dir="$HOME/.cursor-backups/$(date +%Y%m%d_%H%M%S)"
     
     echo "Backing up Cursor configuration to $backup_dir..."
     mkdir -p "$backup_dir"
@@ -759,31 +765,43 @@ EOF
 }
 
 # Function to register Cursor caddie commands
-cursor_caddie_register() {
-    echo "cursor:detect|caddie_cursor_detect|Detect Cursor installation"
-    echo "cursor:setup|caddie_cursor_setup|Setup Cursor integration"
-    echo "cursor:verify|caddie_cursor_verify|Verify Cursor integration"
-    echo "cursor:open|caddie_cursor_open|Open project in Cursor"
-    echo "cursor:new|caddie_cursor_new|Create new project and open in Cursor"
-    echo "cursor:workspace|caddie_cursor_workspace|Show Cursor workspace info"
-    echo "cursor:recent|caddie_cursor_recent|List recently opened projects"
-    echo "cursor:switch|caddie_cursor_switch|Switch to different project"
-    echo "cursor:ai:explain|caddie_cursor_ai_explain|Ask AI to explain code"
-    echo "cursor:ai:refactor|caddie_cursor_ai_refactor|AI-assisted refactoring"
-    echo "cursor:ai:test|caddie_cursor_ai_test|Generate tests with AI"
-    echo "cursor:ai:docs|caddie_cursor_ai_docs|Generate documentation with AI"
-    echo "cursor:ai:review|caddie_cursor_ai_review|AI code review"
-    echo "cursor:ext:install|caddie_cursor_ext_install|Install Cursor extension"
-    echo "cursor:ext:list|caddie_cursor_ext_list|List installed extensions"
-    echo "cursor:ext:update|caddie_cursor_ext_update|Update all extensions"
-    echo "cursor:ext:sync|caddie_cursor_ext_sync|Sync extensions across devices"
-    echo "cursor:ext:recommend|caddie_cursor_ext_recommend|Recommend extensions for project type"
-    echo "cursor:config:show|caddie_cursor_config_show|Show Cursor configuration"
-    echo "cursor:config:backup|caddie_cursor_config_backup|Backup Cursor settings"
-    echo "cursor:config:restore|caddie_cursor_config_restore|Restore Cursor settings"
-    echo "cursor:config:sync|caddie_cursor_config_sync|Sync Cursor settings"
-    echo "cursor:config:optimize|caddie_cursor_config_optimize|Optimize Cursor for performance"
-    echo "cursor:help|caddie_cursor_help|Show detailed Cursor help"
+# Main registration function for cursor module
+cursor_register() {
+    cursor_help_register
+    cursor_commands_register
+}
+
+# Register help information
+cursor_help_register() {
+    caddie_help_append "cursor" "Cursor IDE integration"
+}
+
+# Register commands
+cursor_commands_register() {
+    caddie_commands_append "cursor:detect|caddie_cursor_detect|Detect Cursor installation"
+    caddie_commands_append "cursor:setup|caddie_cursor_setup|Setup Cursor integration"
+    caddie_commands_append "cursor:verify|caddie_cursor_verify|Verify Cursor integration"
+    caddie_commands_append "cursor:open|caddie_cursor_open|Open project in Cursor"
+    caddie_commands_append "cursor:new|caddie_cursor_new|Create new project and open in Cursor"
+    caddie_commands_append "cursor:workspace|caddie_cursor_workspace|Show Cursor workspace info"
+    caddie_commands_append "cursor:recent|caddie_cursor_recent|List recently opened projects"
+    caddie_commands_append "cursor:switch|caddie_cursor_switch|Switch to different project"
+    caddie_commands_append "cursor:ai:explain|caddie_cursor_ai_explain|Ask AI to explain code"
+    caddie_commands_append "cursor:ai:refactor|caddie_cursor_ai_refactor|AI-assisted refactoring"
+    caddie_commands_append "cursor:ai:test|caddie_cursor_ai_test|Generate tests with AI"
+    caddie_commands_append "cursor:ai:docs|caddie_cursor_ai_docs|Generate documentation with AI"
+    caddie_commands_append "cursor:ai:review|caddie_cursor_ai_review|AI code review"
+    caddie_commands_append "cursor:ext:install|caddie_cursor_ext_install|Install Cursor extension"
+    caddie_commands_append "cursor:ext:list|caddie_cursor_ext_list|List installed extensions"
+    caddie_commands_append "cursor:ext:update|caddie_cursor_ext_update|Update all extensions"
+    caddie_commands_append "cursor:ext:sync|caddie_cursor_ext_sync|Sync extensions across devices"
+    caddie_commands_append "cursor:ext:recommend|caddie_cursor_ext_recommend|Recommend extensions for project type"
+    caddie_commands_append "cursor:config:show|caddie_cursor_config_show|Show Cursor configuration"
+    caddie_commands_append "cursor:config:backup|caddie_cursor_config_backup|Backup Cursor settings"
+    caddie_commands_append "cursor:config:restore|caddie_cursor_config_restore|Restore Cursor settings"
+    caddie_commands_append "cursor:config:sync|caddie_cursor_config_sync|Sync Cursor settings"
+    caddie_commands_append "cursor:config:optimize|caddie_cursor_config_optimize|Optimize Cursor for performance"
+    caddie_commands_append "cursor:help|caddie_cursor_help|Show detailed Cursor help"
 }
 
 # Function to display Cursor module help

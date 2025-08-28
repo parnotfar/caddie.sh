@@ -17,7 +17,7 @@ caddie_env_status() {
             echo "  ✓ pip $(pip --version | cut -d' ' -f2)"
         fi
         if [ -n "$VIRTUAL_ENV" ]; then
-            echo "  ✓ Virtual environment: $(basename $VIRTUAL_ENV)"
+            echo "  ✓ Virtual environment: $(basename "$VIRTUAL_ENV")"
         fi
     else
         echo "  ✗ Python not found"
@@ -143,7 +143,8 @@ caddie_env_reset() {
 
 # Function to backup current configurations
 caddie_env_backup() {
-    local backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
+    local backup_dir
+    backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
     
     echo "Creating backup in $backup_dir..."
     mkdir -p "$backup_dir"
@@ -267,7 +268,7 @@ caddie_template_create() {
 caddie_template_web() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create basic web structure
     mkdir -p src/{components,pages,styles,utils}
@@ -315,7 +316,7 @@ EOF
 caddie_template_api() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create API structure
     mkdir -p src/{controllers,models,routes,middleware}
@@ -362,7 +363,7 @@ EOF
 caddie_template_mobile() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create React Native structure
     mkdir -p src/{components,screens,navigation,services}
@@ -406,7 +407,7 @@ EOF
 caddie_template_ios_app() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create iOS app structure
     mkdir -p "$name"{,Tests,UITests}
@@ -424,7 +425,7 @@ caddie_template_ios_app() {
 caddie_template_ios_framework() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create iOS framework structure
     mkdir -p "$name"{,Tests}
@@ -441,7 +442,7 @@ caddie_template_ios_framework() {
 caddie_template_ios_extension() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create iOS extension structure
     mkdir -p "$name"{,Tests}
@@ -458,7 +459,7 @@ caddie_template_ios_extension() {
 caddie_template_data() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create data analysis structure
     mkdir -p {data,notebooks,src,reports}
@@ -486,7 +487,7 @@ EOF
 caddie_template_ml() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create ML structure
     mkdir -p {data,models,src,notebooks,reports}
@@ -518,7 +519,7 @@ EOF
 caddie_template_cli() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create CLI structure
     mkdir -p src
@@ -561,7 +562,7 @@ EOF
 caddie_template_lib() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create library structure
     mkdir -p src
@@ -602,7 +603,7 @@ EOF
 caddie_template_wasm() {
     local name="$1"
     mkdir -p "$name"
-    cd "$name"
+    cd "$name" || exit
     
     # Create WebAssembly structure
     mkdir -p src
@@ -852,25 +853,36 @@ caddie_tools_format() {
     echo "✓ All code formatted"
 }
 
-# Function to register cross-language caddie commands
-cross_caddie_register() {
-    echo "env:status|caddie_env_status|Show all environment status"
-    echo "env:setup|caddie_env_setup|Setup development environment"
-    echo "env:reset|caddie_env_reset|Reset all environments"
-    echo "env:backup|caddie_env_backup|Backup current configurations"
-    echo "template:list|caddie_template_list|List available templates"
-    echo "template:create|caddie_template_create|Create from template"
-    echo "build:all|caddie_build_all|Build all projects"
-    echo "build:python|caddie_build_python|Build Python package"
-    echo "build:rust|caddie_build_rust|Build Rust project"
-    echo "build:ios|caddie_build_ios|Build iOS project"
-    echo "deploy:docker|caddie_deploy_docker|Create Docker setup"
-    echo "deploy:local|caddie_deploy_local|Local deployment"
-    echo "tools:install|caddie_tools_install|Install dev tools"
-    echo "tools:setup|caddie_tools_setup|Setup git hooks, etc."
-    echo "tools:lint|caddie_tools_lint|Run all linters"
-    echo "tools:format|caddie_tools_format|Format all code"
-    echo "cross:help|caddie_cross_help|Show detailed cross-language help"
+# Main registration function for cross module
+cross_register() {
+    cross_help_register
+    cross_commands_register
+}
+
+# Register help information
+cross_help_register() {
+    caddie_help_append "cross" "Cross-language development tools"
+}
+
+# Register commands
+cross_commands_register() {
+    caddie_commands_append "env:status|caddie_env_status|Show all environment status"
+    caddie_commands_append "env:setup|caddie_env_setup|Setup development environment"
+    caddie_commands_append "env:reset|caddie_env_reset|Reset all environments"
+    caddie_commands_append "env:backup|caddie_env_backup|Backup current configurations"
+    caddie_commands_append "template:list|caddie_template_list|List available templates"
+    caddie_commands_append "template:create|caddie_template_create|Create from template"
+    caddie_commands_append "build:all|caddie_build_all|Build all projects"
+    caddie_commands_append "build:python|caddie_build_python|Build Python package"
+    caddie_commands_append "build:rust|caddie_build_rust|Build Rust project"
+    caddie_commands_append "build:ios|caddie_build_ios|Build iOS project"
+    caddie_commands_append "deploy:docker|caddie_deploy_docker|Create Docker setup"
+    caddie_commands_append "deploy:local|caddie_deploy_local|Local deployment"
+    caddie_commands_append "tools:install|caddie_tools_install|Install dev tools"
+    caddie_commands_append "tools:setup|caddie_tools_setup|Setup git hooks, etc."
+    caddie_commands_append "tools:lint|caddie_tools_lint|Run all linters"
+    caddie_commands_append "tools:format|caddie_tools_format|Format all code"
+    caddie_commands_append "cross:help|caddie_cross_help|Show detailed cross-language help"
 }
 
 # Function to display cross-language module help

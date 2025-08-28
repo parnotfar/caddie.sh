@@ -6,76 +6,23 @@
 # Default caddie home file location
 CADDIE_HOME_FILE="$HOME/.caddie_home"
 
-# Function to register core caddie commands
-core_caddie_register() {
-    # New modular format using pipe separator
-    echo "core:set:home|caddie_set_home|Set caddie home directory"
-    echo "core:get:home|caddie_get_home|Get current caddie home"
-    echo "core:reset:home|caddie_reset_home|Reset caddie home directory"
-    echo "core:help|caddie_core_help|Show core caddie help"
+# Main registration function for core module
+core_register() {
+    core_help_register
+    core_commands_register
 }
 
-# Function to display caddie help
-caddie_help() {
-    echo "Caddie.sh - Development Environment Manager"
-    echo "=========================================="
-    echo ""
-    echo "Usage: caddie <command>"
-    echo ""
-    echo "Command Categories:"
-    echo "  home                     Home directory management"
-    
-    # Dynamically show loaded modules
-    if caddie_module_help_loaded; then
-        caddie_module_help_get
-    fi
-    
-    echo ""
-    echo "General Commands:"
-    echo "  help                     Show this overview"
-    echo "  version                  Show caddie version"
-    echo ""
-    echo "Detailed Help:"
-    # Dynamically generate help commands for loaded modules
-    if [ -n "$CADDIE_MODULE_HELP" ]; then
-        echo "Available module help:"
-        for moddesc in "${CADDIE_MODULES[@]}"; do
-            module="${moddesc%%|*}"
-            if [ -n "$module" ]; then
-                echo "  caddie ${module}:help       Show detailed ${module} help"
-            fi
-        done
-    else
-        echo "  No additional modules available for detailed help"
-    fi
-    
-    echo ""
-            echo "Quick Examples:"
-        echo "  caddie core:set:home ~/projects/myproject  # Set caddie home directory"
-    if [ -n "$CADDIE_MODULE_HELP" ]; then
-        for moddesc in "${CADDIE_MODULES[@]}"; do
-            module="${moddesc%%|*}"
-            case "$module" in
-                "python")
-                    echo "  caddie python:create myenv"
-                    ;;
-                "rust")
-                    echo "  caddie rust:new myproject"
-                    ;;
-                "ios")
-                    echo "  caddie ios:setup"
-                    ;;
-                "cross")
-                    echo "  caddie env:status"
-                    ;;
-                "cursor")
-                    echo "  caddie cursor:detect"
-                    ;;
-            esac
-        done
-    fi
-    echo ""
-    echo "For detailed help on any category, use: caddie <category>:help"
+# Register help information
+core_help_register() {
+    caddie_help_append "core" "Core caddie functions"
+}
+
+# Register commands
+core_commands_register() {
+    caddie_commands_append "core:set:home|caddie_set_home|Set caddie home directory"
+    caddie_commands_append "core:get:home|caddie_get_home|Get current caddie home"
+    caddie_commands_append "core:reset:home|caddie_reset_home|Reset caddie home directory"
+    caddie_commands_append "core:help|caddie_core_help|Show core caddie help"
 }
 
 # Function to set the caddie home directory
@@ -90,6 +37,7 @@ caddie_set_home() {
     
     # Expand the path (handle ~, relative paths, etc.)
     local expanded_path
+
     expanded_path=$(eval echo "$path")
     
     # Check if the path exists
@@ -100,12 +48,12 @@ caddie_set_home() {
     
     # Get the absolute path
     local absolute_path
+
     absolute_path=$(cd "$expanded_path" && pwd)
     
     # Save the path to the caddie home file
     echo "$absolute_path" > "$CADDIE_HOME_FILE"
     
-    # Export the CADDIE_HOME variable
     export CADDIE_HOME="$absolute_path"
     
     echo "✓ Caddie home directory set to: $absolute_path"
@@ -115,7 +63,9 @@ caddie_set_home() {
 caddie_get_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
         local caddie_home
+
         caddie_home=$(cat "$CADDIE_HOME_FILE")
+
         echo "Current caddie home: $caddie_home"
     else
         echo "No caddie home directory was set"
@@ -136,6 +86,7 @@ caddie_reset_home() {
 # Function to show caddie version
 caddie_version() {
     if [ -f "$HOME/.caddie_version" ]; then
+        # shellcheck disable=SC1091
         source "$HOME/.caddie_version"
         caddie_version_show
     else
@@ -165,7 +116,9 @@ caddie_core_help() {
 
 # Auto-load caddie home on shell startup
 if [ -f "$CADDIE_HOME_FILE" ]; then
-    export CADDIE_HOME=$(cat "$CADDIE_HOME_FILE")
+    local caddie_home
+    caddie_home=$(cat "$CADDIE_HOME_FILE")
+    export CADDIE_HOME="$caddie_home"
 fi
 
 # Tab completion function removed - now handled by dot_caddie
@@ -175,6 +128,5 @@ export -f core_caddie_register
 export -f caddie_set_home
 export -f caddie_get_home
 export -f caddie_reset_home
-export -f caddie_help
 export -f caddie_version
 export -f caddie_core_help

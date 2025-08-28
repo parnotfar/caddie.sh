@@ -1,0 +1,649 @@
+#!/bin/bash
+
+# Caddie.sh - JavaScript/Node.js Environment Management (NVM-based)
+# This file provides Node.js development environment management using NVM
+
+# Main registration function for js module
+js_register() {
+    js_help_register
+    js_commands_register
+}
+
+# Register help information
+js_help_register() {
+    caddie_help_append "js" "JavaScript/Node.js environment management with NVM"
+}
+
+# Register commands
+js_commands_register() {
+    caddie_commands_append "js:setup|caddie_js_setup|Setup Node.js development environment with NVM"
+    caddie_commands_append "js:install|caddie_js_install|Install specific Node.js version"
+    caddie_commands_append "js:use|caddie_js_use|Switch to specific Node.js version"
+    caddie_commands_append "js:list|caddie_js_list|List installed Node.js versions"
+    caddie_commands_append "js:current|caddie_js_current|Show current Node.js version"
+    caddie_commands_append "js:project:init|caddie_js_project_init|Initialize Node.js project structure"
+    caddie_commands_append "js:project:install|caddie_js_project_install|Install project dependencies"
+    caddie_commands_append "js:project:update|caddie_js_project_update|Update project dependencies"
+    caddie_commands_append "js:project:test|caddie_js_project_test|Run Node.js tests"
+    caddie_commands_append "js:project:build|caddie_js_project_build|Build Node.js project"
+    caddie_commands_append "js:project:serve|caddie_js_project_serve|Serve Node.js application"
+    caddie_commands_append "js:package:install|caddie_js_package_install|Install npm package"
+    caddie_commands_append "js:package:uninstall|caddie_js_package_uninstall|Uninstall npm package"
+    caddie_commands_append "js:package:list|caddie_js_package_list|List installed packages"
+    caddie_commands_append "js:package:update|caddie_js_package_update|Update npm package"
+    caddie_commands_append "js:package:outdated|caddie_js_package_outdated|Show outdated packages"
+    caddie_commands_append "js:package:audit|caddie_js_package_audit|Audit package security"
+    caddie_commands_append "js:package:run|caddie_js_package_run|Run npm script"
+    caddie_commands_append "js:package:publish|caddie_js_package_publish|Publish npm package"
+    caddie_commands_append "js:framework:create|caddie_js_framework_create|Create framework project"
+    caddie_commands_append "js:framework:serve|caddie_js_framework_serve|Serve framework application"
+    caddie_commands_append "js:framework:build|caddie_js_framework_build|Build framework application"
+    caddie_commands_append "js:version|caddie_js_version|Show Node.js and NVM version information"
+}
+
+# Function to setup Node.js development environment
+caddie_js_setup() {
+    echo "Setting up Node.js development environment..."
+    
+    # Check if NVM is installed
+    if ! command -v nvm >/dev/null 2>&1; then
+        echo "Installing NVM..."
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+        
+        # Source NVM
+        export NVM_DIR="$HOME/.nvm"
+        # shellcheck disable=SC1091
+        [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
+        # shellcheck disable=SC1091
+        [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion"
+        
+        if ! command -v nvm >/dev/null 2>&1; then
+            echo "✗ Failed to install NVM"
+            return 1
+        fi
+    else
+        echo "✓ NVM already installed"
+    fi
+    
+    # Install latest LTS Node.js
+    echo "Installing latest LTS Node.js..."
+    
+    if nvm install --lts; then
+        echo "✓ Node.js installed successfully"
+        nvm use --lts
+        nvm alias default node
+        echo "✓ Node.js set as default"
+    else
+        echo "✗ Failed to install Node.js"
+        return 1
+    fi
+    
+    # Install essential global packages
+    echo "Installing essential global packages..."
+    npm install -g yarn pnpm typescript ts-node nodemon eslint prettier
+    
+    echo "✓ Node.js development environment setup complete"
+    caddie_js_version
+}
+
+# Function to install specific Node.js version
+caddie_js_install() {
+    local version="$1"
+    
+    if [ -z "$version" ]; then
+        echo "Error: Please provide a Node.js version"
+        echo "Usage: caddie js:install <version>"
+        echo "Examples: 18.17.0, 20.5.0, lts/*"
+        return 1
+    fi
+    
+    echo "Installing Node.js $version..."
+    
+    if nvm install "$version"; then
+        echo "✓ Node.js $version installed successfully"
+        echo "Use 'caddie js:use $version' to switch to it"
+    else
+        echo "✗ Failed to install Node.js $version"
+        return 1
+    fi
+}
+
+# Function to switch to specific Node.js version
+caddie_js_use() {
+    local version="$1"
+    
+    if [ -z "$version" ]; then
+        echo "Error: Please provide a Node.js version"
+        echo "Usage: caddie js:use <version>"
+        return 1
+    fi
+    
+    echo "Switching to Node.js $version..."
+    
+    if nvm use "$version"; then
+        echo "✓ Switched to Node.js $version"
+        echo "Current Node.js: $(node --version)"
+        echo "Current npm: $(npm --version)"
+    else
+        echo "✗ Failed to switch to Node.js $version"
+        return 1
+    fi
+}
+
+# Function to list installed Node.js versions
+caddie_js_list() {
+    echo "Installed Node.js versions:"
+    echo "==========================="
+    nvm list
+    echo ""
+    echo "Current version: $(node --version)"
+}
+
+# Function to show current Node.js version
+caddie_js_current() {
+    echo "Current Node.js Environment:"
+    echo "============================"
+    echo "Node.js: $(node --version)"
+    echo "npm: $(npm --version)"
+    echo "NVM: $(nvm --version)"
+    echo "Yarn: $(yarn --version 2>/dev/null || echo 'not installed')"
+    echo "pnpm: $(pnpm --version 2>/dev/null || echo 'not installed')"
+}
+
+# Function to initialize Node.js project structure
+caddie_js_project_init() {
+    local project_name="$1"
+    
+    if [ -z "$project_name" ]; then
+        project_name="my-node-project"
+    fi
+    
+    echo "Initializing Node.js project: $project_name"
+    
+    mkdir -p "$project_name"
+    cd "$project_name" || exit
+    
+    # Initialize npm project
+    npm init -y
+    
+    # Create basic project structure
+    mkdir -p src tests docs
+    touch src/index.js
+    touch tests/index.test.js
+    touch README.md
+    touch .gitignore
+    touch .eslintrc.js
+    touch .prettierrc
+    
+    # Create basic package.json scripts
+    node -e "
+    const pkg = require('./package.json');
+    pkg.scripts = {
+        'start': 'node src/index.js',
+        'dev': 'nodemon src/index.js',
+        'test': 'jest',
+        'lint': 'eslint src/',
+        'format': 'prettier --write src/',
+        'build': 'npm run lint && npm run test'
+    };
+    fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+    "
+    
+    # Create basic .gitignore
+    cat > .gitignore << 'EOF'
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOF
+
+    # Install essential dev dependencies
+    npm install --save-dev jest nodemon eslint prettier
+    
+    echo "✓ Node.js project '$project_name' initialized"
+    echo "  Created: src/, tests/, docs/, package.json, README.md, .gitignore"
+}
+
+# Function to install project dependencies
+caddie_js_project_install() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Installing project dependencies..."
+    
+    if [ -f "yarn.lock" ]; then
+        yarn install
+    elif [ -f "pnpm-lock.yaml" ]; then
+        pnpm install
+    else
+        npm install
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Dependencies installed successfully"
+    else
+        echo "✗ Failed to install dependencies"
+        return 1
+    fi
+}
+
+# Function to update project dependencies
+caddie_js_project_update() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Updating project dependencies..."
+    
+    if [ -f "yarn.lock" ]; then
+        yarn upgrade
+    elif [ -f "pnpm-lock.yaml" ]; then
+        pnpm update
+    else
+        npm update
+    fi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Dependencies updated successfully"
+    else
+        echo "✗ Failed to update dependencies"
+        return 1
+    fi
+}
+
+# Function to run Node.js tests
+caddie_js_project_test() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Running Node.js tests..."
+    
+    if [ -f "package.json" ] && grep -q '"test"' package.json; then
+        npm test
+    elif [ -d "tests" ]; then
+        npx jest
+    else
+        echo "No tests found. Create tests in the 'tests' directory"
+        return 1
+    fi
+}
+
+# Function to build Node.js project
+caddie_js_project_build() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Building Node.js project..."
+    
+    # Install dependencies
+    caddie_js_project_install
+    
+    # Run tests
+    if [ -d "tests" ]; then
+        caddie_js_project_test
+    fi
+    
+    # Run linting
+    if grep -q '"lint"' package.json; then
+        npm run lint
+    fi
+    
+    echo "✓ Node.js project built successfully"
+}
+
+# Function to serve Node.js application
+caddie_js_project_serve() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Starting Node.js application..."
+    
+    # Check for start script
+    if grep -q '"start"' package.json; then
+        npm start
+    elif grep -q '"dev"' package.json; then
+        npm run dev
+    elif [ -f "src/index.js" ]; then
+        node src/index.js
+    else
+        echo "No start script found. Add 'start' or 'dev' script to package.json"
+        return 1
+    fi
+}
+
+# Function to install npm package
+caddie_js_package_install() {
+    local package="$1"
+    
+    if [ -z "$package" ]; then
+        echo "Error: Please provide a package name"
+        echo "Usage: caddie js:package:install <package>"
+        return 1
+    fi
+    
+    echo "Installing package '$package'..."
+    
+    if npm install "$package"; then
+        echo "✓ Package '$package' installed successfully"
+    else
+        echo "✗ Failed to install package '$package'"
+        return 1
+    fi
+}
+
+# Function to uninstall npm package
+caddie_js_package_uninstall() {
+    local package="$1"
+    
+    if [ -z "$package" ]; then
+        echo "Error: Please provide a package name"
+        echo "Usage: caddie js:package:uninstall <package>"
+        return 1
+    fi
+    
+    echo "Uninstalling package '$package'..."
+    
+    if npm uninstall "$package"; then
+        echo "✓ Package '$package' uninstalled successfully"
+    else
+        echo "✗ Failed to uninstall package '$package'"
+        return 1
+    fi
+}
+
+# Function to list installed packages
+caddie_js_package_list() {
+    echo "Installed packages:"
+    echo "==================="
+    npm list --depth=0
+}
+
+# Function to update npm package
+caddie_js_package_update() {
+    local package="$1"
+    
+    if [ -z "$package" ]; then
+        echo "Error: Please provide a package name"
+        echo "Usage: caddie js:package:update <package>"
+        return 1
+    fi
+    
+    echo "Updating package '$package'..."
+    
+    if npm update "$package"; then
+        echo "✓ Package '$package' updated successfully"
+    else
+        echo "✗ Failed to update package '$package'"
+        return 1
+    fi
+}
+
+# Function to show outdated packages
+caddie_js_package_outdated() {
+    echo "Outdated packages:"
+    echo "=================="
+    npm outdated
+}
+
+# Function to audit package security
+caddie_js_package_audit() {
+    echo "Auditing package security..."
+    npm audit
+}
+
+# Function to run npm script
+caddie_js_package_run() {
+    local script="$1"
+    
+    if [ -z "$script" ]; then
+        echo "Error: Please provide a script name"
+        echo "Usage: caddie js:package:run <script>"
+        return 1
+    fi
+    
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Running script: $script"
+    npm run "$script"
+}
+
+# Function to publish npm package
+caddie_js_package_publish() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Publishing npm package..."
+    
+    # Check if logged in
+    if ! npm whoami >/dev/null 2>&1; then
+        echo "Error: Not logged in to npm"
+        echo "Run 'npm login' first"
+        return 1
+    fi
+    
+    
+    if npm publish; then
+        echo "✓ Package published successfully"
+    else
+        echo "✗ Failed to publish package"
+        return 1
+    fi
+}
+
+# Function to create framework project
+caddie_js_framework_create() {
+    local framework="$1"
+    local project_name="$2"
+    
+    if [ -z "$framework" ] || [ -z "$project_name" ]; then
+        echo "Error: Please provide framework and project name"
+        echo "Usage: caddie js:framework:create <framework> <name>"
+        echo "Frameworks: react, vue, angular, express, next, nuxt"
+        return 1
+    fi
+    
+    echo "Creating $framework project: $project_name"
+    
+    case "$framework" in
+        "react")
+            if npx create-react-app "$project_name"; then
+                echo "✓ $framework project '$project_name' created successfully"
+                echo "  Enter directory: cd $project_name"
+                echo "  Start development: caddie js:framework:serve"
+            else
+                echo "✗ Failed to create $framework project"
+                return 1
+            fi
+            ;;
+        "vue")
+            if npx @vue/cli create "$project_name"; then
+                echo "✓ $framework project '$project_name' created successfully"
+                echo "  Enter directory: cd $project_name"
+                echo "  Start development: caddie js:framework:serve"
+            else
+                echo "✗ Failed to create $framework project"
+                return 1
+            fi
+            ;;
+        "angular")
+            if npx @angular/cli new "$project_name"; then
+                echo "✓ $framework project '$project_name' created successfully"
+                echo "  Enter directory: cd $project_name"
+                echo "  Start development: caddie js:framework:serve"
+            else
+                echo "✗ Failed to create $framework project"
+                return 1
+            fi
+            ;;
+        "express")
+            if npx express-generator "$project_name"; then
+                echo "✓ $framework project '$project_name' created successfully"
+                echo "  Enter directory: cd $project_name"
+                echo "  Start development: caddie js:framework:serve"
+            else
+                echo "✗ Failed to create $framework project"
+                return 1
+            fi
+            ;;
+        "next")
+            if npx create-next-app "$project_name"; then
+                echo "✓ $framework project '$project_name' created successfully"
+                echo "  Enter directory: cd $project_name"
+                echo "  Start development: caddie js:framework:serve"
+            else
+                echo "✗ Failed to create $framework project"
+                return 1
+            fi
+            ;;
+        "nuxt")
+            if npx create-nuxt-app "$project_name"; then
+                echo "✓ $framework project '$project_name' created successfully"
+                echo "  Enter directory: cd $project_name"
+                echo "  Start development: caddie js:framework:serve"
+            else
+                echo "✗ Failed to create $framework project"
+                return 1
+            fi
+            ;;
+        *)
+            echo "Error: Unknown framework '$framework'"
+            return 1
+            ;;
+    esac
+}
+
+# Function to serve framework application
+caddie_js_framework_serve() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Starting framework application..."
+    
+    # Check for common framework scripts
+    if grep -q '"dev"' package.json; then
+        npm run dev
+    elif grep -q '"start"' package.json; then
+        npm start
+    elif grep -q '"serve"' package.json; then
+        npm run serve
+    else
+        echo "No development script found. Check package.json for available scripts"
+        return 1
+    fi
+}
+
+# Function to build framework application
+caddie_js_framework_build() {
+    if [ ! -f "package.json" ]; then
+        echo "Error: Not in a Node.js project directory (package.json not found)"
+        return 1
+    fi
+    
+    echo "Building framework application..."
+    
+    # Check for build script
+    if grep -q '"build"' package.json; then
+        npm run build
+    else
+        echo "No build script found. Add 'build' script to package.json"
+        return 1
+    fi
+}
+
+# Function to show Node.js and NVM version information
+caddie_js_version() {
+    echo "Node.js Environment Information"
+    echo "=============================="
+    echo "Node.js: $(node --version)"
+    echo "npm: $(npm --version)"
+    echo "NVM: $(nvm --version)"
+    echo "Yarn: $(yarn --version 2>/dev/null || echo 'not installed')"
+    echo "pnpm: $(pnpm --version 2>/dev/null || echo 'not installed')"
+    echo "TypeScript: $(tsc --version 2>/dev/null || echo 'not installed')"
+}
+
+# Export JavaScript functions
+export -f js_caddie_register
+export -f caddie_js_setup
+export -f caddie_js_install
+export -f caddie_js_use
+export -f caddie_js_list
+export -f caddie_js_current
+export -f caddie_js_project_init
+export -f caddie_js_project_install
+export -f caddie_js_project_update
+export -f caddie_js_project_test
+export -f caddie_js_project_build
+export -f caddie_js_project_serve
+export -f caddie_js_package_install
+export -f caddie_js_package_uninstall
+export -f caddie_js_package_list
+export -f caddie_js_package_update
+export -f caddie_js_package_outdated
+export -f caddie_js_package_audit
+export -f caddie_js_package_run
+export -f caddie_js_package_publish
+export -f caddie_js_framework_create
+export -f caddie_js_framework_serve
+export -f caddie_js_framework_build
+export -f caddie_js_version
