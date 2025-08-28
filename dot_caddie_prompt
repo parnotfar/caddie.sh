@@ -20,9 +20,9 @@ function caddie_prompt() {
         local git_status=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         
         if [ "$git_status" -gt 0 ]; then
-            git_info=" [${Magenta}${branch}${Reset}|${LightBlue}+${git_status}${Reset}]"
+            git_info="[${Magenta}${branch}${Reset}|${LightBlue}+${git_status}${Reset}]"
         else
-            git_info=" [${Magenta}${branch}${Reset}|${LightBlue}✓${Reset}]"
+            git_info="[${Magenta}${branch}${Reset}|${LightBlue}✓${Reset}]"
         fi
     fi
     

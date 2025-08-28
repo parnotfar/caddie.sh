@@ -3,22 +3,6 @@
 # Caddie.sh - Git Prompt and Custom File Management
 # This file handles git prompt setup and custom file sourcing
 
-# Function to setup bash-git-prompt
-caddie_git_setup_prompt() {
-    # Due to catalina switching to zsh
-    export BASH_SILENCE_DEPRECATION_WARNING=1
-    
-    # Set basic prompt
-    export PS1="\u@\h:\w> "
-    export EDITOR=vim
-    
-    # Note: We're using our custom colored prompt instead of bash-git-prompt
-    # This provides better control and consistent behavior
-    
-    # Set up a simple custom prompt with caddie version and git info
-    export PS1='$(caddie_prompt)'
-}
-
 # Function to source custom files
 caddie_source_custom_files() {
     # Source custom bash profile additions
@@ -32,10 +16,10 @@ caddie_source_custom_files() {
     fi
 }
 
+export PS1='$(caddie_prompt)'
+
 # Auto-setup when sourced
-caddie_git_setup_prompt
 caddie_source_custom_files
 
 # Export functions for external use
-export -f caddie_git_setup_prompt
 export -f caddie_source_custom_files
