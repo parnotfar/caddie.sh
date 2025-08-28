@@ -100,14 +100,14 @@ install-dot: backup-existing ## Install dot files to home directory
 	@echo "$(YELLOW)  →$(NC) Installing modular caddie files..."
 	@mkdir -p "$(CADDIE_MODULES_DIR)" && echo "$(GREEN)    ✓$(NC) ~/.caddie_modules directory ready" || (echo "$(RED)    ✗$(NC) Failed to create ~/.caddie_modules directory" && exit 1)
 
-	@cp dot_caddie_core "$(CADDIE_MODULES_DIR)/.caddie_core" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_core" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_core" && exit 1)
-	@cp dot_caddie_python "$(CADDIE_MODULES_DIR)/.caddie_python" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_python" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_python" && exit 1)
-	@cp dot_caddie_rust "$(CADDIE_MODULES_DIR)/.caddie_rust" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_rust" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_rust" && exit 1)
-	@cp dot_caddie_ios "$(CADDIE_MODULES_DIR)/.caddie_ios" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_ios" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_ios" && exit 1)
-	@cp dot_caddie_cross "$(CADDIE_MODULES_DIR)/.caddie_cross" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_cross" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_cross" && exit 1)
-	@cp dot_caddie_cursor "$(CADDIE_MODULES_DIR)/.caddie_cursor" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_cursor" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_cursor" && exit 1)
-	@cp dot_caddie_ruby "$(CADDIE_MODULES_DIR)/.caddie_ruby" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_ruby" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_ruby" && exit 1)
-	@cp dot_caddie_js "$(CADDIE_MODULES_DIR)/.caddie_js" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_modules/.caddie_js" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_modules/.caddie_js" && exit 1)
+	@cp dot_caddie_core "$(CADDIE_MODULES_DIR)/.caddie_core" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_core" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_core" && exit 1)
+	@cp dot_caddie_python "$(CADDIE_MODULES_DIR)/.caddie_python" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_python" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_python" && exit 1)
+	@cp dot_caddie_rust "$(CADDIE_MODULES_DIR)/.caddie_rust" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_rust" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_rust" && exit 1)
+	@cp dot_caddie_ios "$(CADDIE_MODULES_DIR)/.caddie_ios" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_ios" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_ios" && exit 1)
+	@cp dot_caddie_cross "$(CADDIE_MODULES_DIR)/.caddie_cross" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_cross" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_cross" && exit 1)
+	@cp dot_caddie_cursor "$(CADDIE_MODULES_DIR)/.caddie_cursor" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_cursor" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_cursor" && exit 1)
+	@cp dot_caddie_ruby "$(CADDIE_MODULES_DIR)/.caddie_ruby" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_ruby" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_ruby" && exit 1)
+	@cp dot_caddie_js "$(CADDIE_MODULES_DIR)/.caddie_js" && echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_js" || (echo "$(RED)    ✗$(NC) Failed to install $(CADDIE_MODULES_DIR)/.caddie_js" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	@cp dot_caddie "$(HOME_DIR)/.caddie.sh" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie.sh" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie.sh" && exit 1)
 	@echo "$(GREEN)✓$(NC) All dot files installed successfully"

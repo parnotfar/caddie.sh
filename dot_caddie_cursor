@@ -4,7 +4,7 @@
 # This file contains all Cursor IDE-related functions
 
 # Function to detect Cursor installation
-caddie_cursor_detect() {
+function caddie_cursor_detect() {
     echo "Detecting Cursor IDE installation..."
     
     # Check for Cursor CLI
@@ -31,8 +31,12 @@ caddie_cursor_detect() {
     fi
 }
 
+function caddie_cursor_description() {
+    echo 'Cursor IDE Integration'
+}
+
 # Function to setup Cursor integration
-caddie_cursor_setup() {
+function caddie_cursor_setup() {
     echo "Setting up Cursor IDE integration..."
     
     # Create Cursor configuration directory
@@ -73,7 +77,7 @@ EOF
 }
 
 # Function to verify Cursor integration
-caddie_cursor_verify() {
+function caddie_cursor_verify() {
     echo "Verifying Cursor IDE integration..."
     
     local issues=0
@@ -110,7 +114,7 @@ caddie_cursor_verify() {
 }
 
 # Function to open project in Cursor
-caddie_cursor_open() {
+function caddie_cursor_open() {
     local path="$1"
     
     if [ -z "$path" ]; then
@@ -134,7 +138,7 @@ caddie_cursor_open() {
 }
 
 # Function to create new project and open in Cursor
-caddie_cursor_new() {
+function caddie_cursor_new() {
     local project_type="$1"
     local project_name="$2"
     
@@ -165,7 +169,7 @@ caddie_cursor_new() {
 }
 
 # Function to setup Cursor-specific project configuration
-caddie_cursor_setup_project() {
+function caddie_cursor_setup_project() {
     local project_name="$1"
     local project_type="$2"
     
@@ -231,7 +235,7 @@ EOF
 }
 
 # Function to show Cursor workspace info
-caddie_cursor_workspace() {
+function caddie_cursor_workspace() {
     echo "Cursor Workspace Information"
     echo "==========================="
     
@@ -256,7 +260,7 @@ caddie_cursor_workspace() {
 }
 
 # Function to list recently opened projects
-caddie_cursor_recent() {
+function caddie_cursor_recent() {
     echo "Recently Opened Projects in Cursor"
     echo "=================================="
     
@@ -268,7 +272,7 @@ caddie_cursor_recent() {
 }
 
 # Function to switch to different project
-caddie_cursor_switch() {
+function caddie_cursor_switch() {
     local project="$1"
     
     if [ -z "$project" ]; then
@@ -298,7 +302,7 @@ caddie_cursor_switch() {
 }
 
 # AI-powered development functions
-caddie_cursor_ai_explain() {
+function caddie_cursor_ai_explain() {
     local file="$1"
     
     if [ -z "$file" ]; then
@@ -656,7 +660,7 @@ caddie_cursor_ext_recommend() {
 }
 
 # Configuration management functions
-caddie_cursor_config_show() {
+function caddie_cursor_config_show() {
     echo "Cursor Configuration"
     echo "==================="
     
@@ -672,7 +676,7 @@ caddie_cursor_config_show() {
     fi
 }
 
-caddie_cursor_config_backup() {
+function caddie_cursor_config_backup() {
     local backup_dir
     backup_dir="$HOME/.cursor-backups/$(date +%Y%m%d_%H%M%S)"
     
@@ -692,7 +696,7 @@ caddie_cursor_config_backup() {
     echo "✓ Cursor configuration backed up to $backup_dir"
 }
 
-caddie_cursor_config_restore() {
+function caddie_cursor_config_restore() {
     local backup_path="$1"
     
     if [ -z "$backup_path" ]; then
@@ -723,7 +727,7 @@ caddie_cursor_config_restore() {
     echo "✓ Cursor configuration restored"
 }
 
-caddie_cursor_config_sync() {
+function caddie_cursor_config_sync() {
     echo "Syncing Cursor configuration..."
     
     # Create backup first
@@ -734,7 +738,7 @@ caddie_cursor_config_sync() {
     echo "  Note: Manual cloud sync may be required"
 }
 
-caddie_cursor_config_optimize() {
+function caddie_cursor_config_optimize() {
     echo "Optimizing Cursor configuration for performance..."
     
     # Create optimized settings
@@ -764,44 +768,9 @@ EOF
     echo "✓ Cursor configuration optimized for performance"
 }
 
-# Function to register Cursor caddie commands
-# Main registration function for cursor module
-cursor_register() {
-    cursor_help_register
-    cursor_commands_register
-}
-
 # Register help information
 cursor_help_register() {
     caddie_help_append "cursor" "Cursor IDE integration"
-}
-
-# Register commands
-cursor_commands_register() {
-    caddie_commands_append "cursor:detect|caddie_cursor_detect|Detect Cursor installation"
-    caddie_commands_append "cursor:setup|caddie_cursor_setup|Setup Cursor integration"
-    caddie_commands_append "cursor:verify|caddie_cursor_verify|Verify Cursor integration"
-    caddie_commands_append "cursor:open|caddie_cursor_open|Open project in Cursor"
-    caddie_commands_append "cursor:new|caddie_cursor_new|Create new project and open in Cursor"
-    caddie_commands_append "cursor:workspace|caddie_cursor_workspace|Show Cursor workspace info"
-    caddie_commands_append "cursor:recent|caddie_cursor_recent|List recently opened projects"
-    caddie_commands_append "cursor:switch|caddie_cursor_switch|Switch to different project"
-    caddie_commands_append "cursor:ai:explain|caddie_cursor_ai_explain|Ask AI to explain code"
-    caddie_commands_append "cursor:ai:refactor|caddie_cursor_ai_refactor|AI-assisted refactoring"
-    caddie_commands_append "cursor:ai:test|caddie_cursor_ai_test|Generate tests with AI"
-    caddie_commands_append "cursor:ai:docs|caddie_cursor_ai_docs|Generate documentation with AI"
-    caddie_commands_append "cursor:ai:review|caddie_cursor_ai_review|AI code review"
-    caddie_commands_append "cursor:ext:install|caddie_cursor_ext_install|Install Cursor extension"
-    caddie_commands_append "cursor:ext:list|caddie_cursor_ext_list|List installed extensions"
-    caddie_commands_append "cursor:ext:update|caddie_cursor_ext_update|Update all extensions"
-    caddie_commands_append "cursor:ext:sync|caddie_cursor_ext_sync|Sync extensions across devices"
-    caddie_commands_append "cursor:ext:recommend|caddie_cursor_ext_recommend|Recommend extensions for project type"
-    caddie_commands_append "cursor:config:show|caddie_cursor_config_show|Show Cursor configuration"
-    caddie_commands_append "cursor:config:backup|caddie_cursor_config_backup|Backup Cursor settings"
-    caddie_commands_append "cursor:config:restore|caddie_cursor_config_restore|Restore Cursor settings"
-    caddie_commands_append "cursor:config:sync|caddie_cursor_config_sync|Sync Cursor settings"
-    caddie_commands_append "cursor:config:optimize|caddie_cursor_config_optimize|Optimize Cursor for performance"
-    caddie_commands_append "cursor:help|caddie_cursor_help|Show detailed Cursor help"
 }
 
 # Function to display Cursor module help
@@ -853,7 +822,7 @@ caddie_cursor_help() {
 }
 
 # Export Cursor functions
-export -f cursor_register
+export -f caddie_cursor_description
 export -f caddie_cursor_detect
 export -f caddie_cursor_verify
 export -f caddie_cursor_open

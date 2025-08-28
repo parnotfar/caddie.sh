@@ -4,7 +4,7 @@
 # This file contains all Python-related functions
 
 # Function to create a new Python virtual environment
-caddie_python_create() {
+function caddie_python_create() {
     local env_name="$1"
     
     if [ -z "$env_name" ]; then
@@ -28,7 +28,7 @@ caddie_python_create() {
 }
 
 # Function to activate a Python virtual environment
-caddie_python_activate() {
+function caddie_python_activate() {
     local env_name="$1"
     
     if [ -z "$env_name" ]; then
@@ -54,7 +54,7 @@ caddie_python_activate() {
 }
 
 # Function to deactivate current Python virtual environment
-caddie_python_deactivate() {
+function caddie_python_deactivate() {
     if [ -z "$VIRTUAL_ENV" ]; then
         echo "No virtual environment is currently active"
         return 0
@@ -66,7 +66,7 @@ caddie_python_deactivate() {
 }
 
 # Function to list all Python virtual environments
-caddie_python_list() {
+function caddie_python_list() {
     local venv_dir="$HOME/.virtualenvs"
     
     if [ ! -d "$venv_dir" ]; then
@@ -92,7 +92,7 @@ caddie_python_list() {
 }
 
 # Function to remove a Python virtual environment
-caddie_python_remove() {
+function caddie_python_remove() {
     local env_name="$1"
     
     if [ -z "$env_name" ]; then
@@ -120,7 +120,7 @@ caddie_python_remove() {
 }
 
 # Function to show current Python environment
-caddie_python_current() {
+function caddie_python_current() {
     if [ -n "$VIRTUAL_ENV" ]; then
         echo "Current Python environment:"
         echo "  Virtual Environment: $VIRTUAL_ENV"
@@ -136,7 +136,7 @@ caddie_python_current() {
 }
 
 # Function to install a Python package
-caddie_python_install() {
+function caddie_python_install() {
     local package="$1"
     
     if [ -z "$package" ]; then
@@ -161,7 +161,7 @@ caddie_python_install() {
 }
 
 # Function to uninstall a Python package
-caddie_python_uninstall() {
+function caddie_python_uninstall() {
     local package="$1"
     
     if [ -z "$package" ]; then
@@ -186,7 +186,7 @@ caddie_python_uninstall() {
 }
 
 # Function to freeze current Python environment
-caddie_python_freeze() {
+function caddie_python_freeze() {
     if [ -z "$VIRTUAL_ENV" ]; then
         echo "Warning: No virtual environment is active"
         echo "Consider activating one with: caddie python:activate <name>"
@@ -209,7 +209,7 @@ caddie_python_freeze() {
 }
 
 # Function to sync Python environment from requirements.txt
-caddie_python_sync() {
+function caddie_python_sync() {
     if [ ! -f "requirements.txt" ]; then
         echo "Error: requirements.txt not found in current directory"
         return 1
@@ -231,7 +231,7 @@ caddie_python_sync() {
 }
 
 # Function to upgrade a Python package
-caddie_python_upgrade() {
+function caddie_python_upgrade() {
     local package="$1"
     
     if [ -z "$package" ]; then
@@ -256,7 +256,7 @@ caddie_python_upgrade() {
 }
 
 # Function to show outdated Python packages
-caddie_python_outdated() {
+function caddie_python_outdated() {
     if [ -z "$VIRTUAL_ENV" ]; then
         echo "Warning: No virtual environment is active"
         echo "Consider activating one with: caddie python:activate <name>"
@@ -272,7 +272,7 @@ caddie_python_outdated() {
 }
 
 # Function to initialize Python project structure
-caddie_python_init() {
+function caddie_python_init() {
     echo "Initializing Python project structure..."
     
     # Create basic project structure
@@ -355,7 +355,7 @@ EOF
 }
 
 # Function to run Python tests
-caddie_python_test() {
+function caddie_python_test() {
     if [ -z "$VIRTUAL_ENV" ]; then
         echo "Warning: No virtual environment is active"
         echo "Consider activating one with: caddie python:activate <name>"
@@ -375,7 +375,7 @@ caddie_python_test() {
 }
 
 # Function to run Python linting
-caddie_python_lint() {
+function caddie_python_lint() {
     if [ -z "$VIRTUAL_ENV" ]; then
         echo "Warning: No virtual environment is active"
         echo "Consider activating one with: caddie python:activate <name>"
@@ -395,7 +395,7 @@ caddie_python_lint() {
 }
 
 # Function to format Python code
-caddie_python_format() {
+function caddie_python_format() {
     if [ -z "$VIRTUAL_ENV" ]; then
         echo "Warning: No virtual environment is active"
         echo "Consider activating one with: caddie python:activate <name>"
@@ -414,41 +414,12 @@ caddie_python_format() {
     fi
 }
 
-# Function to register Python caddie commands
-# Main registration function for python module
-python_register() {
-    python_help_register
-    python_commands_register
-}
-
-# Register help information
-python_help_register() {
-    caddie_help_append "python" "Python environment management"
-}
-
-# Register commands
-python_commands_register() {
-    caddie_commands_append "python:create|caddie_python_create|Create new virtual environment"
-    caddie_commands_append "python:activate|caddie_python_activate|Activate environment"
-    caddie_commands_append "python:deactivate|caddie_python_deactivate|Deactivate current environment"
-    caddie_commands_append "python:list|caddie_python_list|List all environments"
-    caddie_commands_append "python:remove|caddie_python_remove|Remove environment"
-    caddie_commands_append "python:current|caddie_python_current|Show current environment"
-    caddie_commands_append "python:install|caddie_python_install|Install package in current env"
-    caddie_commands_append "python:uninstall|caddie_python_uninstall|Uninstall package"
-    caddie_commands_append "python:freeze|caddie_python_freeze|Generate requirements.txt"
-    caddie_commands_append "python:sync|caddie_python_sync|Install from requirements.txt"
-    caddie_commands_append "python:upgrade|caddie_python_upgrade|Upgrade specific package"
-    caddie_commands_append "python:outdated|caddie_python_outdated|Show outdated packages"
-    caddie_commands_append "python:init|caddie_python_init|Initialize Python project structure"
-    caddie_commands_append "python:test|caddie_python_test|Run tests"
-    caddie_commands_append "python:lint|caddie_python_lint|Run linting"
-    caddie_commands_append "python:format|caddie_python_format|Format code"
-    caddie_commands_append "python:help|caddie_python_help|Show detailed Python help"
+function caddie_python_description() {
+    echo 'Python environment management'
 }
 
 # Function to display Python module help
-caddie_python_help() {
+function caddie_python_help() {
     echo "Python Environment Management"
     echo "============================"
     echo ""
@@ -485,7 +456,7 @@ caddie_python_help() {
 }
 
 # Export Python functions
-export -f python_register
+export -f caddie_python_description
 export -f caddie_python_create
 export -f caddie_python_activate
 export -f caddie_python_deactivate

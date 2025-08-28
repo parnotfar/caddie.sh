@@ -6,27 +6,8 @@
 # Default caddie home file location
 CADDIE_HOME_FILE="$HOME/.caddie_home"
 
-# Main registration function for core module
-core_register() {
-    core_help_register
-    core_commands_register
-}
-
-# Register help information
-core_help_register() {
-    caddie_help_append "core" "Core caddie functions"
-}
-
-# Register commands
-core_commands_register() {
-    caddie_commands_append "core:set:home|caddie_set_home|Set caddie home directory"
-    caddie_commands_append "core:get:home|caddie_get_home|Get current caddie home"
-    caddie_commands_append "core:reset:home|caddie_reset_home|Reset caddie home directory"
-    caddie_commands_append "core:help|caddie_core_help|Show core caddie help"
-}
-
 # Function to set the caddie home directory
-caddie_set_home() {
+caddie_core_set_home() {
     local path="$1"
     
     if [ -z "$path" ]; then
@@ -36,9 +17,7 @@ caddie_set_home() {
     fi
     
     # Expand the path (handle ~, relative paths, etc.)
-    local expanded_path
-
-    expanded_path=$(eval echo "$path")
+    local expanded_path=$(eval echo "$path")
     
     # Check if the path exists
     if [ ! -d "$expanded_path" ]; then
@@ -47,9 +26,7 @@ caddie_set_home() {
     fi
     
     # Get the absolute path
-    local absolute_path
-
-    absolute_path=$(cd "$expanded_path" && pwd)
+    local absolute_path=$(cd "$expanded_path" && pwd)
     
     # Save the path to the caddie home file
     echo "$absolute_path" > "$CADDIE_HOME_FILE"
@@ -60,11 +37,9 @@ caddie_set_home() {
 }
 
 # Function to get the caddie home directory
-caddie_get_home() {
+caddie_core_get_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
-        local caddie_home
-
-        caddie_home=$(cat "$CADDIE_HOME_FILE")
+        local caddie_home=$(cat "$CADDIE_HOME_FILE")
 
         echo "Current caddie home: $caddie_home"
     else
@@ -73,7 +48,7 @@ caddie_get_home() {
 }
 
 # Function to reset the caddie home directory
-caddie_reset_home() {
+caddie_core_reset_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
         rm "$CADDIE_HOME_FILE"
         unset CADDIE_HOME
@@ -101,7 +76,9 @@ caddie_core_help() {
     echo "  caddie core:reset:home"
 }
 
-# Main caddie function removed - now handled by dot_caddie
+function caddie_core_description() {
+    echo 'core - Core Caddie Functions'
+}
 
 # Auto-load caddie home on shell startup
 if [ -f "$CADDIE_HOME_FILE" ]; then
@@ -109,11 +86,9 @@ if [ -f "$CADDIE_HOME_FILE" ]; then
     export CADDIE_HOME="$caddie_home"
 fi
 
-# Tab completion function removed - now handled by dot_caddie
-
 # Export core functions
-export -f core_register
-export -f caddie_set_home
-export -f caddie_get_home
-export -f caddie_reset_home
+export -f caddie_core_set_home
+export -f caddie_core_get_home
+export -f caddie_core_reset_home
 export -f caddie_core_help
+export -f caddie_core_description

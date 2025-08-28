@@ -3,46 +3,13 @@
 # Caddie.sh - JavaScript/Node.js Environment Management (NVM-based)
 # This file provides Node.js development environment management using NVM
 
-# Main registration function for js module
-js_register() {
-    js_help_register
-    js_commands_register
-}
-
 # Register help information
-js_help_register() {
-    caddie_help_append "js" "JavaScript/Node.js environment management with NVM"
-}
-
-# Register commands
-js_commands_register() {
-    caddie_commands_append "js:setup|caddie_js_setup|Setup Node.js development environment with NVM"
-    caddie_commands_append "js:install|caddie_js_install|Install specific Node.js version"
-    caddie_commands_append "js:use|caddie_js_use|Switch to specific Node.js version"
-    caddie_commands_append "js:list|caddie_js_list|List installed Node.js versions"
-    caddie_commands_append "js:current|caddie_js_current|Show current Node.js version"
-    caddie_commands_append "js:project:init|caddie_js_project_init|Initialize Node.js project structure"
-    caddie_commands_append "js:project:install|caddie_js_project_install|Install project dependencies"
-    caddie_commands_append "js:project:update|caddie_js_project_update|Update project dependencies"
-    caddie_commands_append "js:project:test|caddie_js_project_test|Run Node.js tests"
-    caddie_commands_append "js:project:build|caddie_js_project_build|Build Node.js project"
-    caddie_commands_append "js:project:serve|caddie_js_project_serve|Serve Node.js application"
-    caddie_commands_append "js:package:install|caddie_js_package_install|Install npm package"
-    caddie_commands_append "js:package:uninstall|caddie_js_package_uninstall|Uninstall npm package"
-    caddie_commands_append "js:package:list|caddie_js_package_list|List installed packages"
-    caddie_commands_append "js:package:update|caddie_js_package_update|Update npm package"
-    caddie_commands_append "js:package:outdated|caddie_js_package_outdated|Show outdated packages"
-    caddie_commands_append "js:package:audit|caddie_js_package_audit|Audit package security"
-    caddie_commands_append "js:package:run|caddie_js_package_run|Run npm script"
-    caddie_commands_append "js:package:publish|caddie_js_package_publish|Publish npm package"
-    caddie_commands_append "js:framework:create|caddie_js_framework_create|Create framework project"
-    caddie_commands_append "js:framework:serve|caddie_js_framework_serve|Serve framework application"
-    caddie_commands_append "js:framework:build|caddie_js_framework_build|Build framework application"
-    caddie_commands_append "js:version|caddie_js_version|Show Node.js and NVM version information"
+function caddie_js_description() {
+    echo 'JavaScript/Node.js environment management with NVM'
 }
 
 # Function to setup Node.js development environment
-caddie_js_setup() {
+function caddie_js_setup() {
     echo "Setting up Node.js development environment..."
     
     # Check if NVM is installed
@@ -87,7 +54,7 @@ caddie_js_setup() {
 }
 
 # Function to install specific Node.js version
-caddie_js_install() {
+function caddie_js_install() {
     local version="$1"
     
     if [ -z "$version" ]; then
@@ -109,7 +76,7 @@ caddie_js_install() {
 }
 
 # Function to switch to specific Node.js version
-caddie_js_use() {
+function caddie_js_use() {
     local version="$1"
     
     if [ -z "$version" ]; then
@@ -131,7 +98,7 @@ caddie_js_use() {
 }
 
 # Function to list installed Node.js versions
-caddie_js_list() {
+function caddie_js_list() {
     echo "Installed Node.js versions:"
     echo "==========================="
     nvm list
@@ -140,7 +107,7 @@ caddie_js_list() {
 }
 
 # Function to show current Node.js version
-caddie_js_current() {
+function caddie_js_current() {
     echo "Current Node.js Environment:"
     echo "============================"
     echo "Node.js: $(node --version)"
@@ -151,7 +118,7 @@ caddie_js_current() {
 }
 
 # Function to initialize Node.js project structure
-caddie_js_project_init() {
+function caddie_js_project_init() {
     local project_name="$1"
     
     if [ -z "$project_name" ]; then
@@ -249,7 +216,7 @@ EOF
 }
 
 # Function to install project dependencies
-caddie_js_project_install() {
+function caddie_js_project_install() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -274,7 +241,7 @@ caddie_js_project_install() {
 }
 
 # Function to update project dependencies
-caddie_js_project_update() {
+function caddie_js_project_update() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -299,7 +266,7 @@ caddie_js_project_update() {
 }
 
 # Function to run Node.js tests
-caddie_js_project_test() {
+function caddie_js_project_test() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -318,7 +285,7 @@ caddie_js_project_test() {
 }
 
 # Function to build Node.js project
-caddie_js_project_build() {
+function caddie_js_project_build() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -343,7 +310,7 @@ caddie_js_project_build() {
 }
 
 # Function to serve Node.js application
-caddie_js_project_serve() {
+function caddie_js_project_serve() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -365,7 +332,7 @@ caddie_js_project_serve() {
 }
 
 # Function to install npm package
-caddie_js_package_install() {
+function caddie_js_package_install() {
     local package="$1"
     
     if [ -z "$package" ]; then
@@ -385,7 +352,7 @@ caddie_js_package_install() {
 }
 
 # Function to uninstall npm package
-caddie_js_package_uninstall() {
+function caddie_js_package_uninstall() {
     local package="$1"
     
     if [ -z "$package" ]; then
@@ -405,14 +372,14 @@ caddie_js_package_uninstall() {
 }
 
 # Function to list installed packages
-caddie_js_package_list() {
+function caddie_js_package_list() {
     echo "Installed packages:"
     echo "==================="
     npm list --depth=0
 }
 
 # Function to update npm package
-caddie_js_package_update() {
+function caddie_js_package_update() {
     local package="$1"
     
     if [ -z "$package" ]; then
@@ -432,20 +399,20 @@ caddie_js_package_update() {
 }
 
 # Function to show outdated packages
-caddie_js_package_outdated() {
+function caddie_js_package_outdated() {
     echo "Outdated packages:"
     echo "=================="
     npm outdated
 }
 
 # Function to audit package security
-caddie_js_package_audit() {
+function caddie_js_package_audit() {
     echo "Auditing package security..."
     npm audit
 }
 
 # Function to run npm script
-caddie_js_package_run() {
+function caddie_js_package_run() {
     local script="$1"
     
     if [ -z "$script" ]; then
@@ -464,7 +431,7 @@ caddie_js_package_run() {
 }
 
 # Function to publish npm package
-caddie_js_package_publish() {
+function caddie_js_package_publish() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -489,7 +456,7 @@ caddie_js_package_publish() {
 }
 
 # Function to create framework project
-caddie_js_framework_create() {
+function caddie_js_framework_create() {
     local framework="$1"
     local project_name="$2"
     
@@ -571,7 +538,7 @@ caddie_js_framework_create() {
 }
 
 # Function to serve framework application
-caddie_js_framework_serve() {
+function caddie_js_framework_serve() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -593,7 +560,7 @@ caddie_js_framework_serve() {
 }
 
 # Function to build framework application
-caddie_js_framework_build() {
+function caddie_js_framework_build() {
     if [ ! -f "package.json" ]; then
         echo "Error: Not in a Node.js project directory (package.json not found)"
         return 1
@@ -611,7 +578,7 @@ caddie_js_framework_build() {
 }
 
 # Function to show Node.js and NVM version information
-caddie_js_version() {
+function caddie_js_version() {
     echo "Node.js Environment Information"
     echo "=============================="
     echo "Node.js: $(node --version)"
@@ -623,7 +590,7 @@ caddie_js_version() {
 }
 
 # Export JavaScript functions
-export -f js_register
+export -f caddie_js_description
 export -f caddie_js_setup
 export -f caddie_js_install
 export -f caddie_js_use

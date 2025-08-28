@@ -7,25 +7,26 @@
 CADDIE_COMMANDS=()
 
 # Add a command to the commands array
-caddie_commands_append() {
+function caddie_commands_append() {
     local cmd_info="$1"
+
     if [ -n "$cmd_info" ]; then
         CADDIE_COMMANDS+=("$cmd_info")
     fi
 }
 
 # Get all commands from the array
-caddie_commands_get() {
-    echo "${CADDIE_COMMANDS[@]}"
+function caddie_commands_get() {
+    printf '%s\n' "${CADDIE_COMMANDS[@]}"
 }
 
 # Get the count of commands in the array
-caddie_commands_count() {
-    echo "${#CADDIE_COMMANDS[@]}"
+function caddie_commands_count() {
+    printf '%s\n' "${#CADDIE_COMMANDS[@]}"
 }
 
 # Reset the commands array to empty
-caddie_commands_reset() {
+function caddie_commands_reset() {
     CADDIE_COMMANDS=()
 }
 

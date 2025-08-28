@@ -3,13 +3,13 @@
 # Caddie.sh - Rust Environment Management
 # This file contains all Rust-related functions
 
-caddie_rust_load_env() {
+function caddie_rust_load_env() {
     if [ -f "$HOME/.cargo/env" ]; then
-        # shellcheck disable=SC1091
         source "$HOME/.cargo/env"
     else
         echo "Error: Rust environment not found at ~/.cargo/env"
         echo "  Please install Rust first: https://rustup.rs/"
+
         return 1
     fi
 }
@@ -18,7 +18,7 @@ caddie_rust_load_env() {
 caddie_rust_load_env
 
 # Function to create a new Rust project
-caddie_rust_new() {
+function caddie_rust_new() {
     caddie_rust_load_env
     
     local project_name="$1"
@@ -43,7 +43,7 @@ caddie_rust_new() {
 }
 
 # Function to build current Rust project
-caddie_rust_build() {
+function caddie_rust_build() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -57,7 +57,7 @@ caddie_rust_build() {
 }
 
 # Function to run current Rust project
-caddie_rust_run() {
+function caddie_rust_run() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -71,7 +71,7 @@ caddie_rust_run() {
 }
 
 # Function to run Rust tests
-caddie_rust_test() {
+function caddie_rust_test() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -85,7 +85,7 @@ caddie_rust_test() {
 }
 
 # Function to check Rust project without building
-caddie_rust_check() {
+function caddie_rust_check() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -99,7 +99,7 @@ caddie_rust_check() {
 }
 
 # Function to clean Rust build artifacts
-caddie_rust_clean() {
+function caddie_rust_clean() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -113,7 +113,7 @@ caddie_rust_clean() {
 }
 
 # Function to update Rust dependencies
-caddie_rust_update() {
+function caddie_rust_update() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -127,7 +127,7 @@ caddie_rust_update() {
 }
 
 # Function to add a Rust dependency
-caddie_rust_add() {
+function caddie_rust_add() {
     caddie_rust_load_env
     
     local crate="$1"
@@ -149,7 +149,7 @@ caddie_rust_add() {
 }
 
 # Function to remove a Rust dependency
-caddie_rust_remove() {
+function caddie_rust_remove() {
     caddie_rust_load_env
     
     local crate="$1"
@@ -171,7 +171,7 @@ caddie_rust_remove() {
 }
 
 # Function to search crates.io
-caddie_rust_search() {
+function caddie_rust_search() {
     caddie_rust_load_env
     
     local query="$1"
@@ -187,7 +187,7 @@ caddie_rust_search() {
 }
 
 # Function to show outdated Rust dependencies
-caddie_rust_outdated() {
+function caddie_rust_outdated() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -208,7 +208,7 @@ caddie_rust_outdated() {
 }
 
 # Function to run Rust security audit
-caddie_rust_audit() {
+function caddie_rust_audit() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
@@ -229,7 +229,7 @@ caddie_rust_audit() {
 }
 
 # Function to switch Rust toolchain
-caddie_rust_toolchain() {
+function caddie_rust_toolchain() {
     caddie_rust_load_env
     
     local version="$1"
@@ -248,7 +248,7 @@ caddie_rust_toolchain() {
 }
 
 # Function to add Rust compilation target
-caddie_rust_target() {
+function caddie_rust_target() {
     caddie_rust_load_env
     
     local target="$1"
@@ -266,7 +266,7 @@ caddie_rust_target() {
 }
 
 # Function to install Rust component
-caddie_rust_component() {
+function caddie_rust_component() {
     caddie_rust_load_env
     
     local component="$1"
@@ -283,39 +283,8 @@ caddie_rust_component() {
     echo "✓ Installed Rust component '$component'"
 }
 
-# Main registration function for rust module
-rust_register() {
-    rust_help_register
-    rust_commands_register
-}
-
-# Register help information
-rust_help_register() {
-    caddie_help_append "rust" "Rust development tools"
-}
-
-# Register commands
-rust_commands_register() {
-    caddie_commands_append "rust:new|caddie_rust_new|Create new Rust project"
-    caddie_commands_append "rust:build|caddie_rust_build|Build current project"
-    caddie_commands_append "rust:run|caddie_rust_run|Run current project"
-    caddie_commands_append "rust:test|caddie_rust_test|Run tests"
-    caddie_commands_append "rust:check|caddie_rust_check|Check without building"
-    caddie_commands_append "rust:clean|caddie_rust_clean|Clean build artifacts"
-    caddie_commands_append "rust:update|caddie_rust_update|Update dependencies"
-    caddie_commands_append "rust:add|caddie_rust_add|Add dependency to Cargo.toml"
-    caddie_commands_append "rust:remove|caddie_rust_remove|Remove dependency"
-    caddie_commands_append "rust:search|caddie_rust_search|Search crates.io"
-    caddie_commands_append "rust:outdated|caddie_rust_outdated|Show outdated dependencies"
-    caddie_commands_append "rust:audit|caddie_rust_audit|Security audit"
-    caddie_commands_append "rust:toolchain|caddie_rust_toolchain|Switch toolchain (stable/beta/nightly)"
-    caddie_commands_append "rust:target|caddie_rust_target|Add compilation target"
-    caddie_commands_append "rust:component|caddie_rust_component|Install component (clippy/rustfmt/etc)"
-    caddie_commands_append "rust:help|caddie_rust_help|Show detailed Rust help"
-}
-
 # Function to display Rust module help
-caddie_rust_help() {
+function caddie_rust_help() {
     echo "Rust Development Tools"
     echo "====================="
     echo ""
@@ -350,9 +319,13 @@ caddie_rust_help() {
     echo "  caddie rust:component clippy"
 }
 
+function caddie_rust_description() {
+    echo 'Rust development tools'
+}
+
 # Export Rust functions
 export -f caddie_rust_load_env
-export -f rust_register
+export -f caddie_rust_description
 export -f caddie_rust_new
 export -f caddie_rust_build
 export -f caddie_rust_run

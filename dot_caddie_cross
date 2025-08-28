@@ -4,7 +4,7 @@
 # This file contains cross-language development functions
 
 # Function to show all environment status
-caddie_env_status() {
+function caddie_cross_env_status() {
     echo "Development Environment Status"
     echo "============================="
     echo ""
@@ -82,7 +82,7 @@ caddie_env_status() {
 }
 
 # Function to setup development environment
-caddie_env_setup() {
+function caddie_cross_env_setup() {
     echo "Setting up development environment..."
     
     # Check for Homebrew
@@ -111,7 +111,7 @@ caddie_env_setup() {
 }
 
 # Function to reset all environments
-caddie_env_reset() {
+function caddie_cross_env_reset() {
     echo "Resetting all development environments..."
     
     # Deactivate Python virtual environment
@@ -142,9 +142,8 @@ caddie_env_reset() {
 }
 
 # Function to backup current configurations
-caddie_env_backup() {
-    local backup_dir
-    backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
+function caddie_cross_env_backup() {
+    local backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
     
     echo "Creating backup in $backup_dir..."
     mkdir -p "$backup_dir"
@@ -177,7 +176,7 @@ caddie_env_backup() {
 }
 
 # Function to list available templates
-caddie_template_list() {
+function caddie_cross_template_list() {
     echo "Available Project Templates"
     echo "=========================="
     echo ""
@@ -204,7 +203,7 @@ caddie_template_list() {
 }
 
 # Function to create project from template
-caddie_template_create() {
+function caddie_cross_template_create() {
     local template_type="$1"
     local project_name="$2"
     
@@ -224,37 +223,37 @@ caddie_template_create() {
     
     case "$template_type" in
         "web")
-            caddie_template_web "$project_name"
+            caddie_cross_template_web "$project_name"
             ;;
         "api")
-            caddie_template_api "$project_name"
+            caddie_cross_template_api "$project_name"
             ;;
         "mobile")
-            caddie_template_mobile "$project_name"
+            caddie_cross_template_mobile "$project_name"
             ;;
         "app")
-            caddie_template_ios_app "$project_name"
+            caddie_cross_template_ios_app "$project_name"
             ;;
         "framework")
-            caddie_template_ios_framework "$project_name"
+            caddie_cross_template_ios_framework "$project_name"
             ;;
         "extension")
-            caddie_template_ios_extension "$project_name"
+            caddie_cross_template_ios_extension "$project_name"
             ;;
         "data")
-            caddie_template_data "$project_name"
+            caddie_cross_template_data "$project_name"
             ;;
         "ml")
-            caddie_template_ml "$project_name"
+            caddie_cross_template_ml "$project_name"
             ;;
         "cli")
-            caddie_template_cli "$project_name"
+            caddie_cross_template_cli "$project_name"
             ;;
         "lib")
-            caddie_template_lib "$project_name"
+            caddie_cross_template_lib "$project_name"
             ;;
         "wasm")
-            caddie_template_wasm "$project_name"
+            caddie_cross_template_wasm "$project_name"
             ;;
         *)
             echo "Error: Unknown template type '$template_type'"
@@ -265,7 +264,7 @@ caddie_template_create() {
 }
 
 # Template creation functions
-caddie_template_web() {
+function caddie_cross_template_web() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -313,7 +312,7 @@ EOF
     echo "✓ Web project '$name' created"
 }
 
-caddie_template_api() {
+function caddie_cross_template_api() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -360,7 +359,7 @@ EOF
     echo "✓ API project '$name' created"
 }
 
-caddie_template_mobile() {
+caddie_cross_template_mobile() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -404,7 +403,7 @@ EOF
     echo "✓ Mobile project '$name' created"
 }
 
-caddie_template_ios_app() {
+caddie_cross_template_ios_app() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -422,7 +421,7 @@ caddie_template_ios_app() {
     echo "✓ iOS app '$name' created"
 }
 
-caddie_template_ios_framework() {
+caddie_cross_template_ios_framework() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -439,7 +438,7 @@ caddie_template_ios_framework() {
     echo "✓ iOS framework '$name' created"
 }
 
-caddie_template_ios_extension() {
+caddie_cross_template_ios_extension() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -456,7 +455,7 @@ caddie_template_ios_extension() {
     echo "✓ iOS extension '$name' created"
 }
 
-caddie_template_data() {
+caddie_cross_template_data() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -484,7 +483,7 @@ EOF
     echo "✓ Data project '$name' created"
 }
 
-caddie_template_ml() {
+caddie_cross_template_ml() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -516,7 +515,7 @@ EOF
     echo "✓ ML project '$name' created"
 }
 
-caddie_template_cli() {
+caddie_cross_template_cli() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -559,7 +558,7 @@ EOF
     echo "✓ CLI project '$name' created"
 }
 
-caddie_template_lib() {
+function caddie_cross_template_lib() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -600,7 +599,7 @@ EOF
     echo "✓ Library project '$name' created"
 }
 
-caddie_template_wasm() {
+function caddie_cross_template_wasm() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -652,31 +651,31 @@ EOF
 }
 
 # Build functions
-caddie_build_all() {
+function caddie_cross_build_all() {
     echo "Building all projects..."
     
     # Build Python
     if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
         echo "Building Python project..."
-        caddie_build_python
+        caddie_cross_build_python
     fi
     
     # Build Rust
     if [ -f "Cargo.toml" ]; then
         echo "Building Rust project..."
-        caddie_build_rust
+        caddie_cross_build_rust
     fi
     
     # Build iOS
     if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
         echo "Building iOS project..."
-        caddie_build_ios
+        caddie_cross_build_ios
     fi
     
     echo "✓ All projects built"
 }
 
-caddie_build_python() {
+function caddie_cross_build_python() {
     if [ -f "setup.py" ]; then
         echo "Building Python package..."
         python setup.py build
@@ -688,7 +687,7 @@ caddie_build_python() {
     fi
 }
 
-caddie_build_rust() {
+function caddie_cross_build_rust() {
     if [ -f "Cargo.toml" ]; then
         echo "Building Rust project..."
         cargo build --release
@@ -697,17 +696,17 @@ caddie_build_rust() {
     fi
 }
 
-caddie_build_ios() {
+function caddie_cross_build_ios() {
     if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
         echo "Building iOS project..."
-        caddie_ios_build
+        echo "iOS build functionality not yet implemented"
     else
         echo "No iOS project found"
     fi
 }
 
 # Deployment functions
-caddie_deploy_docker() {
+function caddie_cross_deploy_docker() {
     echo "Creating Docker deployment setup..."
     
     # Create Dockerfile
@@ -745,7 +744,7 @@ EOF
     echo "✓ Docker deployment setup created"
 }
 
-caddie_deploy_local() {
+function caddie_cross_deploy_local() {
     echo "Setting up local deployment..."
     
     # Create deployment script
@@ -767,7 +766,7 @@ EOF
 }
 
 # Tools functions
-caddie_tools_install() {
+function caddie_cross_tools_install() {
     echo "Installing development tools..."
     
     # Install common tools
@@ -788,7 +787,7 @@ caddie_tools_install() {
     echo "✓ Development tools installed"
 }
 
-caddie_tools_setup() {
+function caddie_cross_tools_setup() {
     echo "Setting up development tools..."
     
     # Setup git hooks
@@ -806,7 +805,7 @@ caddie_tools_setup() {
     echo "✓ Development tools setup complete"
 }
 
-caddie_tools_lint() {
+function caddie_cross_tools_lint() {
     echo "Running all linters..."
     
     # Python linting
@@ -831,7 +830,7 @@ caddie_tools_lint() {
     echo "✓ All linters completed"
 }
 
-caddie_tools_format() {
+function caddie_cross_tools_format() {
     echo "Formatting all code..."
     
     # Python formatting
@@ -851,38 +850,6 @@ caddie_tools_format() {
     fi
     
     echo "✓ All code formatted"
-}
-
-# Main registration function for cross module
-cross_register() {
-    cross_help_register
-    cross_commands_register
-}
-
-# Register help information
-cross_help_register() {
-    caddie_help_append "cross" "Cross-language development tools"
-}
-
-# Register commands
-cross_commands_register() {
-    caddie_commands_append "env:status|caddie_env_status|Show all environment status"
-    caddie_commands_append "env:setup|caddie_env_setup|Setup development environment"
-    caddie_commands_append "env:reset|caddie_env_reset|Reset all environments"
-    caddie_commands_append "env:backup|caddie_env_backup|Backup current configurations"
-    caddie_commands_append "template:list|caddie_template_list|List available templates"
-    caddie_commands_append "template:create|caddie_template_create|Create from template"
-    caddie_commands_append "build:all|caddie_build_all|Build all projects"
-    caddie_commands_append "build:python|caddie_build_python|Build Python package"
-    caddie_commands_append "build:rust|caddie_build_rust|Build Rust project"
-    caddie_commands_append "build:ios|caddie_build_ios|Build iOS project"
-    caddie_commands_append "deploy:docker|caddie_deploy_docker|Create Docker setup"
-    caddie_commands_append "deploy:local|caddie_deploy_local|Local deployment"
-    caddie_commands_append "tools:install|caddie_tools_install|Install dev tools"
-    caddie_commands_append "tools:setup|caddie_tools_setup|Setup git hooks, etc."
-    caddie_commands_append "tools:lint|caddie_tools_lint|Run all linters"
-    caddie_commands_append "tools:format|caddie_tools_format|Format all code"
-    caddie_commands_append "cross:help|caddie_cross_help|Show detailed cross-language help"
 }
 
 # Function to display cross-language module help
@@ -937,33 +904,37 @@ caddie_cross_help() {
     echo "  caddie tools:lint"
 }
 
+function caddie_cross_description() {
+    echo 'Cross-Language Features & Templates'
+}
+
 # Export cross-language functions
-export -f cross_register
-export -f caddie_env_status
-export -f caddie_env_setup
-export -f caddie_env_reset
-export -f caddie_env_backup
-export -f caddie_template_list
-export -f caddie_template_create
-export -f caddie_template_web
-export -f caddie_template_api
-export -f caddie_template_mobile
-export -f caddie_template_ios_app
-export -f caddie_template_ios_framework
-export -f caddie_template_ios_extension
-export -f caddie_template_data
-export -f caddie_template_ml
-export -f caddie_template_cli
-export -f caddie_template_lib
-export -f caddie_template_wasm
-export -f caddie_build_all
-export -f caddie_build_python
-export -f caddie_build_rust
-export -f caddie_build_ios
-export -f caddie_deploy_docker
-export -f caddie_deploy_local
-export -f caddie_tools_install
-export -f caddie_tools_setup
-export -f caddie_tools_lint
-export -f caddie_tools_format
+export -f caddie_cross_env_status
+export -f caddie_cross_env_setup
+export -f caddie_cross_env_reset
+export -f caddie_cross_env_backup
+export -f caddie_cross_template_list
+export -f caddie_cross_template_create
+export -f caddie_cross_template_web
+export -f caddie_cross_template_api
+export -f caddie_cross_template_mobile
+export -f caddie_cross_template_ios_app
+export -f caddie_cross_template_ios_framework
+export -f caddie_cross_template_ios_extension
+export -f caddie_cross_template_data
+export -f caddie_cross_template_ml
+export -f caddie_cross_template_cli
+export -f caddie_cross_template_lib
+export -f caddie_cross_template_wasm
+export -f caddie_cross_build_all
+export -f caddie_cross_build_python
+export -f caddie_cross_build_rust
+export -f caddie_cross_build_ios
+export -f caddie_cross_deploy_docker
+export -f caddie_cross_deploy_local
+export -f caddie_cross_tools_install
+export -f caddie_cross_tools_setup
+export -f caddie_cross_tools_lint
+export -f caddie_cross_tools_format
 export -f caddie_cross_help
+export -f caddie_cross_description

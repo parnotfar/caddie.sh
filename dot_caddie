@@ -7,11 +7,8 @@
 set -e
 
 # Source the dependent files
-# shellcheck disable=SC1091
 source "$HOME/.caddie_version"
-# shellcheck disable=SC1091
 source "$HOME/.caddie_prompt.sh"
-# shellcheck disable=SC1091
 source "$HOME/.caddie_git"
 
 # Auto-discover caddie modules from ~/.caddie_modules/ directory
@@ -19,9 +16,7 @@ source "$HOME/.caddie_git"
 CADDIE_MODULES_DIR="$HOME/.caddie_modules"
 
 # Source data structure files
-# shellcheck disable=SC1091
 source "$HOME/.caddie_data/.caddie_commands"
-# shellcheck disable=SC1091
 source "$HOME/.caddie_data/.caddie_help"
 
 # Helper function to extract module name from filename
@@ -42,50 +37,22 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
     # Use a different approach to avoid subshell issues with while read
     # Store module files in an array first, then iterate
     module_files=()
+    modules=()
+
     while IFS= read -r -d '' file; do
+        source "$file"
+
+        module_name=$(caddie_extract_module_name "$file")
+
         module_files+=("$file")
+        modules+=("$module_name")
     done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
-    
-    # Now iterate over the array (no subshell)
-    for module_file in "${module_files[@]}"; do
-        if [ -f "$module_file" ]; then
-            # Extract module name from filename
-            module=$(caddie_extract_module_name "$module_file")
-            
-            echo "Loading module: $module"
-            echo "  Module file: $module_file"
-            # shellcheck disable=SC1090
-            source "$module_file"
-            
-            # Call the module's register function
-            if command -v "${module}_register" >/dev/null 2>&1; then
-                echo "  ✓ Registered $module module"
-                echo "  DEBUG: Calling ${module}_register function"
-                "${module}_register"
-                echo "  DEBUG: After ${module}_register, commands count: $(caddie_commands_count)"
-                echo "  DEBUG: After ${module}_register, help count: $(caddie_help_count)"
-                echo "  DEBUG: Current commands: [$(caddie_commands_get)]"
-                echo "  DEBUG: Current help: [$(caddie_help_get)]"
-            else
-                echo "  ⚠ Module $module missing register function"
-                echo "  DEBUG: Available functions: $(declare -F | grep "${module}_" || echo "None found")"
-            fi
-        fi
-    done
     
     echo "=== DEBUG: Module loading complete ==="
     echo "Final commands count: $(caddie_commands_count)"
     echo "Final help count: $(caddie_help_count)"
     echo "Final commands array contents: [$(caddie_commands_get)]"
     echo "Final help array contents: [$(caddie_help_get)]"
-    echo "All registered commands:"
-    caddie_commands_get | while IFS= read -r cmd; do
-        echo "  $cmd"
-    done
-    echo "All registered help:"
-    caddie_help_get | while IFS= read -r help; do
-        echo "  $help"
-    done
 else
     echo "Warning: ~/.caddie_modules directory not found"
 fi
@@ -106,11 +73,11 @@ function caddie_help() {
     echo "Command Categories:"
     echo "  home                     Home directory management"
     
-    # Display the loaded modules help information
-    local loaded_modules=$(caddie_help_get)
-    
     echo "Available modules:"
-    IFS=$'\n'; for f in $(caddie_help_get); do echo "  $f" | sed 's/|/ - /'; done
+    for m in ${modules[@]}; do
+        description_function="caddie_${m}_description"
+        printf "  %-10s %s\n" "$m" "$(eval "$description_function")"
+    done
     
     echo
     echo "General Commands:"
@@ -136,8 +103,9 @@ function caddie_version() {
 # Main caddie function - directly executes commands
 function caddie() {
     local command="$1"
-    shift 2>/dev/null || true  # Remove first argument, handle case where no args
-    
+
+    shift  # Remove first argument (the command); safe in bash, no need for OPTIND here
+
     echo "=== DEBUG: caddie function called ==="
     echo "DEBUG: command='$command'"
     echo "DEBUG: remaining args='$*'"
@@ -160,50 +128,23 @@ function caddie() {
             ;;
     esac
     
-    # Try to find and execute the command from registered commands
-    local found=false
-
-    for cmd_info in $(caddie_commands_get); do
-        # Extract the command pattern (module:command) and function name
-        local cmd_pattern
-        local func_name
-        cmd_pattern=$(echo "$cmd_info" | cut -d'|' -f1)
-        func_name=$(echo "$cmd_info" | cut -d'|' -f2)
-        
-        echo "DEBUG: Checking cmd_info='$cmd_info'"
-        echo "DEBUG:  - cmd_pattern='$cmd_pattern'"
-        echo "DEBUG:  - func_name='$func_name'"
-        echo "DEBUG:  - comparing with command='$command'"
-        
-        if [ "$cmd_pattern" = "$command" ]; then
-            echo "DEBUG: Found matching command!"
-            # Found the command, execute it with remaining arguments
-            if [ -n "$func_name" ] && command -v "$func_name" >/dev/null 2>&1; then
-                echo "DEBUG: Executing function '$func_name' with args: $*"
-                eval "$func_name \"\$@\""
-                found=true
-                break
-            else
-                echo "Error: Function '$func_name' not found for command '$command'"
-                echo "DEBUG: command -v '$func_name' returned: $(command -v "$func_name" 2>&1 || echo "not found")"
-                return 1
-            fi
-        fi
-    done
+    # Use naming convention: module:command -> caddie_module_command
+    local function_name="caddie_${command//:/_}"
     
-    if [ "$found" = false ]; then
+    if command -v "$function_name" >/dev/null 2>&1; then
+        echo "DEBUG: Found function '$function_name', executing with args: $*"
+        eval "$function_name \"\$@\""
+    else
         echo "Error: Unknown command '$command'"
-        echo "Use 'caddie help' to see available commands"
-        echo "DEBUG: Command not found in registered commands"
+        caddie_help
         return 1
     fi
 }
 
-
-
 # Tab completion function for caddie command
 function _caddie_completion() {
     local cur prev opts
+
     COMPREPLY=()
     
     # Safely access COMP_WORDS array elements
