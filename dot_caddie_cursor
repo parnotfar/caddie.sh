@@ -768,11 +768,6 @@ EOF
     echo "✓ Cursor configuration optimized for performance"
 }
 
-# Register help information
-cursor_help_register() {
-    caddie_help_append "cursor" "Cursor IDE integration"
-}
-
 # Function to display Cursor module help
 caddie_cursor_help() {
     echo "Cursor IDE Integration"

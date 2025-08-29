@@ -93,8 +93,6 @@ install-dot: backup-existing ## Install dot files to home directory
 	@cp dot_caddie_version "$(HOME_DIR)/.caddie_version" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_version" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_version" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing caddie data structure files..."
 	@mkdir -p "$(HOME_DIR)/.caddie_data" && echo "$(GREEN)    ✓$(NC) ~/.caddie_data directory ready" || (echo "$(RED)    ✗$(NC) Failed to create ~/.caddie_data directory" && exit 1)
-	@cp dot_caddie_commands "$(HOME_DIR)/.caddie_data/.caddie_commands" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_data/.caddie_commands" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_data/.caddie_commands" && exit 1)
-	@cp dot_caddie_help "$(HOME_DIR)/.caddie_data/.caddie_help" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_data/.caddie_help" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_data/.caddie_help" && exit 1)
 	@cp dot_caddie_modules "$(HOME_DIR)/.caddie_data/.caddie_modules" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_data/.caddie_modules" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_data/.caddie_modules" && exit 1)
 	@echo "$(YELLOW)  →$(NC) Installing caddie debug system..."
 	@cp dot_caddie_debug "$(HOME_DIR)/.caddie_debug" && echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_debug" || (echo "$(RED)    ✗$(NC) Failed to install ~/.caddie_debug" && exit 1)
