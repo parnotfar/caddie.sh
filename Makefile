@@ -15,6 +15,7 @@ NC := \033[0m # No Color
 # Default target
 .PHONY: all install help
 .DEFAULT_GOAL := help
+.SILENT:
 
 # Variables
 HOME_DIR := $(HOME)
