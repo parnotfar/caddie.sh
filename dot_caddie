@@ -6,39 +6,20 @@
 # Note: set -e removed for better error handling and user experience
 # Errors will be handled gracefully with proper error messages
 
-# Source the dependent files with error handling
-if ! source "$HOME/.caddie_version" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_version (this is normal for new installations)"
-fi
-
-if ! source "$HOME/.caddie_prompt.sh" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_prompt.sh (this is normal for new installations)"
-fi
-
-if ! source "$HOME/.caddie_git" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_git (this is normal for new installations)"
-fi
-
-if ! source "$HOME/.caddie_debug" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_debug (this is normal for new installations)"
-fi
+# Source the dependent files
+source "$HOME/.caddie_version" 2>/dev/null || true
+source "$HOME/.caddie_prompt.sh" 2>/dev/null || true
+source "$HOME/.caddie_git" 2>/dev/null || true
+source "$HOME/.caddie_debug" 2>/dev/null || true
 
 # Auto-discover caddie modules from ~/.caddie_modules/ directory
-# Each module file should have functions named <module>_caddie_register and <module>_help_register
+# Each module file should have functions named <module>_caddie_description and <module>_caddie_help
 CADDIE_MODULES_DIR="$HOME/.caddie_modules"
 
-# Source data structure files with error handling
-if ! source "$HOME/.caddie_data/.caddie_commands" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_data/.caddie_commands (this is normal for new installations)"
-fi
-
-if ! source "$HOME/.caddie_data/.caddie_help" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_data/.caddie_help (this is normal for new installations)"
-fi
-
-if ! source "$HOME/.caddie_data/.caddie_modules" 2>/dev/null; then
-    echo "Warning: Could not source ~/.caddie_data/.caddie_modules (this is normal for new installations)"
-fi
+# Source data structure files
+source "$HOME/.caddie_data/.caddie_commands" 2>/dev/null || true
+source "$HOME/.caddie_data/.caddie_help" 2>/dev/null || true
+source "$HOME/.caddie_data/.caddie_modules" 2>/dev/null || true
 
 # Helper function to extract module name from filename
 function caddie_extract_module_name() {
@@ -61,14 +42,10 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
     caddie_modules_reset
 
     while IFS= read -r -d '' file; do
-        if source "$file" 2>/dev/null; then
-            module_name=$(caddie_extract_module_name "$file")
-            module_files+=("$file")
-            caddie_modules_append "$module_name"
-            caddie_debug "Successfully loaded module: $module_name"
-        else
-            echo "Warning: Failed to load module from $file"
-        fi
+        source "$file" 2>/dev/null || true
+        module_name=$(caddie_extract_module_name "$file")
+        module_files+=("$file")
+        caddie_modules_append "$module_name"
     done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
     
     caddie_debug "=== Module loading complete ==="
