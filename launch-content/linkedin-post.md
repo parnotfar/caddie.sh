@@ -4,7 +4,8 @@
 
 🚀 Excited to announce the open-source launch of Caddie.sh!
 
-After months of development, I'm thrilled to share this project with the developer community. Caddie.sh is a powerful, modular shell script that transforms your macOS terminal into a comprehensive development environment.
+After months of development, I'm thrilled to share this project with the developer community. Caddie.sh is a powerful,
+modular shell script that transforms your macOS terminal into a comprehensive development environment.
 
 🎯 What makes it special:
 • One-command setup for complete dev environments
