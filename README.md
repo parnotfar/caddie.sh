@@ -6,7 +6,10 @@
 [![macOS](https://img.shields.io/badge/macOS-10.15+-blue.svg)](https://www.apple.com/macos/)
 [![Bash](https://img.shields.io/badge/Bash-4.0+-green.svg)](https://www.gnu.org/software/bash/)
 
-Caddie.sh is a powerful, modular shell script that transforms your macOS terminal into a comprehensive development environment. Think of it as your personal caddie on the golf course of development - always ready with the right tools, environment setup, and shortcuts to make your coding experience smooth and efficient.
+Caddie.sh is a powerful, modular shell application that transforms your macOS terminal into a standardized development
+environment.  Using a common language for tooling is a powerful multiplier for you and your team's success.  Think of it
+as your personal caddie on the golf course of development - always ready with the right tools, environment setup, and
+shortcuts to make your coding experience smooth and efficient.
 
 ## Features
 
@@ -226,4 +229,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the developer community**
 
-*Caddie.sh – Because every developer, DevOps engineer, and data engineer deserves a great caddie on the course of building, deploying, and innovating.*
+*Caddie.sh – Because every developer, DevOps engineer, and data engineer deserves a great caddie on the course of
+*building, deploying, and innovating.*
