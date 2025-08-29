@@ -6,41 +6,41 @@ labels: ['enhancement', 'needs-triage']
 assignees: ''
 ---
 
-## ✨ Feature Description
+## Feature Description
 <!-- A clear and concise description of the feature you'd like to see -->
 
-## 🎯 Problem Statement
+## Problem Statement
 <!-- A clear and concise description of what problem this feature would solve -->
 <!-- For example: "I'm always frustrated when..." -->
 
-## 💡 Proposed Solution
+## Proposed Solution
 <!-- A clear and concise description of how you envision this feature working -->
 <!-- Include any specific implementation details you have in mind -->
 
-## 🔄 Alternatives Considered
+## Alternatives Considered
 <!-- A clear and concise description of any alternative solutions or features you've considered -->
 
-## 📋 Use Cases
+## Use Cases
 <!-- Describe specific scenarios where this feature would be useful -->
 1. 
 2. 
 3. 
 
-## 🎨 Mockups/Examples
+## Mockups/Examples
 <!-- If applicable, add mockups, screenshots, or examples of similar features in other tools -->
 
-## 🔗 Related Features
+## Related Features
 <!-- Does this feature relate to any existing Caddie.sh functionality? -->
 <!-- Does it integrate with any specific modules? -->
 
-## 📊 Priority
+## Priority
 <!-- How important is this feature to your workflow? -->
 - [ ] Critical - I cannot work without this
 - [ ] High - Significantly improves my productivity
 - [ ] Medium - Nice to have, but not essential
 - [ ] Low - Would be cool to have someday
 
-## 🏷️ Module Context
+## Module Context
 <!-- Which Caddie.sh module would this feature belong to? -->
 - [ ] Core functionality
 - [ ] Python module
@@ -52,10 +52,10 @@ assignees: ''
 - [ ] New module needed
 - [ ] Other: 
 
-## 📝 Additional Context
+## Additional Context
 <!-- Add any other context, screenshots, or information about the feature request here -->
 
-## 🔍 Checklist
+## Checklist
 <!-- Please check the boxes that apply -->
 - [ ] I have searched existing issues to avoid duplicates
 - [ ] I have provided clear use cases and examples
@@ -64,4 +64,4 @@ assignees: ''
 
 ---
 
-**Thank you for helping improve Caddie.sh! 🏌️‍♂️**
+**Thank you for helping improve Caddie.sh!**
