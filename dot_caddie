@@ -81,8 +81,6 @@ function caddie() {
 # 1) make ':' not break words (so ruby:add stays one token)
 COMP_WORDBREAKS=${COMP_WORDBREAKS//:/}
 
-
-
 _caddie_completion() {
   local cur prev words cword
   COMPREPLY=()
@@ -97,54 +95,51 @@ _caddie_completion() {
     prev=${words[$((cword-1))]}
   fi
 
-  # First arg completion: commands & modules
-  if (( cword == 1 )); then
-    local base_opts="help version --help -h --version -v"
-    # Collect modules (ensure one-per-line, no extra chatter)
-    local modules=()
-    if command -v caddie_modules_get >/dev/null 2>&1; then
-      # read safely into array; suppress module function's stdout noise
-      IFS=$'\n' read -r -d '' -a modules < <(caddie_modules_get 2>/dev/null; printf '\0')
-    fi
-    local all_opts="$base_opts ${modules[*]}"
-    IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$all_opts" -- "$cur")
-    return 0
+  # Build a flat list of all accepted commands
+  local base_opts="help version --help -h --version -v"
+  local modules=()
+  
+  if command -v caddie_modules_get >/dev/null 2>&1; then
+    # read safely into array; suppress module function's stdout noise
+    IFS=$'\n' read -r -d '' -a modules < <(caddie_modules_get 2>/dev/null; printf '\0')
   fi
-
-  # Second+ arg completion: per-module subcommands
-  case "${words[1]}" in
-    python)
-      local py_sub="init install update venv:activate venv:deactivate build test run lint format pip:freeze pip:audit"
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$py_sub" -- "$cur")
-      return 0
-      ;;
-    ruby)
-      local rb_sub="init bundle install update exec rake rspec rubocop"
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$rb_sub" -- "$cur")
-      return 0
-      ;;
-    js|node|npm|pnpm|yarn)
-      local js_sub="init install add update build dev start test lint format audit"
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$js_sub" -- "$cur")
-      return 0
-      ;;
-    rust)
-      local rs_sub="new build run test add remove fmt clippy check doc"
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$rs_sub" -- "$cur")
-      return 0
-      ;;
-    ios)
-      local ios_sub="build run test archive pods:install swift:version"
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$ios_sub" -- "$cur")
-      return 0
-      ;;
-    core|cursor|cross)
-      local core_sub="status set:home set:app get:app help"
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$core_sub" -- "$cur")
-      return 0
-      ;;
-  esac
-
+  
+  # Add module-specific commands (these are the actual commands, not subcommands)
+  local module_commands=""
+  for module in "${modules[@]}"; do
+    case "$module" in
+      python)
+        module_commands="$module_commands python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
+        ;;
+      ruby)
+        module_commands="$module_commands ruby:init ruby:bundle ruby:install ruby:update ruby:exec ruby:rake ruby:rspec ruby:rubocop"
+        ;;
+      js)
+        module_commands="$module_commands js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
+        ;;
+      rust)
+        module_commands="$module_commands rust:new rust:build rust:run rust:test rust:add rust:remove rust:fmt rust:clippy rust:check rust:doc"
+        ;;
+      ios)
+        module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version"
+        ;;
+      core)
+        module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:help"
+        ;;
+      cursor)
+        module_commands="$module_commands cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
+        ;;
+      cross)
+        module_commands="$module_commands cross:template:create"
+        ;;
+    esac
+  done
+  
+  local all_opts="$base_opts $module_commands"
+  
+  # Complete with all available commands
+  IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$all_opts" -- "$cur")
+  
   return 0
 }
 
@@ -197,7 +192,7 @@ fi
 if command -v complete >/dev/null 2>&1; then
     # Clear any existing completion for caddie and register our completion function
     complete -r caddie 2>/dev/null || true
-    complete -o default -o nospace -F _caddie_completion caddie
+    complete -o default -F _caddie_completion caddie
     
     # Configure completion behavior
     bind 'set show-all-if-ambiguous off' 2>/dev/null || true

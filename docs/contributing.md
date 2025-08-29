@@ -186,64 +186,101 @@ git commit -m "docs: update installation guide with troubleshooting"
 git commit -m "style: format shell scripts with consistent indentation"
 ```
 
-## Adding Tab Completion for New Modules
+## Adding Tab Completion for New Commands
 
-When adding a new module to Caddie.sh, you'll need to add tab completion support by modifying the `caddie_completion` function in `dot_caddie`. This is a current limitation due to Bash's variable scope behavior.
+Caddie.sh uses a flat command structure where all commands (like `help`, `python:lint`, `core:set:home`) are treated as equal options. Tab completion is handled centrally in the `_caddie_completion` function in `dot_caddie`.
 
-### Why This Limitation Exists
+### How Completion Works
 
-Unlike languages like Ruby that have `load` functions for runtime code execution, Bash's `source` command executes at load time, not execution time. This means:
+The completion system:
+- **Treats colons as part of command names**: `python:lint` is one command, not a subcommand
+- **Uses `COMP_WORDBREAKS` override**: Prevents `:` from breaking words during completion
+- **Builds a flat list**: All available commands are presented as completion options
+- **Filters automatically**: `compgen` handles filtering based on what the user types
 
-- **Variable scope**: Function parameters like `$prev`, `$cur`, and `COMPREPLY` don't exist when the file is sourced
-- **Execution context**: Completion logic needs access to the current completion context
-- **Modular approach**: We can't easily source completion files at runtime with proper scope
+### Adding New Commands
 
-### How to Add Tab Completion
+To add tab completion for new commands, you need to update the `_caddie_completion` function:
 
-1. **Locate the completion function**: Find `function caddie_completion()` in `dot_caddie`
-2. **Add your case statement**: Add a new case for your module's commands
-3. **Follow the pattern**: Use the existing completion patterns as examples
+#### Step 1: Locate the Completion Function
 
-#### Example: Adding Python Module Completion
+Find the `_caddie_completion` function in `dot_caddie` around line 84.
+
+#### Step 2: Add Your Commands
+
+Add your new commands to the appropriate section in the `module_commands` case statement:
 
 ```bash
-# In the caddie_completion function, add:
-"python:create"|"python:activate"|"python:remove")
-    # Complete with existing virtual environment names
-    if [ -d "$HOME/.virtualenvs" ]; then
-        local venvs
-        venvs=$(ls "$HOME/.virtualenvs" 2>/dev/null)
-        mapfile -t COMPREPLY < <(compgen -W "${venvs}" -- "${cur}")
-    fi
-    return 0
-    ;;
-"python:install"|"python:uninstall"|"python:upgrade")
-    # Complete with installed packages (if pip is available)
-    if command -v pip >/dev/null 2>&1; then
-        local packages
-        packages=$(pip list --format=freeze 2>/dev/null | cut -d'=' -f1)
-        mapfile -t COMPREPLY < <(compgen -W "${packages}" -- "${cur}")
-    fi
-    return 0
-    ;;
+# Add module-specific commands (these are the actual commands, not subcommands)
+local module_commands=""
+for module in "${modules[@]}"; do
+  case "$module" in
+    python)
+      module_commands="$module_commands python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
+      ;;
+    # Add your new module here
+    mymodule)
+      module_commands="$module_commands mymodule:command1 mymodule:command2 mymodule:command3"
+      ;;
+    # ... existing modules ...
+  esac
+done
 ```
+
+#### Step 3: Add Base Commands (if needed)
+
+If you're adding a new base command (not module-specific), add it to the `base_opts`:
+
+```bash
+local base_opts="help version --help -h --version -v mynewcommand"
+```
+
+### Example: Adding a New Module
+
+Let's say you're adding a new `docker` module with commands `docker:build`, `docker:run`, and `docker:stop`:
+
+```bash
+case "$module" in
+  python)
+    module_commands="$module_commands python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
+    ;;
+  docker)
+    module_commands="$module_commands docker:build docker:run docker:stop"
+    ;;
+  # ... other modules ...
+esac
+```
+
+### Command Naming Convention
+
+- **Base commands**: `help`, `version`, `--help`, `-h`, `--version`, `-v`
+- **Module commands**: `module:action` (e.g., `python:lint`, `rust:build`)
+- **Multi-level commands**: `module:category:action` (e.g., `python:venv:activate`, `cursor:ai:explain`)
+
+### Testing Your Changes
+
+After adding new commands:
+
+1. **Reload caddie**: `source ~/.caddie.sh`
+2. **Test completion**: 
+   - `caddie d<tab>` → Should show `docker:build`, `docker:run`, `docker:stop`
+   - `caddie docker:b<tab>` → Should complete to `docker:build`
+3. **Verify behavior**: Ensure the correct completions appear
+4. **Check edge cases**: Test with partial input and various contexts
+
+### Why This Approach Works
+
+- **Simple and maintainable**: All completion logic is in one place
+- **Consistent with DSL**: Treats colon-separated commands as single tokens
+- **No scope issues**: Avoids Bash variable scope limitations
+- **Easy to extend**: Just add new commands to the appropriate case statement
 
 ### Future Improvements
 
-We're exploring ways to make tab completion more modular:
-
-- **Function-based approach**: Define completion functions that get called at runtime
-- **Environment variable approach**: Pass completion context via environment variables
-- **Better Bash patterns**: Discover more elegant ways to handle this limitation
-
-### Testing Tab Completion
-
-After adding completion logic:
-
-1. **Reload caddie**: `source ~/.caddie.sh`
-2. **Test completion**: Type `caddie yourmodule:` and press Tab
-3. **Verify behavior**: Ensure the correct completions appear
-4. **Check edge cases**: Test with partial input and various contexts
+We're exploring ways to make this even more maintainable:
+- **Auto-discovery**: Automatically detect available commands from module files
+- **Configuration files**: Store completion data in separate, easily-editable files
+- **Dynamic loading**: Load completion data at runtime from module definitions
 
 ### Pull Request Process
 
