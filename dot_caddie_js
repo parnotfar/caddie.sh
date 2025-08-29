@@ -106,16 +106,7 @@ function caddie_js_list() {
     echo "Current version: $(node --version)"
 }
 
-# Function to show current Node.js version
-function caddie_js_current() {
-    echo "Current Node.js Environment:"
-    echo "============================"
-    echo "Node.js: $(node --version)"
-    echo "npm: $(npm --version)"
-    echo "NVM: $(nvm --version)"
-    echo "Yarn: $(yarn --version 2>/dev/null || echo 'not installed')"
-    echo "pnpm: $(pnpm --version 2>/dev/null || echo 'not installed')"
-}
+
 
 # Function to initialize Node.js project structure
 function caddie_js_project_init() {
@@ -589,13 +580,55 @@ function caddie_js_version() {
     echo "TypeScript: $(tsc --version 2>/dev/null || echo 'not installed')"
 }
 
+# Function to show JavaScript module help
+function caddie_js_help() {
+    echo "JavaScript Module Help"
+    echo "======================"
+    echo ""
+    echo "Setup and Installation:"
+    echo "  setup                    - Install Node.js and NVM"
+    echo "  install                  - Install additional tools (Yarn, pnpm, TypeScript)"
+    echo "  use <version>            - Switch to specific Node.js version"
+    echo "  list                     - List installed Node.js versions"
+    echo "  version                  - Show current environment information"
+    echo ""
+    echo "Project Management:"
+    echo "  project:init [name]      - Initialize new Node.js project"
+    echo "  project:install          - Install project dependencies"
+    echo "  project:update           - Update project dependencies"
+    echo "  project:test             - Run project tests"
+    echo "  project:build            - Build project"
+    echo "  project:serve            - Serve project"
+    echo ""
+    echo "Package Management:"
+    echo "  package:install <pkg>    - Install package globally or locally"
+    echo "  package:uninstall <pkg>  - Uninstall package"
+    echo "  package:list             - List installed packages"
+    echo "  package:update           - Update packages"
+    echo "  package:outdated         - Check for outdated packages"
+    echo "  package:audit            - Security audit"
+    echo "  package:run <script>     - Run npm script"
+    echo "  package:publish          - Publish package to npm"
+    echo ""
+    echo "Framework Support:"
+    echo "  framework:create <type> <name>  - Create framework project (react, vue, angular, next, nuxt)"
+    echo "  framework:serve          - Serve framework application"
+    echo "  framework:build          - Build framework application"
+    echo ""
+    echo "Examples:"
+    echo "  caddie js:setup"
+    echo "  caddie js:use 18.17.0"
+    echo "  caddie js:project:init my-app"
+    echo "  caddie js:framework:create react my-react-app"
+}
+
 # Export JavaScript functions
 export -f caddie_js_description
 export -f caddie_js_setup
 export -f caddie_js_install
 export -f caddie_js_use
 export -f caddie_js_list
-export -f caddie_js_current
+export -f caddie_js_help
 export -f caddie_js_project_init
 export -f caddie_js_project_install
 export -f caddie_js_project_update
