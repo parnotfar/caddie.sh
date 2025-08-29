@@ -34,6 +34,8 @@ shortcuts to make your coding experience smooth and efficient.
 - Homebrew (will be installed automatically if missing)
 - Bash 4.0+ (latest version via Homebrew recommended)
 
+> **⚠️ Important for macOS Terminal Users**: You must configure your Terminal app to use the Homebrew version of Bash (`/opt/homebrew/bin/bash --login`) for proper functionality. See [Installation Guide](docs/installation.md#macos-terminal-configuration) for detailed steps.
+
 ### Installation
 
 ```bash

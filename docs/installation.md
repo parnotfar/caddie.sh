@@ -18,6 +18,23 @@ This guide covers all the ways to install and set up Caddie.sh on your macOS sys
 - [ ] Verify you have at least 100MB of free disk space
 - [ ] Ensure you have a stable internet connection
 
+### macOS Terminal Configuration
+
+**Important**: If you're using the macOS Terminal app, you must configure it to use the Homebrew version of Bash for proper functionality.
+
+1. **Open Terminal Preferences**: Press `Cmd + ,` or go to Terminal → Preferences
+2. **Select the Profiles Tab**: Click on the "Profiles" tab
+3. **Choose Your Profile**: Select your active profile (e.g., "IR_Black")
+4. **Go to Shell Tab**: Click on the "Shell" sub-tab
+5. **Configure Startup Command**: 
+   - Check "Run command:"
+   - Enter: `/opt/homebrew/bin/bash --login`
+   - **Do NOT check "Run inside shell"**
+
+![Terminal Profile Configuration](terminal-profile-config.png)
+
+This ensures you're using the latest Bash version with full `mapfile` support, which is required for Caddie.sh's tab completion functionality.
+
 ## Installation Methods
 
 ### Method 1: Quick Install (Recommended)
@@ -261,6 +278,39 @@ export http_proxy=http://proxy.company.com:8080
 export https_proxy=http://proxy.company.com:8080
 make install
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Tab Completion Not Working
+
+If tab completion shows a bell sound or doesn't work:
+
+1. **Verify Bash Version**: Run `bash --version` - you should see version 5.0 or later
+2. **Check Terminal Configuration**: Ensure your Terminal app is configured to use `/opt/homebrew/bin/bash --login`
+3. **Verify PATH**: Run `which bash` - should show `/opt/homebrew/bin/bash`
+4. **Restart Terminal**: After configuration changes, restart your terminal completely
+
+#### "mapfile: command not found" Error
+
+This indicates you're using an older version of Bash:
+
+```bash
+# Check current bash version
+bash --version
+
+# If it shows version 3.x or 4.x, you need to configure Terminal
+# Follow the macOS Terminal Configuration steps above
+```
+
+#### Module Commands Not Found
+
+If `caddie python:help` returns "Unknown command":
+
+1. **Check Installation**: Verify `~/.caddie_modules/` directory exists
+2. **Verify Sourcing**: Check that `~/.bash_profile` sources `~/.caddie.sh`
+3. **Reload Environment**: Run `source ~/.bash_profile`
 
 ## Support
 

@@ -46,7 +46,8 @@ function caddie_debug() {
     local message="$1"
     
     if caddie_debug_is_enabled; then
-        echo "DEBUG: $message"
+        # Always write debug output to stderr
+        printf "DEBUG: %s\n" "$message" >&2
     fi
 }
 

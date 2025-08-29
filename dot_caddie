@@ -31,7 +31,6 @@ function caddie_help() {
 # Function to show caddie version
 function caddie_version() {
     if [ -f "$HOME/.caddie_version" ]; then
-        # shellcheck disable=SC1091
         source "$HOME/.caddie_version"
         echo "Caddie.sh version: $CADDIE_SH_VERSION"
     else
@@ -43,7 +42,7 @@ function caddie_version() {
 function caddie() {
     local command="$1"
 
-    shift  # Remove first argument (the command); safe in bash, no need for OPTIND here
+    shift  # Remove first argument (the command)
 
     caddie_debug "=== caddie function called ==="
     caddie_debug "command='$command'"
@@ -78,221 +77,75 @@ function caddie() {
     fi
 }
 
-# Tab completion function for caddie command
-function caddie_completion() {
-    local cur prev opts
+# --- completion setup ---
+# 1) make ':' not break words (so ruby:add stays one token)
+COMP_WORDBREAKS=${COMP_WORDBREAKS//:/}
 
-    COMPREPLY=()
-    
-    # Safely access COMP_WORDS array elements
-    if [ -n "$COMP_CWORD" ] && [ "${COMP_CWORD}" -ge 0 ] && [ "${COMP_CWORD}" -lt ${#COMP_WORDS[@]} ]; then
-        cur="${COMP_WORDS[COMP_CWORD]}"
-    else
-        cur=""
+
+
+_caddie_completion() {
+  local cur prev words cword
+  COMPREPLY=()
+
+  # Prefer bash-completion helper if present; otherwise manual
+  if declare -F _get_comp_words_by_ref >/dev/null 2>&1; then
+    _get_comp_words_by_ref -n : cur prev words cword
+  else
+    words=("${COMP_WORDS[@]}")
+    cword=${COMP_CWORD:-0}
+    cur=${words[$cword]}
+    prev=${words[$((cword-1))]}
+  fi
+
+  # First arg completion: commands & modules
+  if (( cword == 1 )); then
+    local base_opts="help version --help -h --version -v"
+    # Collect modules (ensure one-per-line, no extra chatter)
+    local modules=()
+    if command -v caddie_modules_get >/dev/null 2>&1; then
+      # read safely into array; suppress module function's stdout noise
+      IFS=$'\n' read -r -d '' -a modules < <(caddie_modules_get 2>/dev/null; printf '\0')
     fi
-    
-    if [ -n "$COMP_CWORD" ] && [ "${COMP_CWORD}" -ge 1 ] && [ "${COMP_CWORD}" -lt ${#COMP_WORDS[@]} ]; then
-        prev="${COMP_WORDS[COMP_CWORD-1]}"
-    else
-        prev=""
-    fi
-    
-    # Build available caddie commands for completion
-    local opts="help version --help -h --version -v"
-    
-    # If we're completing the first argument (command)
-    if [ -n "$COMP_CWORD" ] && [ "${COMP_CWORD}" -eq 1 ]; then
-        # Use compgen to generate completions from our options
-        local IFS=$'\n'
-        mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
-        return 0
-    fi
-    
-    # Handle completion for specific commands that take arguments
-    case "${prev}" in
-        "core:set:home")
-            # Complete with directory names
-            mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
-            return 0
-            ;;
-        "python:create"|"python:activate"|"python:remove")
-            # Complete with existing virtual environment names
-            if [ -d "$HOME/.virtualenvs" ]; then
-                local venvs
-                venvs=$(ls "$HOME/.virtualenvs" 2>/dev/null)
-                mapfile -t COMPREPLY < <(compgen -W "${venvs}" -- "${cur}")
-            fi
-            return 0
-            ;;
-        "python:install"|"python:uninstall"|"python:upgrade")
-            # Complete with installed packages (if pip is available)
-            if command -v pip >/dev/null 2>&1; then
-                local packages
-                packages=$(pip list --format=freeze 2>/dev/null | cut -d'=' -f1)
-                mapfile -t COMPREPLY < <(compgen -W "${packages}" -- "${cur}")
-            fi
-            return 0
-            ;;
-        "rust:new")
-            # Complete with directory names for project location
-            mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
-            return 0
-            ;;
-        "rust:add"|"rust:remove")
-            # Complete with installed crates (if cargo is available)
-            if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
-                local crates
-                crates=$(grep -E '^[[:space:]]*[a-zA-Z0-9_-]+[[:space:]]*=' Cargo.toml 2>/dev/null | sed 's/[[:space:]]*\([a-zA-Z0-9_-]*\)[[:space:]]*=.*/\1/')
-                mapfile -t COMPREPLY < <(compgen -W "${crates}" -- "${cur}")
-            fi
-            return 0
-            ;;
-        "rust:toolchain")
-            # Complete with common Rust toolchain versions
-            local toolchains="stable beta nightly"
-            mapfile -t COMPREPLY < <(compgen -W "${toolchains}" -- "${cur}")
-            return 0
-            ;;
-        "rust:target")
-            # Complete with common Rust targets
-            local targets="x86_64-unknown-linux-gnu aarch64-apple-darwin x86_64-apple-darwin x86_64-pc-windows-msvc"
-            mapfile -t COMPREPLY < <(compgen -W "${targets}" -- "${cur}")
-            return 0
-            ;;
-        "rust:component")
-            # Complete with common Rust components
-            local components="clippy rustfmt rust-src rust-analysis"
-            mapfile -t COMPREPLY < <(compgen -W "${components}" -- "${cur}")
-            return 0
-            ;;
-        "cross:template:create")
-            # Complete with available template types
-            local templates="web cli api data ml lib wasm app framework extension mobile"
-            mapfile -t COMPREPLY < <(compgen -W "${templates}" -- "${cur}")
-            return 0
-            ;;
-        # Cursor integration completions
-        "cursor:open")
-            # Complete with directory names
-            mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
-            return 0
-            ;;
-        "cursor:new")
-            # Complete with project types
-            local project_types="web api mobile data ml cli lib"
-            mapfile -t COMPREPLY < <(compgen -W "${project_types}" -- "${cur}")
-            return 0
-            ;;
-        "cursor:switch")
-            # Complete with recent projects and common project directories
-            local projects=""
-            # Add recent projects from Cursor workspace storage
-            if [ -d "$HOME/.cursor/User/workspaceStorage" ]; then
-                projects=$(find "$HOME/.cursor/User/workspaceStorage" -name "*.json" -exec basename {} \; 2>/dev/null | sed 's/\.json$//')
-            fi
-            # Add common project directories
-            if [ -d "$HOME/projects" ]; then
-                projects="$projects $(ls "$HOME/projects" 2>/dev/null)"
-            fi
-            if [ -d "$HOME/work" ]; then
-                projects="$projects $(ls "$HOME/work" 2>/dev/null)"
-            fi
-            mapfile -t COMPREPLY < <(compgen -W "${projects}" -- "${cur}")
-            return 0
-            ;;
-        "cursor:ai:explain"|"cursor:ai:refactor"|"cursor:ai:test"|"cursor:ai:docs"|"cursor:ai:review")
-            # Complete with file names
-            mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
-            return 0
-            ;;
-        "cursor:ext:install")
-            # Complete with common extension IDs
-            local common_extensions="ms-python.python ms-python.pylint ms-python.black-formatter rust-lang.rust-analyzer ms-vscode.vscode-typescript-next esbenp.prettier-vscode ms-vscode.vscode-eslint ms-vscode.vscode-json redhat.vscode-yaml ms-vscode.vscode-markdown"
-            mapfile -t COMPREPLY < <(compgen -W "${common_extensions}" -- "${cur}")
-            return 0
-            ;;
-        "cursor:ext:recommend")
-            # Complete with project types
-            local project_types="python rust javascript typescript web mobile data ml"
-            mapfile -t COMPREPLY < <(compgen -W "${project_types}" -- "${cur}")
-            return 0
-            ;;
-        "cursor:config:restore")
-            # Complete with backup directories
-            if [ -d "$HOME/.cursor-backups" ]; then
-                local backups
-                backups=$(ls "$HOME/.cursor-backups" 2>/dev/null)
-                mapfile -t COMPREPLY < <(compgen -W "${backups}" -- "${cur}")
-            fi
-            return 0
-            ;;
-    esac
-    
-    # Handle multi-argument commands
-    local first_arg=""
-    if [ ${#COMP_WORDS[@]} -ge 2 ]; then
-        first_arg="${COMP_WORDS[1]}"
-    fi
-    case "${first_arg}" in
-        "cursor:new")
-            # First argument is project type, second is project name
-            if [ "${COMP_CWORD}" -eq 2 ]; then
-                local project_types="web api mobile data ml cli lib"
-                mapfile -t COMPREPLY < <(compgen -W "${project_types}" -- "${cur}")
-                return 0
-            elif [ "${COMP_CWORD}" -eq 3 ]; then
-                # Complete with directory names for project location
-                mapfile -t COMPREPLY < <(compgen -d -- "${cur}")
-                return 0
-            fi
-            ;;
-        "cursor:ai:refactor")
-            # First argument is file, second is refactor type
-            if [ "${COMP_CWORD}" -eq 2 ]; then
-                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
-                return 0
-            elif [ "${COMP_CWORD}" -eq 3 ]; then
-                local refactor_types="general performance readability security structure"
-                mapfile -t COMPREPLY < <(compgen -W "${refactor_types}" -- "${cur}")
-                return 0
-            fi
-            ;;
-        "cursor:ai:test")
-            # First argument is file, second is test framework
-            if [ "${COMP_CWORD}" -eq 2 ]; then
-                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
-                return 0
-            elif [ "${COMP_CWORD}" -eq 3 ]; then
-                local test_frameworks="pytest unittest jest mocha rspec"
-                mapfile -t COMPREPLY < <(compgen -W "${test_frameworks}" -- "${cur}")
-                return 0
-            fi
-            ;;
-        "cursor:ai:docs")
-            # First argument is file, second is doc format
-            if [ "${COMP_CWORD}" -eq 2 ]; then
-                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
-                return 0
-            elif [ "${COMP_CWORD}" -eq 3 ]; then
-                local doc_formats="markdown sphinx javadoc godoc rustdoc"
-                mapfile -t COMPREPLY < <(compgen -W "${doc_formats}" -- "${cur}")
-                return 0
-            fi
-            ;;
-        "cursor:ai:review")
-            # First argument is file, second is review focus
-            if [ "${COMP_CWORD}" -eq 2 ]; then
-                mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
-                return 0
-            elif [ "${COMP_CWORD}" -eq 3 ]; then
-                local review_focus="general security performance style bugs best-practices"
-                mapfile -t COMPREPLY < <(compgen -W "${review_focus}" -- "${cur}")
-                return 0
-            fi
-            ;;
-    esac
-    
+    local all_opts="$base_opts ${modules[*]}"
+    IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$all_opts" -- "$cur")
     return 0
+  fi
+
+  # Second+ arg completion: per-module subcommands
+  case "${words[1]}" in
+    python)
+      local py_sub="init install update venv:activate venv:deactivate build test run lint format pip:freeze pip:audit"
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$py_sub" -- "$cur")
+      return 0
+      ;;
+    ruby)
+      local rb_sub="init bundle install update exec rake rspec rubocop"
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$rb_sub" -- "$cur")
+      return 0
+      ;;
+    js|node|npm|pnpm|yarn)
+      local js_sub="init install add update build dev start test lint format audit"
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$js_sub" -- "$cur")
+      return 0
+      ;;
+    rust)
+      local rs_sub="new build run test add remove fmt clippy check doc"
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$rs_sub" -- "$cur")
+      return 0
+      ;;
+    ios)
+      local ios_sub="build run test archive pods:install swift:version"
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$ios_sub" -- "$cur")
+      return 0
+      ;;
+    core|cursor|cross)
+      local core_sub="status set:home set:app get:app help"
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$core_sub" -- "$cur")
+      return 0
+      ;;
+  esac
+
+  return 0
 }
 
 # Helper function to extract module name from filename
@@ -344,8 +197,13 @@ fi
 if command -v complete >/dev/null 2>&1; then
     # Clear any existing completion for caddie and register our completion function
     complete -r caddie 2>/dev/null || true
-    complete -F caddie_completion caddie
-    export -f caddie_completion
+    complete -o default -o nospace -F _caddie_completion caddie
+    
+    # Configure completion behavior
+    bind 'set show-all-if-ambiguous off' 2>/dev/null || true
+    bind 'set show-all-if-unmodified off' 2>/dev/null || true
+    bind 'set completion-ignore-case off' 2>/dev/null || true
+    
     echo "✓ Tab completion enabled"
 else
     echo "⚠ Tab completion not available"
