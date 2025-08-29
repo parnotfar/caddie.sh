@@ -186,6 +186,65 @@ git commit -m "docs: update installation guide with troubleshooting"
 git commit -m "style: format shell scripts with consistent indentation"
 ```
 
+## Adding Tab Completion for New Modules
+
+When adding a new module to Caddie.sh, you'll need to add tab completion support by modifying the `caddie_completion` function in `dot_caddie`. This is a current limitation due to Bash's variable scope behavior.
+
+### Why This Limitation Exists
+
+Unlike languages like Ruby that have `load` functions for runtime code execution, Bash's `source` command executes at load time, not execution time. This means:
+
+- **Variable scope**: Function parameters like `$prev`, `$cur`, and `COMPREPLY` don't exist when the file is sourced
+- **Execution context**: Completion logic needs access to the current completion context
+- **Modular approach**: We can't easily source completion files at runtime with proper scope
+
+### How to Add Tab Completion
+
+1. **Locate the completion function**: Find `function caddie_completion()` in `dot_caddie`
+2. **Add your case statement**: Add a new case for your module's commands
+3. **Follow the pattern**: Use the existing completion patterns as examples
+
+#### Example: Adding Python Module Completion
+
+```bash
+# In the caddie_completion function, add:
+"python:create"|"python:activate"|"python:remove")
+    # Complete with existing virtual environment names
+    if [ -d "$HOME/.virtualenvs" ]; then
+        local venvs
+        venvs=$(ls "$HOME/.virtualenvs" 2>/dev/null)
+        mapfile -t COMPREPLY < <(compgen -W "${venvs}" -- "${cur}")
+    fi
+    return 0
+    ;;
+"python:install"|"python:uninstall"|"python:upgrade")
+    # Complete with installed packages (if pip is available)
+    if command -v pip >/dev/null 2>&1; then
+        local packages
+        packages=$(pip list --format=freeze 2>/dev/null | cut -d'=' -f1)
+        mapfile -t COMPREPLY < <(compgen -W "${packages}" -- "${cur}")
+    fi
+    return 0
+    ;;
+```
+
+### Future Improvements
+
+We're exploring ways to make tab completion more modular:
+
+- **Function-based approach**: Define completion functions that get called at runtime
+- **Environment variable approach**: Pass completion context via environment variables
+- **Better Bash patterns**: Discover more elegant ways to handle this limitation
+
+### Testing Tab Completion
+
+After adding completion logic:
+
+1. **Reload caddie**: `source ~/.caddie.sh`
+2. **Test completion**: Type `caddie yourmodule:` and press Tab
+3. **Verify behavior**: Ensure the correct completions appear
+4. **Check edge cases**: Test with partial input and various contexts
+
 ### Pull Request Process
 
 1. **Create a pull request** from your feature branch to the main repository

@@ -117,6 +117,8 @@ caddie.sh/
 └── dot_caddie_*            # Additional modules...
 ```
 
+> **Note**: Tab completion is currently centralized in the main `dot_caddie` file due to Bash variable scope limitations. See [Contributing Guide](docs/contributing.md#adding-tab-completion-for-new-modules) for details on adding completion for new modules.
+
 ## Configuration
 
 ### Environment Variables
