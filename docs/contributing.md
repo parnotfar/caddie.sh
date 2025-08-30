@@ -203,7 +203,7 @@ git commit -m "style: format shell scripts with consistent indentation"
 
 ## Adding Tab Completion for New Commands
 
-Caddie.sh uses a flat command structure where all commands (like `help`, `python:lint`, `core:set:home`) are treated as equal options. Tab completion is handled centrally in the `_caddie_completion` function in `dot_caddie`.
+Caddie.sh uses a flat command structure where all commands (like `help`, `python:lint`, `core:set:home`, `core:go:home`) are treated as equal options. Tab completion is handled centrally in the `_caddie_completion` function in `dot_caddie`.
 
 ### How Completion Works
 

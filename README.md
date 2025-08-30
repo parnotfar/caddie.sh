@@ -92,6 +92,13 @@ Caddie.sh comes with a comprehensive set of aliases that make development faster
 # View all available aliases
 caddie core:aliases
 
+# Search aliases by keyword
+ag git          # or: caddie core:alias:grep git
+ag docker       # or: caddie core:alias:grep docker
+
+# Navigate to caddie home
+caddie core:go:home
+
 # Common shortcuts
 g              # git
 gst            # git status
@@ -149,7 +156,7 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-> 💡 **Pro Tip**: Use `caddie core:aliases` whenever you need a quick reference to available aliases!
+> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie core:go:home` to quickly navigate to your caddie home directory!
 
 ## Use Cases
 

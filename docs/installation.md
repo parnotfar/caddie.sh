@@ -132,6 +132,7 @@ caddie python:create test-env
 1. **Set Project Home Directory** (Optional):
    ```bash
    caddie core:set:home ~/projects
+   caddie core:go:home
    ```
 
 2. **Enable Debug Mode** (Optional):

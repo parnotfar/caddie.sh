@@ -10,6 +10,8 @@ First, enable debug mode to see what's happening:
 
 ```bash
 caddie core:debug on
+# Navigate to caddie home if needed
+caddie core:go:home
 # Run the failing command
 caddie help
 # Check debug output

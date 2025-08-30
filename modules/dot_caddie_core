@@ -58,6 +58,25 @@ function caddie_core_reset_home() {
     fi
 }
 
+# Function to navigate to caddie home directory
+function caddie_core_go_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        local caddie_home=$(cat "$CADDIE_HOME_FILE")
+        
+        if [ -d "$caddie_home" ]; then
+            cd "$caddie_home"
+            echo "✓ Navigated to caddie home: $caddie_home"
+        else
+            echo "Error: Caddie home directory '$caddie_home' does not exist"
+            return 1
+        fi
+    else
+        echo "Error: No caddie home directory was set"
+        echo "Use 'caddie core:set:home <path>' to set a home directory"
+        return 1
+    fi
+}
+
 # Function to handle debug commands
 function caddie_core_debug() {
     local action="$1"
@@ -227,13 +246,14 @@ function caddie_core_aliases() {
     echo "  cj             caddie js:install"
     echo ""
     echo "🔍 Utility Functions:"
-    echo "  blanks         Add blank lines to output"
-    echo "  path           Show PATH entries"
-    echo "  bash-stats     Show command usage statistics"
-    echo "  take           mkdir -p and cd into directory"
-    echo "  lessdown       View markdown files in terminal"
-    echo "  readless       Alias for lessdown"
-    echo "  hg             Search history with regex"
+echo "  blanks         Add blank lines to output"
+echo "  path           Show PATH entries"
+echo "  bash-stats     Show command usage statistics"
+echo "  take           mkdir -p and cd into directory"
+echo "  lessdown       View markdown files in terminal"
+echo "  readless       Alias for lessdown"
+echo "  hg             Search history with regex"
+echo "  ag             Search aliases by keyword"
     echo ""
     echo "💡 Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
 }
@@ -249,6 +269,7 @@ function caddie_core_help() {
     echo "  set:home <path>     Set caddie home directory"
     echo "  get:home            Get current caddie home"
     echo "  reset:home          Reset caddie home directory"
+    echo "  go:home             Navigate to caddie home directory"
     echo ""
     echo "Debug Management:"
     echo "  debug:on            Enable debug output"
@@ -268,6 +289,7 @@ function caddie_core_help() {
     echo "  caddie core:set:home ~/projects/myproject"
     echo "  caddie core:get:home"
     echo "  caddie core:reset:home"
+    echo "  caddie core:go:home"
     echo "  caddie core:aliases"
     echo "  caddie core:alias:grep git"
     echo "  caddie core:alias:git"
@@ -287,6 +309,7 @@ fi
 export -f caddie_core_set_home
 export -f caddie_core_get_home
 export -f caddie_core_reset_home
+export -f caddie_core_go_home
 export -f caddie_core_help
 export -f caddie_core_description
 export -f caddie_core_debug

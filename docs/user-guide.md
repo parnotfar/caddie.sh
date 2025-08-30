@@ -98,6 +98,9 @@ caddie core:set:home ~/my-projects
 # Check current home directory
 caddie core:get:home
 
+# Navigate to caddie home directory
+caddie core:go:home
+
 # Reset to default
 caddie core:reset:home
 ```
@@ -109,6 +112,16 @@ Caddie.sh includes 50+ productivity aliases that make development faster:
 ```bash
 # View all available aliases
 caddie core:aliases
+
+# Search aliases by keyword
+ag git          # or: caddie core:alias:grep git
+ag docker       # or: caddie core:alias:grep docker
+
+# View aliases by family
+caddie core:alias:git
+caddie core:alias:docker
+caddie core:alias:npm
+caddie core:alias:nav
 
 # Common shortcuts you'll use daily
 g              # git
@@ -167,7 +180,7 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-> 💡 **Pro Tip**: Use `caddie core:aliases` whenever you need a quick reference to available aliases!
+> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie core:go:home` to quickly navigate to your caddie home directory!
 
 ## Module Usage
 
