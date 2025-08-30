@@ -85,6 +85,8 @@ git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 ```
 
+**Repository Structure**: The project is organized with core system files in the root directory and all module files (including core functions) in the `modules/` subdirectory for better maintainability.
+
 ### Step 2: Run the Installer
 
 ```bash

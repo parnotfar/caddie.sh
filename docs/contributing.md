@@ -33,6 +33,21 @@ Caddie.sh is an open-source project that aims to make development environment ma
 - **macOS**: Development environment (for testing)
 - **GitHub account**: For collaboration
 
+### Repository Structure
+
+The project is organized for clarity and maintainability:
+
+- **Root Directory**: Contains the main entry point (`dot_caddie`) and core system files
+- **`modules/` Directory**: Contains all functional module files (Python, Rust, Ruby, etc.) and core functions
+- **`docs/` Directory**: Comprehensive documentation and guides
+- **Core System Files**: `dot_caddie_debug`, `dot_caddie_modules`, `dot_caddie_prompt`, `dot_caddie_version`
+- **Module Files**: All `dot_caddie_*` files including `dot_caddie_core` are in the `modules/` directory
+
+This structure makes it easy to:
+- Add new modules without cluttering the root directory
+- Maintain clear separation between core system and functional modules
+- Navigate the codebase for new contributors
+
 ### Development Environment Setup
 
 1. **Fork the repository**:
@@ -205,6 +220,8 @@ To add tab completion for new commands, you need to update the `_caddie_completi
 #### Step 1: Locate the Completion Function
 
 Find the `_caddie_completion` function in `dot_caddie` around line 84.
+
+**Note**: Module files (including `dot_caddie_core`) are now organized in the `modules/` directory for better repository structure.
 
 #### Step 2: Add Your Commands
 

@@ -20,7 +20,8 @@ NC := \033[0m # No Color
 # Variables
 HOME_DIR := $(HOME)
 CADDIE_DIR := $(shell pwd)
-CADDIE_MODULES_DIR := $(HOME_DIR)/.caddie_modules
+SRC_MODULES_DIR := $(CADDIE_DIR)/modules
+DEST_MODULES_DIR := $(HOME_DIR)/.caddie_modules
 
 help: ## Show this help message
 	echo "$(CYAN)Caddie.sh Installation Makefile$(NC)"
@@ -42,6 +43,10 @@ help: ## Show this help message
 	echo "  • Automatically backs up existing .bash_profile and .bashrc"
 	echo "  • Backups stored as .caddie-backup files (e.g., .bash_profile.caddie-backup)"
 	echo "  • Easy restore with 'make restore-backup'"
+	echo ""
+	echo "$(CYAN)Directory Structure:$(NC)"
+	echo "  • Source modules: $(SRC_MODULES_DIR)"
+	echo "  • Destination modules: $(DEST_MODULES_DIR)"
 
 all: install ## Alias for install
 
@@ -106,30 +111,26 @@ install-dot: backup-existing ## Install dot files to home directory
 	cp dot_caddie_debug "$(HOME_DIR)/.caddie_debug"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_debug"
 	
-	echo "$(YELLOW)  →$(NC) Installing dot_caddie_git as ~/.caddie_git"
-	cp dot_caddie_git "$(HOME_DIR)/.caddie_git"
-	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_git"
-	
 	echo "$(YELLOW)  →$(NC) Installing modular caddie files..."
-	mkdir -p "$(CADDIE_MODULES_DIR)"
+	mkdir -p "$(DEST_MODULES_DIR)"
 	echo "$(GREEN)    ✓$(NC) ~/.caddie_modules directory ready"
 
-	cp dot_caddie_core "$(CADDIE_MODULES_DIR)/.caddie_core"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_core"
-	cp dot_caddie_python "$(CADDIE_MODULES_DIR)/.caddie_python"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_python"
-	cp dot_caddie_rust "$(CADDIE_MODULES_DIR)/.caddie_rust"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_rust"
-	cp dot_caddie_ios "$(CADDIE_MODULES_DIR)/.caddie_ios"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_ios"
-	cp dot_caddie_cross "$(CADDIE_MODULES_DIR)/.caddie_cross"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_cross"
-	cp dot_caddie_cursor "$(CADDIE_MODULES_DIR)/.caddie_cursor"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_cursor"
-	cp dot_caddie_ruby "$(CADDIE_MODULES_DIR)/.caddie_ruby"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_ruby"
-	cp dot_caddie_js "$(CADDIE_MODULES_DIR)/.caddie_js"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(CADDIE_MODULES_DIR)/.caddie_js"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_core" "$(DEST_MODULES_DIR)/.caddie_core"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_core"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_python" "$(DEST_MODULES_DIR)/.caddie_python"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_python"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_rust" "$(DEST_MODULES_DIR)/.caddie_rust"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_rust"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_ios" "$(DEST_MODULES_DIR)/.caddie_ios"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ios"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_cross" "$(DEST_MODULES_DIR)/.caddie_cross"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cross"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_cursor" "$(DEST_MODULES_DIR)/.caddie_cursor"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cursor"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_ruby" "$(DEST_MODULES_DIR)/.caddie_ruby"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ruby"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_js" "$(DEST_MODULES_DIR)/.caddie_js"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_js"
 	
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"
@@ -262,8 +263,8 @@ uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or R
 	fi
 	
 	echo "$(YELLOW)  →$(NC) Removing modular caddie files..."
-	if [ -d "$(CADDIE_MODULES_DIR)" ]; then \
-		rm -rf "$(CADDIE_MODULES_DIR)"; \
+	if [ -d "$(DEST_MODULES_DIR)" ]; then \
+		rm -rf "$(DEST_MODULES_DIR)"; \
 		echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_modules directory"; \
 	else \
 		echo "$(YELLOW)    →$(NC) ~/.caddie_modules directory not found (already removed)"; \
@@ -344,10 +345,10 @@ status: ## Check installation status
 		echo "$(RED)  ✗$(NC) ~/.caddie_data directory"; \
 	fi
 	echo "$(CYAN)Caddie Modules:$(NC)"
-	if [ -d "$(CADDIE_MODULES_DIR)" ]; then \
+	if [ -d "$(DEST_MODULES_DIR)" ]; then \
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_modules directory"; \
 		for module in core python rust ios cross cursor ruby js; do \
-			if [ -f "$(CADDIE_MODULES_DIR)/.caddie_$$module" ]; then \
+			if [ -f "$(DEST_MODULES_DIR)/.caddie_$$module" ]; then \
 				echo "$(GREEN)    ✓$(NC) ~/.caddie_modules/.caddie_$$module"; \
 			else \
 				echo "$(RED)    ✗$(NC) ~/.caddie_modules/.caddie_$$module"; \

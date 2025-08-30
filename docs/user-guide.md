@@ -102,6 +102,73 @@ caddie core:get:home
 caddie core:reset:home
 ```
 
+### Productivity Aliases
+
+Caddie.sh includes 50+ productivity aliases that make development faster:
+
+```bash
+# View all available aliases
+caddie core:aliases
+
+# Common shortcuts you'll use daily
+g              # git
+gst            # git status
+gl             # git pull
+gp             # git push
+d              # docker
+ni             # npm install
+ns             # npm start
+r              # rails
+c              # clear
+ll             # ls -laGFH
+```
+
+**Navigation & File Management:**
+```bash
+bu, ud, dud    # cd .. (go back)
+dir            # ls -FH
+pcd            # pushd
+```
+
+**Development Workflow:**
+```bash
+maek, amek     # make (typo correction)
+bim            # vim (typo correction)
+ss             # source ~/.bashrc
+shitory        # search history
+externalip     # curl whatismyip.org
+```
+
+**Docker Commands:**
+```bash
+dps            # docker ps
+dsp            # docker system prune
+dcb            # docker compose build
+dcu            # docker compose up
+dcd            # docker compose down
+```
+
+**Git Workflow:**
+```bash
+ga             # git add
+gaa            # git add -A
+gc             # git commit
+gc!            # git commit --amend
+gdrop          # git add .; git stash; git stash drop
+glo            # git log --oneline
+```
+
+**Package Management:**
+```bash
+bsl            # brew services list
+nid            # npm install --save-dev
+nrl            # npm run lint
+nrt            # npm run test
+nrtw           # npm run test -- --watch
+```
+
+> 💡 **Pro Tip**: Add `caddie core:aliases` to your `~/.bash_profile` for quick reference!
+
 ## Module Usage
 
 ### Python Development

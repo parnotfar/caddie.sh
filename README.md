@@ -25,6 +25,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Git Integration**: Enhanced git workflows and shortcuts
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
+- **Productivity Aliases**: 50+ aliases for faster development workflows
 
 ## 🚀 Quick Start
 
@@ -82,6 +83,74 @@ caddie help
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 
+## 🚀 Productivity Aliases
+
+Caddie.sh comes with a comprehensive set of aliases that make development faster and more efficient:
+
+### Quick Access
+```bash
+# View all available aliases
+caddie core:aliases
+
+# Common shortcuts
+g              # git
+gst            # git status
+gl             # git pull
+gp             # git push
+d              # docker
+ni             # npm install
+ns             # npm start
+r              # rails
+```
+
+### Navigation & File Management
+```bash
+bu, ud, dud    # cd .. (go back)
+c              # clear
+ll             # ls -laGFH
+dir            # ls -FH
+pcd            # pushd
+```
+
+### Development Workflow
+```bash
+maek, amek     # make (typo correction)
+bim            # vim (typo correction)
+ss             # source ~/.bashrc
+shitory        # search history
+externalip     # curl whatismyip.org
+```
+
+### Docker Commands
+```bash
+dps            # docker ps
+dsp            # docker system prune
+dcb            # docker compose build
+dcu            # docker compose up
+dcd            # docker compose down
+```
+
+### Git Workflow
+```bash
+ga             # git add
+gaa            # git add -A
+gc             # git commit
+gc!            # git commit --amend
+gdrop          # git add .; git stash; git stash drop
+glo            # git log --oneline
+```
+
+### Package Management
+```bash
+bsl            # brew services list
+nid            # npm install --save-dev
+nrl            # npm run lint
+nrt            # npm run test
+nrtw           # npm run test -- --watch
+```
+
+> 💡 **Pro Tip**: Add `caddie core:aliases` to your `~/.bash_profile` for quick reference!
+
 ## Use Cases
 
 ### For Developers
@@ -107,16 +176,23 @@ Caddie.sh follows a modular architecture where each development tool or language
 ```
 caddie.sh/
 ├── dot_caddie              # Main entry point
-├── dot_caddie_core         # Core functions and debug system
-├── dot_caddie_python       # Python environment management
-├── dot_caddie_rust         # Rust development tools
-├── dot_caddie_ruby         # Ruby environment management
-├── dot_caddie_js           # JavaScript/Node.js tools
-├── dot_caddie_ios          # iOS development tools
-├── dot_caddie_cross        # Cross-language features
-├── dot_caddie_cursor       # IDE integration
-├── dot_caddie_git          # Git enhancements
-└── dot_caddie_*            # Additional modules...
+├── dot_caddie_prompt       # Prompt customization
+├── dot_caddie_version      # Version information
+├── dot_caddie_debug        # Debug system
+├── dot_caddie_modules      # Data structure management
+├── modules/                 # All module files
+│   ├── dot_caddie_core     # Core functions and debug system
+│   ├── dot_caddie_python   # Python environment management
+│   ├── dot_caddie_rust     # Rust development tools
+│   ├── dot_caddie_ruby     # Ruby environment management
+│   ├── dot_caddie_js       # JavaScript/Node.js tools
+│   ├── dot_caddie_ios      # iOS development tools
+│   ├── dot_caddie_cross    # Cross-language features
+│   ├── dot_caddie_cursor   # IDE integration
+│   └── dot_caddie_git      # Git enhancements (future)
+├── docs/                    # Documentation
+├── Makefile                 # Build system
+└── README.md                # Project overview
 ```
 
 > **Note**: Tab completion is currently centralized in the main `dot_caddie` file due to Bash variable scope limitations. See [Contributing Guide](docs/contributing.md#adding-tab-completion-for-new-modules) for details on adding completion for new modules.

@@ -233,6 +233,8 @@ alias cr='caddie rust:new'
 alias cj='caddie js:install'
 ```
 
+> 💡 **Built-in Aliases**: Caddie.sh comes with 50+ productivity aliases already configured! Use `caddie core:aliases` to see them all.
+
 #### Adding Custom Functions
 ```bash
 # Add to ~/.bash_profile

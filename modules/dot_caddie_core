@@ -1,0 +1,230 @@
+#!/bin/bash
+
+# Caddie.sh - Core Functions
+# This file contains the main caddie function and core functionality
+
+# Default caddie home file location
+CADDIE_HOME_FILE="$HOME/.caddie_home"
+
+# Function to set the caddie home directory
+function caddie_core_set_home() {
+    local path="$1"
+    
+    if [ -z "$path" ]; then
+        echo "Error: Please provide a path for caddie home"
+        echo "Usage: caddie core:set:home <path>"
+        return 1
+    fi
+    
+    # Expand the path (handle ~, relative paths, etc.)
+    local expanded_path=$(eval echo "$path")
+    
+    # Check if the path exists
+    if [ ! -d "$expanded_path" ]; then
+        echo "Error: Directory '$expanded_path' does not exist"
+        return 1
+    fi
+    
+    # Get the absolute path
+    local absolute_path=$(cd "$expanded_path" && pwd)
+    
+    # Save the path to the caddie home file
+    echo "$absolute_path" > "$CADDIE_HOME_FILE"
+    
+    export CADDIE_HOME="$absolute_path"
+    
+    echo "✓ Caddie home directory set to: $absolute_path"
+}
+
+# Function to get the caddie home directory
+function caddie_core_get_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        local caddie_home=$(cat "$CADDIE_HOME_FILE")
+
+        echo "Current caddie home: $caddie_home"
+    else
+        echo "No caddie home directory was set"
+    fi
+}
+
+# Function to reset the caddie home directory
+function caddie_core_reset_home() {
+    if [ -f "$CADDIE_HOME_FILE" ]; then
+        rm "$CADDIE_HOME_FILE"
+        unset CADDIE_HOME
+        echo "✓ Caddie home directory has been reset"
+    else
+        echo "No caddie home directory was set"
+    fi
+}
+
+# Function to handle debug commands
+function caddie_core_debug() {
+    local action="$1"
+    
+    case "$action" in
+        "on")
+            caddie_debug_on
+            echo "✓ Debug mode enabled"
+            ;;
+        "off")
+            caddie_debug_off
+            echo "✓ Debug mode disabled"
+            ;;
+        "toggle")
+            caddie_debug_toggle
+            echo "✓ Debug mode toggled to: $(caddie_debug_status)"
+            ;;
+        "status")
+            echo "Debug mode is: $(caddie_debug_status)"
+            ;;
+        *)
+            echo "Error: Invalid debug action '$action'"
+            echo "Usage: caddie core:debug <on|off|toggle|status>"
+            return 1
+            ;;
+    esac
+}
+
+
+
+# Function to show available aliases
+function caddie_core_aliases() {
+    echo "Caddie.sh Available Aliases"
+    echo "==========================="
+    echo ""
+    echo "Caddie.sh comes with a comprehensive set of aliases that make development faster:"
+    echo ""
+    echo "📁 Navigation & File Management:"
+    echo "  bu, ud, dud    cd .. (go back)"
+    echo "  c              clear"
+    echo "  cdc            cd; clear"
+    echo "  dir            ls -FH"
+    echo "  la             ll (ls -laGFH)"
+    echo "  ll             ls -laGFH"
+    echo "  ls             ls -GFH"
+    echo "  pcd            pushd"
+    echo ""
+    echo "🔧 Development Tools:"
+    echo "  maek, amek     make (typo correction)"
+    echo "  bim            vim (typo correction)"
+    echo "  ss             source ~/.bashrc"
+    echo "  shitory        search history"
+    echo "  externalip     curl whatismyip.org"
+    echo ""
+    echo "🐳 Docker Commands:"
+    echo "  d              docker"
+    echo "  dps            docker ps"
+    echo "  dsp            docker system prune"
+    echo "  di             docker images"
+    echo "  dcb            docker compose build"
+    echo "  dcu            docker compose up"
+    echo "  dcd            docker compose down"
+    echo ""
+    echo "📦 Package Management:"
+    echo "  bsl            brew services list"
+    echo "  ni             npm install"
+    echo "  nid            npm install --save-dev"
+    echo "  ns             npm start"
+    echo "  nr             npm run"
+    echo "  nrl            npm run lint"
+    echo "  nrlf           npm run --fix"
+    echo "  nrt            npm run test"
+    echo "  nrtu           npm run test -- --updateSnapshot"
+    echo "  nrtw           npm run test -- --watch"
+    echo ""
+    echo "🌐 Git Workflow:"
+    echo "  g              git"
+    echo "  gst            git status"
+    echo "  gl             git pull"
+    echo "  gp             git push"
+    echo "  ggfl           git push --force-with-lease"
+    echo "  gd             git diff"
+    echo "  ga             git add"
+    echo "  gaa            git add -A"
+    echo "  gba            git branch -a"
+    echo "  gc             git commit"
+    echo "  gc!            git commit --amend"
+    echo "  gca            git commit --all"
+    echo "  gca!           git commit --all --amend"
+    echo "  gcm            git commit --message"
+    echo "  gdrop          git add .; git stash; git stash drop"
+    echo "  gpop           git stash pop"
+    echo "  gf             git fetch"
+    echo "  gfp            git fetch -p"
+    echo "  glo            git log --oneline"
+    echo "  glgga          git log --graph --decorate --all"
+    echo "  gbcln          git branch -d (clean merged branches)"
+    echo "  gsp            git stash pop"
+    echo "  gsc            git stash clear"
+    echo ""
+    echo "🚀 Rails Development:"
+    echo "  r              rails"
+    echo "  rsp4k          rails server -p 4000"
+    echo ""
+    echo "💡 Custom Caddie Aliases (add to ~/.bash_profile):"
+    echo "  c              caddie"
+    echo "  cp             caddie python:create"
+    echo "  ca             caddie python:activate"
+    echo "  cr             caddie rust:new"
+    echo "  cj             caddie js:install"
+    echo ""
+    echo "🔍 Utility Functions:"
+    echo "  blanks         Add blank lines to output"
+    echo "  path           Show PATH entries"
+    echo "  bash-stats     Show command usage statistics"
+    echo "  take           mkdir -p and cd into directory"
+    echo "  lessdown       View markdown files in terminal"
+    echo "  readless       Alias for lessdown"
+    echo "  hg             Search history with regex"
+    echo ""
+    echo "💡 Tip: Use 'alias | grep <keyword>' to find specific aliases"
+    echo "💡 Tip: Add 'caddie core:aliases' to your ~/.bash_profile for quick reference"
+}
+
+# Function to show core caddie help
+function caddie_core_help() {
+    echo "Core Caddie Functions"
+    echo "===================="
+    echo ""
+    echo "Usage: caddie core:<command>"
+    echo ""
+    echo "Home Directory Management:"
+    echo "  set:home <path>     Set caddie home directory"
+    echo "  get:home            Get current caddie home"
+    echo "  reset:home          Reset caddie home directory"
+    echo ""
+    echo "Debug Management:"
+    echo "  debug:on            Enable debug output"
+    echo "  debug:off           Disable debug output"
+    echo "  debug:toggle        Toggle debug output"
+    echo "  debug:status        Show debug status"
+    echo ""
+    echo "Information:"
+    echo "  aliases             Show all available aliases"
+    echo ""
+    echo "Examples:"
+    echo "  caddie core:set:home ~/projects/myproject"
+    echo "  caddie core:get:home"
+    echo "  caddie core:reset:home"
+    echo "  caddie core:aliases"
+}
+
+function caddie_core_description() {
+    echo 'Core Caddie Functions'
+}
+
+# Auto-load caddie home on shell startup
+if [ -f "$CADDIE_HOME_FILE" ]; then
+    caddie_home=$(cat "$CADDIE_HOME_FILE")
+    export CADDIE_HOME="$caddie_home"
+fi
+
+# Export core functions
+export -f caddie_core_set_home
+export -f caddie_core_get_home
+export -f caddie_core_reset_home
+export -f caddie_core_help
+export -f caddie_core_description
+export -f caddie_core_debug
+export -f caddie_core_aliases
