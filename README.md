@@ -149,7 +149,7 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-> 💡 **Pro Tip**: Add `caddie core:aliases` to your `~/.bash_profile` for quick reference!
+> 💡 **Pro Tip**: Use `caddie core:aliases` whenever you need a quick reference to available aliases!
 
 ## Use Cases
 
@@ -189,7 +189,7 @@ caddie.sh/
 │   ├── dot_caddie_ios      # iOS development tools
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_cursor   # IDE integration
-│   └── dot_caddie_git      # Git enhancements (future)
+│   └── dot_caddie_git      # Git enhancements
 ├── docs/                    # Documentation
 ├── Makefile                 # Build system
 └── README.md                # Project overview

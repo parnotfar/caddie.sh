@@ -131,6 +131,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ruby"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_js" "$(DEST_MODULES_DIR)/.caddie_js"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_js"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_git" "$(DEST_MODULES_DIR)/.caddie_git"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_git"
 	
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"

@@ -167,7 +167,7 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-> 💡 **Pro Tip**: Add `caddie core:aliases` to your `~/.bash_profile` for quick reference!
+> 💡 **Pro Tip**: Use `caddie core:aliases` whenever you need a quick reference to available aliases!
 
 ## Module Usage
 

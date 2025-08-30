@@ -432,6 +432,20 @@ function hg() {
 
 export -f hg
 
+function ag() {
+  local keyword="$1"
+  
+  if [ -z "$keyword" ]; then
+    echo "Usage: ag <keyword>"
+    echo "Example: ag git"
+    return 1
+  fi
+  
+  alias | grep -i "$keyword"
+}
+
+export -f ag
+
 function bashy_functions() {
   local repo=$1
 

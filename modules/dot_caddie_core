@@ -88,6 +88,63 @@ function caddie_core_debug() {
 
 
 
+# Function to grep aliases by keyword
+function caddie_core_alias_grep() {
+    local keyword="$1"
+    
+    if [ -z "$keyword" ]; then
+        echo "Usage: caddie core:alias:grep <keyword>"
+        echo "Example: caddie core:alias:grep git"
+        return 1
+    fi
+    
+    echo "Aliases containing '$keyword':"
+    echo "=============================="
+    echo ""
+    alias | grep -i "$keyword"
+}
+
+# Function to show aliases by family
+function caddie_core_alias_git() {
+    echo "Git Workflow Aliases"
+    echo "==================="
+    echo ""
+    alias | grep -E "(^g|git)" | sort
+}
+
+function caddie_core_alias_docker() {
+    echo "Docker Aliases"
+    echo "=============="
+    echo ""
+    alias | grep -E "(^d|docker)" | sort
+}
+
+function caddie_core_alias_npm() {
+    echo "NPM Aliases"
+    echo "==========="
+    echo ""
+    alias | grep -E "(^n|npm)" | sort
+}
+
+function caddie_core_alias_nav() {
+    echo "Navigation Aliases"
+    echo "================="
+    echo ""
+    echo "Directory Navigation:"
+    echo "  bu, ud, dud    cd .. (go back)"
+    echo "  pcd            pushd"
+    echo ""
+    echo "File Listing:"
+    echo "  dir            ls -FH"
+    echo "  la             ll (ls -laGFH)"
+    echo "  ll             ls -laGFH"
+    echo "  ls             ls -GFH"
+    echo ""
+    echo "Screen Management:"
+    echo "  c              clear"
+    echo "  cdc            cd; clear"
+}
+
 # Function to show available aliases
 function caddie_core_aliases() {
     echo "Caddie.sh Available Aliases"
@@ -178,8 +235,7 @@ function caddie_core_aliases() {
     echo "  readless       Alias for lessdown"
     echo "  hg             Search history with regex"
     echo ""
-    echo "💡 Tip: Use 'alias | grep <keyword>' to find specific aliases"
-    echo "💡 Tip: Add 'caddie core:aliases' to your ~/.bash_profile for quick reference"
+    echo "💡 Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
 }
 
 # Function to show core caddie help
@@ -202,12 +258,19 @@ function caddie_core_help() {
     echo ""
     echo "Information:"
     echo "  aliases             Show all available aliases"
+    echo "  alias:grep <keyword> Search aliases by keyword"
+    echo "  alias:git            Show git-related aliases"
+    echo "  alias:docker         Show docker-related aliases"
+    echo "  alias:npm            Show npm-related aliases"
+    echo "  alias:nav            Show navigation aliases"
     echo ""
     echo "Examples:"
     echo "  caddie core:set:home ~/projects/myproject"
     echo "  caddie core:get:home"
     echo "  caddie core:reset:home"
     echo "  caddie core:aliases"
+    echo "  caddie core:alias:grep git"
+    echo "  caddie core:alias:git"
 }
 
 function caddie_core_description() {
@@ -228,3 +291,8 @@ export -f caddie_core_help
 export -f caddie_core_description
 export -f caddie_core_debug
 export -f caddie_core_aliases
+export -f caddie_core_alias_grep
+export -f caddie_core_alias_git
+export -f caddie_core_alias_docker
+export -f caddie_core_alias_npm
+export -f caddie_core_alias_nav

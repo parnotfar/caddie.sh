@@ -21,5 +21,66 @@ export PS1='$(caddie_prompt)'
 # Auto-setup when sourced
 caddie_source_custom_files
 
+# Git workflow functions
+function caddie_git_status() {
+    echo "Git Status:"
+    git status --short
+}
+
+function caddie_git_branch() {
+    echo "Current branch: $(git branch --show-current)"
+    echo "All branches:"
+    git branch -a
+}
+
+function caddie_git_commit() {
+    local message="$1"
+    if [ -z "$message" ]; then
+        echo "Error: Please provide a commit message"
+        echo "Usage: caddie git:commit <message>"
+        return 1
+    fi
+    git add .
+    git commit -m "$message"
+}
+
+function caddie_git_push() {
+    git push
+}
+
+function caddie_git_pull() {
+    git pull
+}
+
+function caddie_git_help() {
+    echo "Git Module Commands"
+    echo "=================="
+    echo ""
+    echo "Usage: caddie git:<command>"
+    echo ""
+    echo "Commands:"
+    echo "  status              Show git status"
+    echo "  branch              Show current and all branches"
+    echo "  commit <message>    Add all changes and commit with message"
+    echo "  push               Push to remote repository"
+    echo "  pull               Pull from remote repository"
+    echo ""
+    echo "Examples:"
+    echo "  caddie git:status"
+    echo "  caddie git:commit 'Add new feature'"
+    echo "  caddie git:push"
+}
+
+function caddie_git_description() {
+    echo 'Git workflow enhancements'
+}
+
 # Export functions for external use
 export -f caddie_source_custom_files
+export -f caddie_git_status
+export -f caddie_git_branch
+export -f caddie_git_commit
+export -f caddie_git_push
+export -f caddie_git_pull
+export -f caddie_git_help
+export -f caddie_git_description
