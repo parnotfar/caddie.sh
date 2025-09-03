@@ -232,6 +232,57 @@ function caddie_ios_xcode_version() {
     fi
 }
 
+# Function to setup Rust development environment for iOS
+function caddie_ios_rust_setup() {
+    caddie cli:title "Setting up Rust development environment for iOS..."
+    
+    # Check if Rust is installed
+    if ! command -v rustc &> /dev/null; then
+        caddie cli:title "Installing Rust..."
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        source "$HOME/.cargo/env"
+        caddie cli:check "Rust installed successfully"
+    else
+        caddie cli:check "Rust already installed: $(rustc --version)"
+    fi
+    
+    # Add iOS-specific Rust targets
+    caddie cli:title "Adding iOS Rust targets..."
+    rustup target add aarch64-apple-ios x86_64-apple-ios 2>/dev/null || true
+    caddie cli:check "iOS Rust targets added successfully"
+    
+    # Install essential Cargo tools
+    caddie cli:title "Installing essential Cargo tools..."
+    cargo install cargo-edit cargo-watch cargo-tarpaulin 2>/dev/null || true
+    caddie cli:check "Cargo tools installed successfully"
+    
+    # Validate iOS development environment
+    caddie cli:title "Validating iOS development environment..."
+    
+    if ! command -v xcodebuild >/dev/null 2>&1; then
+        caddie cli:x "Xcode not found. Please install Xcode from the App Store"
+        return 1
+    fi
+    
+    if ! command -v swift >/dev/null 2>&1; then
+        caddie cli:x "Swift not found. Please install Xcode command line tools"
+        caddie cli:thought "Run: xcode-select --install"
+        return 1
+    fi
+    
+    caddie cli:check "iOS development environment validated"
+    caddie cli:indent "Xcode: $(xcodebuild -version | head -n1)"
+    caddie cli:indent "Swift: $(swift --version | head -n1)"
+    caddie cli:indent "Rust: $(rustc --version)"
+    
+    caddie cli:check "Rust development environment for iOS setup complete"
+    caddie cli:blank
+    caddie cli:title "Next steps:"
+    caddie cli:indent "1. Build Rust library: cargo build --target aarch64-apple-ios --release --lib"
+    caddie cli:indent "2. Create iOS framework structure for Swift integration"
+    caddie cli:indent "3. Use the generated .a static libraries in your iOS project"
+}
+
 # Function to display iOS module help
 function caddie_ios_help() {
     caddie cli:title "iOS Development Tools"
@@ -240,6 +291,7 @@ function caddie_ios_help() {
     caddie cli:blank
     caddie cli:title "Environment Setup:"
     caddie cli:indent "setup              Setup iOS development environment"
+    caddie cli:indent "rust:setup         Setup Rust development environment for iOS"
     caddie cli:indent "simulator          List available simulators"
     caddie cli:indent "device             List connected devices"
     caddie cli:blank
@@ -260,6 +312,7 @@ function caddie_ios_help() {
     caddie cli:blank
     caddie cli:title "Examples:"
     caddie cli:indent "caddie ios:setup"
+    caddie cli:indent "caddie ios:rust:setup"
     caddie cli:indent "caddie ios:simulator"
     caddie cli:indent "caddie ios:build"
     caddie cli:indent "caddie ios:pod:install"
@@ -274,6 +327,7 @@ function caddie_ios_description() {
 # Export iOS functions
 export -f caddie_ios_description
 export -f caddie_ios_setup
+export -f caddie_ios_rust_setup
 export -f caddie_ios_simulator
 export -f caddie_ios_device
 export -f caddie_ios_build

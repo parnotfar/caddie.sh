@@ -23,6 +23,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Ruby Environment**: RVM integration and gem management
 - **JavaScript/Node.js**: NVM integration and package management
 - **iOS Development**: Xcode integration and development tools
+- **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows and shortcuts
@@ -79,10 +80,10 @@ caddie help
 
 - **[Core Module](docs/modules/core.md)** - Basic caddie functions and debug system
 - **[Python Module](docs/modules/python.md)** - Python environment management
-- **[Rust Module](docs/modules/rust.md)** - Rust development tools
+- **[Rust Module](docs/modules/rust.md)** - Rust development tools and cross-platform integration
 - **[Ruby Module](docs/modules/ruby.md)** - Ruby environment with RVM
 - **[JavaScript Module](docs/modules/javascript.md)** - Node.js and npm management
-- **[iOS Module](docs/modules/ios.md)** - iOS development tools
+- **[iOS Module](docs/modules/ios.md)** - iOS development tools and Rust integration
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows

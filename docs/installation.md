@@ -55,6 +55,7 @@ This will:
 - Set up your shell environment
 - Install all Caddie.sh modules
 - Configure your system for development
+- Enable cross-platform Rust development for iOS, WatchOS, and Android
 
 ### Method 2: Minimal Install
 
@@ -101,6 +102,7 @@ The installer will:
 4. **Install Caddie.sh**: Copy all necessary files to your home directory
 5. **Configure Shell**: Update your bash profile and bashrc
 6. **Verify Installation**: Test that everything is working correctly
+7. **Setup Cross-Platform Development**: Configure Rust for iOS, WatchOS, and Android
 
 ### Step 3: Activate the Environment
 
@@ -144,6 +146,16 @@ caddie python:create test-env
    ```bash
    # Edit the prompt file
    nano ~/.caddie_prompt.sh
+   ```
+
+4. **Setup Cross-Platform Rust Development** (Optional):
+   ```bash
+   # Setup Rust for iOS development
+   caddie ios:rust:setup
+   
+   # Future: Setup for WatchOS and Android
+   # caddie watchos:rust:setup
+   # caddie android:rust:setup
    ```
 
 ### Environment Variables

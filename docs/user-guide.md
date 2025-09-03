@@ -153,6 +153,13 @@ shitory        # search history
 externalip     # curl whatismyip.org
 ```
 
+**Cross-Platform Development:**
+```bash
+ios:rust:setup # Setup Rust for iOS development
+# watchos:rust:setup  # Setup Rust for WatchOS (future)
+# android:rust:setup   # Setup Rust for Android (future)
+```
+
 **Docker Commands:**
 ```bash
 dps            # docker ps
@@ -260,6 +267,19 @@ caddie rust:test
 
 # Check code without building
 caddie rust:check
+```
+
+#### Cross-Platform Development
+
+```bash
+# Setup Rust for iOS
+caddie ios:rust:setup
+
+# Setup Rust for WatchOS (future)
+# caddie watchos:rust:setup
+
+# Setup Rust for Android (future)
+# caddie android:rust:setup
 ```
 
 #### Dependency Management
@@ -375,6 +395,19 @@ caddie ios:open MyApp.xcodeproj
 
 # Build project
 caddie ios:build MyApp
+```
+
+#### Rust Integration
+
+```bash
+# Setup Rust for iOS development
+caddie ios:rust:setup
+
+# Build Rust library for iOS
+cargo build --target aarch64-apple-ios --release --lib
+
+# Create iOS framework with Rust library
+# ... integrate with iOS project ...
 ```
 
 #### Development Tools

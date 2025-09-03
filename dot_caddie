@@ -130,7 +130,7 @@ _caddie_completion() {
         module_commands="$module_commands rust:new rust:build rust:run rust:test rust:add rust:remove rust:fmt rust:clippy rust:check rust:doc"
         ;;
       ios)
-        module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version"
+        module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
         ;;
       core)
         module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav"
