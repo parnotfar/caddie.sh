@@ -42,14 +42,21 @@ function set_caddie_git_prompt() {
     export GIT_PROMPT_END+=' \n\[\033[0;37m\]$(date +%H:%M)\[\033[0;0m\] $ '
 }
 
-# Alternative: Simple prompt without bash-git-prompt dependency
-function set_simple_caddie_prompt() {
+# Main prompt setup function
+function set_caddie_prompt() {
     local version=$(get_caddie_version)
-    local git_branch=""
+    local git_info=""
     
     if [ -d '.git' ]; then
-        git_branch=" (${PURPLE}$(git symbolic-ref --short HEAD 2>/dev/null || echo 'detached')${RESET})"
+        local branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo 'detached')
+        local git_status=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+        
+        if [ "$git_status" -gt 0 ]; then
+            git_info=" (${PURPLE}${branch}${RESET}|${CYAN}+${git_status}${RESET})"
+        else
+            git_info=" (${PURPLE}${branch}${RESET}|${GREEN}✓${RESET})"
+        fi
     fi
     
-    export PS1="[${BLUE}Caddie-${version}${RESET}]${git_branch} ${YELLOW}\w${RESET} $ "
+    export PS1="[${BLUE}Caddie-${version}${RESET}]${git_info} ${YELLOW}\w${RESET} $ "
 }
