@@ -23,6 +23,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Cross-Platform**: Multi-language project templates and tools
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows and shortcuts
+- **CLI Utilities**: Sophisticated color output and formatting functions
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
 - **Productivity Aliases**: 50+ aliases for faster development workflows
@@ -82,6 +83,7 @@ caddie help
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
+- **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
 
 ## 🚀 Productivity Aliases
 
@@ -98,6 +100,11 @@ ag docker       # or: caddie core:alias:grep docker
 
 # Navigate to caddie home
 caddie go:home
+
+# CLI color utilities
+caddie cli:green "Success message"
+caddie cli:red "Error message"
+caddie cli:title "Section Header"
 
 # Common shortcuts
 g              # git

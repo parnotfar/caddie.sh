@@ -97,9 +97,9 @@ install-dot: backup-existing ## Install dot files to home directory
 	cp dot_caddie_prompt "$(HOME_DIR)/.caddie_prompt.sh"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_prompt.sh"
 	
-	echo "$(YELLOW)  →$(NC) Installing dot_caddie_colors as ~/.caddie_colors"
-	cp dot_caddie_colors "$(HOME_DIR)/.caddie_colors"
-	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_colors"
+	echo "$(YELLOW)  →$(NC) Installing dot_caddie_cli as ~/.caddie_cli"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(HOME_DIR)/.caddie_cli"
+	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_cli"
 	
 	echo "$(YELLOW)  →$(NC) Installing dot_caddie_version as ~/.caddie_version"
 	cp dot_caddie_version "$(HOME_DIR)/.caddie_version"
@@ -137,6 +137,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_js"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_git" "$(DEST_MODULES_DIR)/.caddie_git"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_git"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(DEST_MODULES_DIR)/.caddie_cli"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"
@@ -244,6 +246,14 @@ uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or R
 		echo "$(YELLOW)    →$(NC) ~/.caddie_prompt.sh not found (already removed)"; \
 	fi
 	
+	echo "$(YELLOW)  →$(NC) Removing ~/.caddie_cli"
+	if [ -f "$(HOME_DIR)/.caddie_cli" ]; then \
+		rm "$(HOME_DIR)/.caddie_cli"; \
+		echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_cli"; \
+	else \
+		echo "$(YELLOW)    →$(NC) ~/.caddie_cli not found (already removed)"; \
+	fi
+	
 	echo "$(YELLOW)  →$(NC) Removing ~/.caddie_git"
 	if [ -f "$(HOME_DIR)/.caddie_git" ]; then \
 		rm "$(HOME_DIR)/.caddie_git"; \
@@ -327,6 +337,11 @@ status: ## Check installation status
 	else \
 		echo "$(RED)  ✗$(NC) ~/.caddie_prompt.sh"; \
 	fi
+	if [ -f "$(HOME_DIR)/.caddie_cli" ]; then \
+		echo "$(GREEN)  ✓$(NC) ~/.caddie_cli"; \
+	else \
+		echo "$(RED)  ✗$(NC) ~/.caddie_cli"; \
+	fi
 	if [ -f "$(HOME_DIR)/.caddie_version" ]; then \
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_version"; \
 	else \
@@ -353,7 +368,7 @@ status: ## Check installation status
 	echo "$(CYAN)Caddie Modules:$(NC)"
 	if [ -d "$(DEST_MODULES_DIR)" ]; then \
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_modules directory"; \
-		for module in core python rust ios cross cursor ruby js; do \
+		for module in core python rust ios cross cursor ruby js cli; do \
 			if [ -f "$(DEST_MODULES_DIR)/.caddie_$$module" ]; then \
 				echo "$(GREEN)    ✓$(NC) ~/.caddie_modules/.caddie_$$module"; \
 			else \

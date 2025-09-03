@@ -149,6 +149,9 @@ _caddie_completion() {
       git)
         module_commands="$module_commands git:status git:branch git:commit git:push git:pull"
         ;;
+      cli)
+        module_commands="$module_commands cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:help"
+        ;;
     esac
   done
   

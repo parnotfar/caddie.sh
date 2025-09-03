@@ -1,0 +1,185 @@
+# Caddie.sh CLI Color Module
+# This provides reliable color definitions and CLI utilities for the prompt system
+
+# Module description
+function caddie_cli_description() {
+    echo "CLI color utilities and formatting"
+}
+
+# Common colors for reference
+export BOLD=$(tput bold)
+export RED=$(tput setaf 1)
+export GREEN=$(tput setaf 2)
+export YELLOW=$(tput setaf 3)
+export BLUE=$(tput setaf 4)
+export PURPLE=$(tput setaf 5)
+export CYAN=$(tput setaf 6)
+export WHITE=$(tput setaf 7)
+export GREY=$(tput setaf 8)
+export ORANGE=$(tput setaf 9)
+export RESET=$(tput sgr0)
+
+# CLI color output functions
+function caddie_cli_red() {
+    local text="$1"
+    echo "${RED}${text}${RESET}"
+}
+
+function caddie_cli_green() {
+    local text="$1"
+    echo "${GREEN}${text}${RESET}"
+}
+
+function caddie_cli_yellow() {
+    local text="$1"
+    echo "${YELLOW}${text}${RESET}"
+}
+
+function caddie_cli_blue() {
+    local text="$1"
+    echo "${BLUE}${text}${RESET}"
+}
+
+function caddie_cli_purple() {
+    local text="$1"
+    echo "${PURPLE}${text}${RESET}"
+}
+
+function caddie_cli_cyan() {
+    local text="$1"
+    echo "${CYAN}${text}${RESET}"
+}
+
+function caddie_cli_grey() {
+    local text="$1"
+    echo "${GREY}${text}${RESET}"
+}
+
+function caddie_cli_orange() {
+    local text="$1"
+    echo "${ORANGE}${text}${RESET}"
+}
+
+function caddie_cli_white() {
+    local text="$1"
+    echo "${WHITE}${text}${RESET}"
+}
+
+# Bold color functions
+function caddie_cli_red_bold() {
+    local text="$1"
+    echo "${BOLD}${RED}${text}${RESET}"
+}
+
+function caddie_cli_green_bold() {
+    local text="$1"
+    echo "${BOLD}${GREEN}${text}${RESET}"
+}
+
+function caddie_cli_yellow_bold() {
+    local text="$1"
+    echo "${BOLD}${YELLOW}${text}${RESET}"
+}
+
+function caddie_cli_blue_bold() {
+    local text="$1"
+    echo "${BOLD}${BLUE}${text}${RESET}"
+}
+
+function caddie_cli_purple_bold() {
+    local text="$1"
+    echo "${BOLD}${PURPLE}${text}${RESET}"
+}
+
+function caddie_cli_cyan_bold() {
+    local text="$1"
+    echo "${BOLD}${CYAN}${text}${RESET}"
+}
+
+function caddie_cli_grey_bold() {
+    local text="$1"
+    echo "${BOLD}${GREY}${text}${RESET}"
+}
+
+function caddie_cli_orange_bold() {
+    local text="$1"
+    echo "${BOLD}${ORANGE}${text}${RESET}"
+}
+
+function caddie_cli_white_bold() {
+    local text="$1"
+    echo "${BOLD}${WHITE}${text}${RESET}"
+}
+
+# Utility functions
+function caddie_cli_usage() {
+    local text="$1"
+    echo "${BOLD}${BLUE}Usage: ${text}${RESET}"
+}
+
+function caddie_cli_installed() {
+    echo "${BOLD}${BLUE}installed${RESET}"
+}
+
+function caddie_cli_complete() {
+    echo "${BOLD}${BLUE}complete${RESET}"
+}
+
+function caddie_cli_title() {
+    local text="$1"
+    echo "${BOLD}${GREEN}== ${text} ==${RESET}"
+}
+
+function caddie_cli_colorlist() {
+    echo "${BOLD}BOLD${RESET}"
+    echo "${RED}RED${RESET}"
+    echo "${GREEN}GREEN${RESET}"
+    echo "${YELLOW}YELLOW${RESET}"
+    echo "${BLUE}BLUE${RESET}"
+    echo "${PURPLE}PURPLE${RESET}"
+    echo "${CYAN}CYAN${RESET}"
+    echo "${GREY}GREY${RESET}"
+    echo "${ORANGE}ORANGE${RESET}"
+    echo "${WHITE}WHITE${RESET}"
+    echo "${WHITE}RESET${RESET}"
+}
+
+function caddie_cli_help() {
+    echo "Usage: caddie cli:<command> [text]"
+    echo ""
+    echo "Color Commands:"
+    echo "  red <text>              - Print text in red"
+    echo "  green <text>            - Print text in green"
+    echo "  yellow <text>           - Print text in yellow"
+    echo "  blue <text>             - Print text in blue"
+    echo "  purple <text>           - Print text in purple"
+    echo "  cyan <text>             - Print text in cyan"
+    echo "  grey <text>             - Print text in grey"
+    echo "  orange <text>           - Print text in orange"
+    echo "  white <text>            - Print text in white"
+    echo ""
+    echo "Bold Color Commands:"
+    echo "  red:bold <text>         - Print text in bold red"
+    echo "  green:bold <text>       - Print text in bold green"
+    echo "  yellow:bold <text>      - Print text in bold yellow"
+    echo "  blue:bold <text>        - Print text in bold blue"
+    echo "  purple:bold <text>      - Print text in bold purple"
+    echo "  cyan:bold <text>        - Print text in bold cyan"
+    echo "  grey:bold <text>        - Print text in bold grey"
+    echo "  orange:bold <text>      - Print text in bold orange"
+    echo "  white:bold <text>       - Print text in bold white"
+    echo ""
+    echo "Utility Commands:"
+    echo "  usage <text>            - Print usage text in blue"
+    echo "  installed               - Print 'installed' in blue"
+    echo "  complete                - Print 'complete' in blue"
+    echo "  title <text>            - Print title with green formatting"
+    echo "  colorlist               - List all available colors"
+    echo "  help                    - Show this help message"
+}
+
+# Export all functions
+export -f caddie_cli_description
+export -f caddie_cli_red caddie_cli_green caddie_cli_yellow caddie_cli_blue caddie_cli_purple caddie_cli_cyan caddie_cli_grey caddie_cli_orange caddie_cli_white
+export -f caddie_cli_red_bold caddie_cli_green_bold caddie_cli_yellow_bold caddie_cli_blue_bold caddie_cli_purple_bold caddie_cli_cyan_bold caddie_cli_grey_bold caddie_cli_orange_bold caddie_cli_white_bold
+export -f caddie_cli_usage caddie_cli_installed caddie_cli_complete caddie_cli_title caddie_cli_colorlist caddie_cli_help

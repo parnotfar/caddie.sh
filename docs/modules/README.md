@@ -18,6 +18,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[Cross Module](cross.md)** - Multi-language project templates and tools
 - **[Cursor Module](cursor.md)** - IDE integration and AI-powered development
 - **[Git Module](git.md)** - Enhanced git workflows and shortcuts
+- **[CLI Module](cli.md)** - Color utilities and formatting functions
 
 ## Module Structure
 
@@ -45,6 +46,7 @@ For example:
 caddie python:help
 caddie rust:help
 caddie core:help
+caddie cli:help
 ```
 
 ## Contributing

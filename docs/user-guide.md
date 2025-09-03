@@ -47,6 +47,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`cross`**: Multi-language project templates and tools
 - **`cursor`**: IDE integration and AI-powered development
 - **`git`**: Enhanced git workflows and shortcuts
+- **`cli`**: Color utilities and formatting functions
 
 ### Data Structures
 
@@ -466,6 +467,64 @@ caddie cursor:ext:update
 # Sync extensions
 caddie cursor:ext:sync
 ```
+
+### CLI Utilities
+
+The CLI module provides sophisticated color output and formatting functions for creating better command-line interfaces:
+
+#### Basic Color Output
+
+```bash
+# Success messages
+caddie cli:green "✓ Installation completed successfully"
+caddie cli:green:bold "SUCCESS: All tests passed"
+
+# Error messages
+caddie cli:red "Error: File not found"
+caddie cli:red:bold "CRITICAL: Database connection failed"
+
+# Warning messages
+caddie cli:yellow "Warning: Deprecated feature used"
+caddie cli:orange "⚠️  Please update your configuration"
+
+# Information
+caddie cli:blue "Info: Processing 150 files..."
+caddie cli:cyan "Debug: Function called with args: $@"
+```
+
+#### Utility Functions
+
+```bash
+# Section headers
+caddie cli:title "Caddie.sh Installation"
+
+# Usage text
+caddie cli:usage "caddie <module>:<command> [options]"
+
+# Status indicators
+caddie cli:installed
+caddie cli:complete
+
+# Color reference
+caddie cli:colorlist
+```
+
+#### Integration Examples
+
+Use CLI functions in your scripts and modules:
+
+```bash
+#!/bin/bash
+source ~/.caddie_cli
+
+# Show progress
+caddie cli:blue "Starting installation..."
+caddie cli:green "✓ Dependencies installed"
+caddie cli:yellow "⚠️  Some optional packages failed"
+caddie cli:title "Installation Summary"
+```
+
+> 💡 **Pro Tip**: Use consistent colors across your modules - red for errors, green for success, yellow for warnings, blue for info!
 
 ## Advanced Usage
 
