@@ -1,5 +1,90 @@
 # Caddie.sh Release Notes
 
+## Version 1.2 - Cross-Platform Rust Integration Release
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+#### **Cross-Platform Rust Development**
+- **iOS Rust Integration**: New `caddie ios:rust:setup` command for iOS development with Rust
+- **Automatic Target Management**: Automatically adds iOS-specific Rust targets (aarch64-apple-ios, x86_64-apple-ios)
+- **Essential Tool Installation**: Installs cargo-edit, cargo-watch, and cargo-tarpaulin for iOS development
+- **Environment Validation**: Comprehensive validation of Xcode, Swift, and Rust environments
+- **Idempotent Operations**: Safe to run multiple times without errors
+
+#### **Enhanced iOS Module**
+- **Rust Integration**: Seamless Rust setup for iOS development workflows
+- **Swift-Rust Bridge**: Streamlined setup for Swift applications consuming Rust libraries
+- **Framework Support**: Preparation for iOS framework integration with Rust static libraries
+- **Next Steps Guidance**: Clear instructions for building and integrating Rust libraries
+
+#### **Comprehensive Documentation**
+- **New iOS Module Documentation**: Complete `docs/modules/ios.md` with all iOS commands
+- **Rust Module Updates**: Enhanced `docs/modules/rust.md` with iOS integration section
+- **User Guide Integration**: Updated workflow examples for iOS-Rust development
+- **Installation Guide Updates**: Cross-platform setup instructions
+
+### 🔧 Improvements
+
+#### **Command Structure**
+- **Platform-Specific Commands**: `caddie ios:rust:setup` pattern for platform-specific Rust setup
+- **Extensible Design**: Foundation for future `caddie watchos:rust:setup` and `caddie android:rust:setup`
+- **Consistent CLI**: Maintains existing caddie command patterns and help system
+
+#### **Developer Experience**
+- **One-Command Setup**: Complete iOS Rust environment setup with single command
+- **Clear Feedback**: Professional CLI output with status indicators and next steps
+- **Error Handling**: Graceful handling of missing dependencies and validation failures
+- **Tab Completion**: Full integration with existing caddie completion system
+
+#### **Documentation Quality**
+- **Static Documentation**: Comprehensive markdown documentation for all new features
+- **Help Integration**: Complete help system integration with examples
+- **Cross-Reference**: Proper linking between iOS and Rust module documentation
+
+### 🎯 Use Cases
+
+#### **iOS Development with Rust**
+```bash
+# Setup complete iOS Rust environment
+caddie ios:rust:setup
+
+# Build Rust library for iOS
+cargo build --target aarch64-apple-ios --release --lib
+
+# Create iOS framework structure
+# ... integrate with iOS project ...
+
+# Build iOS project with Rust library
+caddie ios:build
+```
+
+#### **Cross-Platform Development Workflow**
+- **Swift Applications**: Consume Rust libraries for performance-critical components
+- **Framework Development**: Create iOS frameworks with Rust backend
+- **Performance Optimization**: Leverage Rust's performance for iOS applications
+- **Code Sharing**: Share business logic between iOS and other platforms
+
+### 📦 Technical Details
+
+#### **Rust Targets Added**
+- `aarch64-apple-ios` - ARM64 for iOS devices
+- `x86_64-apple-ios` - x86_64 for iOS Simulator
+
+#### **Cargo Tools Installed**
+- `cargo-edit` - Dependency management
+- `cargo-watch` - Development workflow
+- `cargo-tarpaulin` - Code coverage
+
+#### **Environment Validation**
+- Xcode installation and version
+- Swift availability and version
+- Rust installation and toolchain
+- iOS SDK accessibility
+
+---
+
 ## Version 1.1 - CLI Enhancement Release
 
 **Release Date:** September 3, 2025
@@ -109,6 +194,7 @@
 
 | Version | Date | Description |
 |---------|------|-------------|
+| 1.2 | Dec 2025 | Cross-Platform Rust Integration Release - iOS Rust setup, comprehensive documentation |
 | 1.1 | Dec 2025 | CLI Enhancement Release - Rich formatting, UTF-8 icons, consistent output |
 | 1.0 | Nov 2025 | Initial Release - Core functionality, language modules, productivity features |
 
@@ -116,11 +202,11 @@
 
 ## Upcoming Features
 
-### Planned for Version 1.2
+### Planned for Version 1.3
+- **WatchOS Rust Integration**: `caddie watchos:rust:setup` for WatchOS development
+- **Android Rust Integration**: `caddie android:rust:setup` for Android development
 - **Plugin System**: Third-party module support
 - **Configuration Management**: User-configurable settings
-- **Cloud Integration**: Remote development environment support
-- **Performance Monitoring**: Built-in performance tracking
 
 ### Future Roadmap
 - **GUI Interface**: Optional graphical interface
