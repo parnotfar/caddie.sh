@@ -11,6 +11,9 @@ environment.  Using a common language for tooling is a powerful multiplier for y
 as your personal caddie on the golf course of development - always ready with the right tools, environment setup, and
 shortcuts to make your coding experience smooth and efficient.
 
+📋 **[Release Notes](RELEASE_NOTES.md)** - See what's new in the latest version
+
+
 ## Features
 
 - **One-Command Setup**: Complete development environment installation in minutes
