@@ -13,6 +13,9 @@ function caddie_help() {
     echo "  home                     Home directory management"
     echo "  aliases                  Alias search and management"
     
+    echo "Navigation:"
+    echo "  go:home                  Navigate to caddie home directory"
+    
     echo "Available modules:"
     for m in $(caddie_modules_get); do
         description_function="caddie_${m}_description"
@@ -68,6 +71,13 @@ function caddie() {
             ;;
     esac
     
+    # Handle special case: go:home command
+    if [[ "$command" == "go:home" ]]; then
+        caddie_debug "Special case: go:home command, calling caddie_core_go_home"
+        caddie_core_go_home "$@"
+        return 0
+    fi
+    
     # Use naming convention: module:command -> caddie_module_command
     local function_name="caddie_${command//:/_}"
     
@@ -100,7 +110,7 @@ _caddie_completion() {
   fi
 
   # Build a flat list of all accepted commands
-  local base_opts="help version --help -h --version -v"
+  local base_opts="help version go:home --help -h --version -v"
   local modules=()
   
   if command -v caddie_modules_get >/dev/null 2>&1; then
@@ -128,7 +138,7 @@ _caddie_completion() {
         module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version"
         ;;
       core)
-        module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:go:home core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav"
+        module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav"
         ;;
       cursor)
         module_commands="$module_commands cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"

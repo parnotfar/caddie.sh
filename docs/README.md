@@ -48,7 +48,7 @@ caddie core:debug on
 caddie core:set:home ~/projects
 
 # Navigate to caddie home
-caddie core:go:home
+caddie go:home
 ```
 
 ### Module Help

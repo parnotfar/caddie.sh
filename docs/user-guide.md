@@ -99,7 +99,7 @@ caddie core:set:home ~/my-projects
 caddie core:get:home
 
 # Navigate to caddie home directory
-caddie core:go:home
+caddie go:home
 
 # Reset to default
 caddie core:reset:home
@@ -180,7 +180,7 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie core:go:home` to quickly navigate to your caddie home directory!
+> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie go:home` to quickly navigate to your caddie home directory!
 
 ## Module Usage
 

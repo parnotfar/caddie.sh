@@ -97,7 +97,7 @@ ag git          # or: caddie core:alias:grep git
 ag docker       # or: caddie core:alias:grep docker
 
 # Navigate to caddie home
-caddie core:go:home
+caddie go:home
 
 # Common shortcuts
 g              # git
@@ -156,7 +156,7 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie core:go:home` to quickly navigate to your caddie home directory!
+> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie go:home` to quickly navigate to your caddie home directory!
 
 ## Use Cases
 
