@@ -3,203 +3,204 @@
 # Caddie.sh - Cross-Language Features
 # This file contains cross-language development functions
 
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
 # Function to show all environment status
 function caddie_cross_env_status() {
-    echo "Development Environment Status"
-    echo "============================="
-    echo ""
+    caddie cli:title "Development Environment Status"
+    caddie cli:blank
     
     # Python status
-    echo "Python:"
+    caddie cli:snake "Python:"
     if command -v python3 >/dev/null 2>&1; then
-        echo "  ✓ Python $(python3 --version | cut -d' ' -f2)"
+        caddie cli:check "Python $(python3 --version | cut -d' ' -f2)"
         if command -v pip >/dev/null 2>&1; then
-            echo "  ✓ pip $(pip --version | cut -d' ' -f2)"
+            caddie cli:check "pip $(pip --version | cut -d' ' -f2)"
         fi
         if [ -n "$VIRTUAL_ENV" ]; then
-            echo "  ✓ Virtual environment: $(basename "$VIRTUAL_ENV")"
+            caddie cli:check "Virtual environment: $(basename "$VIRTUAL_ENV")"
         fi
     else
-        echo "  ✗ Python not found"
+        caddie cli:x "Python not found"
     fi
-    echo ""
+    caddie cli:blank
     
     # Rust status
-    echo "Rust:"
+    caddie cli:crab "Rust:"
     if command -v rustc >/dev/null 2>&1; then
-        echo "  ✓ Rust $(rustc --version | cut -d' ' -f2)"
+        caddie cli:check "Rust $(rustc --version | cut -d' ' -f2)"
         if command -v cargo >/dev/null 2>&1; then
-            echo "  ✓ Cargo $(cargo --version | cut -d' ' -f2)"
+            caddie cli:check "Cargo $(cargo --version | cut -d' ' -f2)"
         fi
     else
-        echo "  ✗ Rust not found"
+        caddie cli:x "Rust not found"
     fi
-    echo ""
+    caddie cli:blank
     
     # Node.js status
-    echo "Node.js:"
+    caddie cli:package "Node.js:"
     if command -v node >/dev/null 2>&1; then
-        echo "  ✓ Node.js $(node --version)"
+        caddie cli:check "Node.js $(node --version)"
         if command -v npm >/dev/null 2>&1; then
-            echo "  ✓ npm $(npm --version)"
+            caddie cli:check "npm $(npm --version)"
         fi
     else
-        echo "  ✗ Node.js not found"
+        caddie cli:x "Node.js not found"
     fi
-    echo ""
+    caddie cli:blank
     
     # iOS status
-    echo "iOS Development:"
+    caddie cli:rocket "iOS Development:"
     if command -v xcodebuild >/dev/null 2>&1; then
-        echo "  ✓ Xcode $(xcodebuild -version | head -n1 | cut -d' ' -f2)"
+        caddie cli:check "Xcode $(xcodebuild -version | head -n1 | cut -d' ' -f2)"
         if command -v swift >/dev/null 2>&1; then
-            echo "  ✓ Swift $(swift --version | head -n1 | cut -d' ' -f3)"
+            caddie cli:check "Swift $(swift --version | head -n1 | cut -d' ' -f3)"
         fi
         if command -v pod >/dev/null 2>&1; then
-            echo "  ✓ CocoaPods $(pod --version)"
+            caddie cli:check "CocoaPods $(pod --version)"
         fi
     else
-        echo "  ✗ Xcode not found"
+        caddie cli:x "Xcode not found"
     fi
-    echo ""
+    caddie cli:blank
     
     # Git status
-    echo "Git:"
+    caddie cli:git "Git:"
     if command -v git >/dev/null 2>&1; then
-        echo "  ✓ Git $(git --version | cut -d' ' -f3)"
+        caddie cli:check "Git $(git --version | cut -d' ' -f3)"
     else
-        echo "  ✗ Git not found"
+        caddie cli:x "Git not found"
     fi
-    echo ""
+    caddie cli:blank
     
     # Docker status
-    echo "Docker:"
+    caddie cli:whale "Docker:"
     if command -v docker >/dev/null 2>&1; then
-        echo "  ✓ Docker $(docker --version | cut -d' ' -f3 | cut -d',' -f1)"
+        caddie cli:check "Docker $(docker --version | cut -d' ' -f3 | cut -d',' -f1)"
     else
-        echo "  ✗ Docker not found"
+        caddie cli:x "Docker not found"
     fi
 }
 
 # Function to setup development environment
 function caddie_cross_env_setup() {
-    echo "Setting up development environment..."
+    caddie cli:title "Setting up development environment..."
     
     # Check for Homebrew
     if ! command -v brew >/dev/null 2>&1; then
-        echo "Installing Homebrew..."
+        caddie cli:beer "Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
     
     # Update Homebrew
-    echo "Updating Homebrew..."
+    caddie cli:rotate "Updating Homebrew..."
     brew update
     
     # Install common development tools
-    echo "Installing development tools..."
+    caddie cli:wrench "Installing development tools..."
     brew install git python3 node rust
     
     # Install Python virtualenv
-    echo "Installing Python virtualenv..."
+    caddie cli:snake "Installing Python virtualenv..."
     pip3 install virtualenv
     
     # Install Node.js tools
-    echo "Installing Node.js tools..."
+    caddie cli:package "Installing Node.js tools..."
     npm install -g npm@latest
     
-    echo "✓ Development environment setup complete"
+    caddie cli:check "Development environment setup complete"
 }
 
 # Function to reset all environments
 function caddie_cross_env_reset() {
-    echo "Resetting all development environments..."
+    caddie cli:title "Resetting all development environments..."
     
     # Deactivate Python virtual environment
     if [ -n "$VIRTUAL_ENV" ]; then
-        echo "Deactivating Python virtual environment..."
+        caddie cli:snake "Deactivating Python virtual environment..."
         deactivate
     fi
     
     # Clean Rust build artifacts
     if [ -f "Cargo.toml" ]; then
-        echo "Cleaning Rust build artifacts..."
+        caddie cli:crab "Cleaning Rust build artifacts..."
         cargo clean
     fi
     
     # Clean Node.js node_modules
     if [ -f "package.json" ]; then
-        echo "Removing Node.js dependencies..."
+        caddie cli:package "Removing Node.js dependencies..."
         rm -rf node_modules/
     fi
     
     # Clean iOS build artifacts
     if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
-        echo "Cleaning iOS build artifacts..."
+        caddie cli:rocket "Cleaning iOS build artifacts..."
         rm -rf build/
     fi
     
-    echo "✓ All environments reset"
+    caddie cli:check "All environments reset"
 }
 
 # Function to backup current configurations
 function caddie_cross_env_backup() {
     local backup_dir="$HOME/.caddie-backups/$(date +%Y%m%d_%H%M%S)"
     
-    echo "Creating backup in $backup_dir..."
+    caddie cli:save "Creating backup in $backup_dir..."
     mkdir -p "$backup_dir"
     
     # Backup Python virtual environments
     if [ -d "$HOME/.virtualenvs" ]; then
-        echo "Backing up Python virtual environments..."
+        caddie cli:snake "Backing up Python virtual environments..."
         cp -r "$HOME/.virtualenvs" "$backup_dir/"
     fi
     
     # Backup Rust toolchain
     if [ -d "$HOME/.rustup" ]; then
-        echo "Backing up Rust toolchain..."
+        caddie cli:crab "Backing up Rust toolchain..."
         cp -r "$HOME/.rustup" "$backup_dir/"
     fi
     
     # Backup Node.js global packages
     if command -v npm >/dev/null 2>&1; then
-        echo "Backing up Node.js global packages..."
+        caddie cli:package "Backing up Node.js global packages..."
         npm list -g --depth=0 > "$backup_dir/npm-global-packages.txt"
     fi
     
     # Backup shell configurations
-    echo "Backing up shell configurations..."
+    caddie cli:folder "Backing up shell configurations..."
     cp "$HOME/.bashrc" "$backup_dir/" 2>/dev/null || true
     cp "$HOME/.bash_profile" "$backup_dir/" 2>/dev/null || true
     cp "$HOME/.zshrc" "$backup_dir/" 2>/dev/null || true
     
-    echo "✓ Backup created: $backup_dir"
+    caddie cli:check "Backup created: $backup_dir"
 }
 
 # Function to list available templates
 function caddie_cross_template_list() {
-    echo "Available Project Templates"
-    echo "=========================="
-    echo ""
-    echo "Web Development:"
-    echo "  web          - Full-stack web application"
-    echo "  api          - REST API with documentation"
-    echo ""
-    echo "Mobile Development:"
-    echo "  mobile       - Cross-platform mobile app"
-    echo "  app          - iOS app"
-    echo "  framework    - iOS framework"
-    echo "  extension    - iOS app extension"
-    echo ""
-    echo "Data & ML:"
-    echo "  data         - Data analysis project"
-    echo "  ml           - Machine learning project"
-    echo ""
-    echo "General:"
-    echo "  cli          - Command-line tool"
-    echo "  lib          - Library/package"
-    echo "  wasm         - WebAssembly project"
-    echo ""
-    echo "Usage: caddie template:create <type> <name>"
+    caddie cli:title "Available Project Templates"
+    caddie cli:blank
+    caddie cli:title "Web Development:"
+    caddie cli:indent "web          - Full-stack web application"
+    caddie cli:indent "api          - REST API with documentation"
+    caddie cli:blank
+    caddie cli:title "Mobile Development:"
+    caddie cli:indent "mobile       - Cross-platform mobile app"
+    caddie cli:indent "app          - iOS app"
+    caddie cli:indent "framework    - iOS framework"
+    caddie cli:indent "extension    - iOS app extension"
+    caddie cli:blank
+    caddie cli:title "Data & ML:"
+    caddie cli:indent "data         - Data analysis project"
+    caddie cli:indent "ml           - Machine learning project"
+    caddie cli:blank
+    caddie cli:title "General:"
+    caddie cli:indent "cli          - Command-line tool"
+    caddie cli:indent "lib          - Library/package"
+    caddie cli:indent "wasm         - WebAssembly project"
+    caddie cli:blank
+    caddie cli:usage "caddie template:create <type> <name>"
 }
 
 # Function to create project from template
@@ -208,18 +209,18 @@ function caddie_cross_template_create() {
     local project_name="$2"
     
     if [ -z "$template_type" ] || [ -z "$project_name" ]; then
-        echo "Error: Please provide template type and project name"
-        echo "Usage: caddie template:create <type> <name>"
-        echo "Use 'caddie template:list' to see available templates"
+        caddie cli:red "Error: Please provide template type and project name"
+        caddie cli:usage "caddie template:create <type> <name>"
+        caddie cli:thought "Use 'caddie template:list' to see available templates"
         return 1
     fi
     
     if [ -d "$project_name" ]; then
-        echo "Error: Directory '$project_name' already exists"
+        caddie cli:red "Error: Directory '$project_name' already exists"
         return 1
     fi
     
-    echo "Creating $template_type project '$project_name'..."
+    caddie cli:title "Creating $template_type project '$project_name'..."
     
     case "$template_type" in
         "web")
@@ -256,8 +257,8 @@ function caddie_cross_template_create() {
             caddie_cross_template_wasm "$project_name"
             ;;
         *)
-            echo "Error: Unknown template type '$template_type'"
-            echo "Use 'caddie template:list' to see available templates"
+            caddie cli:red "Error: Unknown template type '$template_type'"
+            caddie cli:thought "Use 'caddie template:list' to see available templates"
             return 1
             ;;
     esac
@@ -652,62 +653,62 @@ EOF
 
 # Build functions
 function caddie_cross_build_all() {
-    echo "Building all projects..."
+    caddie cli:title "Building all projects..."
     
     # Build Python
     if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
-        echo "Building Python project..."
+        caddie cli:snake "Building Python project..."
         caddie_cross_build_python
     fi
     
     # Build Rust
     if [ -f "Cargo.toml" ]; then
-        echo "Building Rust project..."
+        caddie cli:crab "Building Rust project..."
         caddie_cross_build_rust
     fi
     
     # Build iOS
     if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
-        echo "Building iOS project..."
+        caddie cli:rocket "Building iOS project..."
         caddie_cross_build_ios
     fi
     
-    echo "✓ All projects built"
+    caddie cli:check "All projects built"
 }
 
 function caddie_cross_build_python() {
     if [ -f "setup.py" ]; then
-        echo "Building Python package..."
+        caddie cli:snake "Building Python package..."
         python setup.py build
     elif [ -f "pyproject.toml" ]; then
-        echo "Building Python package with build..."
+        caddie cli:snake "Building Python package with build..."
         python -m build
     else
-        echo "No Python build configuration found"
+        caddie cli:warning "No Python build configuration found"
     fi
 }
 
 function caddie_cross_build_rust() {
     if [ -f "Cargo.toml" ]; then
-        echo "Building Rust project..."
+        caddie cli:crab "Building Rust project..."
         cargo build --release
     else
-        echo "No Rust project found"
+        caddie cli:warning "No Rust project found"
     fi
 }
 
 function caddie_cross_build_ios() {
     if [ -f "*.xcodeproj" ] || [ -f "*.xcworkspace" ]; then
-        echo "Building iOS project..."
-        echo "iOS build functionality not yet implemented"
+        caddie cli:rocket "Building iOS project..."
+        caddie cli:warning "iOS build functionality not yet implemented"
     else
-        echo "No iOS project found"
+        caddie cli:warning "No iOS project found"
     fi
 }
 
 # Deployment functions
 function caddie_cross_deploy_docker() {
-    echo "Creating Docker deployment setup..."
+    caddie cli:whale "Creating Docker deployment setup..."
     
     # Create Dockerfile
     cat > Dockerfile << EOF
@@ -741,11 +742,11 @@ services:
       - /app/node_modules
 EOF
     
-    echo "✓ Docker deployment setup created"
+    caddie cli:check "Docker deployment setup created"
 }
 
 function caddie_cross_deploy_local() {
-    echo "Setting up local deployment..."
+    caddie cli:folder "Setting up local deployment..."
     
     # Create deployment script
     cat > deploy.sh << 'EOF'
@@ -762,55 +763,58 @@ EOF
     
     chmod +x deploy.sh
     
-    echo "✓ Local deployment setup created"
+    caddie cli:check "Local deployment setup created"
 }
 
 # Tools functions
 function caddie_cross_tools_install() {
-    echo "Installing development tools..."
+    caddie cli:wrench "Installing development tools..."
     
     # Install common tools
     if command -v brew >/dev/null 2>&1; then
+        caddie cli:beer "Installing common tools..."
         brew install git-lfs pre-commit
     fi
     
     # Install Node.js tools
     if command -v npm >/dev/null 2>&1; then
+        caddie cli:package "Installing Node.js tools..."
         npm install -g eslint prettier jest
     fi
     
     # Install Python tools
     if command -v pip3 >/dev/null 2>&1; then
+        caddie cli:snake "Installing Python tools..."
         pip3 install black flake8 mypy pytest
     fi
     
-    echo "✓ Development tools installed"
+    caddie cli:check "Development tools installed"
 }
 
 function caddie_cross_tools_setup() {
-    echo "Setting up development tools..."
+    caddie cli:wrench "Setting up development tools..."
     
     # Setup git hooks
     if [ -d ".git" ]; then
-        echo "Setting up git hooks..."
+        caddie cli:git "Setting up git hooks..."
         pre-commit install
     fi
     
     # Setup linting
     if [ -f "package.json" ]; then
-        echo "Setting up Node.js linting..."
+        caddie cli:package "Setting up Node.js linting..."
         npm install --save-dev eslint prettier
     fi
     
-    echo "✓ Development tools setup complete"
+    caddie cli:check "Development tools setup complete"
 }
 
 function caddie_cross_tools_lint() {
-    echo "Running all linters..."
+    caddie cli:magnifying_glass "Running all linters..."
     
     # Python linting
     if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
-        echo "Running Python linters..."
+        caddie cli:snake "Running Python linters..."
         if command -v flake8 >/dev/null 2>&1; then
             flake8 src/ tests/
         fi
@@ -821,21 +825,21 @@ function caddie_cross_tools_lint() {
     
     # Node.js linting
     if [ -f "package.json" ]; then
-        echo "Running Node.js linters..."
+        caddie cli:package "Running Node.js linters..."
         if command -v eslint >/dev/null 2>&1; then
             eslint src/ tests/
         fi
     fi
     
-    echo "✓ All linters completed"
+    caddie cli:check "All linters completed"
 }
 
 function caddie_cross_tools_format() {
-    echo "Formatting all code..."
+    caddie cli:wrench "Formatting all code..."
     
     # Python formatting
     if [ -f "setup.py" ] || [ -f "pyproject.toml" ]; then
-        echo "Formatting Python code..."
+        caddie cli:snake "Formatting Python code..."
         if command -v black >/dev/null 2>&1; then
             black src/ tests/
         fi
@@ -843,65 +847,65 @@ function caddie_cross_tools_format() {
     
     # Node.js formatting
     if [ -f "package.json" ]; then
-        echo "Formatting Node.js code..."
+        caddie cli:package "Formatting Node.js code..."
         if command -v prettier >/dev/null 2>&1; then
             prettier --write src/ tests/
         fi
     fi
     
-    echo "✓ All code formatted"
+    caddie cli:check "All code formatted"
 }
 
 # Function to display cross-language module help
 caddie_cross_help() {
-    echo "Cross-Language Features & Templates"
-    echo "==================================="
-    echo ""
-    echo "Usage: caddie <command>"
-    echo ""
-    echo "Environment Management:"
-    echo "  env:status         Show all environment status"
-    echo "  env:setup          Setup development environment"
-    echo "  env:reset          Reset all environments"
-    echo "  env:backup         Backup current configurations"
-    echo ""
-    echo "Project Templates:"
-    echo "  template:list      List available templates"
-    echo "  template:create <type> <name>  Create from template"
-    echo ""
-    echo "Available Template Types:"
-    echo "  web                Full-stack web application"
-    echo "  api                REST API with documentation"
-    echo "  mobile             Cross-platform mobile app"
-    echo "  app                iOS app"
-    echo "  framework          iOS framework"
-    echo "  extension          iOS app extension"
-    echo "  data               Data analysis project"
-    echo "  ml                 Machine learning project"
-    echo "  cli                Command-line tool"
-    echo "  lib                Library/package"
-    echo "  wasm               WebAssembly project"
-    echo ""
-    echo "Build & Deploy:"
-    echo "  build:all          Build all projects"
-    echo "  build:python       Build Python package"
-    echo "  build:rust         Build Rust project"
-    echo "  build:ios          Build iOS project"
-    echo "  deploy:docker      Create Docker setup"
-    echo "  deploy:local       Local deployment"
-    echo ""
-    echo "Development Tools:"
-    echo "  tools:install      Install dev tools"
-    echo "  tools:setup        Setup git hooks, etc."
-    echo "  tools:lint         Run all linters"
-    echo "  tools:format       Format all code"
-    echo ""
-    echo "Examples:"
-    echo "  caddie template:create web myapp"
-    echo "  caddie template:create api myapi"
-    echo "  caddie env:status"
-    echo "  caddie build:all"
-    echo "  caddie tools:lint"
+    caddie cli:title "Cross-Language Features & Templates"
+    caddie cli:blank
+    caddie cli:usage "caddie <command>"
+    caddie cli:blank
+    caddie cli:title "Environment Management:"
+    caddie cli:indent "env:status         Show all environment status"
+    caddie cli:indent "env:setup          Setup development environment"
+    caddie cli:indent "env:reset          Reset all environments"
+    caddie cli:indent "env:backup         Backup current configurations"
+    caddie cli:blank
+    caddie cli:title "Project Templates:"
+    caddie cli:indent "template:list      List available templates"
+    caddie cli:indent "template:create <type> <name>  Create from template"
+    caddie cli:blank
+    caddie cli:title "Available Template Types:"
+    caddie cli:indent "web                Full-stack web application"
+    caddie cli:indent "api                REST API with documentation"
+    caddie cli:indent "mobile             Cross-platform mobile app"
+    caddie cli:indent "app                iOS app"
+    caddie cli:indent "framework          iOS framework"
+    caddie cli:indent "extension          iOS app extension"
+    caddie cli:indent "data               Data analysis project"
+    caddie cli:indent "ml                 Machine learning project"
+    caddie cli:indent "cli                Command-line tool"
+    caddie cli:indent "lib                Library/package"
+    caddie cli:indent "wasm               WebAssembly project"
+    caddie cli:blank
+    caddie cli:title "Build & Deploy:"
+    caddie cli:indent "build:all          Build all projects"
+    caddie cli:indent "build:python       Build Python package"
+    caddie cli:indent "build:rust         Build Rust project"
+    caddie cli:indent "build:ios          Build iOS project"
+    caddie cli:indent "deploy:docker      Create Docker setup"
+    caddie cli:indent "deploy:local       Local deployment"
+    caddie cli:blank
+    caddie cli:title "Development Tools:"
+    caddie cli:indent "tools:install      Install dev tools"
+    caddie cli:indent "tools:setup        Setup git hooks, etc."
+    caddie cli:indent "tools:lint         Run all linters"
+    caddie cli:indent "tools:format       Format all code"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie template:create web myapp"
+    caddie cli:indent "caddie template:create api myapi"
+    caddie cli:indent "caddie env:status"
+    caddie cli:indent "caddie build:all"
+    caddie cli:indent "caddie tools:lint"
+    caddie cli:blank
 }
 
 function caddie_cross_description() {

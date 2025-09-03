@@ -3,13 +3,15 @@
 # Caddie.sh - Rust Environment Management
 # This file contains all Rust-related functions
 
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
 function caddie_rust_load_env() {
     if [ -f "$HOME/.cargo/env" ]; then
         source "$HOME/.cargo/env"
     else
-        echo "Error: Rust environment not found at ~/.cargo/env"
-        echo "  Please install Rust first: https://rustup.rs/"
-
+        caddie cli:red "Error: Rust environment not found at ~/.cargo/env"
+        caddie cli:thought "Please install Rust first: https://rustup.rs/"
         return 1
     fi
 }
@@ -24,22 +26,22 @@ function caddie_rust_new() {
     local project_name="$1"
     
     if [ -z "$project_name" ]; then
-        echo "Error: Please provide a project name"
-        echo "Usage: caddie rust:new <name>"
+        caddie cli:red "Error: Please provide a project name"
+        caddie cli:usage "caddie rust:new <name>"
         return 1
     fi
     
     if [ -d "$project_name" ]; then
-        echo "Error: Directory '$project_name' already exists"
+        caddie cli:red "Error: Directory '$project_name' already exists"
         return 1
     fi
     
-    echo "Creating new Rust project '$project_name'..."
+    caddie cli:title "Creating new Rust project '$project_name'..."
     cargo new "$project_name"
-    echo "✓ Rust project '$project_name' created successfully"
-    echo "  Location: $(pwd)/$project_name"
-    echo "  Enter directory: cd $project_name"
-    echo "  Build project: caddie rust:build"
+    caddie cli:check "Rust project '$project_name' created successfully"
+    caddie cli:indent "Location: $(pwd)/$project_name"
+    caddie cli:indent "Enter directory: cd $project_name"
+    caddie cli:indent "Build project: caddie rust:build"
 }
 
 # Function to build current Rust project
@@ -47,13 +49,13 @@ function caddie_rust_build() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Building Rust project..."
+    caddie cli:title "Building Rust project..."
     cargo build
-    echo "✓ Rust project built successfully"
+    caddie cli:check "Rust project built successfully"
 }
 
 # Function to run current Rust project
@@ -61,13 +63,13 @@ function caddie_rust_run() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Running Rust project..."
+    caddie cli:title "Running Rust project..."
     cargo run
-    echo "✓ Rust project ran successfully"
+    caddie cli:check "Rust project ran successfully"
 }
 
 # Function to run Rust tests
@@ -75,13 +77,13 @@ function caddie_rust_test() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Running Rust tests..."
+    caddie cli:title "Running Rust tests..."
     cargo test
-    echo "✓ Rust tests completed successfully"
+    caddie cli:check "Rust tests completed successfully"
 }
 
 # Function to check Rust project without building
@@ -89,13 +91,13 @@ function caddie_rust_check() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Checking Rust project..."
+    caddie cli:title "Checking Rust project..."
     cargo check
-    echo "✓ Rust project check passed"
+    caddie cli:check "Rust project check passed"
 }
 
 # Function to clean Rust build artifacts
@@ -103,13 +105,13 @@ function caddie_rust_clean() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Cleaning Rust build artifacts..."
+    caddie cli:title "Cleaning Rust build artifacts..."
     cargo clean
-    echo "✓ Rust build artifacts cleaned"
+    caddie cli:check "Rust build artifacts cleaned"
 }
 
 # Function to update Rust dependencies
@@ -117,13 +119,13 @@ function caddie_rust_update() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Updating Rust dependencies..."
+    caddie cli:title "Updating Rust dependencies..."
     cargo update
-    echo "✓ Rust dependencies updated"
+    caddie cli:check "Rust dependencies updated"
 }
 
 # Function to add a Rust dependency
@@ -133,19 +135,19 @@ function caddie_rust_add() {
     local crate="$1"
     
     if [ -z "$crate" ]; then
-        echo "Error: Please provide a crate name"
-        echo "Usage: caddie rust:add <crate>"
+        caddie cli:red "Error: Please provide a crate name"
+        caddie cli:usage "caddie rust:add <crate>"
         return 1
     fi
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Adding dependency '$crate'..."
+    caddie cli:title "Adding dependency '$crate'..."
     cargo add "$crate"
-    echo "✓ Dependency '$crate' added successfully"
+    caddie cli:check "Dependency '$crate' added successfully"
 }
 
 # Function to remove a Rust dependency
@@ -155,19 +157,19 @@ function caddie_rust_remove() {
     local crate="$1"
     
     if [ -z "$crate" ]; then
-        echo "Error: Please provide a crate name"
-        echo "Usage: caddie rust:remove <crate>"
+        caddie cli:red "Error: Please provide a crate name"
+        caddie cli:usage "caddie rust:remove <crate>"
         return 1
     fi
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Removing dependency '$crate'..."
+    caddie cli:title "Removing dependency '$crate'..."
     cargo remove "$crate"
-    echo "✓ Dependency '$crate' removed successfully"
+    caddie cli:check "Dependency '$crate' removed successfully"
 }
 
 # Function to search crates.io
@@ -177,12 +179,12 @@ function caddie_rust_search() {
     local query="$1"
     
     if [ -z "$query" ]; then
-        echo "Error: Please provide a search query"
-        echo "Usage: caddie rust:search <query>"
+        caddie cli:red "Error: Please provide a search query"
+        caddie cli:usage "caddie rust:search <query>"
         return 1
     fi
     
-    echo "Searching crates.io for '$query'..."
+    caddie cli:title "Searching crates.io for '$query'..."
     cargo search "$query"
 }
 
@@ -191,17 +193,17 @@ function caddie_rust_outdated() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Checking for outdated Rust dependencies..."
+    caddie cli:title "Checking for outdated Rust dependencies..."
     
     # Try cargo-outdated if available, otherwise show current versions
     if command -v cargo-outdated >/dev/null 2>&1; then
         cargo outdated
     else
-        echo "Installing cargo-outdated for better outdated dependency checking..."
+        caddie cli:title "Installing cargo-outdated for better outdated dependency checking..."
         cargo install cargo-outdated
         cargo outdated
     fi
@@ -212,17 +214,17 @@ function caddie_rust_audit() {
     caddie_rust_load_env
     
     if [ ! -f "Cargo.toml" ]; then
-        echo "Error: Not in a Rust project directory (Cargo.toml not found)"
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
         return 1
     fi
     
-    echo "Running Rust security audit..."
+    caddie cli:title "Running Rust security audit..."
     
     # Try cargo-audit if available, otherwise install it
     if command -v cargo-audit >/dev/null 2>&1; then
         cargo audit
     else
-        echo "Installing cargo-audit for security auditing..."
+        caddie cli:title "Installing cargo-audit for security auditing..."
         cargo install cargo-audit
         cargo audit
     fi
@@ -235,16 +237,16 @@ function caddie_rust_toolchain() {
     local version="$1"
     
     if [ -z "$version" ]; then
-        echo "Error: Please provide a toolchain version"
-        echo "Usage: caddie rust:toolchain <version>"
-        echo "Examples: stable, beta, nightly, 1.70.0"
+        caddie cli:red "Error: Please provide a toolchain version"
+        caddie cli:usage "caddie rust:toolchain <version>"
+        caddie cli:thought "Examples: stable, beta, nightly, 1.70.0"
         return 1
     fi
     
-    echo "Switching to Rust toolchain '$version'..."
+    caddie cli:title "Switching to Rust toolchain '$version'..."
     rustup default "$version"
-    echo "✓ Switched to Rust toolchain '$version'"
-    echo "  Current version: $(rustc --version)"
+    caddie cli:check "Switched to Rust toolchain '$version'"
+    caddie cli:indent "Current version: $(rustc --version)"
 }
 
 # Function to add Rust compilation target
@@ -254,15 +256,15 @@ function caddie_rust_target() {
     local target="$1"
     
     if [ -z "$target" ]; then
-        echo "Error: Please provide a target"
-        echo "Usage: caddie rust:target <target>"
-        echo "Examples: x86_64-unknown-linux-gnu, aarch64-apple-darwin"
+        caddie cli:red "Error: Please provide a target"
+        caddie cli:usage "caddie rust:target <target>"
+        caddie cli:thought "Examples: x86_64-unknown-linux-gnu, aarch64-apple-darwin"
         return 1
     fi
     
-    echo "Adding Rust target '$target'..."
+    caddie cli:title "Adding Rust target '$target'..."
     rustup target add "$target"
-    echo "✓ Added Rust target '$target'"
+    caddie cli:check "Added Rust target '$target'"
 }
 
 # Function to install Rust component
@@ -272,51 +274,51 @@ function caddie_rust_component() {
     local component="$1"
     
     if [ -z "$component" ]; then
-        echo "Error: Please provide a component name"
-        echo "Usage: caddie rust:component <component>"
-        echo "Examples: clippy, rustfmt, rust-src"
+        caddie cli:red "Error: Please provide a component name"
+        caddie cli:usage "caddie rust:component <component>"
+        caddie cli:thought "Examples: clippy, rustfmt, rust-src"
         return 1
     fi
     
-    echo "Installing Rust component '$component'..."
+    caddie cli:title "Installing Rust component '$component'..."
     rustup component add "$component"
-    echo "✓ Installed Rust component '$component'"
+    caddie cli:check "Installed Rust component '$component'"
 }
 
 # Function to display Rust module help
 function caddie_rust_help() {
-    echo "Rust Development Tools"
-    echo "====================="
-    echo ""
-    echo "Usage: caddie rust:<command>"
-    echo ""
-    echo "Project Management:"
-    echo "  new <name>        Create new Rust project"
-    echo "  build             Build current project"
-    echo "  run               Run current project"
-    echo "  test              Run tests"
-    echo "  check             Check without building"
-    echo "  clean             Clean build artifacts"
-    echo ""
-    echo "Dependency Management:"
-    echo "  update            Update dependencies"
-    echo "  add <crate>       Add dependency to Cargo.toml"
-    echo "  remove <crate>    Remove dependency"
-    echo "  search <query>    Search crates.io"
-    echo "  outdated          Show outdated dependencies"
-    echo "  audit             Security audit"
-    echo ""
-    echo "Toolchain Management:"
-    echo "  toolchain <ver>   Switch toolchain (stable/beta/nightly)"
-    echo "  target <target>   Add compilation target"
-    echo "  component <comp>  Install component (clippy/rustfmt/etc)"
-    echo ""
-    echo "Examples:"
-    echo "  caddie rust:new myproject"
-    echo "  caddie rust:build"
-    echo "  caddie rust:add serde"
-    echo "  caddie rust:toolchain nightly"
-    echo "  caddie rust:component clippy"
+    caddie cli:title "Rust Development Tools"
+    caddie cli:blank
+    caddie cli:usage "caddie rust:<command>"
+    caddie cli:blank
+    caddie cli:title "Project Management:"
+    caddie cli:indent "new <name>        Create new Rust project"
+    caddie cli:indent "build             Build current project"
+    caddie cli:indent "run               Run current project"
+    caddie cli:indent "test              Run tests"
+    caddie cli:indent "check             Check without building"
+    caddie cli:indent "clean             Clean build artifacts"
+    caddie cli:blank
+    caddie cli:title "Dependency Management:"
+    caddie cli:indent "update            Update dependencies"
+    caddie cli:indent "add <crate>       Add dependency to Cargo.toml"
+    caddie cli:indent "remove <crate>    Remove dependency"
+    caddie cli:indent "search <query>    Search crates.io"
+    caddie cli:indent "outdated          Show outdated dependencies"
+    caddie cli:indent "audit             Security audit"
+    caddie cli:blank
+    caddie cli:title "Toolchain Management:"
+    caddie cli:indent "toolchain <ver>   Switch toolchain (stable/beta/nightly)"
+    caddie cli:indent "target <target>   Add compilation target"
+    caddie cli:indent "component <comp>  Install component (clippy/rustfmt/etc)"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie rust:new myproject"
+    caddie cli:indent "caddie rust:build"
+    caddie cli:indent "caddie rust:add serde"
+    caddie cli:indent "caddie rust:toolchain nightly"
+    caddie cli:indent "caddie rust:component clippy"
+    caddie cli:blank
 }
 
 function caddie_rust_description() {

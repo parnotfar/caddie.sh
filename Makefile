@@ -111,10 +111,6 @@ install-dot: backup-existing ## Install dot files to home directory
 	cp dot_caddie_modules "$(HOME_DIR)/.caddie_data/.caddie_modules"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_data/.caddie_modules"
 	
-	echo "$(YELLOW)  →$(NC) Installing caddie debug system..."
-	cp dot_caddie_debug "$(HOME_DIR)/.caddie_debug"
-	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_debug"
-	
 	echo "$(YELLOW)  →$(NC) Installing modular caddie files..."
 	mkdir -p "$(DEST_MODULES_DIR)"
 	echo "$(GREEN)    ✓$(NC) ~/.caddie_modules directory ready"
@@ -139,6 +135,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_git"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(DEST_MODULES_DIR)/.caddie_cli"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_debug"
 	
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"

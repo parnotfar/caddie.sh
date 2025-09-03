@@ -3,28 +3,31 @@
 # Caddie.sh - Python Environment Management
 # This file contains all Python-related functions
 
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
 # Function to create a new Python virtual environment
 function caddie_python_create() {
     local env_name="$1"
     
     if [ -z "$env_name" ]; then
-        echo "Error: Please provide a name for the virtual environment"
-        echo "Usage: caddie python:create <name>"
+        caddie cli:red "Error: Please provide a name for the virtual environment"
+        caddie cli:usage "caddie python:create <name>"
         return 1
     fi
     
     local env_path="$HOME/.virtualenvs/$env_name"
     
     if [ -d "$env_path" ]; then
-        echo "Error: Virtual environment '$env_name' already exists"
+        caddie cli:red "Error: Virtual environment '$env_name' already exists"
         return 1
     fi
     
-    echo "Creating virtual environment '$env_name'..."
+    caddie cli:title "Creating virtual environment '$env_name'..."
     python3 -m venv "$env_path"
-    echo "✓ Virtual environment '$env_name' created successfully"
-    echo "  Location: $env_path"
-    echo "  Activate with: caddie python:activate $env_name"
+    caddie cli:check "Virtual environment '$env_name' created successfully"
+    caddie cli:indent "Location: $env_path"
+    caddie cli:indent "Activate with: caddie python:activate $env_name"
 }
 
 # Function to activate a Python virtual environment
@@ -32,37 +35,37 @@ function caddie_python_activate() {
     local env_name="$1"
     
     if [ -z "$env_name" ]; then
-        echo "Error: Please provide a name for the virtual environment"
-        echo "Usage: caddie python:activate <name>"
+        caddie cli:red "Error: Please provide a name for the virtual environment"
+        caddie cli:usage "caddie python:activate <name>"
         return 1
     fi
     
     local env_path="$HOME/.virtualenvs/$env_name"
     
     if [ ! -d "$env_path" ]; then
-        echo "Error: Virtual environment '$env_name' does not exist"
-        echo "Create it with: caddie python:create $env_name"
+        caddie cli:red "Error: Virtual environment '$env_name' does not exist"
+        caddie cli:thought "Create it with: caddie python:create $env_name"
         return 1
     fi
     
-    echo "Activating virtual environment '$env_name'..."
+    caddie cli:title "Activating virtual environment '$env_name'..."
     # shellcheck disable=SC1091
     source "$env_path/bin/activate"
-    echo "✓ Virtual environment '$env_name' activated"
-    echo "  Python: $(which python)"
-    echo "  Pip: $(which pip)"
+    caddie cli:check "Virtual environment '$env_name' activated"
+    caddie cli:indent "Python: $(which python)"
+    caddie cli:indent "Pip: $(which pip)"
 }
 
 # Function to deactivate current Python virtual environment
 function caddie_python_deactivate() {
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "No virtual environment is currently active"
+        caddie cli:warning "No virtual environment is currently active"
         return 0
     fi
     
-    echo "Deactivating virtual environment..."
+    caddie cli:title "Deactivating virtual environment..."
     deactivate
-    echo "✓ Virtual environment deactivated"
+    caddie cli:check "Virtual environment deactivated"
 }
 
 # Function to list all Python virtual environments
@@ -70,22 +73,22 @@ function caddie_python_list() {
     local venv_dir="$HOME/.virtualenvs"
     
     if [ ! -d "$venv_dir" ]; then
-        echo "No virtual environments found"
-        echo "Create one with: caddie python:create <name>"
+        caddie cli:warning "No virtual environments found"
+        caddie cli:thought "Create one with: caddie python:create <name>"
         return 0
     fi
     
-    echo "Available Python virtual environments:"
-    echo "====================================="
+    caddie cli:title "Available Python virtual environments"
+    caddie cli:blank
     
     for env in "$venv_dir"/*; do
         if [ -d "$env" ]; then
             local env_name
             env_name=$(basename "$env")
             if [ "$env" = "$VIRTUAL_ENV" ]; then
-                echo "  ✓ $env_name (active)"
+                caddie cli:check "$env_name (active)"
             else
-                echo "    $env_name"
+                caddie cli:indent "$env_name"
             fi
         fi
     done
@@ -96,42 +99,42 @@ function caddie_python_remove() {
     local env_name="$1"
     
     if [ -z "$env_name" ]; then
-        echo "Error: Please provide a name for the virtual environment"
-        echo "Usage: caddie python:remove <name>"
+        caddie cli:red "Error: Please provide a name for the virtual environment"
+        caddie cli:usage "caddie python:remove <name>"
         return 1
     fi
     
     local env_path="$HOME/.virtualenvs/$env_name"
     
     if [ ! -d "$env_path" ]; then
-        echo "Error: Virtual environment '$env_name' does not exist"
+        caddie cli:red "Error: Virtual environment '$env_name' does not exist"
         return 1
     fi
     
     if [ "$env_path" = "$VIRTUAL_ENV" ]; then
-        echo "Error: Cannot remove currently active virtual environment"
-        echo "Deactivate it first with: caddie python:deactivate"
+        caddie cli:red "Error: Cannot remove currently active virtual environment"
+        caddie cli:thought "Deactivate it first with: caddie python:deactivate"
         return 1
     fi
     
-    echo "Removing virtual environment '$env_name'..."
+    caddie cli:title "Removing virtual environment '$env_name'..."
     rm -rf "$env_path"
-    echo "✓ Virtual environment '$env_name' removed successfully"
+    caddie cli:check "Virtual environment '$env_name' removed successfully"
 }
 
 # Function to show current Python environment
 function caddie_python_current() {
     if [ -n "$VIRTUAL_ENV" ]; then
-        echo "Current Python environment:"
-        echo "  Virtual Environment: $VIRTUAL_ENV"
-        echo "  Python: $(which python)"
-        echo "  Python Version: $(python --version)"
-        echo "  Pip: $(which pip)"
-        echo "  Pip Version: $(pip --version | cut -d' ' -f1-2)"
+        caddie cli:title "Current Python environment"
+        caddie cli:indent "Virtual Environment: $VIRTUAL_ENV"
+        caddie cli:indent "Python: $(which python)"
+        caddie cli:indent "Python Version: $(python --version)"
+        caddie cli:indent "Pip: $(which pip)"
+        caddie cli:indent "Pip Version: $(pip --version | cut -d' ' -f1-2)"
     else
-        echo "No virtual environment is currently active"
-        echo "System Python: $(which python3)"
-        echo "System Python Version: $(python3 --version)"
+        caddie cli:warning "No virtual environment is currently active"
+        caddie cli:indent "System Python: $(which python3)"
+        caddie cli:indent "System Python Version: $(python3 --version)"
     fi
 }
 
@@ -140,14 +143,14 @@ function caddie_python_install() {
     local package="$1"
     
     if [ -z "$package" ]; then
-        echo "Error: Please provide a package name"
-        echo "Usage: caddie python:install <package>"
+        caddie cli:red "Error: Please provide a package name"
+        caddie cli:usage "caddie python:install <package>"
         return 1
     fi
     
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
         read -p "Continue with system Python? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -155,9 +158,9 @@ function caddie_python_install() {
         fi
     fi
     
-    echo "Installing package '$package'..."
+    caddie cli:title "Installing package '$package'..."
     pip install "$package"
-    echo "✓ Package '$package' installed successfully"
+    caddie cli:check "Package '$package' installed successfully"
 }
 
 # Function to uninstall a Python package
@@ -165,14 +168,14 @@ function caddie_python_uninstall() {
     local package="$1"
     
     if [ -z "$package" ]; then
-        echo "Error: Please provide a package name"
-        echo "Usage: caddie python:uninstall <package>"
+        caddie cli:red "Error: Please provide a package name"
+        caddie cli:usage "caddie python:uninstall <package>"
         return 1
     fi
     
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
         read -p "Continue with system Python? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -180,16 +183,16 @@ function caddie_python_uninstall() {
         fi
     fi
     
-    echo "Uninstalling package '$package'..."
+    caddie cli:title "Uninstalling package '$package'..."
     pip uninstall -y "$package"
-    echo "✓ Package '$package' uninstalled successfully"
+    caddie cli:check "Package '$package' uninstalled successfully"
 }
 
 # Function to freeze current Python environment
 function caddie_python_freeze() {
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
         read -p "Continue with system Python? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -197,13 +200,13 @@ function caddie_python_freeze() {
         fi
     fi
     
-    echo "Generating requirements.txt..."
+    caddie cli:title "Generating requirements.txt..."
     
     if pip freeze > requirements.txt; then
-        echo "✓ requirements.txt generated successfully"
-        echo "  Packages: $(wc -l < requirements.txt)"
+        caddie cli:check "requirements.txt generated successfully"
+        caddie cli:indent "Packages: $(wc -l < requirements.txt)"
     else
-        echo "✗ Failed to generate requirements.txt"
+        caddie cli:x "Failed to generate requirements.txt"
         return 1
     fi
 }
@@ -211,13 +214,13 @@ function caddie_python_freeze() {
 # Function to sync Python environment from requirements.txt
 function caddie_python_sync() {
     if [ ! -f "requirements.txt" ]; then
-        echo "Error: requirements.txt not found in current directory"
+        caddie cli:red "Error: requirements.txt not found in current directory"
         return 1
     fi
     
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
         read -p "Continue with system Python? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -225,9 +228,9 @@ function caddie_python_sync() {
         fi
     fi
     
-    echo "Installing packages from requirements.txt..."
+    caddie cli:title "Installing packages from requirements.txt..."
     pip install -r requirements.txt
-    echo "✓ Packages installed successfully from requirements.txt"
+    caddie cli:check "Packages installed successfully from requirements.txt"
 }
 
 # Function to upgrade a Python package
@@ -235,14 +238,14 @@ function caddie_python_upgrade() {
     local package="$1"
     
     if [ -z "$package" ]; then
-        echo "Error: Please provide a package name"
-        echo "Usage: caddie python:upgrade <package>"
+        caddie cli:red "Error: Please provide a package name"
+        caddie cli:usage "caddie python:upgrade <package>"
         return 1
     fi
     
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
         read -p "Continue with system Python? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -250,16 +253,16 @@ function caddie_python_upgrade() {
         fi
     fi
     
-    echo "Upgrading package '$package'..."
+    caddie cli:title "Upgrading package '$package'..."
     pip install --upgrade "$package"
-    echo "✓ Package '$package' upgraded successfully"
+    caddie cli:check "Package '$package' upgraded successfully"
 }
 
 # Function to show outdated Python packages
 function caddie_python_outdated() {
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
         read -p "Continue with system Python? (y/N): " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -267,13 +270,13 @@ function caddie_python_outdated() {
         fi
     fi
     
-    echo "Checking for outdated packages..."
+    caddie cli:title "Checking for outdated packages..."
     pip list --outdated
 }
 
 # Function to initialize Python project structure
 function caddie_python_init() {
-    echo "Initializing Python project structure..."
+    caddie cli:title "Initializing Python project structure..."
     
     # Create basic project structure
     mkdir -p src tests docs
@@ -350,18 +353,18 @@ setup(
 EOF
     fi
     
-    echo "✓ Python project structure initialized"
-    echo "  Created: src/, tests/, docs/, README.md, .gitignore, setup.py"
+    caddie cli:check "Python project structure initialized"
+    caddie cli:indent "Created: src/, tests/, docs/, README.md, .gitignore, setup.py"
 }
 
 # Function to run Python tests
 function caddie_python_test() {
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
     fi
     
-    echo "Running Python tests..."
+    caddie cli:title "Running Python tests..."
     
     # Try pytest first, then unittest
     if command -v pytest >/dev/null 2>&1; then
@@ -369,7 +372,7 @@ function caddie_python_test() {
     elif [ -d "tests" ]; then
         python -m unittest discover tests
     else
-        echo "No tests found. Create tests in the 'tests' directory"
+        caddie cli:warning "No tests found. Create tests in the 'tests' directory"
         return 1
     fi
 }
@@ -377,11 +380,11 @@ function caddie_python_test() {
 # Function to run Python linting
 function caddie_python_lint() {
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
     fi
     
-    echo "Running Python linting..."
+    caddie cli:title "Running Python linting..."
     
     # Try flake8 first, then pylint
     if command -v flake8 >/dev/null 2>&1; then
@@ -389,7 +392,7 @@ function caddie_python_lint() {
     elif command -v pylint >/dev/null 2>&1; then
         pylint src/ tests/
     else
-        echo "No linter found. Install flake8 or pylint"
+        caddie cli:warning "No linter found. Install flake8 or pylint"
         return 1
     fi
 }
@@ -397,11 +400,11 @@ function caddie_python_lint() {
 # Function to format Python code
 function caddie_python_format() {
     if [ -z "$VIRTUAL_ENV" ]; then
-        echo "Warning: No virtual environment is active"
-        echo "Consider activating one with: caddie python:activate <name>"
+        caddie cli:warning "No virtual environment is active"
+        caddie cli:thought "Consider activating one with: caddie python:activate <name>"
     fi
     
-    echo "Formatting Python code..."
+    caddie cli:title "Formatting Python code..."
     
     # Try black first, then autopep8
     if command -v black >/dev/null 2>&1; then
@@ -409,7 +412,7 @@ function caddie_python_format() {
     elif command -v autopep8 >/dev/null 2>&1; then
         autopep8 --in-place --recursive src/ tests/
     else
-        echo "No formatter found. Install black or autopep8"
+        caddie cli:warning "No formatter found. Install black or autopep8"
         return 1
     fi
 }
@@ -420,39 +423,39 @@ function caddie_python_description() {
 
 # Function to display Python module help
 function caddie_python_help() {
-    echo "Python Environment Management"
-    echo "============================"
-    echo ""
-    echo "Usage: caddie python:<command>"
-    echo ""
-    echo "Virtual Environment Management:"
-    echo "  create <name>     Create new virtual environment"
-    echo "  activate <name>   Activate environment"
-    echo "  deactivate        Deactivate current environment"
-    echo "  list              List all environments"
-    echo "  remove <name>     Remove environment"
-    echo "  current           Show current environment"
-    echo ""
-    echo "Package Management:"
-    echo "  install <pkg>     Install package in current env"
-    echo "  uninstall <pkg>   Uninstall package"
-    echo "  freeze            Generate requirements.txt"
-    echo "  sync              Install from requirements.txt"
-    echo "  upgrade <pkg>     Upgrade specific package"
-    echo "  outdated          Show outdated packages"
-    echo ""
-    echo "Project Management:"
-    echo "  init              Initialize Python project structure"
-    echo "  test              Run tests"
-    echo "  lint              Run linting"
-    echo "  format            Format code"
-    echo ""
-    echo "Examples:"
-    echo "  caddie python:create myenv"
-    echo "  caddie python:activate myenv"
-    echo "  caddie python:install requests"
-    echo "  caddie python:freeze"
-    echo "  caddie python:init"
+    caddie cli:title "Python Environment Management"
+    caddie cli:blank
+    caddie cli:usage "caddie python:<command>"
+    caddie cli:blank
+    caddie cli:title "Virtual Environment Management:"
+    caddie cli:indent "create <name>     Create new virtual environment"
+    caddie cli:indent "activate <name>   Activate environment"
+    caddie cli:indent "deactivate        Deactivate current environment"
+    caddie cli:indent "list              List all environments"
+    caddie cli:indent "remove <name>     Remove environment"
+    caddie cli:indent "current           Show current environment"
+    caddie cli:blank
+    caddie cli:title "Package Management:"
+    caddie cli:indent "install <pkg>     Install package in current env"
+    caddie cli:indent "uninstall <pkg>   Uninstall package"
+    caddie cli:indent "freeze            Generate requirements.txt"
+    caddie cli:indent "sync              Install from requirements.txt"
+    caddie cli:indent "upgrade <pkg>     Upgrade specific package"
+    caddie cli:indent "outdated          Show outdated packages"
+    caddie cli:blank
+    caddie cli:title "Project Management:"
+    caddie cli:indent "init              Initialize Python project structure"
+    caddie cli:indent "test              Run tests"
+    caddie cli:indent "lint              Run linting"
+    caddie cli:indent "format            Format code"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie python:create myenv"
+    caddie cli:indent "caddie python:activate myenv"
+    caddie cli:indent "caddie python:install requests"
+    caddie cli:indent "caddie python:freeze"
+    caddie cli:indent "caddie python:init"
+    caddie cli:blank
 }
 
 # Export Python functions

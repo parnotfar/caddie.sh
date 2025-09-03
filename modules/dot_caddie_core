@@ -11,8 +11,8 @@ function caddie_core_set_home() {
     local path="$1"
     
     if [ -z "$path" ]; then
-        echo "Error: Please provide a path for caddie home"
-        echo "Usage: caddie core:set:home <path>"
+        caddie cli:red "Error: Please provide a path for caddie home"
+        caddie cli:usage "caddie core:set:home <path>"
         return 1
     fi
     
@@ -21,7 +21,7 @@ function caddie_core_set_home() {
     
     # Check if the path exists
     if [ ! -d "$expanded_path" ]; then
-        echo "Error: Directory '$expanded_path' does not exist"
+        caddie cli:red "Error: Directory '$expanded_path' does not exist"
         return 1
     fi
     
@@ -33,7 +33,7 @@ function caddie_core_set_home() {
     
     export CADDIE_HOME="$absolute_path"
     
-    echo "✓ Caddie home directory set to: $absolute_path"
+    caddie cli:check "Caddie home directory set to: $absolute_path"
 }
 
 # Function to get the caddie home directory
@@ -41,9 +41,9 @@ function caddie_core_get_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
         local caddie_home=$(cat "$CADDIE_HOME_FILE")
 
-        echo "Current caddie home: $caddie_home"
+        caddie cli:green "Current caddie home: $caddie_home"
     else
-        echo "No caddie home directory was set"
+        caddie cli:red "No caddie home directory was set"
     fi
 }
 
@@ -52,9 +52,9 @@ function caddie_core_reset_home() {
     if [ -f "$CADDIE_HOME_FILE" ]; then
         rm "$CADDIE_HOME_FILE"
         unset CADDIE_HOME
-        echo "✓ Caddie home directory has been reset"
+        caddie cli:check "Caddie home directory has been reset"
     else
-        echo "No caddie home directory was set"
+        caddie cli:red "No caddie home directory was set"
     fi
 }
 
@@ -65,14 +65,14 @@ function caddie_core_go_home() {
         
         if [ -d "$caddie_home" ]; then
             cd "$caddie_home"
-            echo "✓ Navigated to caddie home: $caddie_home"
+            caddie cli:check "Navigated to caddie home: $caddie_home"
         else
-            echo "Error: Caddie home directory '$caddie_home' does not exist"
+            caddie cli:red "Error: Caddie home directory '$caddie_home' does not exist"
             return 1
         fi
     else
-        echo "Error: No caddie home directory was set"
-        echo "Use 'caddie core:set:home <path>' to set a home directory"
+        caddie cli:red "Error: No caddie home directory was set"
+        caddie cli:usage "caddie core:set:home <path> to set a home directory"
         return 1
     fi
 }
@@ -84,214 +84,205 @@ function caddie_core_debug() {
     case "$action" in
         "on")
             caddie_debug_on
-            echo "✓ Debug mode enabled"
             ;;
         "off")
             caddie_debug_off
-            echo "✓ Debug mode disabled"
-            ;;
-        "toggle")
-            caddie_debug_toggle
-            echo "✓ Debug mode toggled to: $(caddie_debug_status)"
             ;;
         "status")
-            echo "Debug mode is: $(caddie_debug_status)"
+            caddie_debug_status
             ;;
         *)
-            echo "Error: Invalid debug action '$action'"
-            echo "Usage: caddie core:debug <on|off|toggle|status>"
+            caddie cli:red "Error: Invalid debug action '$action'"
+            caddie cli:usage "caddie core:debug <on|off|status>"
             return 1
             ;;
     esac
 }
-
-
 
 # Function to grep aliases by keyword
 function caddie_core_alias_grep() {
     local keyword="$1"
     
     if [ -z "$keyword" ]; then
-        echo "Usage: caddie core:alias:grep <keyword>"
-        echo "Example: caddie core:alias:grep git"
+        caddie cli:usage "caddie core:alias:grep <keyword>"
+        caddie cli:usage "Example: caddie core:alias:grep git"
         return 1
     fi
     
-    echo "Aliases containing '$keyword':"
-    echo "=============================="
-    echo ""
+    caddie cli:title "Aliases containing '$keyword':"
+    caddie cli:title "=============================="
+    caddie cli:blank
     alias | grep -i "$keyword"
 }
 
 # Function to show aliases by family
 function caddie_core_alias_git() {
-    echo "Git Workflow Aliases"
-    echo "==================="
-    echo ""
+    caddie cli:title "Git Workflow Aliases"
+    caddie cli:title "==================="
+    caddie cli:blank
     alias | grep -E "(^g|git)" | sort
 }
 
 function caddie_core_alias_docker() {
-    echo "Docker Aliases"
-    echo "=============="
-    echo ""
+    caddie cli:title "Docker Aliases"
+    caddie cli:title "=============="
+    caddie cli:blank
     alias | grep -E "(^d|docker)" | sort
 }
 
 function caddie_core_alias_npm() {
-    echo "NPM Aliases"
-    echo "==========="
-    echo ""
+    caddie cli:title "NPM Aliases"
+    caddie cli:title "==========="
+    caddie cli:blank
     alias | grep -E "(^n|npm)" | sort
 }
 
 function caddie_core_alias_nav() {
-    echo "Navigation Aliases"
-    echo "================="
-    echo ""
-    echo "Directory Navigation:"
-    echo "  bu, ud, dud    cd .. (go back)"
-    echo "  pcd            pushd"
-    echo ""
-    echo "File Listing:"
-    echo "  dir            ls -FH"
-    echo "  la             ll (ls -laGFH)"
-    echo "  ll             ls -laGFH"
-    echo "  ls             ls -GFH"
-    echo ""
-    echo "Screen Management:"
-    echo "  c              clear"
-    echo "  cdc            cd; clear"
+    caddie cli:title "Navigation Aliases"
+    caddie cli:title "================="
+    caddie cli:blank
+    caddie cli:title "Directory Navigation:"
+    caddie cli:indent "bu, ud, dud    cd .. (go back)"
+    caddie cli:indent "pcd            pushd"
+    caddie cli:blank
+    caddie cli:title "File Listing:"
+    caddie cli:indent "dir            ls -FH"
+    caddie cli:indent "la             ll (ls -laGFH)"
+    caddie cli:indent "ll             ls -laGFH"
+    caddie cli:indent "ls             ls -GFH"
+    caddie cli:blank
+    caddie cli:title "Screen Management:"
+    caddie cli:indent "c              clear"
+    caddie cli:indent "cdc            cd; clear"
 }
 
 # Function to show available aliases
 function caddie_core_aliases() {
-    echo "Caddie.sh Available Aliases"
-    echo "==========================="
-    echo ""
-    echo "Caddie.sh comes with a comprehensive set of aliases that make development faster:"
-    echo ""
-    echo "📁 Navigation & File Management:"
-    echo "  bu, ud, dud    cd .. (go back)"
-    echo "  c              clear"
-    echo "  cdc            cd; clear"
-    echo "  dir            ls -FH"
-    echo "  la             ll (ls -laGFH)"
-    echo "  ll             ls -laGFH"
-    echo "  ls             ls -GFH"
-    echo "  pcd            pushd"
-    echo ""
-    echo "🔧 Development Tools:"
-    echo "  maek, amek     make (typo correction)"
-    echo "  bim            vim (typo correction)"
-    echo "  ss             source ~/.bashrc"
-    echo "  shitory        search history"
-    echo "  externalip     curl whatismyip.org"
-    echo ""
-    echo "🐳 Docker Commands:"
-    echo "  d              docker"
-    echo "  dps            docker ps"
-    echo "  dsp            docker system prune"
-    echo "  di             docker images"
-    echo "  dcb            docker compose build"
-    echo "  dcu            docker compose up"
-    echo "  dcd            docker compose down"
-    echo ""
-    echo "📦 Package Management:"
-    echo "  bsl            brew services list"
-    echo "  ni             npm install"
-    echo "  nid            npm install --save-dev"
-    echo "  ns             npm start"
-    echo "  nr             npm run"
-    echo "  nrl            npm run lint"
-    echo "  nrlf           npm run --fix"
-    echo "  nrt            npm run test"
-    echo "  nrtu           npm run test -- --updateSnapshot"
-    echo "  nrtw           npm run test -- --watch"
-    echo ""
-    echo "🌐 Git Workflow:"
-    echo "  g              git"
-    echo "  gst            git status"
-    echo "  gl             git pull"
-    echo "  gp             git push"
-    echo "  ggfl           git push --force-with-lease"
-    echo "  gd             git diff"
-    echo "  ga             git add"
-    echo "  gaa            git add -A"
-    echo "  gba            git branch -a"
-    echo "  gc             git commit"
-    echo "  gc!            git commit --amend"
-    echo "  gca            git commit --all"
-    echo "  gca!           git commit --all --amend"
-    echo "  gcm            git commit --message"
-    echo "  gdrop          git add .; git stash; git stash drop"
-    echo "  gpop           git stash pop"
-    echo "  gf             git fetch"
-    echo "  gfp            git fetch -p"
-    echo "  glo            git log --oneline"
-    echo "  glgga          git log --graph --decorate --all"
-    echo "  gbcln          git branch -d (clean merged branches)"
-    echo "  gsp            git stash pop"
-    echo "  gsc            git stash clear"
-    echo ""
-    echo "🚀 Rails Development:"
-    echo "  r              rails"
-    echo "  rsp4k          rails server -p 4000"
-    echo ""
-    echo "💡 Custom Caddie Aliases (add to ~/.bash_profile):"
-    echo "  c              caddie"
-    echo "  cp             caddie python:create"
-    echo "  ca             caddie python:activate"
-    echo "  cr             caddie rust:new"
-    echo "  cj             caddie js:install"
-    echo ""
-    echo "🔍 Utility Functions:"
-echo "  blanks         Add blank lines to output"
-echo "  path           Show PATH entries"
-echo "  bash-stats     Show command usage statistics"
-echo "  take           mkdir -p and cd into directory"
-echo "  lessdown       View markdown files in terminal"
-echo "  readless       Alias for lessdown"
-echo "  hg             Search history with regex"
-echo "  ag             Search aliases by keyword"
-    echo ""
-    echo "💡 Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
+    caddie cli:title "Caddie.sh Available Aliases"
+    caddie cli:title "==========================="
+    caddie cli:blank
+    caddie cli:title "Caddie.sh comes with a comprehensive set of aliases that make development faster:"
+    caddie cli:blank
+    caddie cli:folder "Navigation & File Management:"
+    caddie cli:indent "bu, ud, dud    cd .. (go back)"
+    caddie cli:indent "c              clear"
+    caddie cli:indent "cdc            cd; clear"
+    caddie cli:indent "dir            ls -FH"
+    caddie cli:indent "la             ll (ls -laGFH)"
+    caddie cli:indent "ll             ls -laGFH"
+    caddie cli:indent "ls             ls -GFH"
+    caddie cli:indent "pcd            pushd"
+    caddie cli:blank
+    caddie cli:wrench "Development Tools:"
+    caddie cli:indent "maek, amek     make (typo correction)"
+    caddie cli:indent "bim            vim (typo correction)"
+    caddie cli:indent "ss             source ~/.bashrc"
+    caddie cli:indent "shitory        search history"
+    caddie cli:indent "externalip     curl whatismyip.org"
+    caddie cli:blank
+    caddie cli:whale "Docker Commands:"
+    caddie cli:indent "d              docker"
+    caddie cli:indent "dps            docker ps"
+    caddie cli:indent "dsp            docker system prune"
+    caddie cli:indent "di             docker images"
+    caddie cli:indent "dcb            docker compose build"
+    caddie cli:indent "dcu            docker compose up"
+    caddie cli:indent "dcd            docker compose down"
+    caddie cli:blank
+    caddie cli:package "Package Management:"
+    caddie cli:indent "bsl            brew services list"
+    caddie cli:indent "ni             npm install"
+    caddie cli:indent "nid            npm install --save-dev"
+    caddie cli:indent "ns             npm start"
+    caddie cli:indent "nr             npm run"
+    caddie cli:indent "nrl            npm run lint"
+    caddie cli:indent "nrlf           npm run --fix"
+    caddie cli:indent "nrt            npm run test"
+    caddie cli:indent "nrtu           npm run test -- --updateSnapshot"
+    caddie cli:indent "nrtw           npm run test -- --watch"
+    caddie cli:blank
+    caddie cli:git "Git Workflow:"
+    caddie cli:indent "g              git"
+    caddie cli:indent "gst            git status"
+    caddie cli:indent "gl             git pull"
+    caddie cli:indent "gp             git push"
+    caddie cli:indent "ggfl           git push --force-with-lease"
+    caddie cli:indent "gd             git diff"
+    caddie cli:indent "ga             git add"
+    caddie cli:indent "gaa            git add -A"
+    caddie cli:indent "gba            git branch -a"
+    caddie cli:indent "gc             git commit"
+    caddie cli:indent "gc!            git commit --amend"
+    caddie cli:indent "gca            git commit --all"
+    caddie cli:indent "gca!           git commit --all --amend"
+    caddie cli:indent "gcm            git commit --message"
+    caddie cli:indent "gdrop          git add .; git stash; git stash drop"
+    caddie cli:indent "gpop           git stash pop"
+    caddie cli:indent "gf             git fetch"
+    caddie cli:indent "gfp            git fetch -p"
+    caddie cli:indent "glo            git log --oneline"
+    caddie cli:indent "glgga          git log --graph --decorate --all"
+    caddie cli:indent "gbcln          git branch -d (clean merged branches)"
+    caddie cli:indent "gsp            git stash pop"
+    caddie cli:indent "gsc            git stash clear"
+    caddie cli:blank
+    caddie cli:rocket "Rails Development:"
+    caddie cli:indent "r              rails"
+    caddie cli:indent "rsp4k          rails server -p 4000"
+    caddie cli:blank
+    caddie cli:thought "Custom Caddie Aliases (add to ~/.bash_profile):"
+    caddie cli:indent "c              caddie"
+    caddie cli:indent "cp             caddie python:create"
+    caddie cli:indent "ca             caddie python:activate"
+    caddie cli:indent "cr             caddie rust:new"
+    caddie cli:indent "cj             caddie js:install"
+    caddie cli:blank
+    caddie cli:magnifying_glass "Utility Functions:"
+    caddie cli:indent "blanks         Add blank lines to output"
+    caddie cli:indent "path           Show PATH entries"
+    caddie cli:indent "bash-stats     Show command usage statistics"
+    caddie cli:indent "take           mkdir -p and cd into directory"
+    caddie cli:indent "lessdown       View markdown files in terminal"
+    caddie cli:indent "readless       Alias for lessdown"
+    caddie cli:indent "hg             Search history with regex"
+    caddie cli:indent "ag             Search aliases by keyword"
+    caddie cli:blank
+    caddie cli:thought "Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
 }
 
 # Function to show core caddie help
 function caddie_core_help() {
-    echo "Core Caddie Functions"
-    echo "===================="
-    echo ""
-    echo "Usage: caddie core:<command>"
-    echo ""
-    echo "Home Directory Management:"
-    echo "  set:home <path>     Set caddie home directory"
-    echo "  get:home            Get current caddie home"
-    echo "  reset:home          Reset caddie home directory"
-    echo ""
-    echo "Debug Management:"
-    echo "  debug:on            Enable debug output"
-    echo "  debug:off           Disable debug output"
-    echo "  debug:toggle        Toggle debug output"
-    echo "  debug:status        Show debug status"
-    echo ""
-    echo "Information:"
-    echo "  aliases             Show all available aliases"
-    echo "  alias:grep <keyword> Search aliases by keyword"
-    echo "  alias:git            Show git-related aliases"
-    echo "  alias:docker         Show docker-related aliases"
-    echo "  alias:npm            Show npm-related aliases"
-    echo "  alias:nav            Show navigation aliases"
-    echo ""
-    echo "Examples:"
-    echo "  caddie core:set:home ~/projects/myproject"
-    echo "  caddie core:get:home"
-    echo "  caddie core:reset:home"
-    echo "  caddie go:home"
-    echo "  caddie core:aliases"
-    echo "  caddie core:alias:grep git"
-    echo "  caddie core:alias:git"
+    caddie cli:title "Core Caddie Functions"
+    caddie cli:title "===================="
+    caddie cli:blank
+    caddie cli:usage "caddie core:<command>"
+    caddie cli:blank
+    caddie cli:folder "Home Directory Management:"
+    caddie cli:indent "set:home <path>     Set caddie home directory"
+    caddie cli:indent "get:home            Get current caddie home"
+    caddie cli:indent "reset:home          Reset caddie home directory"
+    caddie cli:blank
+    caddie cli:debug "Debug Management:"
+    caddie cli:indent "debug:on            Enable debug output"
+    caddie cli:indent "debug:off           Disable debug output"
+    caddie cli:indent "debug:status        Show debug status"
+    caddie cli:blank
+    caddie cli:magnifying_glass "Information:"
+    caddie cli:indent "aliases             Show all available aliases"
+    caddie cli:indent "alias:grep <keyword> Search aliases by keyword"
+    caddie cli:indent "alias:git            Show git-related aliases"
+    caddie cli:indent "alias:docker         Show docker-related aliases"
+    caddie cli:indent "alias:npm            Show npm-related aliases"
+    caddie cli:indent "alias:nav            Show navigation aliases"
+    caddie cli:blank
+    caddie cli:thought "Examples:"
+    caddie cli:indent "caddie core:set:home ~/projects/myproject"
+    caddie cli:indent "caddie core:get:home"
+    caddie cli:indent "caddie core:reset:home"
+    caddie cli:indent "caddie go:home"
+    caddie cli:indent "caddie core:aliases"
+    caddie cli:indent "caddie core:alias:grep git"
+    caddie cli:indent "caddie core:alias:git"
 }
 
 function caddie_core_description() {

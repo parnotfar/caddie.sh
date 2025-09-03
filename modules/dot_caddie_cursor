@@ -3,31 +3,34 @@
 # Caddie.sh - Cursor IDE Integration
 # This file contains all Cursor IDE-related functions
 
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
 # Function to detect Cursor installation
 function caddie_cursor_detect() {
-    echo "Detecting Cursor IDE installation..."
+    caddie cli:title "Detecting Cursor IDE installation..."
     
     # Check for Cursor CLI
     if command -v cursor >/dev/null 2>&1; then
-        echo "✓ Cursor CLI found: $(which cursor)"
+        caddie cli:check "Cursor CLI found: $(which cursor)"
         cursor --version
     else
-        echo "✗ Cursor CLI not found"
-        echo "  Install from: https://cursor.sh/"
+        caddie cli:x "Cursor CLI not found"
+        caddie cli:thought "Install from: https://cursor.sh/"
     fi
     
     # Check for Cursor application
     if [ -d "/Applications/Cursor.app" ]; then
-        echo "✓ Cursor application found"
+        caddie cli:check "Cursor application found"
     else
-        echo "✗ Cursor application not found"
+        caddie cli:x "Cursor application not found"
     fi
     
     # Check for Cursor configuration
     if [ -d "$HOME/.cursor" ]; then
-        echo "✓ Cursor configuration directory found"
+        caddie cli:check "Cursor configuration directory found"
     else
-        echo "✗ Cursor configuration directory not found"
+        caddie cli:x "Cursor configuration directory not found"
     fi
 }
 
@@ -37,7 +40,7 @@ function caddie_cursor_description() {
 
 # Function to setup Cursor integration
 function caddie_cursor_setup() {
-    echo "Setting up Cursor IDE integration..."
+    caddie cli:title "Setting up Cursor IDE integration..."
     
     # Create Cursor configuration directory
     mkdir -p "$HOME/.cursor/User"
@@ -73,43 +76,43 @@ EOF
 ]
 EOF
     
-    echo "✓ Cursor integration setup complete"
+    caddie cli:check "Cursor integration setup complete"
 }
 
 # Function to verify Cursor integration
 function caddie_cursor_verify() {
-    echo "Verifying Cursor IDE integration..."
+    caddie cli:title "Verifying Cursor IDE integration..."
     
     local issues=0
     
     # Check CLI
     if ! command -v cursor >/dev/null 2>&1; then
-        echo "✗ Cursor CLI not available"
+        caddie cli:x "Cursor CLI not available"
         ((issues++))
     else
-        echo "✓ Cursor CLI available"
+        caddie cli:check "Cursor CLI available"
     fi
     
     # Check configuration
     if [ ! -f "$HOME/.cursor/User/settings.json" ]; then
-        echo "✗ Cursor settings not configured"
+        caddie cli:x "Cursor settings not configured"
         ((issues++))
     else
-        echo "✓ Cursor settings configured"
+        caddie cli:check "Cursor settings configured"
     fi
     
     # Check AI features
     if [ ! -d ".cursor" ]; then
-        echo "⚠ Cursor AI features not initialized in current project"
+        caddie cli:warning "Cursor AI features not initialized in current project"
     else
-        echo "✓ Cursor AI features available"
+        caddie cli:check "Cursor AI features available"
     fi
     
     if [ $issues -eq 0 ]; then
-        echo "✓ Cursor integration verified successfully"
+        caddie cli:check "Cursor integration verified successfully"
     else
-        echo "✗ Found $issues issues with Cursor integration"
-        echo "Run 'caddie cursor:setup' to fix issues"
+        caddie cli:x "Found $issues issues with Cursor integration"
+        caddie cli:thought "Run 'caddie cursor:setup' to fix issues"
     fi
 }
 
@@ -122,17 +125,17 @@ function caddie_cursor_open() {
     fi
     
     if [ ! -d "$path" ]; then
-        echo "Error: Directory '$path' does not exist"
+        caddie cli:red "Error: Directory '$path' does not exist"
         return 1
     fi
     
-    echo "Opening '$path' in Cursor..."
+    caddie cli:title "Opening '$path' in Cursor..."
     
     if command -v cursor >/dev/null 2>&1; then
         cursor "$path"
-        echo "✓ Opened '$path' in Cursor"
+        caddie cli:check "Opened '$path' in Cursor"
     else
-        echo "✗ Cursor CLI not found. Please install Cursor IDE"
+        caddie cli:x "Cursor CLI not found. Please install Cursor IDE"
         return 1
     fi
 }
@@ -143,13 +146,13 @@ function caddie_cursor_new() {
     local project_name="$2"
     
     if [ -z "$project_type" ] || [ -z "$project_name" ]; then
-        echo "Error: Please provide project type and name"
-        echo "Usage: caddie cursor:new <type> <name>"
-        echo "Types: web, api, mobile, data, ml, cli, lib"
+        caddie cli:red "Error: Please provide project type and name"
+        caddie cli:usage "caddie cursor:new <type> <name>"
+        caddie cli:thought "Types: web, api, mobile, data, ml, cli, lib"
         return 1
     fi
     
-    echo "Creating new $project_type project '$project_name'..."
+    caddie cli:title "Creating new $project_type project '$project_name'..."
     
     # Create project using template
     caddie_template_create "$project_type" "$project_name"
@@ -161,9 +164,9 @@ function caddie_cursor_new() {
         # Open in Cursor
         caddie_cursor_open "$project_name"
         
-        echo "✓ Project '$project_name' created and opened in Cursor"
+        caddie cli:check "Project '$project_name' created and opened in Cursor"
     else
-        echo "✗ Failed to create project '$project_name'"
+        caddie cli:x "Failed to create project '$project_name'"
         return 1
     fi
 }
@@ -173,7 +176,7 @@ function caddie_cursor_setup_project() {
     local project_name="$1"
     local project_type="$2"
     
-    echo "Setting up Cursor configuration for $project_type project..."
+    caddie cli:title "Setting up Cursor configuration for $project_type project..."
     
     mkdir -p "$project_name/.cursor"
     
@@ -231,43 +234,43 @@ EOF
 }
 EOF
     
-    echo "✓ Cursor project configuration created"
+    caddie cli:check "Cursor project configuration created"
 }
 
 # Function to show Cursor workspace info
 function caddie_cursor_workspace() {
-    echo "Cursor Workspace Information"
-    echo "==========================="
+    caddie cli:title "Cursor Workspace Information"
+    caddie cli:blank
     
     if [ -f ".cursor/settings.json" ]; then
-        echo "Project Settings:"
+        caddie cli:title "Project Settings:"
         cat .cursor/settings.json | jq '.' 2>/dev/null || cat .cursor/settings.json
     else
-        echo "No project-specific Cursor settings found"
+        caddie cli:warning "No project-specific Cursor settings found"
     fi
     
     if [ -f ".cursor/launch.json" ]; then
-        echo ""
-        echo "Launch Configurations:"
+        caddie cli:blank
+        caddie cli:title "Launch Configurations:"
         cat .cursor/launch.json | jq '.' 2>/dev/null || cat .cursor/launch.json
     fi
     
     if [ -f ".cursor/tasks.json" ]; then
-        echo ""
-        echo "Tasks Configuration:"
+        caddie cli:blank
+        caddie cli:title "Tasks Configuration:"
         cat .cursor/tasks.json | jq '.' 2>/dev/null || cat .cursor/tasks.json
     fi
 }
 
 # Function to list recently opened projects
 function caddie_cursor_recent() {
-    echo "Recently Opened Projects in Cursor"
-    echo "=================================="
+    caddie cli:title "Recently Opened Projects in Cursor"
+    caddie cli:blank
     
     if [ -d "$HOME/.cursor/User/workspaceStorage" ]; then
         find "$HOME/.cursor/User/workspaceStorage" -name "*.json" -exec basename {} \; | sed 's/\.json$//' | head -10
     else
-        echo "No recent projects found"
+        caddie cli:warning "No recent projects found"
     fi
 }
 
@@ -276,9 +279,9 @@ function caddie_cursor_switch() {
     local project="$1"
     
     if [ -z "$project" ]; then
-        echo "Error: Please provide a project name"
-        echo "Usage: caddie cursor:switch <project>"
-        echo "Use 'caddie cursor:recent' to see recent projects"
+        caddie cli:red "Error: Please provide a project name"
+        caddie cli:usage "caddie cursor:switch <project>"
+        caddie cli:thought "Use 'caddie cursor:recent' to see recent projects"
         return 1
     fi
     
@@ -293,11 +296,11 @@ function caddie_cursor_switch() {
     done
     
     if [ -z "$project_path" ]; then
-        echo "Error: Project '$project' not found in common directories"
+        caddie cli:red "Error: Project '$project' not found in common directories"
         return 1
     fi
     
-    echo "Switching to project '$project'..."
+    caddie cli:title "Switching to project '$project'..."
     caddie_cursor_open "$project_path"
 }
 
@@ -306,17 +309,17 @@ function caddie_cursor_ai_explain() {
     local file="$1"
     
     if [ -z "$file" ]; then
-        echo "Error: Please provide a file path"
-        echo "Usage: caddie cursor:ai:explain <file>"
+        caddie cli:red "Error: Please provide a file path"
+        caddie cli:usage "caddie cursor:ai:explain <file>"
         return 1
     fi
     
     if [ ! -f "$file" ]; then
-        echo "Error: File '$file' does not exist"
+        caddie cli:red "Error: File '$file' does not exist"
         return 1
     fi
     
-    echo "Asking AI to explain: $file"
+    caddie cli:title "Asking AI to explain: $file"
     
     local ai_prompt_file
     ai_prompt_file=".cursor/ai-explain-$(basename "$file").md"
@@ -341,8 +344,8 @@ $(cat "$file")
 **Context:** This is a request from the caddie CLI tool for AI-assisted code explanation.
 EOF
     
-    echo "✓ AI explanation request created: $ai_prompt_file"
-    echo "  Open this file in Cursor and use AI chat to get explanation"
+    caddie cli:check "AI explanation request created: $ai_prompt_file"
+    caddie cli:thought "Open this file in Cursor and use AI chat to get explanation"
     
     if command -v cursor >/dev/null 2>&1; then
         cursor "$ai_prompt_file"
@@ -354,18 +357,18 @@ caddie_cursor_ai_refactor() {
     local refactor_type="${2:-general}"
     
     if [ -z "$file" ]; then
-        echo "Error: Please provide a file path"
-        echo "Usage: caddie cursor:ai:refactor <file> [type]"
-        echo "Types: general, performance, readability, security, structure"
+        caddie cli:red "Error: Please provide a file path"
+        caddie cli:usage "caddie cursor:ai:refactor <file> [type]"
+        caddie cli:thought "Types: general, performance, readability, security, structure"
         return 1
     fi
     
     if [ ! -f "$file" ]; then
-        echo "Error: File '$file' does not exist"
+        caddie cli:red "Error: File '$file' does not exist"
         return 1
     fi
     
-    echo "Asking AI to refactor: $file (type: $refactor_type)"
+    caddie cli:title "Asking AI to refactor: $file (type: $refactor_type)"
     
     local ai_prompt_file
     ai_prompt_file=".cursor/ai-refactor-$(basename "$file").md"
@@ -391,8 +394,8 @@ $(cat "$file")
 **Context:** This is a request from the caddie CLI tool for AI-assisted code refactoring.
 EOF
     
-    echo "✓ AI refactoring request created: $ai_prompt_file"
-    echo "  Open this file in Cursor and use AI chat to get refactored code"
+    caddie cli:check "AI refactoring request created: $ai_prompt_file"
+    caddie cli:thought "Open this file in Cursor and use AI chat to get refactored code"
     
     if command -v cursor >/dev/null 2>&1; then
         cursor "$ai_prompt_file"
@@ -404,18 +407,18 @@ caddie_cursor_ai_test() {
     local test_framework="${2:-pytest}"
     
     if [ -z "$file" ]; then
-        echo "Error: Please provide a file path"
-        echo "Usage: caddie cursor:ai:test <file> [framework]"
-        echo "Frameworks: pytest, unittest, jest, mocha, rspec"
+        caddie cli:red "Error: Please provide a file path"
+        caddie cli:usage "caddie cursor:ai:test <file> [framework]"
+        caddie cli:thought "Frameworks: pytest, unittest, jest, mocha, rspec"
         return 1
     fi
     
     if [ ! -f "$file" ]; then
-        echo "Error: File '$file' does not exist"
+        caddie cli:red "Error: File '$file' does not exist"
         return 1
     fi
     
-    echo "Asking AI to generate tests for: $file (framework: $test_framework)"
+    caddie cli:title "Asking AI to generate tests for: $file (framework: $test_framework)"
     
     local ai_prompt_file
     ai_prompt_file=".cursor/ai-test-$(basename "$file").md"
@@ -441,8 +444,8 @@ $(cat "$file")
 **Context:** This is a request from the caddie CLI tool for AI-assisted test generation.
 EOF
     
-    echo "✓ AI test generation request created: $ai_prompt_file"
-    echo "  Open this file in Cursor and use AI chat to get generated tests"
+    caddie cli:check "AI test generation request created: $ai_prompt_file"
+    caddie cli:thought "Open this file in Cursor and use AI chat to get generated tests"
     
     if command -v cursor >/dev/null 2>&1; then
         cursor "$ai_prompt_file"
@@ -454,18 +457,18 @@ caddie_cursor_ai_docs() {
     local doc_format="${2:-markdown}"
     
     if [ -z "$file" ]; then
-        echo "Error: Please provide a file path"
-        echo "Usage: caddie cursor:ai:docs <file> [format]"
-        echo "Formats: markdown, sphinx, javadoc, godoc, rustdoc"
+        caddie cli:red "Error: Please provide a file path"
+        caddie cli:usage "caddie cursor:ai:docs <file> [format]"
+        caddie cli:thought "Formats: markdown, sphinx, javadoc, godoc, rustdoc"
         return 1
     fi
     
     if [ ! -f "$file" ]; then
-        echo "Error: File '$file' does not exist"
+        caddie cli:red "Error: File '$file' does not exist"
         return 1
     fi
     
-    echo "Asking AI to generate documentation for: $file (format: $doc_format)"
+    caddie cli:title "Asking AI to generate documentation for: $file (format: $doc_format)"
     
     local ai_prompt_file
     ai_prompt_file=".cursor/ai-docs-$(basename "$file").md"
@@ -491,8 +494,8 @@ $(cat "$file")
 **Context:** This is a request from the caddie CLI tool for AI-assisted documentation generation.
 EOF
     
-    echo "✓ AI documentation request created: $ai_prompt_file"
-    echo "  Open this file in Cursor and use AI chat to get generated documentation"
+    caddie cli:check "AI documentation request created: $ai_prompt_file"
+    caddie cli:thought "Open this file in Cursor and use AI chat to get generated documentation"
     
     if command -v cursor >/dev/null 2>&1; then
         cursor "$ai_prompt_file"
@@ -504,18 +507,18 @@ caddie_cursor_ai_review() {
     local review_focus="${2:-general}"
     
     if [ -z "$file" ]; then
-        echo "Error: Please provide a file path"
-        echo "Usage: caddie cursor:ai:review <file> [focus]"
-        echo "Focus: general, security, performance, style, bugs, best-practices"
+        caddie cli:red "Error: Please provide a file path"
+        caddie cli:usage "caddie cursor:ai:review <file> [focus]"
+        caddie cli:thought "Focus: general, security, performance, style, bugs, best-practices"
         return 1
     fi
     
     if [ ! -f "$file" ]; then
-        echo "Error: File '$file' does not exist"
+        caddie cli:red "Error: File '$file' does not exist"
         return 1
     fi
     
-    echo "Asking AI to review: $file (focus: $review_focus)"
+    caddie cli:title "Asking AI to review: $file (focus: $review_focus)"
     
     local ai_prompt_file
     ai_prompt_file=".cursor/ai-review-$(basename "$file").md"
@@ -542,8 +545,8 @@ $(cat "$file")
 **Context:** This is a request from the caddie CLI tool for AI-assisted code review.
 EOF
     
-    echo "✓ AI code review request created: $ai_prompt_file"
-    echo "  Open this file in Cursor and use AI chat to get code review"
+    caddie cli:check "AI code review request created: $ai_prompt_file"
+    caddie cli:thought "Open this file in Cursor and use AI chat to get code review"
     
     if command -v cursor >/dev/null 2>&1; then
         cursor "$ai_prompt_file"
@@ -555,56 +558,56 @@ caddie_cursor_ext_install() {
     local extension_id="$1"
     
     if [ -z "$extension_id" ]; then
-        echo "Error: Please provide an extension ID"
-        echo "Usage: caddie cursor:ext:install <extension-id>"
-        echo "Example: caddie cursor:ext:install ms-python.python"
+        caddie cli:red "Error: Please provide an extension ID"
+        caddie cli:usage "caddie cursor:ext:install <extension-id>"
+        caddie cli:thought "Example: caddie cursor:ext:install ms-python.python"
         return 1
     fi
     
-    echo "Installing Cursor extension: $extension_id"
+    caddie cli:title "Installing Cursor extension: $extension_id"
     
     if command -v cursor >/dev/null 2>&1; then
         cursor --install-extension "$extension_id"
-        echo "✓ Extension '$extension_id' installed"
+        caddie cli:check "Extension '$extension_id' installed"
     else
-        echo "✗ Cursor CLI not found. Please install Cursor IDE"
+        caddie cli:x "Cursor CLI not found. Please install Cursor IDE"
         return 1
     fi
 }
 
 caddie_cursor_ext_list() {
-    echo "Installed Cursor Extensions"
-    echo "=========================="
+    caddie cli:title "Installed Cursor Extensions"
+    caddie cli:blank
     
     if command -v cursor >/dev/null 2>&1; then
         cursor --list-extensions
     else
-        echo "✗ Cursor CLI not found. Please install Cursor IDE"
+        caddie cli:x "Cursor CLI not found. Please install Cursor IDE"
         return 1
     fi
 }
 
 caddie_cursor_ext_update() {
-    echo "Updating all Cursor extensions..."
+    caddie cli:title "Updating all Cursor extensions..."
     
     if command -v cursor >/dev/null 2>&1; then
         cursor --update-extensions
-        echo "✓ All extensions updated"
+        caddie cli:check "All extensions updated"
     else
-        echo "✗ Cursor CLI not found. Please install Cursor IDE"
+        caddie cli:x "Cursor CLI not found. Please install Cursor IDE"
         return 1
     fi
 }
 
 caddie_cursor_ext_sync() {
-    echo "Syncing Cursor extensions..."
+    caddie cli:title "Syncing Cursor extensions..."
     
     # Create extensions list
     if command -v cursor >/dev/null 2>&1; then
         cursor --list-extensions > "$HOME/.cursor/extensions.txt"
-        echo "✓ Extensions list saved to ~/.cursor/extensions.txt"
+        caddie cli:check "Extensions list saved to ~/.cursor/extensions.txt"
     else
-        echo "✗ Cursor CLI not found. Please install Cursor IDE"
+        caddie cli:x "Cursor CLI not found. Please install Cursor IDE"
         return 1
     fi
 }
@@ -613,47 +616,47 @@ caddie_cursor_ext_recommend() {
     local project_type="$1"
     
     if [ -z "$project_type" ]; then
-        echo "Error: Please provide a project type"
-        echo "Usage: caddie cursor:ext:recommend <type>"
-        echo "Types: python, rust, javascript, typescript, web, mobile, data, ml"
+        caddie cli:red "Error: Please provide a project type"
+        caddie cli:usage "caddie cursor:ext:recommend <type>"
+        caddie cli:thought "Types: python, rust, javascript, typescript, web, mobile, data, ml"
         return 1
     fi
     
-    echo "Recommended extensions for $project_type projects:"
-    echo "================================================"
+    caddie cli:title "Recommended extensions for $project_type projects:"
+    caddie cli:blank
     
     case "$project_type" in
         "python")
-            echo "ms-python.python - Python language support"
-            echo "ms-python.pylint - Python linting"
-            echo "ms-python.black-formatter - Python formatting"
-            echo "ms-python.isort - Import sorting"
+            caddie cli:indent "ms-python.python - Python language support"
+            caddie cli:indent "ms-python.pylint - Python linting"
+            caddie cli:indent "ms-python.black-formatter - Python formatting"
+            caddie cli:indent "ms-python.isort - Import sorting"
             ;;
         "rust")
-            echo "rust-lang.rust-analyzer - Rust language support"
-            echo "vadimcn.vscode-lldb - Rust debugging"
+            caddie cli:indent "rust-lang.rust-analyzer - Rust language support"
+            caddie cli:indent "vadimcn.vscode-lldb - Rust debugging"
             ;;
         "javascript"|"typescript")
-            echo "ms-vscode.vscode-typescript-next - TypeScript support"
-            echo "esbenp.prettier-vscode - Code formatting"
-            echo "ms-vscode.vscode-eslint - JavaScript linting"
+            caddie cli:indent "ms-vscode.vscode-typescript-next - TypeScript support"
+            caddie cli:indent "esbenp.prettier-vscode - Code formatting"
+            caddie cli:indent "ms-vscode.vscode-eslint - JavaScript linting"
             ;;
         "web")
-            echo "ms-vscode.vscode-html - HTML support"
-            echo "ms-vscode.vscode-css - CSS support"
-            echo "bradlc.vscode-tailwindcss - Tailwind CSS support"
+            caddie cli:indent "ms-vscode.vscode-html - HTML support"
+            caddie cli:indent "ms-vscode.vscode-css - CSS support"
+            caddie cli:indent "bradlc.vscode-tailwindcss - Tailwind CSS support"
             ;;
         "mobile")
-            echo "ms-vscode.vscode-react-native - React Native support"
-            echo "ms-vscode.vscode-flutter - Flutter support"
+            caddie cli:indent "ms-vscode.vscode-react-native - React Native support"
+            caddie cli:indent "ms-vscode.vscode-flutter - Flutter support"
             ;;
         "data"|"ml")
-            echo "ms-python.python - Python support"
-            echo "ms-toolsai.jupyter - Jupyter notebook support"
-            echo "ms-python.pylint - Python linting"
+            caddie cli:indent "ms-python.python - Python support"
+            caddie cli:indent "ms-toolsai.jupyter - Jupyter notebook support"
+            caddie cli:indent "ms-python.pylint - Python linting"
             ;;
         *)
-            echo "Unknown project type: $project_type"
+            caddie cli:red "Unknown project type: $project_type"
             return 1
             ;;
     esac
@@ -661,17 +664,17 @@ caddie_cursor_ext_recommend() {
 
 # Configuration management functions
 function caddie_cursor_config_show() {
-    echo "Cursor Configuration"
-    echo "==================="
+    caddie cli:title "Cursor Configuration"
+    caddie cli:blank
     
     if [ -f "$HOME/.cursor/User/settings.json" ]; then
-        echo "User Settings:"
+        caddie cli:title "User Settings:"
         cat "$HOME/.cursor/User/settings.json" | jq '.' 2>/dev/null || cat "$HOME/.cursor/User/settings.json"
     fi
     
     if [ -f "$HOME/.cursor/User/keybindings.json" ]; then
-        echo ""
-        echo "Keybindings:"
+        caddie cli:blank
+        caddie cli:title "Keybindings:"
         cat "$HOME/.cursor/User/keybindings.json" | jq '.' 2>/dev/null || cat "$HOME/.cursor/User/keybindings.json"
     fi
 }
@@ -680,7 +683,7 @@ function caddie_cursor_config_backup() {
     local backup_dir
     backup_dir="$HOME/.cursor-backups/$(date +%Y%m%d_%H%M%S)"
     
-    echo "Backing up Cursor configuration to $backup_dir..."
+    caddie cli:save "Backing up Cursor configuration to $backup_dir..."
     mkdir -p "$backup_dir"
     
     # Backup settings
@@ -693,24 +696,24 @@ function caddie_cursor_config_backup() {
         cursor --list-extensions > "$backup_dir/extensions.txt"
     fi
     
-    echo "✓ Cursor configuration backed up to $backup_dir"
+    caddie cli:check "Cursor configuration backed up to $backup_dir"
 }
 
 function caddie_cursor_config_restore() {
     local backup_path="$1"
     
     if [ -z "$backup_path" ]; then
-        echo "Error: Please provide backup path"
-        echo "Usage: caddie cursor:config:restore <backup-path>"
+        caddie cli:red "Error: Please provide backup path"
+        caddie cli:usage "caddie cursor:config:restore <backup-path>"
         return 1
     fi
     
     if [ ! -d "$backup_path" ]; then
-        echo "Error: Backup directory '$backup_path' does not exist"
+        caddie cli:red "Error: Backup directory '$backup_path' does not exist"
         return 1
     fi
     
-    echo "Restoring Cursor configuration from $backup_path..."
+    caddie cli:title "Restoring Cursor configuration from $backup_path..."
     
     # Restore settings
     if [ -d "$backup_path/.cursor" ]; then
@@ -724,22 +727,22 @@ function caddie_cursor_config_restore() {
         done < "$backup_path/extensions.txt"
     fi
     
-    echo "✓ Cursor configuration restored"
+    caddie cli:check "Cursor configuration restored"
 }
 
 function caddie_cursor_config_sync() {
-    echo "Syncing Cursor configuration..."
+    caddie cli:title "Syncing Cursor configuration..."
     
     # Create backup first
     caddie_cursor_config_backup
     
     # Sync settings across devices (placeholder for cloud sync)
-    echo "✓ Cursor configuration synced"
-    echo "  Note: Manual cloud sync may be required"
+    caddie cli:check "Cursor configuration synced"
+    caddie cli:thought "Note: Manual cloud sync may be required"
 }
 
 function caddie_cursor_config_optimize() {
-    echo "Optimizing Cursor configuration for performance..."
+    caddie cli:title "Optimizing Cursor configuration for performance..."
     
     # Create optimized settings
     cat > "$HOME/.cursor/User/settings.json" << EOF
@@ -765,57 +768,56 @@ function caddie_cursor_config_optimize() {
 }
 EOF
     
-    echo "✓ Cursor configuration optimized for performance"
+    caddie cli:check "Cursor configuration optimized for performance"
 }
 
 # Function to display Cursor module help
 caddie_cursor_help() {
-    echo "Cursor IDE Integration"
-    echo "====================="
-    echo ""
-    echo "Usage: caddie cursor:<command>"
-    echo ""
-    echo "Setup & Verification:"
-    echo "  detect             Detect Cursor installation"
-    echo "  setup              Setup Cursor integration"
-    echo "  verify             Verify Cursor integration"
-    echo ""
-    echo "Project Management:"
-    echo "  open <path>        Open project in Cursor"
-    echo "  new <type> <name>  Create new project and open in Cursor"
-    echo "  workspace          Show Cursor workspace info"
-    echo "  recent             List recently opened projects"
-    echo "  switch <project>   Switch to different project"
-    echo ""
-    echo "AI-Powered Development:"
-    echo "  ai:explain <file>  Ask AI to explain code"
-    echo "  ai:refactor <file> AI-assisted refactoring"
-    echo "  ai:test <file>     Generate tests with AI"
-    echo "  ai:docs <file>     Generate documentation with AI"
-    echo "  ai:review <file>   AI code review"
-    echo ""
-    echo "Extension Management:"
-    echo "  ext:install <id>   Install Cursor extension"
-    echo "  ext:list           List installed extensions"
-    echo "  ext:update         Update all extensions"
-    echo "  ext:sync           Sync extensions across devices"
-    echo "  ext:recommend <type> Recommend extensions for project type"
-    echo ""
-    echo "Configuration Management:"
-    echo "  config:show        Show Cursor configuration"
-    echo "  config:backup      Backup Cursor settings"
-    echo "  config:restore <path> Restore Cursor settings"
-    echo "  config:sync        Sync Cursor settings"
-    echo "  config:optimize    Optimize Cursor for performance"
-    echo ""
-    echo "Examples:"
-    echo "  caddie cursor:detect"
-    echo "  caddie cursor:open ~/projects/myapp"
-    echo "  caddie cursor:ai:explain src/main.py"
-    echo "  caddie cursor:ext:install ms-python.python"
-    echo "  caddie cursor:config:backup"
+    caddie cli:title "Cursor IDE Integration"
+    caddie cli:blank
+    caddie cli:usage "caddie cursor:<command>"
+    caddie cli:blank
+    caddie cli:title "Setup & Verification:"
+    caddie cli:indent "detect             Detect Cursor installation"
+    caddie cli:indent "setup              Setup Cursor integration"
+    caddie cli:indent "verify             Verify Cursor integration"
+    caddie cli:blank
+    caddie cli:title "Project Management:"
+    caddie cli:indent "open <path>        Open project in Cursor"
+    caddie cli:indent "new <type> <name>  Create new project and open in Cursor"
+    caddie cli:indent "workspace          Show Cursor workspace info"
+    caddie cli:indent "recent             List recently opened projects"
+    caddie cli:indent "switch <project>   Switch to different project"
+    caddie cli:blank
+    caddie cli:title "AI-Powered Development:"
+    caddie cli:indent "ai:explain <file>  Ask AI to explain code"
+    caddie cli:indent "ai:refactor <file> AI-assisted refactoring"
+    caddie cli:indent "ai:test <file>     Generate tests with AI"
+    caddie cli:indent "ai:docs <file>     Generate documentation with AI"
+    caddie cli:indent "ai:review <file>   AI code review"
+    caddie cli:blank
+    caddie cli:title "Extension Management:"
+    caddie cli:indent "ext:install <id>   Install Cursor extension"
+    caddie cli:indent "ext:list           List installed extensions"
+    caddie cli:indent "ext:update         Update all extensions"
+    caddie cli:indent "ext:sync           Sync extensions across devices"
+    caddie cli:indent "ext:recommend <type> Recommend extensions for project type"
+    caddie cli:blank
+    caddie cli:title "Configuration Management:"
+    caddie cli:indent "config:show        Show Cursor configuration"
+    caddie cli:indent "config:backup      Backup Cursor settings"
+    caddie cli:indent "config:restore <path> Restore Cursor settings"
+    caddie cli:indent "config:sync        Sync Cursor settings"
+    caddie cli:indent "config:optimize    Optimize Cursor for performance"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie cursor:detect"
+    caddie cli:indent "caddie cursor:open ~/projects/myapp"
+    caddie cli:indent "caddie cursor:ai:explain src/main.py"
+    caddie cli:indent "caddie cursor:ext:install ms-python.python"
+    caddie cli:indent "caddie cursor:config:backup"
+    caddie cli:blank
 }
-
 # Export Cursor functions
 export -f caddie_cursor_description
 export -f caddie_cursor_detect
@@ -842,3 +844,4 @@ export -f caddie_cursor_config_restore
 export -f caddie_cursor_config_sync
 export -f caddie_cursor_config_optimize
 export -f caddie_cursor_help
+

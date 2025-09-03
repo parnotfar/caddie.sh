@@ -86,8 +86,8 @@ caddie core:debug off
 # Check debug status
 caddie core:debug status
 
-# Toggle debug mode
-caddie core:debug toggle
+# Check debug status
+caddie core:debug status
 ```
 
 ### Home Directory Management
@@ -490,6 +490,30 @@ caddie cli:orange "⚠️  Please update your configuration"
 # Information
 caddie cli:blue "Info: Processing 150 files..."
 caddie cli:cyan "Debug: Function called with args: $@"
+```
+
+#### UTF-8 Character Functions
+
+```bash
+# Status indicators
+caddie cli:check "Task completed successfully"
+caddie cli:x "Operation failed"
+caddie cli:arrow "Next step"
+caddie cli:warning "Warning message"
+
+# Section headers
+caddie cli:folder "File operations"
+caddie cli:wrench "Development tools"
+caddie cli:whale "Docker operations"
+caddie cli:package "Package management"
+caddie cli:git "Git workflow"
+caddie cli:rocket "Rails development"
+caddie cli:thought "Tips and ideas"
+caddie cli:magnifying_glass "Search operations"
+
+# Utility
+caddie cli:debug "Debug information"
+caddie cli:blank
 ```
 
 #### Utility Functions

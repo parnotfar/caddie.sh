@@ -103,6 +103,45 @@ caddie cli:colorlist
 # Output: Shows each color name in its actual color
 ```
 
+## UTF-8 Character Commands
+
+The CLI module provides semantic UTF-8 character functions for consistent visual output:
+
+### Status Indicators
+```bash
+caddie cli:check "Success message"           # ✓ with green text
+caddie cli:x "Error message"                 # ✗ with red text
+caddie cli:arrow "Progress message"          # → with yellow text
+caddie cli:warning "Warning message"         # ⚠ with yellow text
+```
+
+### Section Headers (all with blue text)
+```bash
+caddie cli:folder "File operations"           # 📁
+caddie cli:beer "Homebrew operations"        # 🍺
+caddie cli:snake "Python operations"         # 🐍
+caddie cli:crab "Rust operations"            # 🦀
+caddie cli:trash "Cleanup/removal"           # 🗑️
+caddie cli:rotate "Restore/refresh"          # 🔄
+caddie cli:chart "Status/reports"            # 📊
+caddie cli:magnify "Search/inspection"       # 🔍
+caddie cli:save "Backup/save"                # 💾
+caddie cli:wrench "Development tools"        # 🔧
+caddie cli:whale "Docker operations"         # 🐳
+caddie cli:package "Package management"      # 📦
+caddie cli:git "Git operations"              # 🌐
+caddie cli:rocket "Rails/launch operations"  # 🚀
+caddie cli:thought "Tips/ideas"              # 💡
+caddie cli:lightbulb "Tips/ideas"            # 💡
+caddie cli:magnifying_glass "Search/utility" # 🔍
+```
+
+### Utility Functions
+```bash
+caddie cli:debug "Debug message"             # 🐛 with cyan text
+caddie cli:blank                             # Empty line
+```
+
 ## Use Cases
 
 ### Error Messages
@@ -176,6 +215,34 @@ function caddie_python_install() {
 | Grey | `cli:grey` | Secondary information, muted text |
 | Orange | `cli:orange` | Important warnings, attention needed |
 | White | `cli:white` | Default text, normal output |
+
+### UTF-8 Character Functions
+
+| Function | Emoji | Use Case |
+|----------|-------|----------|
+| `cli:check` | ✓ | Success messages, completed tasks |
+| `cli:x` | ✗ | Error messages, failed operations |
+| `cli:arrow` | → | Progress indicators, next steps |
+| `cli:warning` | ⚠ | Warning messages, cautions |
+| `cli:folder` | 📁 | File operations, directory management |
+| `cli:beer` | 🍺 | Homebrew operations |
+| `cli:snake` | 🐍 | Python operations |
+| `cli:crab` | 🦀 | Rust operations |
+| `cli:trash` | 🗑️ | Cleanup, removal operations |
+| `cli:rotate` | 🔄 | Restore, refresh operations |
+| `cli:chart` | 📊 | Status reports, analytics |
+| `cli:magnify` | 🔍 | Search, inspection operations |
+| `cli:save` | 💾 | Backup, save operations |
+| `cli:wrench` | 🔧 | Development tools, utilities |
+| `cli:whale` | 🐳 | Docker operations |
+| `cli:package` | 📦 | Package management |
+| `cli:git` | 🌐 | Git operations |
+| `cli:rocket` | 🚀 | Rails, launch operations |
+| `cli:thought` | 💡 | Tips, ideas, suggestions |
+| `cli:lightbulb` | 💡 | Tips, ideas, suggestions |
+| `cli:magnifying_glass` | 🔍 | Search, utility functions |
+| `cli:debug` | 🐛 | Debug messages |
+| `cli:blank` | - | Empty line output |
 
 ## Technical Details
 

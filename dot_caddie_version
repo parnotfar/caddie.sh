@@ -2,7 +2,7 @@
 # This file provides encapsulated version management functions
 
 # Private version variable
-CADDIE_SH_VERSION="1.0"
+CADDIE_SH_VERSION="1.1"
 
 # Function to get the current version
 caddie_version_get() {

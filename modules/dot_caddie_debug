@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Caddie Debug Data Structure
+# This file manages the global CADDIE_DEBUG flag and provides methods for debug control
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+# Global debug flag (0 = off, 1 = on)
+CADDIE_DEBUG=0
+
+# Set debug mode on (1)
+function caddie_debug_on() {
+    CADDIE_DEBUG=1
+    export CADDIE_DEBUG
+    caddie cli:check "Debug mode enabled"
+}
+
+# Set debug mode off (0)
+function caddie_debug_off() {
+    CADDIE_DEBUG=0
+    export CADDIE_DEBUG
+    caddie cli:check "Debug mode disabled"
+}
+
+# Get current debug status
+function caddie_debug_status() {
+    if [ "$CADDIE_DEBUG" -eq 1 ]; then
+        caddie cli:green "Debug mode is: enabled"
+    else
+        caddie cli:red "Debug mode is: disabled"
+    fi
+}
+
+# Check if debug is enabled
+function caddie_debug_is_enabled() {
+    [ "$CADDIE_DEBUG" -eq 1 ]
+}
+
+# Function to output debug messages (only when debug is enabled)
+function caddie_debug() {
+    local message="$1"
+    
+    if caddie_debug_is_enabled; then
+        # Always write debug output to stderr
+        caddie cli:debug "$message" >&2
+    fi
+}
+
+# Function to show debug help
+function caddie_debug_help() {
+    caddie cli:title "Debug Module Help"
+    caddie cli:blank
+    
+    caddie cli:usage "caddie debug:<command>"
+    caddie cli:blank
+    
+    caddie cli:title "Available Commands:"
+    caddie cli:indent "on              - Enable debug mode"
+    caddie cli:indent "off             - Disable debug mode"
+    caddie cli:indent "status          - Show current debug status"
+    caddie cli:indent "help            - Show this help message"
+    caddie cli:blank
+    
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie debug:on"
+    caddie cli:indent "caddie debug:off"
+    caddie cli:indent "caddie debug:status"
+    caddie cli:indent "caddie debug:help"
+    caddie cli:blank
+}
+
+# Function to show debug description
+function caddie_debug_description() {
+    echo 'Debug control and output functions'
+}
+
+# Export functions for external use
+export -f caddie_debug_on
+export -f caddie_debug_off
+export -f caddie_debug_status
+export -f caddie_debug_is_enabled
+export -f caddie_debug
+export -f caddie_debug_help
+export -f caddie_debug_description
+
+# Export the debug variable
+export CADDIE_DEBUG

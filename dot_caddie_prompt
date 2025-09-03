@@ -1,8 +1,7 @@
 # Caddie.sh Prompt System
 # This file provides a simple, reliable prompt using tput colors
 
-# Source colors and CLI utilities
-source ~/.caddie_cli
+# NOTE: Do NOT try to use the 'caddie cli' functions here.
 
 # Function to get caddie version
 function get_caddie_version() {

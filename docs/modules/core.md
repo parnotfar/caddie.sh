@@ -124,25 +124,6 @@ caddie core:debug off
 - Exports the variable for all child processes
 - Disables debug output for all subsequent commands
 
-#### `caddie core:debug toggle`
-
-Toggle debug mode between on and off.
-
-**Examples:**
-```bash
-caddie core:debug toggle
-```
-
-**Output:**
-```
-✓ Debug mode toggled to: on
-```
-
-**What it does:**
-- Checks current debug status
-- Switches to opposite state
-- Shows the new status
-
 #### `caddie core:debug status`
 
 Show current debug mode status.
@@ -302,7 +283,7 @@ fi
 
 #### "Error: Invalid debug action 'invalid'"
 **Cause**: Invalid debug command provided
-**Solution**: Use valid actions: `on`, `off`, `toggle`, or `status`
+**Solution**: Use valid actions: `on`, `off`, or `status`
 
 ### Error Output Format
 

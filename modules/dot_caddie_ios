@@ -3,90 +3,92 @@
 # Caddie.sh - iOS Development
 # This file contains all iOS-related functions
 
+source "$HOME/.caddie_modules/.caddie_cli"
+
 # Function to setup iOS development environment
 function caddie_ios_setup() {
-    echo "Setting up iOS development environment..."
+    caddie cli:title "Setting up iOS development environment..."
     
     # Check for Xcode
     if ! command -v xcodebuild >/dev/null 2>&1; then
-        echo "✗ Xcode not found. Please install Xcode from the App Store"
+        caddie cli:x "Xcode not found. Please install Xcode from the App Store"
         return 1
     fi
     
     # Check for Swift
     if ! command -v swift >/dev/null 2>&1; then
-        echo "✗ Swift not found. Please install Xcode command line tools"
-        echo "Run: xcode-select --install"
+        caddie cli:x "Swift not found. Please install Xcode command line tools"
+        caddie cli:thought "Run: xcode-select --install"
         return 1
     fi
     
     # Check for CocoaPods
     if ! command -v pod >/dev/null 2>&1; then
-        echo "Installing CocoaPods..."
+        caddie cli:title "Installing CocoaPods..."
         sudo gem install cocoapods
-        echo "✓ CocoaPods installed successfully"
+        caddie cli:check "CocoaPods installed successfully"
     fi
     
-    echo "✓ iOS development environment setup complete"
-    echo "  Xcode: $(xcodebuild -version | head -n1)"
-    echo "  Swift: $(swift --version | head -n1)"
-    echo "  CocoaPods: $(pod --version)"
+    caddie cli:check "iOS development environment setup complete"
+    caddie cli:indent "Xcode: $(xcodebuild -version | head -n1)"
+    caddie cli:indent "Swift: $(swift --version | head -n1)"
+    caddie cli:indent "CocoaPods: $(pod --version)"
 }
 
 # Function to list available simulators
 function caddie_ios_simulator() {
-    echo "Available iOS Simulators:"
-    echo "========================"
+    caddie cli:title "Available iOS Simulators"
+    caddie cli:blank
     xcrun simctl list devices
 }
 
 # Function to list connected devices
 function caddie_ios_device() {
-    echo "Connected iOS Devices:"
-    echo "====================="
+    caddie cli:title "Connected iOS Devices"
+    caddie cli:blank
     xcrun devicectl list devices
 }
 
 # Function to build iOS project
 function caddie_ios_build() {
     if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
-        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
-    echo "Building iOS project..."
+    caddie cli:title "Building iOS project..."
     
     # Determine project type
     if [ -f ./*.xcworkspace ]; then
-        echo "Building workspace..."
+        caddie cli:indent "Building workspace..."
         xcodebuild -workspace ./*.xcworkspace -scheme * -configuration Debug build
     else
-        echo "Building project..."
+        caddie cli:indent "Building project..."
         xcodebuild -project ./*.xcodeproj -scheme * -configuration Debug build
     fi
     
-    echo "✓ iOS project built successfully"
+    caddie cli:check "iOS project built successfully"
 }
 
 # Function to run iOS project
 function caddie_ios_run() {
     if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
-        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
-    echo "Running iOS project..."
+    caddie cli:title "Running iOS project..."
     
     # Get the first available simulator
     local simulator
     simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
-        echo "Error: No iOS simulator found"
+        caddie cli:red "Error: No iOS simulator found"
         return 1
     fi
     
-    echo "Using simulator: $simulator"
+    caddie cli:indent "Using simulator: $simulator"
     
     # Determine project type and run
     if [ -f ./*.xcworkspace ]; then
@@ -95,28 +97,28 @@ function caddie_ios_run() {
         xcodebuild -project ./*.xcodeproj -scheme * -destination "platform=iOS Simulator,name=$simulator" build
     fi
     
-    echo "✓ iOS project ran successfully on simulator"
+    caddie cli:check "iOS project ran successfully on simulator"
 }
 
 # Function to run iOS tests
 function caddie_ios_test() {
     if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
-        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
-    echo "Running iOS tests..."
+    caddie cli:title "Running iOS tests..."
     
     # Get the first available simulator
     local simulator
     simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
-        echo "Error: No iOS simulator found"
+        caddie cli:red "Error: No iOS simulator found"
         return 1
     fi
     
-    echo "Using simulator: $simulator"
+    caddie cli:indent "Using simulator: $simulator"
     
     # Determine project type and test
     if [ -f ./*.xcworkspace ]; then
@@ -126,9 +128,9 @@ function caddie_ios_test() {
     fi
     
     if xcodebuild -workspace ./*.xcworkspace -scheme * -destination "platform=iOS Simulator,name=$simulator" test; then
-        echo "✓ iOS tests completed successfully"
+        caddie cli:check "iOS tests completed successfully"
     else
-        echo "✗ Some iOS tests failed"
+        caddie cli:x "Some iOS tests failed"
         return 1
     fi
 }
@@ -136,11 +138,11 @@ function caddie_ios_test() {
 # Function to create iOS archive
 function caddie_ios_archive() {
     if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
-        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
-    echo "Creating iOS archive..."
+    caddie cli:title "Creating iOS archive..."
     
     # Create archive directory
     mkdir -p build/archive
@@ -152,18 +154,18 @@ function caddie_ios_archive() {
         xcodebuild -project ./*.xcodeproj -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
     fi
     
-    echo "✓ iOS archive created successfully"
-    echo "  Location: build/archive/App.xcarchive"
+    caddie cli:check "iOS archive created successfully"
+    caddie cli:indent "Location: build/archive/App.xcarchive"
 }
 
 # Function to clean iOS build artifacts
 function caddie_ios_clean() {
     if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
-        echo "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
-    echo "Cleaning iOS build artifacts..."
+    caddie cli:title "Cleaning iOS build artifacts..."
     
     # Determine project type and clean
     if [ -f ./*.xcworkspace ]; then
@@ -175,45 +177,45 @@ function caddie_ios_clean() {
     # Remove build directory
     rm -rf build/
     
-    echo "✓ iOS build artifacts cleaned"
+    caddie cli:check "iOS build artifacts cleaned"
 }
 
 # Function to install CocoaPods dependencies
 function caddie_ios_pod_install() {
     if [ ! -f "Podfile" ]; then
-        echo "Error: Podfile not found in current directory"
+        caddie cli:red "Error: Podfile not found in current directory"
         return 1
     fi
     
-    echo "Installing CocoaPods dependencies..."
+    caddie cli:title "Installing CocoaPods dependencies..."
     pod install
     
-    echo "✓ CocoaPods dependencies installed successfully"
-    echo "  Use the .xcworkspace file to open the project"
+    caddie cli:check "CocoaPods dependencies installed successfully"
+    caddie cli:thought "Use the .xcworkspace file to open the project"
 }
 
 # Function to update CocoaPods dependencies
 function caddie_ios_pod_update() {
     if [ ! -f "Podfile" ]; then
-        echo "Error: Podfile not found in current directory"
+        caddie cli:red "Error: Podfile not found in current directory"
         return 1
     fi
     
-    echo "Updating CocoaPods dependencies..."
+    caddie cli:title "Updating CocoaPods dependencies..."
     pod update
     
-    echo "✓ CocoaPods dependencies updated successfully"
+    caddie cli:check "CocoaPods dependencies updated successfully"
 }
 
 # Function to show Swift version
 function caddie_ios_swift_version() {
     if command -v swift >/dev/null 2>&1; then
-        echo "Swift Version:"
-        echo "=============="
+        caddie cli:title "Swift Version"
+        caddie cli:blank
         swift --version
     else
-        echo "✗ Swift not found. Please install Xcode command line tools"
-        echo "Run: xcode-select --install"
+        caddie cli:x "Swift not found. Please install Xcode command line tools"
+        caddie cli:thought "Run: xcode-select --install"
         return 1
     fi
 }
@@ -221,48 +223,48 @@ function caddie_ios_swift_version() {
 # Function to show Xcode version
 function caddie_ios_xcode_version() {
     if command -v xcodebuild >/dev/null 2>&1; then
-        echo "Xcode Version:"
-        echo "=============="
+        caddie cli:title "Xcode Version"
+        caddie cli:blank
         xcodebuild -version
     else
-        echo "✗ Xcode not found. Please install Xcode from the App Store"
+        caddie cli:x "Xcode not found. Please install Xcode from the App Store"
         return 1
     fi
 }
 
 # Function to display iOS module help
 function caddie_ios_help() {
-    echo "iOS Development Tools"
-    echo "===================="
-    echo ""
-    echo "Usage: caddie ios:<command>"
-    echo ""
-    echo "Environment Setup:"
-    echo "  setup              Setup iOS development environment"
-    echo "  simulator          List available simulators"
-    echo "  device             List connected devices"
-    echo ""
-    echo "Project Management:"
-    echo "  build              Build iOS project"
-    echo "  run                Run on simulator/device"
-    echo "  test               Run iOS tests"
-    echo "  archive            Create archive for distribution"
-    echo "  clean              Clean build artifacts"
-    echo ""
-    echo "Dependency Management:"
-    echo "  pod:install        Install CocoaPods dependencies"
-    echo "  pod:update         Update CocoaPods dependencies"
-    echo ""
-    echo "Version Information:"
-    echo "  swift:version      Show Swift version"
-    echo "  xcode:version      Show Xcode version"
-    echo ""
-    echo "Examples:"
-    echo "  caddie ios:setup"
-    echo "  caddie ios:simulator"
-    echo "  caddie ios:build"
-    echo "  caddie ios:pod:install"
-    echo "  caddie ios:swift:version"
+    caddie cli:title "iOS Development Tools"
+    caddie cli:blank
+    caddie cli:usage "caddie ios:<command>"
+    caddie cli:blank
+    caddie cli:title "Environment Setup:"
+    caddie cli:indent "setup              Setup iOS development environment"
+    caddie cli:indent "simulator          List available simulators"
+    caddie cli:indent "device             List connected devices"
+    caddie cli:blank
+    caddie cli:title "Project Management:"
+    caddie cli:indent "build              Build iOS project"
+    caddie cli:indent "run                Run on simulator/device"
+    caddie cli:indent "test               Run iOS tests"
+    caddie cli:indent "archive            Create archive for distribution"
+    caddie cli:indent "clean              Clean build artifacts"
+    caddie cli:blank
+    caddie cli:title "Dependency Management:"
+    caddie cli:indent "pod:install        Install CocoaPods dependencies"
+    caddie cli:indent "pod:update         Update CocoaPods dependencies"
+    caddie cli:blank
+    caddie cli:title "Version Information:"
+    caddie cli:indent "swift:version      Show Swift version"
+    caddie cli:indent "xcode:version      Show Xcode version"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie ios:setup"
+    caddie cli:indent "caddie ios:simulator"
+    caddie cli:indent "caddie ios:build"
+    caddie cli:indent "caddie ios:pod:install"
+    caddie cli:indent "caddie ios:swift:version"
+    caddie cli:blank
 }
 
 function caddie_ios_description() {

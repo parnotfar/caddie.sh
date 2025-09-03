@@ -3,72 +3,75 @@
 # Caddie.sh - Ruby Environment Management (RVM-based)
 # This file provides Ruby development environment management using RVM
 
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
 function caddie_ruby_description() {
     echo 'Ruby environment management with RVM'
 }
 
 # Function to show detailed Ruby help
 function caddie_ruby_help() {
-    echo "Ruby Environment Management (RVM-based)"
-    echo "======================================"
-    echo ""
-    echo "Usage: caddie ruby:<command> [args]"
-    echo ""
-    echo "Environment Management:"
-    echo "  setup                    Setup Ruby development environment with RVM"
-    echo "  install <version>        Install specific Ruby version"
-    echo "  use <version>            Switch to specific Ruby version"
-    echo "  list                     List installed Ruby versions"
-    echo "  current                  Show current Ruby version"
-    echo "  version                  Show Ruby and RVM version information"
-    echo ""
-    echo "Gemset Management:"
-    echo "  gemset:create <name>     Create new gemset"
-    echo "  gemset:use <name>        Switch to specific gemset"
-    echo "  gemset:list              List available gemsets"
-    echo "  gemset:delete <name>     Delete gemset"
-    echo ""
-    echo "Gem Management:"
-    echo "  gem:install <gem>        Install Ruby gem"
-    echo "  gem:uninstall <gem>      Uninstall Ruby gem"
-    echo "  gem:list                 List installed gems"
-    echo "  gem:update <gem>         Update Ruby gem"
-    echo "  gem:outdated             Show outdated gems"
-    echo ""
-    echo "Project Management:"
-    echo "  project:init             Initialize Ruby project structure"
-    echo "  project:test             Run Ruby tests"
-    echo "  project:build            Build Ruby project"
-    echo "  project:serve            Serve Ruby web application"
-    echo ""
-    echo "Bundler Management:"
-    echo "  bundler:install          Install Bundler dependencies"
-    echo "  bundler:update           Update Bundler dependencies"
-    echo "  bundler:exec <command>   Execute command with Bundler"
-    echo ""
-    echo "Rails Management:"
-    echo "  rails:new <app_name>     Create new Rails application"
-    echo "  rails:server             Start Rails server"
-    echo "  rails:console            Start Rails console"
-    echo "  rails:generate <type>    Generate Rails component"
-    echo "  rails:migrate            Run Rails migrations"
-    echo "  rails:routes             Show Rails routes"
-    echo ""
-    echo "Examples:"
-    echo "  caddie ruby:setup"
-    echo "  caddie ruby:install 3.2.2"
-    echo "  caddie ruby:gemset:create myproject"
-    echo "  caddie ruby:gem:install rails"
-    echo "  caddie ruby:rails:new myapp"
+    caddie cli:title "Ruby Environment Management (RVM-based)"
+    caddie cli:blank
+    caddie cli:usage "caddie ruby:<command> [args]"
+    caddie cli:blank
+    caddie cli:title "Environment Management:"
+    caddie cli:indent "setup                    Setup Ruby development environment with RVM"
+    caddie cli:indent "install <version>        Install specific Ruby version"
+    caddie cli:indent "use <version>            Switch to specific Ruby version"
+    caddie cli:indent "list                     List installed Ruby versions"
+    caddie cli:indent "current                  Show current Ruby version"
+    caddie cli:indent "version                  Show Ruby and RVM version information"
+    caddie cli:blank
+    caddie cli:title "Gemset Management:"
+    caddie cli:indent "gemset:create <name>     Create new gemset"
+    caddie cli:indent "gemset:use <name>        Switch to specific gemset"
+    caddie cli:indent "gemset:list              List available gemsets"
+    caddie cli:indent "gemset:delete <name>     Delete gemset"
+    caddie cli:blank
+    caddie cli:title "Gem Management:"
+    caddie cli:indent "gem:install <gem>        Install Ruby gem"
+    caddie cli:indent "gem:uninstall <gem>      Uninstall Ruby gem"
+    caddie cli:indent "gem:list                 List installed gems"
+    caddie cli:indent "gem:update <gem>         Update Ruby gem"
+    caddie cli:indent "gem:outdated             Show outdated gems"
+    caddie cli:blank
+    caddie cli:title "Project Management:"
+    caddie cli:indent "project:init             Initialize Ruby project structure"
+    caddie cli:indent "project:test             Run Ruby tests"
+    caddie cli:indent "project:build            Build Ruby project"
+    caddie cli:indent "project:serve            Serve Ruby web application"
+    caddie cli:blank
+    caddie cli:title "Bundler Management:"
+    caddie cli:indent "bundler:install          Install Bundler dependencies"
+    caddie cli:indent "bundler:update           Update Bundler dependencies"
+    caddie cli:indent "bundler:exec <command>   Execute command with Bundler"
+    caddie cli:blank
+    caddie cli:title "Rails Management:"
+    caddie cli:indent "rails:new <app_name>     Create new Rails application"
+    caddie cli:indent "rails:server             Start Rails server"
+    caddie cli:indent "rails:console            Start Rails console"
+    caddie cli:indent "rails:generate <type>    Generate Rails component"
+    caddie cli:indent "rails:migrate            Run Rails migrations"
+    caddie cli:indent "rails:routes             Show Rails routes"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie ruby:setup"
+    caddie cli:indent "caddie ruby:install 3.2.2"
+    caddie cli:indent "caddie ruby:gemset:create myproject"
+    caddie cli:indent "caddie ruby:gem:install rails"
+    caddie cli:indent "caddie ruby:rails:new myapp"
+    caddie cli:blank
 }
 
 # Function to setup Ruby development environment
 function caddie_ruby_setup() {
-    echo "Setting up Ruby development environment..."
+    caddie cli:title "Setting up Ruby development environment..."
     
     # Check if RVM is installed
     if ! command -v rvm >/dev/null 2>&1; then
-        echo "Installing RVM..."
+        caddie cli:title "Installing RVM..."
         curl -sSL https://get.rvm.io | bash -s stable
         
         # Source RVM
@@ -76,30 +79,30 @@ function caddie_ruby_setup() {
         source "$HOME/.rvm/scripts/rvm"
         
         if ! command -v rvm >/dev/null 2>&1; then
-            echo "✗ Failed to install RVM"
+            caddie cli:x "Failed to install RVM"
             return 1
         fi
     else
-        echo "✓ RVM already installed"
+        caddie cli:check "RVM already installed"
     fi
     
     # Install latest stable Ruby
-    echo "Installing latest stable Ruby..."
+    caddie cli:title "Installing latest stable Ruby..."
     
     if rvm install ruby --latest; then
-        echo "✓ Ruby installed successfully"
+        caddie cli:check "Ruby installed successfully"
         rvm use ruby --default
-        echo "✓ Ruby set as default"
+        caddie cli:check "Ruby set as default"
     else
-        echo "✗ Failed to install Ruby"
+        caddie cli:x "Failed to install Ruby"
         return 1
     fi
     
     # Install essential gems
-    echo "Installing essential gems..."
+    caddie cli:title "Installing essential gems..."
     gem install bundler rails rake rspec pry
     
-    echo "✓ Ruby development environment setup complete"
+    caddie cli:check "Ruby development environment setup complete"
     caddie_ruby_version
 }
 
@@ -108,19 +111,19 @@ function caddie_ruby_install() {
     local version="$1"
     
     if [ -z "$version" ]; then
-        echo "Error: Please provide a Ruby version"
-        echo "Usage: caddie ruby:install <version>"
-        echo "Examples: 3.2.2, 3.1.4, 3.0.6"
+        caddie cli:red "Error: Please provide a Ruby version"
+        caddie cli:usage "caddie ruby:install <version>"
+        caddie cli:thought "Examples: 3.2.2, 3.1.4, 3.0.6"
         return 1
     fi
     
-    echo "Installing Ruby $version..."
+    caddie cli:title "Installing Ruby $version..."
     
     if rvm install "ruby-$version"; then
-        echo "✓ Ruby $version installed successfully"
-        echo "Use 'caddie ruby:use $version' to switch to it"
+        caddie cli:check "Ruby $version installed successfully"
+        caddie cli:thought "Use 'caddie ruby:use $version' to switch to it"
     else
-        echo "✗ Failed to install Ruby $version"
+        caddie cli:x "Failed to install Ruby $version"
         return 1
     fi
 }
@@ -149,21 +152,21 @@ function caddie_ruby_use() {
 
 # Function to list installed Ruby versions
 function caddie_ruby_list() {
-    echo "Installed Ruby versions:"
-    echo "======================="
+    caddie cli:title "Installed Ruby versions"
+    caddie cli:blank
     rvm list
-    echo ""
-    echo "Current version: $(ruby --version)"
+    caddie cli:blank
+    caddie cli:indent "Current version: $(ruby --version)"
 }
 
 # Function to show current Ruby version
 function caddie_ruby_current() {
-    echo "Current Ruby Environment:"
-    echo "========================"
-    echo "Ruby: $(ruby --version)"
-    echo "Gem: $(gem --version)"
-    echo "RVM: $(rvm --version)"
-    echo "Gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
+    caddie cli:title "Current Ruby Environment"
+    caddie cli:blank
+    caddie cli:indent "Ruby: $(ruby --version)"
+    caddie cli:indent "Gem: $(gem --version)"
+    caddie cli:indent "RVM: $(rvm --version)"
+    caddie cli:indent "Gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
 }
 
 # Function to create new gemset
@@ -615,14 +618,14 @@ function caddie_ruby_rails_routes() {
 
 # Function to show Ruby and RVM version information
 function caddie_ruby_version() {
-    echo "Ruby Environment Information"
-    echo "============================"
-    echo "Ruby: $(ruby --version)"
-    echo "Gem: $(gem --version)"
-    echo "RVM: $(rvm --version)"
-    echo "Bundler: $(bundle --version 2>/dev/null || echo 'not installed')"
-    echo "Rails: $(rails --version 2>/dev/null || echo 'not installed')"
-    echo "Current gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
+    caddie cli:title "Ruby Environment Information"
+    caddie cli:blank
+    caddie cli:indent "Ruby: $(ruby --version)"
+    caddie cli:indent "Gem: $(gem --version)"
+    caddie cli:indent "RVM: $(rvm --version)"
+    caddie cli:indent "Bundler: $(bundle --version 2>/dev/null || echo 'not installed')"
+    caddie cli:indent "Rails: $(rails --version 2>/dev/null || echo 'not installed')"
+    caddie cli:indent "Current gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
 }
 
 # Export Ruby functions

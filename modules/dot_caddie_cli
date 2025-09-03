@@ -144,38 +144,186 @@ function caddie_cli_colorlist() {
     echo "${WHITE}RESET${RESET}"
 }
 
+# UTF-8 character utility functions
+function caddie_cli_check() {
+    local text="$1"
+    echo "${GREEN}✓ ${text}${RESET}"
+}
+
+function caddie_cli_x() {
+    local text="$1"
+    echo "${RED}✗ ${text}${RESET}"
+}
+
+function caddie_cli_arrow() {
+    local text="$1"
+    echo "${YELLOW}→ ${text}${RESET}"
+}
+
+function caddie_cli_folder() {
+    local text="$1"
+    echo "${BLUE}📁 ${text}${RESET}"
+}
+
+function caddie_cli_beer() {
+    local text="$1"
+    echo "${BLUE}🍺 ${text}${RESET}"
+}
+
+function caddie_cli_snake() {
+    local text="$1"
+    echo "${BLUE}🐍 ${text}${RESET}"
+}
+
+function caddie_cli_crab() {
+    local text="$1"
+    echo "${BLUE}🦀 ${text}${RESET}"
+}
+
+function caddie_cli_trash() {
+    local text="$1"
+    echo "${BLUE}🗑️ ${text}${RESET}"
+}
+
+function caddie_cli_rotate() {
+    local text="$1"
+    echo "${BLUE}🔄 ${text}${RESET}"
+}
+
+function caddie_cli_chart() {
+    local text="$1"
+    echo "${BLUE}📊 ${text}${RESET}"
+}
+
+function caddie_cli_magnify() {
+    local text="$1"
+    echo "${BLUE}🔍 ${text}${RESET}"
+}
+
+function caddie_cli_save() {
+    local text="$1"
+    echo "${BLUE}💾 ${text}${RESET}"
+}
+
+function caddie_cli_warning() {
+    local text="$1"
+    echo "${YELLOW}⚠ ${text}${RESET}"
+}
+
+function caddie_cli_debug() {
+    local text="$1"
+    echo "${CYAN}🐛 ${text}${RESET}"
+}
+
+# Additional UTF-8 character utility functions
+function caddie_cli_wrench() {
+    local text="$1"
+    echo "${BLUE}🔧 ${text}${RESET}"
+}
+
+function caddie_cli_whale() {
+    local text="$1"
+    echo "${BLUE}🐳 ${text}${RESET}"
+}
+
+function caddie_cli_package() {
+    local text="$1"
+    echo "${BLUE}📦 ${text}${RESET}"
+}
+
+function caddie_cli_git() {
+    local text="$1"
+    echo "${BLUE}🌐 ${text}${RESET}"
+}
+
+function caddie_cli_rocket() {
+    local text="$1"
+    echo "${BLUE}🚀 ${text}${RESET}"
+}
+
+function caddie_cli_thought() {
+    local text="$1"
+    echo "${BLUE}💡 ${text}${RESET}"
+}
+
+function caddie_cli_lightbulb() {
+    local text="$1"
+    echo "${BLUE}💡 ${text}${RESET}"
+}
+
+function caddie_cli_magnifying_glass() {
+    local text="$1"
+    echo "${BLUE}🔍 ${text}${RESET}"
+}
+
+function caddie_cli_blank() {
+    echo ""
+}
+
+function caddie_cli_indent() {
+    local text="$1"
+    echo "  ${text}"
+}
+
 function caddie_cli_help() {
-    echo "Usage: caddie cli:<command> [text]"
-    echo ""
-    echo "Color Commands:"
-    echo "  red <text>              - Print text in red"
-    echo "  green <text>            - Print text in green"
-    echo "  yellow <text>           - Print text in yellow"
-    echo "  blue <text>             - Print text in blue"
-    echo "  purple <text>           - Print text in purple"
-    echo "  cyan <text>             - Print text in cyan"
-    echo "  grey <text>             - Print text in grey"
-    echo "  orange <text>           - Print text in orange"
-    echo "  white <text>            - Print text in white"
-    echo ""
-    echo "Bold Color Commands:"
-    echo "  red:bold <text>         - Print text in bold red"
-    echo "  green:bold <text>       - Print text in bold green"
-    echo "  yellow:bold <text>      - Print text in bold yellow"
-    echo "  blue:bold <text>        - Print text in bold blue"
-    echo "  purple:bold <text>      - Print text in bold purple"
-    echo "  cyan:bold <text>        - Print text in bold cyan"
-    echo "  grey:bold <text>        - Print text in bold grey"
-    echo "  orange:bold <text>      - Print text in bold orange"
-    echo "  white:bold <text>       - Print text in bold white"
-    echo ""
-    echo "Utility Commands:"
-    echo "  usage <text>            - Print usage text in blue"
-    echo "  installed               - Print 'installed' in blue"
-    echo "  complete                - Print 'complete' in blue"
-    echo "  title <text>            - Print title with green formatting"
-    echo "  colorlist               - List all available colors"
-    echo "  help                    - Show this help message"
+    caddie cli:usage "caddie cli:<command> [text]"
+    caddie cli:blank
+    caddie cli:title "Color Commands:"
+    caddie cli:indent "red <text>              - Print text in red"
+    caddie cli:indent "green <text>            - Print text in green"
+    caddie cli:indent "yellow <text>           - Print text in yellow"
+    caddie cli:indent "blue <text>             - Print text in blue"
+    caddie cli:indent "purple <text>           - Print text in purple"
+    caddie cli:indent "cyan <text>             - Print text in cyan"
+    caddie cli:indent "grey <text>             - Print text in grey"
+    caddie cli:indent "orange <text>           - Print text in orange"
+    caddie cli:indent "white <text>            - Print text in white"
+    caddie cli:blank
+    caddie cli:title "Bold Color Commands:"
+    caddie cli:indent "red:bold <text>         - Print text in bold red"
+    caddie cli:indent "green:bold <text>       - Print text in bold green"
+    caddie cli:indent "yellow:bold <text>      - Print text in bold yellow"
+    caddie cli:indent "blue:bold <text>        - Print text in bold blue"
+    caddie cli:indent "purple:bold <text>      - Print text in bold purple"
+    caddie cli:indent "cyan:bold <text>        - Print text in bold cyan"
+    caddie cli:indent "grey:bold <text>        - Print text in bold grey"
+    caddie cli:indent "orange:bold <text>      - Print text in bold orange"
+    caddie cli:indent "white:bold <text>       - Print text in bold white"
+    caddie cli:blank
+    caddie cli:wrench "Utility Commands:"
+    caddie cli:indent "usage <text>            - Print usage text in blue"
+    caddie cli:indent "installed               - Print 'installed' in blue"
+    caddie cli:indent "complete                - Print 'complete' in blue"
+    caddie cli:indent "title <text>            - Print title with green formatting"
+    caddie cli:indent "colorlist               - List all available colors"
+    caddie cli:indent "indent <text>           - Print text with 2-space indentation"
+    caddie cli:blank
+    caddie cli:magnifying_glass "UTF-8 Character Commands:"
+    caddie cli:indent "check <text>            - Print ✓ with green text"
+    caddie cli:indent "x <text>                - Print ✗ with red text"
+    caddie cli:indent "arrow <text>            - Print → with yellow text"
+    caddie cli:indent "folder <text>           - Print 📁 with blue text"
+    caddie cli:indent "beer <text>             - Print 🍺 with blue text"
+    caddie cli:indent "snake <text>            - Print 🐍 with blue text"
+    caddie cli:indent "crab <text>             - Print 🦀 with blue text"
+    caddie cli:indent "trash <text>            - Print 🗑️ with blue text"
+    caddie cli:indent "rotate <text>           - Print 🔄 with blue text"
+    caddie cli:indent "chart <text>            - Print 📊 with blue text"
+    caddie cli:indent "magnify <text>          - Print 🔍 with blue text"
+    caddie cli:indent "save <text>             - Print 💾 with blue text"
+    caddie cli:indent "warning <text>          - Print ⚠ with yellow text"
+    caddie cli:indent "debug <text>            - Print 🐛 with cyan text"
+    caddie cli:indent "wrench <text>           - Print 🔧 with blue text"
+    caddie cli:indent "whale <text>            - Print 🐳 with blue text"
+    caddie cli:indent "package <text>          - Print 📦 with blue text"
+    caddie cli:indent "git <text>              - Print 🌐 with blue text"
+    caddie cli:indent "rocket <text>           - Print 🚀 with blue text"
+    caddie cli:indent "thought <text>          - Print 💡 with blue text"
+    caddie cli:indent "lightbulb <text>        - Print 💡 with blue text"
+    caddie cli:indent "magnifying_glass <text> - Print 🔍 with blue text"
+    caddie cli:indent "blank                   - Print empty line"
+    caddie cli:blank
+    caddie cli:thought "  help                    - Show this help message"
 }
 
 # Export all functions
@@ -183,3 +331,5 @@ export -f caddie_cli_description
 export -f caddie_cli_red caddie_cli_green caddie_cli_yellow caddie_cli_blue caddie_cli_purple caddie_cli_cyan caddie_cli_grey caddie_cli_orange caddie_cli_white
 export -f caddie_cli_red_bold caddie_cli_green_bold caddie_cli_yellow_bold caddie_cli_blue_bold caddie_cli_purple_bold caddie_cli_cyan_bold caddie_cli_grey_bold caddie_cli_orange_bold caddie_cli_white_bold
 export -f caddie_cli_usage caddie_cli_installed caddie_cli_complete caddie_cli_title caddie_cli_colorlist caddie_cli_help
+export -f caddie_cli_check caddie_cli_x caddie_cli_arrow caddie_cli_folder caddie_cli_beer caddie_cli_snake caddie_cli_crab caddie_cli_trash caddie_cli_rotate caddie_cli_chart caddie_cli_magnify caddie_cli_save caddie_cli_warning caddie_cli_debug
+export -f caddie_cli_wrench caddie_cli_whale caddie_cli_package caddie_cli_git caddie_cli_rocket caddie_cli_thought caddie_cli_lightbulb caddie_cli_magnifying_glass caddie_cli_blank caddie_cli_indent

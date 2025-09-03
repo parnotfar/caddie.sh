@@ -23,7 +23,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Cross-Platform**: Multi-language project templates and tools
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows and shortcuts
-- **CLI Utilities**: Sophisticated color output and formatting functions
+- **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
 - **Productivity Aliases**: 50+ aliases for faster development workflows

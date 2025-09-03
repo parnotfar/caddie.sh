@@ -3,6 +3,8 @@
 # Caddie.sh - Git Prompt and Custom File Management
 # This file handles git prompt setup and custom file sourcing
 
+source "$HOME/.caddie_modules/.caddie_cli"
+
 # Function to source custom files
 caddie_source_custom_files() {
     # Source custom bash profile additions
@@ -58,22 +60,25 @@ function caddie_git_pull() {
 }
 
 function caddie_git_help() {
-    echo "Git Module Commands"
-    echo "=================="
-    echo ""
-    echo "Usage: caddie git:<command>"
-    echo ""
-    echo "Commands:"
-    echo "  status              Show git status"
-    echo "  branch              Show current and all branches"
-    echo "  commit <message>    Add all changes and commit with message"
-    echo "  push               Push to remote repository"
-    echo "  pull               Pull from remote repository"
-    echo ""
-    echo "Examples:"
-    echo "  caddie git:status"
-    echo "  caddie git:commit 'Add new feature'"
-    echo "  caddie git:push"
+    caddie cli:title "Git Module Commands"
+    caddie cli:blank
+    
+    caddie cli:usage "caddie git:<command>"
+    caddie cli:blank
+    
+    caddie cli:title "Commands:"
+    caddie cli:indent "status              Show git status"
+    caddie cli:indent "branch              Show current and all branches"
+    caddie cli:indent "commit <message>    Add all changes and commit with message"
+    caddie cli:indent "push               Push to remote repository"
+    caddie cli:indent "pull               Pull from remote repository"
+    caddie cli:blank
+    
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie git:status"
+    caddie cli:indent "caddie git:commit 'Add new feature'"
+    caddie cli:indent "caddie git:push"
+    caddie cli:blank
 }
 
 function caddie_git_description() {
