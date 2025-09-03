@@ -37,7 +37,6 @@ This document outlines the comprehensive plan for launching Caddie.sh as an open
 - [x] `CONTRIBUTING.md` (link to docs/contributing.md)
 - [x] `CODE_OF_CONDUCT.md`
 - [x] `SECURITY.md`
-- [x] `CHANGELOG.md`
 
 ## 3. Social Media Launch
 

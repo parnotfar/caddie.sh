@@ -643,7 +643,6 @@ We use [Semantic Versioning](https://semver.org/):
 
 - [ ] **All tests pass**
 - [ ] **Documentation is current**
-- [ ] **Changelog is updated**
 - [ ] **Version is bumped**
 - [ ] **Release notes are prepared**
 
@@ -670,7 +669,6 @@ We use [Semantic Versioning](https://semver.org/):
 All contributors are recognized in:
 
 - **README.md**: List of contributors
-- **CHANGELOG.md**: Detailed contribution history
 - **GitHub**: Contributor statistics and graphs
 
 ### Special Recognition

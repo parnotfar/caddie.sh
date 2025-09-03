@@ -2,7 +2,7 @@
 
 ## Version 1.1 - CLI Enhancement Release
 
-**Release Date:** December 2024
+**Release Date:** September 3, 2025
 
 ### 🎨 New Features
 
@@ -62,7 +62,7 @@
 
 ## Version 1.0 - Initial Release
 
-**Release Date:** November 2024
+**Release Date:** August 2025
 
 ### 🚀 Core Features
 
