@@ -16,7 +16,12 @@ caddie_source_custom_files() {
     fi
 }
 
-export PS1='$(caddie_prompt)'
+# Set product name
+export PRODUCT_NAME="Caddie"
+
+# Source and set up our simple prompt
+source ~/.caddie_prompt.sh
+set_simple_caddie_prompt
 
 # Auto-setup when sourced
 caddie_source_custom_files

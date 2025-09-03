@@ -97,6 +97,10 @@ install-dot: backup-existing ## Install dot files to home directory
 	cp dot_caddie_prompt "$(HOME_DIR)/.caddie_prompt.sh"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_prompt.sh"
 	
+	echo "$(YELLOW)  →$(NC) Installing dot_caddie_colors as ~/.caddie_colors"
+	cp dot_caddie_colors "$(HOME_DIR)/.caddie_colors"
+	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_colors"
+	
 	echo "$(YELLOW)  →$(NC) Installing dot_caddie_version as ~/.caddie_version"
 	cp dot_caddie_version "$(HOME_DIR)/.caddie_version"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_version"
