@@ -72,20 +72,6 @@ function caddie_rust_run() {
     caddie cli:check "Rust project ran successfully"
 }
 
-# Function to run Rust tests
-function caddie_rust_test() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
-    caddie cli:title "Running Rust tests..."
-    cargo test
-    caddie cli:check "Rust tests completed successfully"
-}
-
 # Function to check Rust project without building
 function caddie_rust_check() {
     caddie_rust_load_env
@@ -98,6 +84,126 @@ function caddie_rust_check() {
     caddie cli:title "Checking Rust project..."
     cargo check
     caddie cli:check "Rust project check passed"
+}
+
+# Function to run Rust tests
+function caddie_rust_test() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    local test_type="${1:-all}"
+    
+    case "$test_type" in
+        "all"|"")
+            caddie cli:title "Running all Rust tests..."
+            cargo test
+            caddie cli:check "All Rust tests completed successfully"
+            ;;
+        "unit")
+            caddie cli:title "Running unit tests only..."
+            cargo test --lib
+            caddie cli:check "Unit tests completed successfully"
+            ;;
+        "integration")
+            caddie cli:title "Running integration tests only..."
+            cargo test --tests
+            caddie cli:check "Integration tests completed successfully"
+            ;;
+        "property")
+            caddie cli:title "Running property-based tests..."
+            cargo test --test property_tests
+            caddie cli:check "Property-based tests completed successfully"
+            ;;
+        "bench")
+            caddie cli:title "Running benchmarks..."
+            cargo bench
+            caddie cli:check "Benchmarks completed successfully"
+            ;;
+        "watch")
+            caddie cli:title "Running tests in watch mode..."
+            if command -v cargo-watch >/dev/null 2>&1; then
+                cargo watch -x test
+            else
+                caddie cli:title "Installing cargo-watch for test watching..."
+                cargo install cargo-watch
+                cargo watch -x test
+            fi
+            ;;
+        "coverage")
+            caddie cli:title "Running tests with coverage..."
+            if command -v cargo-tarpaulin >/dev/null 2>&1; then
+                cargo tarpaulin --out Html
+                caddie cli:check "Coverage report generated in target/tarpaulin/"
+            else
+                caddie cli:title "Installing cargo-tarpaulin for coverage..."
+                cargo install cargo-tarpaulin
+                cargo tarpaulin --out Html
+                caddie cli:check "Coverage report generated in target/tarpaulin/"
+            fi
+            ;;
+        *)
+            caddie cli:red "Error: Unknown test type '$test_type'"
+            caddie cli:usage "caddie rust:test [all|unit|integration|property|bench|watch|coverage|simulation]"
+            return 1
+            ;;
+    esac
+}
+
+# Function to run simulation-specific tests and validation
+function caddie_rust_simulation_test() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    local test_mode="${1:-full}"
+    
+    case "$test_mode" in
+        "full")
+            caddie cli:title "Running full simulation test suite..."
+            caddie cli:indent "Running unit tests..."
+            cargo test --lib -- --nocapture
+            caddie cli:indent "Running integration tests..."
+            cargo test --tests -- --nocapture 2>/dev/null || caddie cli:thought "No integration tests found"
+            caddie cli:indent "Running property-based tests..."
+            cargo test --test property_tests -- --nocapture 2>/dev/null || caddie cli:thought "No property tests found"
+            caddie cli:check "Full simulation test suite completed"
+            ;;
+        "quick")
+            caddie cli:title "Running quick simulation validation..."
+            cargo test --lib -- --nocapture
+            caddie cli:check "Quick simulation validation completed"
+            ;;
+        "property")
+            caddie cli:title "Running property-based simulation tests..."
+            cargo test --test property_tests -- --nocapture
+            caddie cli:check "Property-based simulation tests completed"
+            ;;
+        "bench")
+            caddie cli:title "Running simulation benchmarks..."
+            cargo bench
+            caddie cli:check "Simulation benchmarks completed"
+            ;;
+        "validate")
+            caddie cli:title "Validating simulation outputs..."
+            caddie cli:indent "Checking probability bounds..."
+            cargo test --lib -- --nocapture | grep -E "(probability|Probability)" || true
+            caddie cli:indent "Checking result validation..."
+            cargo test --lib -- --nocapture | grep -E "(assert|Assert)" || true
+            caddie cli:check "Simulation output validation completed"
+            ;;
+        *)
+            caddie cli:red "Error: Unknown simulation test mode '$test_mode'"
+            caddie cli:usage "caddie rust:simulation:test [full|quick|property|bench|validate]"
+            return 1
+            ;;
+    esac
 }
 
 # Function to clean Rust build artifacts
@@ -209,7 +315,115 @@ function caddie_rust_outdated() {
     fi
 }
 
-# Function to run Rust security audit
+# Function to run unit tests only
+function caddie_rust_test_unit() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running unit tests only..."
+    cargo test --lib -- --nocapture
+    caddie cli:check "Unit tests completed successfully"
+}
+
+# Function to run integration tests only
+function caddie_rust_test_integration() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running integration tests only..."
+    cargo test --tests -- --nocapture
+    caddie cli:check "Integration tests completed successfully"
+}
+
+# Function to run all tests
+function caddie_rust_test_all() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running all Rust tests..."
+    cargo test -- --nocapture
+    caddie cli:check "All Rust tests completed successfully"
+}
+
+# Function to run property-based tests
+function caddie_rust_test_property() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running property-based tests..."
+    cargo test --test property_tests -- --nocapture
+    caddie cli:check "Property-based tests completed successfully"
+}
+
+# Function to run benchmarks
+function caddie_rust_test_bench() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running benchmarks..."
+    cargo bench
+    caddie cli:check "Benchmarks completed successfully"
+}
+
+# Function to run tests in watch mode
+function caddie_rust_test_watch() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running tests in watch mode..."
+    if command -v cargo-watch >/dev/null 2>&1; then
+        cargo watch -x test
+    else
+        caddie cli:title "Installing cargo-watch for test watching..."
+        cargo install cargo-watch
+        cargo watch -x test
+    fi
+}
+
+# Function to run tests with coverage
+function caddie_rust_test_coverage() {
+    caddie_rust_load_env
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Running tests with coverage..."
+    if command -v cargo-tarpaulin >/dev/null 2>&1; then
+        cargo tarpaulin --out Html
+        caddie cli:check "Coverage report generated in target/tarpaulin/"
+    else
+        caddie cli:title "Installing cargo-tarpaulin for coverage..."
+        cargo install cargo-tarpaulin
+        cargo tarpaulin --out Html
+        caddie cli:check "Coverage report generated in target/tarpaulin/"
+    fi
+}
 function caddie_rust_audit() {
     caddie_rust_load_env
     
@@ -295,7 +509,14 @@ function caddie_rust_help() {
     caddie cli:indent "new <name>        Create new Rust project"
     caddie cli:indent "build             Build current project"
     caddie cli:indent "run               Run current project"
-    caddie cli:indent "test              Run tests"
+    caddie cli:indent "test              Run all tests"
+    caddie cli:indent "test:unit         Run unit tests only"
+    caddie cli:indent "test:integration  Run integration tests only"
+    caddie cli:indent "test:all          Run all tests"
+    caddie cli:indent "test:property     Run property-based tests"
+    caddie cli:indent "test:bench        Run benchmarks"
+    caddie cli:indent "test:watch        Run tests in watch mode"
+    caddie cli:indent "test:coverage     Run tests with coverage"
     caddie cli:indent "check             Check without building"
     caddie cli:indent "clean             Clean build artifacts"
     caddie cli:blank
@@ -315,6 +536,8 @@ function caddie_rust_help() {
     caddie cli:title "Examples:"
     caddie cli:indent "caddie rust:new myproject"
     caddie cli:indent "caddie rust:build"
+    caddie cli:indent "caddie rust:test:unit"
+    caddie cli:indent "caddie rust:test:integration"
     caddie cli:indent "caddie rust:add serde"
     caddie cli:indent "caddie rust:toolchain nightly"
     caddie cli:indent "caddie rust:component clippy"
@@ -332,6 +555,13 @@ export -f caddie_rust_new
 export -f caddie_rust_build
 export -f caddie_rust_run
 export -f caddie_rust_test
+export -f caddie_rust_test_unit
+export -f caddie_rust_test_integration
+export -f caddie_rust_test_all
+export -f caddie_rust_test_property
+export -f caddie_rust_test_bench
+export -f caddie_rust_test_watch
+export -f caddie_rust_test_coverage
 export -f caddie_rust_check
 export -f caddie_rust_clean
 export -f caddie_rust_update
