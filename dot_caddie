@@ -62,6 +62,10 @@ function caddie() {
             caddie_version
             return 0
             ;;
+        "reload"|"--reload"|"-r")
+            source "$HOME/.bash_profile"
+            return 0
+            ;;
         "")
             caddie_help
             return 0
@@ -105,7 +109,7 @@ _caddie_completion() {
   fi
 
   # Build a flat list of all accepted commands
-  local base_opts="help version go:home --help -h --version -v"
+  local base_opts="help version go:home --help -h --version -v reload --reload -r"
   local modules=()
   
   if command -v caddie_modules_get >/dev/null 2>&1; then
@@ -127,7 +131,7 @@ _caddie_completion() {
         module_commands="$module_commands js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
         ;;
       rust)
-        module_commands="$module_commands rust:new rust:build rust:run rust:test rust:add rust:remove rust:fmt rust:clippy rust:check rust:doc"
+        module_commands="$module_commands rust:init rust:new rust:build rust:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
         ;;
       ios)
         module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"

@@ -72,6 +72,9 @@ caddie rust:help
 
 # Command help
 caddie core:help
+
+# Reload caddie environment
+caddie reload
 ```
 
 ### Debug System
@@ -86,8 +89,8 @@ caddie core:debug off
 # Check debug status
 caddie core:debug status
 
-# Check debug status
-caddie core:debug status
+# Reload caddie after configuration changes
+caddie reload
 ```
 
 ### Home Directory Management
@@ -104,6 +107,19 @@ caddie go:home
 
 # Reset to default
 caddie core:reset:home
+```
+
+### System Management
+
+```bash
+# Reload caddie environment and configuration
+caddie reload
+
+# Useful after making changes to:
+# - caddie modules or configuration
+# - ~/.bash_profile or ~/.bashrc
+# - environment variables
+# - module installations or updates
 ```
 
 ### Productivity Aliases
@@ -253,7 +269,10 @@ caddie python:format
 #### Project Management
 
 ```bash
-# Create new project
+# Create new project with proper .gitignore
+caddie rust:init myapp
+
+# Create new project (basic)
 caddie rust:new myapp
 
 # Build project
@@ -267,6 +286,22 @@ caddie rust:test
 
 # Check code without building
 caddie rust:check
+
+# Clean build artifacts
+caddie rust:clean
+```
+
+#### Git Integration
+
+```bash
+# Check git status for build artifacts
+caddie rust:git:status
+
+# Add comprehensive .gitignore to existing project
+caddie rust:gitignore
+
+# Remove tracked build artifacts from git
+caddie rust:git:clean
 ```
 
 #### Cross-Platform Development
@@ -296,6 +331,12 @@ caddie rust:update
 
 # Search crates
 caddie rust:search json
+
+# Check for outdated dependencies
+caddie rust:outdated
+
+# Security audit
+caddie rust:audit
 ```
 
 #### Toolchain Management
@@ -309,6 +350,31 @@ caddie rust:target x86_64-unknown-linux-gnu
 
 # Install component
 caddie rust:component clippy
+```
+
+#### Advanced Testing
+
+```bash
+# Run unit tests only
+caddie rust:test:unit
+
+# Run integration tests only
+caddie rust:test:integration
+
+# Run all tests
+caddie rust:test:all
+
+# Run property-based tests
+caddie rust:test:property
+
+# Run benchmarks
+caddie rust:test:bench
+
+# Run tests in watch mode
+caddie rust:test:watch
+
+# Run tests with coverage
+caddie rust:test:coverage
 ```
 
 ### Ruby Development

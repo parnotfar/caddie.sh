@@ -143,6 +143,46 @@ Debug mode is: on
 Debug mode is: off
 ```
 
+### System Management
+
+#### `caddie reload`
+
+Reload the entire Caddie.sh environment and configuration.
+
+**Examples:**
+```bash
+# Reload after making changes to caddie modules
+caddie reload
+
+# Reload after updating ~/.bash_profile
+caddie reload
+
+# Reload after installing new modules
+caddie reload
+```
+
+**What it does:**
+- Sources `~/.bash_profile` to reload all configurations
+- Refreshes environment variables and module loading
+- Provides instant recovery from configuration changes
+- Essential for developers making changes to caddie modules
+
+**Output:**
+```
+(No output - silently reloads the environment)
+```
+
+**Use cases:**
+- After modifying caddie module files
+- After updating `~/.bash_profile` or `~/.bashrc`
+- After installing new development tools
+- When environment variables seem stale
+- During development and testing of caddie modules
+
+**Requirements:**
+- Must be run from a shell that has caddie loaded
+- Requires `~/.bash_profile` to be properly configured
+
 ## Debug Output Examples
 
 When debug mode is enabled, you'll see detailed information about Caddie.sh operations:

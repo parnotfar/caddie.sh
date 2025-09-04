@@ -19,7 +19,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **One-Command Setup**: Complete development environment installation in minutes
 - **Modular Architecture**: Pick and choose the tools you need
 - **Python Management**: Virtual environments, package management, and project scaffolding
-- **Rust Development**: Cargo integration, toolchain management, and project templates
+- **Rust Development**: Cargo integration, toolchain management, project templates, and git integration
 - **Ruby Environment**: RVM integration and gem management
 - **JavaScript/Node.js**: NVM integration and package management
 - **iOS Development**: Xcode integration and development tools
@@ -56,11 +56,8 @@ make install
 ### First Use
 
 ```bash
-# Restart your terminal or source the profile
-source ~/.bash_profile
-
-# Verify installation
-caddie --version
+# Reload environment (recommended)
+caddie reload
 
 # Get help
 caddie help

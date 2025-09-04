@@ -109,9 +109,8 @@ The installer will:
 After installation, you need to activate the new environment:
 
 ```bash
-# Option 1: Restart your terminal
-# Option 2: Source the profile manually
-source ~/.bash_profile
+# Option 1: Use caddie reload command (recommended)
+caddie reload
 ```
 
 ### Step 4: Verify Installation
@@ -158,6 +157,18 @@ caddie python:create test-env
    # caddie android:rust:setup
    ```
 
+5. **Setup Rust Git Integration** (Recommended):
+   ```bash
+   # Create new Rust project with proper .gitignore
+   caddie rust:init myproject
+   
+   # Or add .gitignore to existing project
+   caddie rust:gitignore
+   
+   # Check for build artifacts in git
+   caddie rust:git:status
+   ```
+
 ### Environment Variables
 
 The installer sets up these environment variables:
@@ -175,6 +186,11 @@ The installer sets up these environment variables:
 **Solution**: The shell profile hasn't been sourced. Run:
 ```bash
 source ~/.bash_profile
+```
+
+**Alternative**: Use the reload command:
+```bash
+caddie reload
 ```
 
 #### Issue: "Permission denied" during installation
@@ -326,6 +342,7 @@ If `caddie python:help` returns "Unknown command":
 1. **Check Installation**: Verify `~/.caddie_modules/` directory exists
 2. **Verify Sourcing**: Check that `~/.bash_profile` sources `~/.caddie.sh`
 3. **Reload Environment**: Run `source ~/.bash_profile`
+4. **Use Reload Command**: Try `caddie reload` for quick environment refresh
 
 ## Support
 

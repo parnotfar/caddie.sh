@@ -1,5 +1,140 @@
 # Caddie.sh Release Notes
 
+## Version 1.3 - Rust Git Integration Release
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+#### **Rust Git Integration**
+- **Project Initialization**: New `caddie rust:init` command creates projects with comprehensive `.gitignore`
+- **Git Status Monitoring**: `caddie rust:git:status` checks for tracked build artifacts and warns about issues
+- **Automatic .gitignore**: `caddie rust:gitignore` adds comprehensive `.gitignore` to existing projects
+- **Build Artifact Cleanup**: `caddie rust:git:clean` removes tracked build artifacts from git history
+- **Prevention-First Approach**: Prevents accidental commit of build artifacts before they happen
+
+#### **System Reload Command**
+- **Environment Reload**: New `caddie reload` command refreshes the entire caddie environment
+- **Profile Sourcing**: Automatically sources `~/.bash_profile` to reload all configurations
+- **Quick Recovery**: Provides instant recovery from configuration changes or module updates
+- **Development Workflow**: Essential for developers making changes to caddie modules or configuration
+- **Installation Integration**: Updated installation process to use `caddie reload` instead of manual sourcing
+
+#### **Enhanced Rust Project Management**
+- **Comprehensive .gitignore**: Covers Rust build artifacts, IDE files, OS files, and temporary files
+- **Idempotent Operations**: Safe to run multiple times without side effects
+- **Backup Protection**: Existing `.gitignore` files are backed up before modification
+- **Clear Guidance**: Provides next steps and recommendations after each operation
+
+#### **Advanced Testing Commands**
+- **Granular Test Control**: Separate commands for unit, integration, property, and benchmark tests
+- **Test Watching**: `caddie rust:test:watch` for continuous test execution
+- **Coverage Analysis**: `caddie rust:test:coverage` with automatic cargo-tarpaulin installation
+- **No-Capture Output**: All test commands use `--nocapture` for better debugging
+
+### 🔧 Improvements
+
+#### **Build Artifact Management**
+- **Target Directory Detection**: Automatically detects and handles `/target/` directory tracking
+- **File Type Recognition**: Identifies `.rlib`, `.rmeta`, `.so`, `.dylib`, `.dll`, `.exe` files
+- **Batch Operations**: Efficiently removes multiple build artifacts in single operation
+- **Safety Checks**: Validates git repository and Rust project status before operations
+
+#### **Developer Experience**
+- **Proactive Prevention**: Catches build artifact issues before they reach git history
+- **Clear Feedback**: Professional CLI output with status indicators and file counts
+- **Error Recovery**: Provides specific guidance for fixing detected issues
+- **Tab Completion**: Full integration with existing caddie completion system
+
+#### **Documentation Updates**
+- **Comprehensive Help**: Updated `caddie rust:help` with all new git integration commands
+- **User Guide**: Enhanced Rust development section with git integration examples
+- **Installation Guide**: Added Rust git integration setup recommendations
+- **Release Notes**: Complete documentation of new features and improvements
+
+### 🎯 Use Cases
+
+#### **Installation Workflow**
+```bash
+# Complete installation
+make install
+
+# Reload environment (now recommended)
+caddie reload
+
+# Verify installation
+caddie --version
+```
+
+#### **New Rust Project Setup**
+```bash
+# Create project with proper .gitignore from start
+caddie rust:init myproject
+
+# Verify no build artifacts are tracked
+caddie rust:git:status
+
+# Start development with confidence
+caddie rust:build
+caddie rust:test:unit
+```
+
+#### **Existing Project Cleanup**
+```bash
+# Add comprehensive .gitignore
+caddie rust:gitignore
+
+# Check for existing build artifacts
+caddie rust:git:status
+
+# Remove tracked build artifacts
+caddie rust:git:clean
+
+# Commit the cleanup
+git commit -m "Remove build artifacts and add .gitignore"
+```
+
+#### **Continuous Development Workflow**
+```bash
+# Regular development cycle
+caddie rust:build
+caddie rust:test:unit
+caddie rust:test:integration
+
+# Before committing, check for artifacts
+caddie rust:git:status
+
+# If clean, proceed with commit
+git add .
+git commit -m "Add new feature"
+```
+
+### 📦 Technical Details
+
+#### **New Commands Added**
+- `caddie rust:init <name>` - Create project with .gitignore
+- `caddie rust:git:status` - Check git status for build artifacts
+- `caddie rust:gitignore` - Add comprehensive .gitignore
+- `caddie rust:git:clean` - Remove tracked build artifacts
+- `caddie reload` - Reload caddie environment and configuration
+
+#### **Enhanced Test Commands**
+- `caddie rust:test:unit` - Unit tests with --nocapture
+- `caddie rust:test:integration` - Integration tests with --nocapture
+- `caddie rust:test:all` - All tests with --nocapture
+- `caddie rust:test:property` - Property-based tests
+- `caddie rust:test:bench` - Benchmarks
+- `caddie rust:test:watch` - Watch mode with cargo-watch
+- `caddie rust:test:coverage` - Coverage with cargo-tarpaulin
+
+#### **Git Integration Features**
+- **Comprehensive .gitignore**: 50+ patterns covering Rust, IDE, OS, and temporary files
+- **Build Artifact Detection**: Regex patterns for all common Rust build outputs
+- **Safe Operations**: Validation of git repository and project structure
+- **Backup Protection**: Automatic backup of existing .gitignore files
+
+---
+
 ## Version 1.2 - Cross-Platform Rust Integration Release
 
 **Release Date:** December 2025

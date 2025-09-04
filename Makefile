@@ -51,13 +51,7 @@ help: ## Show this help message
 all: install ## Alias for install
 
 install: check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
-	echo ""
-	echo "$(GREEN)✓$(NC) $(CYAN)Caddie.sh installation completed successfully!$(NC)"
-	echo ""
-	echo "$(YELLOW)Next steps:$(NC)"
-	echo "  1. Restart your terminal or run: $(CYAN)source ~/.bash_profile$(NC)"
-	echo "  2. Verify installation with: $(CYAN)caddie --version$(NC)"
-	echo ""
+	@caddie reload
 
 check-prerequisites: ## Check system prerequisites
 	echo "$(BLUE)🔍$(NC) Checking system prerequisites..."

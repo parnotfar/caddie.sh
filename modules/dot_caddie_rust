@@ -19,6 +19,106 @@ function caddie_rust_load_env() {
 # Source Rust environment when module is loaded
 caddie_rust_load_env
 
+# Function to create a new Rust project with proper .gitignore
+function caddie_rust_init() {
+    caddie_rust_load_env
+    
+    local project_name="$1"
+    
+    if [ -z "$project_name" ]; then
+        caddie cli:red "Error: Please provide a project name"
+        caddie cli:usage "caddie rust:init <name>"
+        return 1
+    fi
+    
+    if [ -d "$project_name" ]; then
+        caddie cli:red "Error: Directory '$project_name' already exists"
+        return 1
+    fi
+    
+    caddie cli:title "Creating new Rust project '$project_name' with proper .gitignore..."
+    cargo new "$project_name"
+    
+    # Add comprehensive .gitignore
+    cat > "$project_name/.gitignore" << 'EOF'
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo
+Cargo.lock
+*.orig
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# Temporary folders
+tmp/
+temp/
+
+# Rust specific
+*.rlib
+*.rmeta
+*.so
+*.dylib
+*.dll
+*.exe
+EOF
+    
+    caddie cli:check "Rust project '$project_name' created successfully with .gitignore"
+    caddie cli:indent "Location: $(pwd)/$project_name"
+    caddie cli:indent "Enter directory: cd $project_name"
+    caddie cli:indent "Build project: caddie rust:build"
+    caddie cli:indent "Run tests: caddie rust:test:unit"
+}
+
 # Function to create a new Rust project
 function caddie_rust_new() {
     caddie_rust_load_env
@@ -204,6 +304,189 @@ function caddie_rust_simulation_test() {
             return 1
             ;;
     esac
+}
+
+# Function to check git status and warn about build artifacts
+function caddie_rust_git_status() {
+    if [ ! -d ".git" ]; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+    
+    caddie cli:title "Checking git status for build artifacts..."
+    
+    # Check for tracked build artifacts
+    local build_files=$(git ls-files | grep -E "(target/|\.rlib|\.rmeta|\.so|\.dylib|\.dll|\.exe|Cargo\.lock)" || true)
+    
+    if [ -n "$build_files" ]; then
+        caddie cli:red "Warning: Build artifacts are tracked in git!"
+        caddie cli:indent "Found tracked build files:"
+        echo "$build_files" | head -10 | while read -r file; do
+            caddie cli:indent "  - $file"
+        done
+        if [ "$(echo "$build_files" | wc -l)" -gt 10 ]; then
+            caddie cli:indent "  ... and $(($(echo "$build_files" | wc -l) - 10)) more files"
+        fi
+        caddie cli:blank
+        caddie cli:title "To fix this:"
+        caddie cli:indent "1. Add proper .gitignore: caddie rust:gitignore"
+        caddie cli:indent "2. Remove tracked files: caddie rust:git:clean"
+        return 1
+    else
+        caddie cli:check "No build artifacts tracked in git"
+    fi
+    
+    # Check for untracked build artifacts
+    local untracked_build=$(git status --porcelain | grep -E "(target/|\.rlib|\.rmeta|\.so|\.dylib|\.dll|\.exe)" || true)
+    
+    if [ -n "$untracked_build" ]; then
+        caddie cli:yellow "Note: Untracked build artifacts found"
+        caddie cli:indent "These will be ignored by .gitignore"
+    fi
+    
+    caddie cli:check "Git status check completed"
+}
+
+# Function to add proper .gitignore to existing project
+function caddie_rust_gitignore() {
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Adding comprehensive .gitignore to Rust project..."
+    
+    # Check if .gitignore already exists
+    if [ -f ".gitignore" ]; then
+        caddie cli:yellow "Warning: .gitignore already exists"
+        caddie cli:indent "Backing up existing .gitignore to .gitignore.backup"
+        cp .gitignore .gitignore.backup
+    fi
+    
+    # Add comprehensive .gitignore
+    cat > .gitignore << 'EOF'
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo
+Cargo.lock
+*.orig
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# Temporary folders
+tmp/
+temp/
+
+# Rust specific
+*.rlib
+*.rmeta
+*.so
+*.dylib
+*.dll
+*.exe
+EOF
+    
+    caddie cli:check "Comprehensive .gitignore added successfully"
+    caddie cli:indent "File: $(pwd)/.gitignore"
+    caddie cli:blank
+    caddie cli:title "Next steps:"
+    caddie cli:indent "1. Check git status: caddie rust:git:status"
+    caddie cli:indent "2. Clean tracked artifacts: caddie rust:git:clean"
+}
+
+# Function to clean tracked build artifacts from git
+function caddie_rust_git_clean() {
+    if [ ! -d ".git" ]; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+    
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+    
+    caddie cli:title "Cleaning tracked build artifacts from git..."
+    
+    # Check for tracked build artifacts
+    local build_files=$(git ls-files | grep -E "(target/|\.rlib|\.rmeta|\.so|\.dylib|\.dll|\.exe|Cargo\.lock)" || true)
+    
+    if [ -z "$build_files" ]; then
+        caddie cli:check "No tracked build artifacts found"
+        return 0
+    fi
+    
+    caddie cli:yellow "Found $(echo "$build_files" | wc -l) tracked build artifacts"
+    caddie cli:indent "Removing from git tracking..."
+    
+    # Remove target directory if tracked
+    if git ls-files | grep -q "^target/"; then
+        git rm -r --cached target/ 2>/dev/null || true
+        caddie cli:indent "Removed target/ directory from tracking"
+    fi
+    
+    # Remove individual build files
+    echo "$build_files" | while read -r file; do
+        if [ -n "$file" ]; then
+            git rm --cached "$file" 2>/dev/null || true
+        fi
+    done
+    
+    caddie cli:check "Build artifacts removed from git tracking"
+    caddie cli:blank
+    caddie cli:title "Next steps:"
+    caddie cli:indent "1. Commit the changes: git commit -m 'Remove build artifacts'"
+    caddie cli:indent "2. Verify cleanup: caddie rust:git:status"
 }
 
 # Function to clean Rust build artifacts
@@ -506,19 +789,25 @@ function caddie_rust_help() {
     caddie cli:usage "caddie rust:<command>"
     caddie cli:blank
     caddie cli:title "Project Management:"
-    caddie cli:indent "new <name>        Create new Rust project"
-    caddie cli:indent "build             Build current project"
-    caddie cli:indent "run               Run current project"
-    caddie cli:indent "test              Run all tests"
-    caddie cli:indent "test:unit         Run unit tests only"
-    caddie cli:indent "test:integration  Run integration tests only"
-    caddie cli:indent "test:all          Run all tests"
-    caddie cli:indent "test:property     Run property-based tests"
-    caddie cli:indent "test:bench        Run benchmarks"
-    caddie cli:indent "test:watch        Run tests in watch mode"
-    caddie cli:indent "test:coverage     Run tests with coverage"
-    caddie cli:indent "check             Check without building"
-    caddie cli:indent "clean             Clean build artifacts"
+    caddie cli:indent "init <name>        Create new Rust project with .gitignore"
+    caddie cli:indent "new <name>         Create new Rust project"
+    caddie cli:indent "build              Build current project"
+    caddie cli:indent "run                Run current project"
+    caddie cli:indent "test               Run all tests"
+    caddie cli:indent "test:unit          Run unit tests only"
+    caddie cli:indent "test:integration   Run integration tests only"
+    caddie cli:indent "test:all           Run all tests"
+    caddie cli:indent "test:property      Run property-based tests"
+    caddie cli:indent "test:bench         Run benchmarks"
+    caddie cli:indent "test:watch         Run tests in watch mode"
+    caddie cli:indent "test:coverage      Run tests with coverage"
+    caddie cli:indent "check              Check without building"
+    caddie cli:indent "clean              Clean build artifacts"
+    caddie cli:blank
+    caddie cli:title "Git Integration:"
+    caddie cli:indent "git:status         Check git status for build artifacts"
+    caddie cli:indent "gitignore          Add comprehensive .gitignore"
+    caddie cli:indent "git:clean          Remove tracked build artifacts"
     caddie cli:blank
     caddie cli:title "Dependency Management:"
     caddie cli:indent "update            Update dependencies"
@@ -534,10 +823,13 @@ function caddie_rust_help() {
     caddie cli:indent "component <comp>  Install component (clippy/rustfmt/etc)"
     caddie cli:blank
     caddie cli:title "Examples:"
+    caddie cli:indent "caddie rust:init myproject"
     caddie cli:indent "caddie rust:new myproject"
     caddie cli:indent "caddie rust:build"
     caddie cli:indent "caddie rust:test:unit"
     caddie cli:indent "caddie rust:test:integration"
+    caddie cli:indent "caddie rust:git:status"
+    caddie cli:indent "caddie rust:gitignore"
     caddie cli:indent "caddie rust:add serde"
     caddie cli:indent "caddie rust:toolchain nightly"
     caddie cli:indent "caddie rust:component clippy"
@@ -551,6 +843,7 @@ function caddie_rust_description() {
 # Export Rust functions
 export -f caddie_rust_load_env
 export -f caddie_rust_description
+export -f caddie_rust_init
 export -f caddie_rust_new
 export -f caddie_rust_build
 export -f caddie_rust_run
@@ -573,4 +866,7 @@ export -f caddie_rust_audit
 export -f caddie_rust_toolchain
 export -f caddie_rust_target
 export -f caddie_rust_component
+export -f caddie_rust_git_status
+export -f caddie_rust_gitignore
+export -f caddie_rust_git_clean
 export -f caddie_rust_help

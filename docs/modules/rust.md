@@ -205,6 +205,167 @@ Cleaning Rust build artifacts...
 **Requirements:**
 - Must be in a Rust project directory
 
+### Git Integration
+
+The Rust module includes comprehensive git integration to prevent build artifacts from being accidentally committed to version control.
+
+#### `caddie rust:init <name>`
+
+Create a new Rust project with comprehensive `.gitignore` file.
+
+**Arguments:**
+- `name`: Name of the new Rust project
+
+**Examples:**
+```bash
+# Create project with proper .gitignore
+caddie rust:init myapp
+
+# Create with descriptive name
+caddie rust:init web-api-backend
+```
+
+**What it does:**
+- Creates a new Rust project using `cargo new`
+- Adds comprehensive `.gitignore` file covering:
+  - Rust build artifacts (`/target/`, `*.rlib`, `*.rmeta`)
+  - IDE files (`.vscode/`, `.idea/`, `*.swp`)
+  - OS files (`.DS_Store`, `Thumbs.db`)
+  - Temporary files and logs
+- Sets up standard project structure
+- Provides navigation and build instructions
+
+**Output:**
+```
+Creating new Rust project 'myapp' with proper .gitignore...
+✓ Rust project 'myapp' created successfully with .gitignore
+  Location: /Users/username/projects/myapp
+  Enter directory: cd myapp
+  Build project: caddie rust:build
+  Run tests: caddie rust:test:unit
+```
+
+**Requirements:**
+- Rust toolchain installed (`rustup`)
+- Cargo available in PATH
+- Write permissions in current directory
+
+#### `caddie rust:git:status`
+
+Check git status for build artifacts in the current Rust project.
+
+**Examples:**
+```bash
+# Check current project
+caddie rust:git:status
+
+# Check before committing
+caddie rust:git:status && git add .
+```
+
+**What it does:**
+- Checks for tracked build artifacts in git
+- Identifies files like `target/`, `*.rlib`, `*.rmeta`, `*.so`, etc.
+- Warns about potential issues before they reach git history
+- Shows count of problematic files
+- Provides guidance for fixing issues
+
+**Output:**
+```
+Checking git status for build artifacts...
+✓ No build artifacts tracked in git
+✓ Git status check completed
+```
+
+**Or if issues found:**
+```
+Checking git status for build artifacts...
+✗ Warning: Build artifacts are tracked in git!
+  Found tracked build files:
+    - target/debug/myapp
+    - target/debug/deps/myapp-1234567890abcdef
+    - target/debug/deps/libserde-abcdef1234567890.rlib
+    ... and 15 more files
+
+To fix this:
+1. Add proper .gitignore: caddie rust:gitignore
+2. Remove tracked files: caddie rust:git:clean
+```
+
+**Requirements:**
+- Must be in a git repository
+- Must be in a Rust project directory
+
+#### `caddie rust:gitignore`
+
+Add comprehensive `.gitignore` to existing Rust project.
+
+**Examples:**
+```bash
+# Add to current project
+caddie rust:gitignore
+
+# Add to specific project
+cd myproject
+caddie rust:gitignore
+```
+
+**What it does:**
+- Adds comprehensive `.gitignore` file to current directory
+- Backs up existing `.gitignore` if present
+- Covers Rust build artifacts, IDE files, OS files, and temporary files
+- Provides next steps for cleanup
+
+**Output:**
+```
+Adding comprehensive .gitignore to Rust project...
+✓ Comprehensive .gitignore added successfully
+  File: /Users/username/projects/myproject/.gitignore
+
+Next steps:
+1. Check git status: caddie rust:git:status
+2. Clean tracked artifacts: caddie rust:git:clean
+```
+
+**Requirements:**
+- Must be in a Rust project directory (contains `Cargo.toml`)
+
+#### `caddie rust:git:clean`
+
+Remove tracked build artifacts from git history.
+
+**Examples:**
+```bash
+# Clean current project
+caddie rust:git:clean
+
+# Clean and commit changes
+caddie rust:git:clean && git commit -m "Remove build artifacts"
+```
+
+**What it does:**
+- Identifies tracked build artifacts in git
+- Removes them from git tracking (keeps local files)
+- Handles both individual files and entire `target/` directory
+- Provides guidance for committing changes
+
+**Output:**
+```
+Cleaning tracked build artifacts from git...
+Found 23 tracked build artifacts
+Removing from git tracking...
+Removed target/ directory from tracking
+✓ Build artifacts removed from git tracking
+
+Next steps:
+1. Commit the changes: git commit -m 'Remove build artifacts'
+2. Verify cleanup: caddie rust:git:status
+```
+
+**Requirements:**
+- Must be in a git repository
+- Must be in a Rust project directory
+
 ### Dependency Management
 
 #### `caddie rust:add <crate>`
