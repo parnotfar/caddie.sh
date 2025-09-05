@@ -27,6 +27,7 @@ function caddie_help() {
     caddie cli:title "General Commands:"
     caddie cli:indent "help                     Show this overview"
     caddie cli:indent "version                  Show caddie version"
+    caddie cli:indent "reload                   Reload caddie"
     caddie cli:blank
     caddie cli:title "Productivity:"
     caddie cli:indent "core:aliases             Show all available aliases"
@@ -161,6 +162,27 @@ _caddie_completion() {
   
   # Complete with all available commands
   IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$all_opts" -- "$cur")
+  
+  # If we have multiple completions and the current word contains a colon,
+  # try to provide more specific completions for subcommands
+  if [[ ${#COMPREPLY[@]} -gt 1 && "$cur" == *:* ]]; then
+    # Extract the prefix (everything before the last colon)
+    local prefix="${cur%:*}"
+    local subcommand_prefix="$prefix:"
+    
+    # Filter completions to only show those that start with the subcommand prefix
+    local filtered_completions=()
+    for completion in "${COMPREPLY[@]}"; do
+      if [[ "$completion" == "$subcommand_prefix"* ]]; then
+        filtered_completions+=("$completion")
+      fi
+    done
+    
+    # If we found filtered completions, use them
+    if [[ ${#filtered_completions[@]} -gt 0 ]]; then
+      COMPREPLY=("${filtered_completions[@]}")
+    fi
+  fi
   
   return 0
 }
