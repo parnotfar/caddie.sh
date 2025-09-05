@@ -14,7 +14,6 @@ alias externalip='curl whatismyip.org'
 alias ss="source $HOME/.bashrc"
 alias shitory="history | sed -E 's/ *[0-9]+ *//g' | grep '$1' | grep -v '^s*his*tory' | sort | uniq 2> /dev/null"
 alias r=rails
-alias rsp4k='r s -p 4000'
 alias dud='cd .. && cd -'
 alias bud='dud'
 alias ud='dud'
@@ -26,14 +25,6 @@ alias dcb='docker compose build'
 alias dcu='docker compose up'
 alias dcd='docker compose down'
 alias bsl='brew services list'
-alias had='h app:deploy'
-
-# data-pipeline docker specific aliases
-alias cpr='ch pipeline run'
-alias cprr='ch pipeline rerun'
-alias cppr='ch pipeline prepare'
-alias cps='ch pipeline shell'
-alias cpt='ch pipeline test'
 
 # Coloring for LESS and man pages
 export LESS_TERMCAP_mb=$'\e[1;31m'     # begin bold
@@ -45,29 +36,6 @@ export LESS_TERMCAP_se=$'\e[0m'        # reset reverse video
 export LESS_TERMCAP_ue=$'\e[0m'        # reset underline
 export GROFF_NO_SGR=1                  # for konsole and gnome-terminal
 
-export QCUSER='omehmood'
-export QCPSWD='Carrum@123'
-export QCHOST='carrum-healthqc.cigv1noav6eo.us-west-2.rds.amazonaws.com'
-
-function carrum-add-key() {
-  local carrum_key=$(ssh-add -l | grep -i $1)
-
-  if [ -z "$carrum_key" ]; then
-    ssh-add $HOME/.ssh/$1
-  fi
-}
-
-function carrum-test-sftp-server() {
-  if [ -f $HOME/.ssh/ch-nextgen.pem ]; then
-    carrum-add-key "ch-nextgen.pem"
-  fi
-  ssh ubuntu@test-sftp.carrumhealth.com
-}
-
-function restart-coreaudio() {
-  sudo kill $(ps ax | grep coreaudio | grep -v grep | cut -d' ' -f1)
-}
-  
 # Git shortcuts
 alias g='git'
 alias gst='git status'
@@ -354,12 +322,6 @@ function path() {
 
 export -f path
 
-function bash-stats() {
-  history | awk '{print $2}' | awk 'BEGIN {FS="|"} {print $1}' | sort | uniq -c | sort -rn | head -30
-}
-
-export -f bash-stats
- 
 function take() {
   local use_dir=$1
  
@@ -375,38 +337,39 @@ function take() {
 
 export -f take
  
-function latest-gemfile-versions() {
-  for g in $(grep -E '^.*> *[0-9\.]*' Gemfile | awk -F' ' '{print $2}' | sed -e "s/'//g" -e 's/,//'); do
-    installed_version=$(bundle info $g | grep '*' | sed 's/[^(]*(\([^)]*\))/\1/')
-    current_version=$(latest-gem $g | sed 's/[^(]*(\([^)]*\))/\1/' | awk '{print $1}')
+# function latest-gemfile-versions() {
+#   for g in $(grep -E '^.*> *[0-9\.]*' Gemfile | awk -F' ' '{print $2}' | sed -e "s/'//g" -e 's/,//'); do
+#     installed_version=$(bundle info $g | grep '*' | sed 's/[^(]*(\([^)]*\))/\1/')
+#     current_version=$(latest-gem $g | sed 's/[^(]*(\([^)]*\))/\1/' | awk '{print $1}')
+# 
+#     color='red'
+#     endcap="${installed_version} (${current_version})"
+# 
+#     if [[ ${current_version} == ${installed_version} ]] || [ -z "${current_version}" ]; then
+#       color='green'
+#       endcap="${installed_version}"
+#     fi
+# 
+#     ch-cli $color "$(ch-marker-rpad "${g}" '.' 40) ${endcap}"
+#   done
+# }
 
-    color='red'
-    endcap="${installed_version} (${current_version})"
+# function latest-gem() {
+#     PRVIFS="${IFS}"
+# 
+#     results=$(gem list -ra $@)
+# 
+#     IFS=$'\n'
+# 
+#     for f in "${results}"; do
+#       for g in "$@"; do
+#         echo "${f}" | grep "^$g .*$" | awk '{printf("%s %s\n", $1, $2)}' | sed -e 's/,$/\)/g' -e 's/\([0-9]\)$/\1\)/g'
+#       done
+#     done
 
-    if [[ ${current_version} == ${installed_version} ]] || [ -z "${current_version}" ]; then
-      color='green'
-      endcap="${installed_version}"
-    fi
-
-    ch-cli $color "$(ch-marker-rpad "${g}" '.' 40) ${endcap}"
-  done
-}
-
-function latest-gem() {
-    PRVIFS="${IFS}"
-
-    results=$(gem list -ra $@)
-
-    IFS=$'\n'
-
-    for f in "${results}"; do
-      for g in "$@"; do
-        echo "${f}" | grep "^$g .*$" | awk '{printf("%s %s\n", $1, $2)}' | sed -e 's/,$/\)/g' -e 's/\([0-9]\)$/\1\)/g'
-      done
-    done
-
-    IFS="${PRVIFS}"
-}
+#     IFS="${PRVIFS}"
+# }
+# }
 
 function lessdown() {
   command -v pandoc || brew install pandoc
@@ -445,20 +408,6 @@ function ag() {
 }
 
 export -f ag
-
-function bashy_functions() {
-  local repo=$1
-
-  if [ -z "$repo" ]; then
-    repo=$HOME/work/carrum/bashy
-  fi
-
-  command -v ack || brew install ack
-
-  ack --nocolor '^function' $repo
-}
-
-export -f 'bashy_functions'
 
 # a fancy way of selecting branches to delete from a list
 
@@ -606,4 +555,3 @@ function __brew_completion() {
 }
 
 complete -F __brew_completion brew
-. "$HOME/.cargo/env"

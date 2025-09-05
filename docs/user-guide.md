@@ -28,9 +28,9 @@ caddie <module>:<command> [arguments]
 ```
 
 **Examples:**
-- `caddie python:create myproject` - Create a Python virtual environment
-- `caddie rust:new myapp` - Create a new Rust project
-- `caddie core:debug on` - Enable debug mode
+- `caddie python:install requests` - Install Python package
+- `caddie rust:test:unit` - Run Rust unit tests
+- `caddie js:install-local express` - Install Node.js package locally
 
 ## Core Concepts
 

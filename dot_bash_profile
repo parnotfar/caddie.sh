@@ -1,8 +1,9 @@
-source ~/.bashrc
-source ~/.caddie.sh
+source $HOME/.bashrc
 
 # Due to catalina switching to zsh
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # Set basic prompt
 export EDITOR=vim
+
+source $HOME/.caddie.sh

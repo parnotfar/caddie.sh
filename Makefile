@@ -51,7 +51,7 @@ help: ## Show this help message
 all: install ## Alias for install
 
 install: check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
-	caddie reload
+	@echo "$(GREEN)✓$(NC) Installation complete! Run 'source ~/.bash_profile' to activate."
 
 check-prerequisites: ## Check system prerequisites
 	echo "$(BLUE)🔍$(NC) Checking system prerequisites..."

@@ -228,7 +228,6 @@ function caddie_core_aliases() {
     caddie cli:blank
     caddie cli:rocket "Rails Development:"
     caddie cli:indent "r              rails"
-    caddie cli:indent "rsp4k          rails server -p 4000"
     caddie cli:blank
     caddie cli:thought "Custom Caddie Aliases (add to ~/.bash_profile):"
     caddie cli:indent "c              caddie"
