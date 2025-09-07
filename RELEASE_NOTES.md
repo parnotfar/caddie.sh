@@ -1,5 +1,28 @@
 # Caddie.sh Release Notes
 
+## Version 1.5 - Run UX Improvements
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+- **Argument Forwarding for Run**: `caddie rust:run` now forwards all arguments to `cargo run`.
+  - Example: `caddie rust:run --example simple_demo`
+  - Example: `caddie rust:run --bin myapp -- --flag value`
+
+- **Example Runner Shortcut**: Added `caddie rust:run:example <name>` to quickly run Cargo examples.
+  - Example: `caddie rust:run:example simple_demo`
+
+### 📚 Documentation
+
+- Updated Rust module help to document the new run argument forwarding and example runner.
+
+### 🔧 Internals
+
+- Improved run command error reporting (non-zero exit status is surfaced).
+
+---
+
 ## Version 1.4 - Bug Fixes and Cleanup Release
 
 **Release Date:** December 2025
@@ -18,24 +41,13 @@
 - **Updated Aliases Documentation**: Removed references to deleted aliases (`rsp4k`, `had`, etc.)
 - **Consistent Documentation**: Ensured all docs reflect current functionality
 
-### 🧹 Code Cleanup
-
-#### **Removed Deprecated Features**
-- **Executable Script Approach**: Removed `bin_caddie` and associated complexity
-- **PATH Management**: Simplified installation without executable script PATH handling
-- **Makefile Simplification**: Streamlined installation process
-- **Documentation Reduction**: Removed unnecessary executable script documentation
-
 #### **Security Improvements**
-- **Sensitive Data Removal**: Eliminated all Carrum database credentials from `dot_bashrc`
-- **Company-Specific Cleanup**: Removed internal functions and aliases
 - **Public-Ready Codebase**: Made codebase suitable for public/open-source distribution
 
 ### 🔧 Technical Improvements
 
 #### **Installation Process**
 - **Simplified Activation**: Updated installation message to `source ~/.bash_profile`
-- **Cleaner Makefile**: Removed executable script installation complexity
 - **Better Error Handling**: Improved installation error messages
 - **Streamlined Process**: More straightforward installation workflow
 
