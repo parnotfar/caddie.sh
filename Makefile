@@ -127,6 +127,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_js"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_git" "$(DEST_MODULES_DIR)/.caddie_git"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_git"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_github" "$(DEST_MODULES_DIR)/.caddie_github"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_github"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(DEST_MODULES_DIR)/.caddie_cli"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
@@ -360,7 +362,7 @@ status: ## Check installation status
 	echo "$(CYAN)Caddie Modules:$(NC)"
 	if [ -d "$(DEST_MODULES_DIR)" ]; then \
 		echo "$(GREEN)  ✓$(NC) ~/.caddie_modules directory"; \
-		for module in core python rust ios cross cursor ruby js cli; do \
+		for module in core python rust ios cross cursor ruby js git github cli; do \
 			if [ -f "$(DEST_MODULES_DIR)/.caddie_$$module" ]; then \
 				echo "$(GREEN)    ✓$(NC) ~/.caddie_modules/.caddie_$$module"; \
 			else \

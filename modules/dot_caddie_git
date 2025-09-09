@@ -59,6 +59,66 @@ function caddie_git_pull() {
     git pull
 }
 
+function caddie_git_remote_add() {
+    local name="$1"
+    local url="$2"
+    
+    # If no arguments provided, auto-detect repository and use stored GitHub account
+    if [ -z "${name}" ] && [ -z "${url}" ]; then
+        local github_account=$(caddie_github_account_get)
+        if [ -z "${github_account}" ]; then
+            echo "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
+            echo "Or provide manual arguments: caddie git:remote:add <name> <url>"
+            return 1
+        fi
+        
+        # Auto-detect repository name from current directory
+        local repo_name=$(basename "$(pwd)")
+        name="origin"
+        url="https://github.com/${github_account}/${repo_name}.git"
+        
+        echo "Auto-detected repository: ${repo_name}"
+        echo "Using GitHub account: ${github_account}"
+        echo "Adding remote '${name}' pointing to '${url}'"
+    elif [ -z "${name}" ] || [ -z "${url}" ]; then
+        echo "Error: Please provide both remote name and URL"
+        echo "Usage: caddie git:remote:add <name> <url>"
+        echo "Or use auto-detection: caddie git:remote:add"
+        return 1
+    fi
+    
+    git remote add "${name}" "${url}"
+    echo "Added remote '${name}' pointing to '${url}'"
+}
+
+function caddie_git_remote_set_url() {
+    local name="$1"
+    local url="$2"
+    if [ -z "$name" ] || [ -z "$url" ]; then
+        echo "Error: Please provide remote name and URL"
+        echo "Usage: caddie git:remote:set-url <name> <url>"
+        return 1
+    fi
+    git remote set-url "$name" "$url"
+    echo "Set remote '$name' URL to '$url'"
+}
+
+function caddie_git_remote_list() {
+    echo "Remote repositories:"
+    git remote -v
+}
+
+function caddie_git_remote_remove() {
+    local name="$1"
+    if [ -z "$name" ]; then
+        echo "Error: Please provide remote name"
+        echo "Usage: caddie git:remote:remove <name>"
+        return 1
+    fi
+    git remote remove "$name"
+    echo "Removed remote '$name'"
+}
+
 function caddie_git_help() {
     caddie cli:title "Git Module Commands"
     caddie cli:blank
@@ -74,10 +134,22 @@ function caddie_git_help() {
     caddie cli:indent "pull               Pull from remote repository"
     caddie cli:blank
     
+    caddie cli:title "Remote Management:"
+    caddie cli:indent "remote:add [<name> <url>]  Add remote (auto-detects if no args)"
+    caddie cli:indent "remote:set-url <name> <url> Set remote URL"
+    caddie cli:indent "remote:list                 List all remotes"
+    caddie cli:indent "remote:remove <name>        Remove remote"
+    caddie cli:blank
+    
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
     caddie cli:indent "caddie git:commit 'Add new feature'"
+    caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
+    caddie cli:blank
+    caddie cli:title "Setup GitHub Integration:"
+    caddie cli:indent "caddie github:account:set <account>  Set GitHub account"
+    caddie cli:indent "caddie git:remote:add                Auto-add remote"
     caddie cli:blank
 }
 
@@ -92,5 +164,9 @@ export -f caddie_git_branch
 export -f caddie_git_commit
 export -f caddie_git_push
 export -f caddie_git_pull
+export -f caddie_git_remote_add
+export -f caddie_git_remote_set_url
+export -f caddie_git_remote_list
+export -f caddie_git_remote_remove
 export -f caddie_git_help
 export -f caddie_git_description

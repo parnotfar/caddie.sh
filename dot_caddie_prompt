@@ -3,6 +3,8 @@
 
 # NOTE: Do NOT try to use the 'caddie cli' functions here.
 
+source "$HOME/.caddie_modules/.caddie_github"
+
 # Function to get caddie version
 function get_caddie_version() {
     if [ -f "$HOME/.caddie_version" ]; then
@@ -45,6 +47,13 @@ function set_caddie_git_prompt() {
 function set_caddie_prompt() {
     local version=$(get_caddie_version)
     local git_info=""
+    local github_info=""
+    
+    # Add GitHub account info if set
+    local github_account=$(caddie_github_account_get)
+    if [ -n "${github_account}" ]; then
+        github_info="[${GREEN}gh:${github_account}${RESET}]"
+    fi
     
     if [ -d '.git' ]; then
         local branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo 'detached')
@@ -57,7 +66,7 @@ function set_caddie_prompt() {
         fi
     fi
     
-    export PS1="[${BLUE}Caddie-${version}${RESET}]${git_info} ${YELLOW}\w${RESET} $ "
+    export PS1="[${BLUE}Caddie-${version}${RESET}]${github_info}${git_info} ${YELLOW}\w${RESET} $ "
 }
 
 # Set PROMPT_COMMAND to rebuild prompt before each display

@@ -1,5 +1,41 @@
 # Caddie.sh Release Notes
 
+## Version 1.6 - GitHub Integration & Smart Git Remotes
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+- **GitHub Module**: New dedicated module for GitHub account and repository management.
+  - `caddie github:account:set <account>` - Set GitHub account
+  - `caddie github:account:get` - Get current GitHub account
+  - `caddie github:account:unset` - Unset GitHub account
+  - `caddie github:repo:create <name> [desc] [private]` - Create new repository
+  - `caddie github:repo:url [name]` - Get repository URL (auto-detects if no name)
+
+- **Smart Git Remote Management**: Enhanced `caddie git:remote:add` with auto-detection.
+  - No arguments needed: `caddie git:remote:add`
+  - Auto-detects repository name from current directory
+  - Uses stored GitHub account for URL generation
+  - Creates `origin` remote pointing to `https://github.com/<account>/<repo>.git`
+
+- **Enhanced Prompt**: Added GitHub account display to prompt.
+  - Format: `[Caddie-1.6][gh:parnotfar] (master|✓) ~/work/pnf/shot-trajectory $`
+  - Shows current GitHub account when set
+
+### 🔧 Internals
+
+- **Module Architecture**: Proper separation of concerns with dedicated GitHub module
+- **Auto-loading**: GitHub account automatically loaded on shell startup
+- **Clean Exports**: Removed GitHub functions from core module for better organization
+
+### 📚 Documentation
+
+- Updated git module help with GitHub integration examples
+- Added GitHub module help with comprehensive command documentation
+
+---
+
 ## Version 1.5 - Run UX Improvements
 
 **Release Date:** December 2025
