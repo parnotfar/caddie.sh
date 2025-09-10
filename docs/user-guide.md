@@ -323,6 +323,7 @@ caddie git:push:set:upstream
 
 # Enhanced git operations
 caddie git:commit "Add new feature"
+caddie git:gacp "Quick commit and push"
 caddie git:push
 caddie git:pull
 ```

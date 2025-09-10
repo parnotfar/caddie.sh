@@ -11,6 +11,11 @@
   - Format: `git@github.com:<account>/<repo-name>.git`
   - Requires GitHub account to be set first
 
+- **Git GACP Command**: New `caddie git:gacp <message>` command for quick workflow.
+  - Add all changes, commit, and push in one command
+  - Perfect for quick commits and rapid development
+  - Equivalent to `git add . && git commit -m "message" && git push`
+
 - **Git Push Set-Upstream**: New `caddie git:push:set:upstream [remote] [branch]` command.
   - Sets upstream branch for new repositories
   - Defaults: `origin` remote, `main` branch

@@ -32,6 +32,14 @@ caddie git:commit "Add new feature"
 caddie git:commit "Fix bug in user authentication"
 ```
 
+#### `caddie git:gacp <message>`
+Add all changes, commit, and push in one command. This is a wrapper for the common workflow of adding, committing, and pushing changes.
+
+```bash
+caddie git:gacp "Quick commit and push"
+caddie git:gacp "Update documentation"
+```
+
 #### `caddie git:push`
 Push changes to the remote repository.
 
@@ -139,13 +147,10 @@ cd my-new-project
 
 # 3. Make changes and commit
 echo "# My New Project" > README.md
-caddie git:commit "Initial commit"
+caddie git:gacp "Initial commit"
 
-# 4. Set upstream and push
-caddie git:push:set:upstream
-
-# 5. Future pushes are simple
-caddie git:push
+# 4. Future changes are simple
+caddie git:gacp "Add new feature"
 ```
 
 ## SSH vs HTTPS
@@ -219,3 +224,4 @@ caddie help
 # Show GitHub module help
 caddie github:help
 ```
+

@@ -176,3 +176,4 @@ The GitHub module requires:
 - GitHub CLI (`gh`) for repository creation
 - SSH keys configured with GitHub
 - Git module for integration features
+

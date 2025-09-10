@@ -67,6 +67,24 @@ function caddie_git_pull() {
     git pull
 }
 
+function caddie_git_gacp() {
+    local message="$1"
+    if [ -z "$message" ]; then
+        echo "Error: Please provide a commit message"
+        echo "Usage: caddie git:gacp <message>"
+        return 1
+    fi
+    
+    echo "Adding all changes..."
+    git add .
+    
+    echo "Committing with message: '${message}'"
+    git commit -m "$message"
+    
+    echo "Pushing to remote..."
+    git push
+}
+
 function caddie_git_remote_add() {
     local name="$1"
     local url="$2"
@@ -158,6 +176,7 @@ function caddie_git_help() {
     caddie cli:indent "status              Show git status"
     caddie cli:indent "branch              Show current and all branches"
     caddie cli:indent "commit <message>    Add all changes and commit with message"
+    caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
@@ -174,6 +193,7 @@ function caddie_git_help() {
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
     caddie cli:indent "caddie git:commit 'Add new feature'"
+    caddie cli:indent "caddie git:gacp 'Quick commit and push'"
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
@@ -193,6 +213,7 @@ export -f caddie_source_custom_files
 export -f caddie_git_status
 export -f caddie_git_branch
 export -f caddie_git_commit
+export -f caddie_git_gacp
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull
