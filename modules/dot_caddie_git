@@ -55,6 +55,14 @@ function caddie_git_push() {
     git push
 }
 
+function caddie_git_push_set_upstream() {
+    local remote="${1:-origin}"
+    local branch="${2:-main}"
+    
+    echo "Setting upstream for branch '${branch}' to '${remote}/${branch}'"
+    git push --set-upstream "${remote}" "${branch}"
+}
+
 function caddie_git_pull() {
     git pull
 }
@@ -75,7 +83,7 @@ function caddie_git_remote_add() {
         # Auto-detect repository name from current directory
         local repo_name=$(basename "$(pwd)")
         name="origin"
-        url="https://github.com/${github_account}/${repo_name}.git"
+        url="git@github.com:${github_account}/${repo_name}.git"
         
         echo "Auto-detected repository: ${repo_name}"
         echo "Using GitHub account: ${github_account}"
@@ -131,6 +139,7 @@ function caddie_git_help() {
     caddie cli:indent "branch              Show current and all branches"
     caddie cli:indent "commit <message>    Add all changes and commit with message"
     caddie cli:indent "push               Push to remote repository"
+    caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
     caddie cli:blank
     
@@ -163,6 +172,7 @@ export -f caddie_git_status
 export -f caddie_git_branch
 export -f caddie_git_commit
 export -f caddie_git_push
+export -f caddie_git_push_set_upstream
 export -f caddie_git_pull
 export -f caddie_git_remote_add
 export -f caddie_git_remote_set_url
