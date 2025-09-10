@@ -117,12 +117,7 @@ function caddie_git_remote_list() {
 }
 
 function caddie_git_remote_remove() {
-    local name="$1"
-    if [ -z "$name" ]; then
-        echo "Error: Please provide remote name"
-        echo "Usage: caddie git:remote:remove <name>"
-        return 1
-    fi
+    local name="${1:-origin}"
     git remote remove "$name"
     echo "Removed remote '$name'"
 }
@@ -147,7 +142,7 @@ function caddie_git_help() {
     caddie cli:indent "remote:add [<name> <url>]  Add remote (auto-detects if no args)"
     caddie cli:indent "remote:set-url <name> <url> Set remote URL"
     caddie cli:indent "remote:list                 List all remotes"
-    caddie cli:indent "remote:remove <name>        Remove remote"
+    caddie cli:indent "remote:remove [<name>]        Remove remote (defaults to origin)"
     caddie cli:blank
     
     caddie cli:title "Examples:"
