@@ -147,7 +147,7 @@ _caddie_completion() {
         module_commands="$module_commands cross:template:create"
         ;;
       git)
-        module_commands="$module_commands git:status git:branch git:commit git:push git:push:set:upstream git:pull"
+        module_commands="$module_commands git:status git:branch git:commit git:push git:push:set:upstream git:pull git:clone"
         ;;
       cli)
         module_commands="$module_commands cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:check cli:x cli:arrow cli:folder cli:beer cli:snake cli:crab cli:trash cli:rotate cli:chart cli:magnify cli:save cli:warning cli:debug cli:wrench cli:whale cli:package cli:git cli:rocket cli:thought cli:lightbulb cli:magnifying_glass cli:blank cli:indent cli:help"

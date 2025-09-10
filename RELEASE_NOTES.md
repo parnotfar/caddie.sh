@@ -1,6 +1,57 @@
 # Caddie.sh Release Notes
 
-## Version 1.6 - GitHub Integration & Smart Git Remotes
+## Version 1.8 - Enhanced Git Workflow & SSH Integration
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+- **Git Clone Command**: New `caddie git:clone <repo-name>` command for easy repository cloning.
+  - Auto-constructs SSH URLs using stored GitHub account
+  - Format: `git@github.com:<account>/<repo-name>.git`
+  - Requires GitHub account to be set first
+
+- **Git Push Set-Upstream**: New `caddie git:push:set:upstream [remote] [branch]` command.
+  - Sets upstream branch for new repositories
+  - Defaults: `origin` remote, `main` branch
+  - Equivalent to `git push --set-upstream origin main`
+
+- **Enhanced Git Remote Remove**: Updated `caddie git:remote:remove [name]` command.
+  - Now defaults to `origin` if no remote name provided
+  - Simplified usage: `caddie git:remote:remove` removes origin
+
+### 🔧 Improvements
+
+- **SSH URL Format**: All Git commands now use SSH URLs (`git@github.com:`) instead of HTTPS
+  - Faster authentication using SSH keys
+  - No need for username/password or tokens
+  - More secure and convenient for development
+
+- **Updated Documentation**: All help text and examples updated to reflect new commands
+- **Enhanced Tab Completion**: All new Git commands now have tab completion support
+
+### 📝 Usage Examples
+
+```bash
+# Set up GitHub account
+caddie github:account:set parnotfar
+
+# Clone a repository
+caddie git:clone my-new-project
+
+# Add remote to existing repository
+caddie git:remote:add
+
+# Set upstream for first push
+caddie git:push:set:upstream
+
+# Remove origin remote
+caddie git:remote:remove
+```
+
+---
+
+## Version 1.7 - Bug Fixes & Improvements
 
 **Release Date:** December 2025
 
