@@ -26,7 +26,8 @@ shortcuts to make your coding experience smooth and efficient.
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **IDE Integration**: Cursor IDE integration with AI-powered development
-- **Git Integration**: Enhanced git workflows and shortcuts
+- **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
+- **GitHub Integration**: Account management and repository creation with seamless Git workflow
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts

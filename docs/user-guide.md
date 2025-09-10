@@ -46,7 +46,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`ios`**: iOS development tools and Xcode integration
 - **`cross`**: Multi-language project templates and tools
 - **`cursor`**: IDE integration and AI-powered development
-- **`git`**: Enhanced git workflows and shortcuts
+- **`git`**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
 - **`cli`**: Color utilities and formatting functions
 
 ### Data Structures
@@ -302,6 +302,29 @@ caddie rust:gitignore
 
 # Remove tracked build artifacts from git
 caddie rust:git:clean
+```
+
+#### Enhanced Git Workflows
+
+Caddie.sh provides enhanced git commands with GitHub integration:
+
+```bash
+# Set up GitHub account (one-time setup)
+caddie github:account:set parnotfar
+
+# Clone repositories with auto-detection
+caddie git:clone my-project
+
+# Add remotes with auto-detection
+caddie git:remote:add
+
+# Set upstream for new repositories
+caddie git:push:set:upstream
+
+# Enhanced git operations
+caddie git:commit "Add new feature"
+caddie git:push
+caddie git:pull
 ```
 
 #### Cross-Platform Development

@@ -17,7 +17,8 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[iOS Module](ios.md)** - iOS development tools and Xcode integration
 - **[Cross Module](cross.md)** - Multi-language project templates and tools
 - **[Cursor Module](cursor.md)** - IDE integration and AI-powered development
-- **[Git Module](git.md)** - Enhanced git workflows and shortcuts
+- **[Git Module](git.md)** - Enhanced git workflows and GitHub integration
+- **[GitHub Module](github.md)** - GitHub account and repository management
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
 
 ## Module Structure
