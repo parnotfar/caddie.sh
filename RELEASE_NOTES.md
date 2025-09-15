@@ -1,5 +1,52 @@
 # Caddie.sh Release Notes
 
+## Version 1.9 - Caddie Shellcheck & Code Quality Tools
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+- **Caddie Shellcheck**: New `caddie core:shellcheck [path]` command for enforcing caddie-specific coding standards.
+  - Replaces generic shellcheck with caddie-aware linting
+  - Enforces caddie function naming conventions (`caddie_<module>_<command>`)
+  - Validates CLI module sourcing and function exports
+  - Checks for proper help and description functions
+  - Provides actionable feedback with caddie-specific examples
+  - Supports checking individual files or entire directories
+
+### 🔧 Improvements
+
+- **Enhanced Code Quality**: Comprehensive linting that understands caddie's modular architecture
+- **Better Error Messages**: Caddie-specific error messages with clear remediation steps
+- **Standards Enforcement**: Ensures consistency across all caddie modules
+- **Developer Experience**: Faster feedback loop for module development
+
+### 📝 Usage Examples
+
+```bash
+# Check all modules
+caddie core:shellcheck
+
+# Check specific module
+caddie core:shellcheck modules/dot_caddie_rust
+
+# Check specific file
+caddie core:shellcheck modules/dot_caddie_python
+```
+
+### 🎯 Standards Enforced
+
+- **Function Naming**: `caddie_<module>_<command>` pattern
+- **CLI Integration**: Proper use of `caddie cli:*` functions
+- **Module Structure**: Required help and description functions
+- **Export Requirements**: All functions must be exported
+- **Error Handling**: Proper input validation and error messages
+- **Variable Usage**: Braces for variables (`${var}`)
+- **Local Declarations**: Use `local` for function variables
+- **Return Statements**: Explicit return statements
+
+---
+
 ## Version 1.8 - Enhanced Git Workflow & SSH Integration
 
 **Release Date:** December 2025

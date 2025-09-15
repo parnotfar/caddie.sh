@@ -249,6 +249,177 @@ function caddie_core_aliases() {
     caddie cli:thought "Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
 }
 
+# Function to run caddie-specific shellcheck
+function caddie_core_shellcheck() {
+    local target="${1:-modules/}"
+    local errors=0
+    local warnings=0
+    
+    caddie cli:title "Caddie Shellcheck - Enforcing Caddie Standards"
+    caddie cli:blank
+    
+    # Check if target exists
+    if [ ! -e "$target" ]; then
+        caddie cli:red "Error: Target '$target' does not exist"
+        return 1
+    fi
+    
+    # Find all shell files
+    local files
+    if [ -d "$target" ]; then
+        files=$(find "$target" -name "*.sh" -o -name "dot_caddie*" | grep -v ".git" | sort)
+    else
+        files="$target"
+    fi
+    
+    if [ -z "$files" ]; then
+        caddie cli:warning "No shell files found in '$target'"
+        return 0
+    fi
+    
+    caddie cli:folder "Checking $(echo "$files" | wc -l | tr -d ' ') file(s)..."
+    caddie cli:blank
+    
+    # Check each file
+    for file in $files; do
+        if [ ! -f "$file" ]; then
+            continue
+        fi
+        
+        caddie cli:indent "Checking: $file"
+        local file_errors=0
+        local file_warnings=0
+        
+        # 1. Check for proper shebang (warning only for sourced files)
+        if ! head -1 "$file" | grep -q "#!/usr/bin/env bash"; then
+            caddie cli:yellow "  ⚠ Missing or incorrect shebang (should be '#!/usr/bin/env bash' for executable files)"
+            ((file_warnings++))
+        fi
+        
+        # 2. Check for CLI module sourcing (for modules)
+        if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_cli"* ]]; then
+            if ! grep -q 'source.*\.caddie_cli' "$file"; then
+                caddie cli:red "  ✗ Missing CLI module sourcing (should source ~/.caddie_modules/.caddie_cli)"
+                ((file_errors++))
+            fi
+        fi
+        
+        # 3. Check function naming convention
+        local bad_functions=$(grep -n "^function caddie_[^_]*[^_].*()" "$file" | grep -v "caddie_[a-z]*_[a-z]" | grep -v "^function caddie_[a-z]*_[a-z]" || true)
+        if [ -n "$bad_functions" ]; then
+            caddie cli:red "  ✗ Invalid function naming (should be caddie_<module>_<command>):"
+            echo "$bad_functions" | while read -r line; do
+                caddie cli:red "    Line $line"
+            done
+            ((file_errors++))
+        fi
+        
+        # 4. Check for proper error handling patterns
+        local functions_without_validation=$(grep -A 10 "^function caddie_.*()" "$file" | grep -B 10 -A 10 "local.*=\$1" | grep -v "if.*-z.*\$1" | grep -v "caddie cli:red.*Error" | head -5 || true)
+        if [ -n "$functions_without_validation" ]; then
+            caddie cli:yellow "  ⚠ Functions should validate input arguments"
+            ((file_warnings++))
+        fi
+        
+        # 5. Check for proper CLI function usage
+        local echo_usage=$(grep -n "echo.*Error" "$file" | grep -v "caddie cli:red" || true)
+        if [ -n "$echo_usage" ]; then
+            caddie cli:yellow "  ⚠ Use 'caddie cli:red' instead of 'echo' for errors:"
+            echo "$echo_usage" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
+        # 6. Check for function exports
+        local functions=$(grep "^function caddie_.*()" "$file" | sed 's/function //' | sed 's/()//' | grep -v '{' || true)
+        local exports=$(grep "^export -f caddie_" "$file" || true)
+        
+        for func in $functions; do
+            if ! echo "$exports" | grep -q "export -f $func"; then
+                caddie cli:red "  ✗ Function '$func' is not exported"
+                ((file_errors++))
+            fi
+        done
+        
+        # 7. Check for help and description functions
+        local module_name=$(basename "$file" | sed 's/dot_caddie_//')
+        if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_core"* ]]; then
+            if ! grep -q "function caddie_${module_name}_help()" "$file"; then
+                caddie cli:red "  ✗ Missing help function (caddie_${module_name}_help)"
+                ((file_errors++))
+            fi
+            if ! grep -q "function caddie_${module_name}_description()" "$file"; then
+                caddie cli:red "  ✗ Missing description function (caddie_${module_name}_description)"
+                ((file_errors++))
+            fi
+        fi
+        
+        # 8. Check for proper variable usage with braces
+        local unbraced_vars=$(grep -n '\$[a-zA-Z_][a-zA-Z0-9_]*[^}]' "$file" | grep -v '\${' | grep -v '\$(' | grep -v '\$#' | grep -v '\$@' | grep -v '\$*' | grep -v '\$?' | grep -v '\$!' | grep -v '\$0' | grep -v '\$1' | grep -v '\$2' | grep -v '\$3' | grep -v '\$4' | grep -v '\$5' | grep -v '\$6' | grep -v '\$7' | grep -v '\$8' | grep -v '\$9' | head -3 || true)
+        if [ -n "$unbraced_vars" ]; then
+            caddie cli:yellow "  ⚠ Consider using braces for variable names (e.g., \${var}):"
+            echo "$unbraced_vars" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
+        # 9. Check for proper local variable declarations
+        local undeclared_vars=$(grep -n '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=' "$file" | grep -v '^[[:space:]]*local ' | grep -v '^[[:space:]]*export ' | grep -v '^[[:space:]]*readonly ' | head -3 || true)
+        if [ -n "$undeclared_vars" ]; then
+            caddie cli:yellow "  ⚠ Consider using 'local' for function variables:"
+            echo "$undeclared_vars" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
+        # 10. Check for proper return statements
+        local functions_without_return=$(grep -A 20 "^function caddie_.*()" "$file" | grep -B 20 -A 20 "return" | grep -v "return 0" | grep -v "return 1" | head -3 || true)
+        if [ -n "$functions_without_return" ]; then
+            caddie cli:yellow "  ⚠ Functions should have explicit return statements"
+            ((file_warnings++))
+        fi
+        
+        # Summary for this file
+        if [ $file_errors -eq 0 ] && [ $file_warnings -eq 0 ]; then
+            caddie cli:check "  ✓ All checks passed"
+        elif [ $file_errors -eq 0 ]; then
+            caddie cli:yellow "  ⚠ $file_warnings warning(s)"
+        else
+            caddie cli:red "  ✗ $file_errors error(s), $file_warnings warning(s)"
+        fi
+        
+        ((errors += file_errors))
+        ((warnings += file_warnings))
+        caddie cli:blank
+    done
+    
+    # Final summary
+    caddie cli:title "Summary"
+    if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
+        caddie cli:check "All files passed caddie standards!"
+    elif [ $errors -eq 0 ]; then
+        caddie cli:yellow "Completed with $warnings warning(s)"
+    else
+        caddie cli:red "Found $errors error(s) and $warnings warning(s)"
+        caddie cli:blank
+        caddie cli:thought "Caddie Standards Reference:"
+        caddie cli:indent "• Use '#!/usr/bin/env bash' shebang (for executable files)"
+        caddie cli:indent "• Source CLI module: source ~/.caddie_modules/.caddie_cli"
+        caddie cli:indent "• Function naming: caddie_<module>_<command>"
+        caddie cli:indent "• Export all functions: export -f caddie_<module>_<command>"
+        caddie cli:indent "• Provide help and description functions"
+        caddie cli:indent "• Use caddie cli:* functions for output"
+        caddie cli:indent "• Validate input arguments"
+        caddie cli:indent "• Use braces for variables: \${var}"
+        caddie cli:indent "• Declare local variables: local var=\$1"
+        caddie cli:indent "• Include explicit return statements"
+        return 1
+    fi
+}
+
 # Function to show core caddie help
 function caddie_core_help() {
     caddie cli:title "Core Caddie Functions"
@@ -266,6 +437,9 @@ function caddie_core_help() {
     caddie cli:indent "debug:off           Disable debug output"
     caddie cli:indent "debug:status        Show debug status"
     caddie cli:blank
+    caddie cli:magnifying_glass "Code Quality:"
+    caddie cli:indent "shellcheck [path]   Run caddie-specific shellcheck"
+    caddie cli:blank
     caddie cli:magnifying_glass "Information:"
     caddie cli:indent "aliases             Show all available aliases"
     caddie cli:indent "alias:grep <keyword> Search aliases by keyword"
@@ -282,6 +456,8 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:aliases"
     caddie cli:indent "caddie core:alias:grep git"
     caddie cli:indent "caddie core:alias:git"
+    caddie cli:indent "caddie core:shellcheck"
+    caddie cli:indent "caddie core:shellcheck modules/"
 }
 
 function caddie_core_description() {
@@ -308,3 +484,4 @@ export -f caddie_core_alias_git
 export -f caddie_core_alias_docker
 export -f caddie_core_alias_npm
 export -f caddie_core_alias_nav
+export -f caddie_core_shellcheck
