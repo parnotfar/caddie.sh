@@ -23,6 +23,7 @@
 
 ### 📝 Usage Examples
 
+```bash
 # Check all modules
 caddie core:shellcheck
 
@@ -31,6 +32,7 @@ caddie core:shellcheck modules/dot_caddie_rust
 
 # Check specific file
 caddie core:shellcheck modules/dot_caddie_python
+```
 
 ### 🎯 Standards Enforced
 
