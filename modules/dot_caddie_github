@@ -3,6 +3,8 @@
 # Caddie.sh - GitHub Module
 # This file contains GitHub account management and integration functions
 
+source "$HOME/.caddie_modules/.caddie_cli"
+
 # GitHub account management functions
 function caddie_github_account_set() {
     local account="$1"
@@ -20,7 +22,10 @@ function caddie_github_account_set() {
 }
 
 function caddie_github_account_get() {
+    # caddie:lint:disable
     echo "${CADDIE_GITHUB_ACCOUNT}"
+    # caddie:lint:enable
+    return 0
 }
 
 function caddie_github_account_unset() {
@@ -99,7 +104,9 @@ function caddie_github_repo_url() {
     fi
     
     local url="https://github.com/${github_account}/${repo_name}.git"
+    # caddie:lint:disable
     echo "${url}"
+    # caddie:lint:enable
     return 0
 }
 
@@ -113,7 +120,6 @@ function caddie_github_help() {
     caddie cli:indent "account:set <name>      Set GitHub account name"
     caddie cli:indent "account:get            Get current GitHub account"
     caddie cli:indent "account:unset         Unset GitHub account"
-    caddie cli:indent "auth:check            Check GitHub CLI authentication status"
     caddie cli:blank
     caddie cli:title "Repository Management:"
     caddie cli:indent "repo:create <name> [desc] [private]  Create new repository"
@@ -121,7 +127,6 @@ function caddie_github_help() {
     caddie cli:blank
     caddie cli:title "Examples:"
     caddie cli:indent "caddie github:account:set parnotfar"
-    caddie cli:indent "caddie github:auth:check"
     caddie cli:indent "caddie github:repo:create my-project 'My awesome project'"
     caddie cli:indent "caddie github:repo:url"
     caddie cli:blank
@@ -129,93 +134,14 @@ function caddie_github_help() {
 }
 
 function caddie_github_description() {
-    echo 'GitHub account and repository management'
+    caddie cli:title 'GitHub account and repository management'
     return 0
-}
-
-function caddie_github_auth_check() {
-    # Check if GitHub CLI is installed
-    if ! command -v gh > /dev/null 2>&1; then
-        caddie cli:red "GitHub CLI (gh) is not installed"
-        caddie cli:indent "Install with: brew install gh"
-        return 1
-    fi
-    
-    # Check if user is authenticated
-    if ! gh auth status > /dev/null 2>&1; then
-        local account=$(caddie_github_account_get)
-        if [ -z "$account" ]; then
-            caddie cli:red "Not authenticated with GitHub CLI and no account set"
-            caddie cli:indent "Run: gh auth login"
-            caddie cli:indent "Then set account: caddie github:account:set <account>"
-        else
-            caddie cli:red "Not authenticated with GitHub CLI (account: $account)"
-            caddie cli:indent "Run: gh auth login"
-        fi
-        return 1
-    fi
-    
-    # Get authenticated user info
-    local auth_user=$(gh api user --jq .login 2>/dev/null)
-    local stored_account=$(caddie_github_account_get)
-    
-    if [ -z "$auth_user" ]; then
-        caddie cli:red "Failed to get authenticated user info"
-        return 1
-    fi
-    
-    if [ -z "$stored_account" ]; then
-        caddie cli:yellow "Authenticated as: $auth_user (no stored account)"
-        caddie cli:indent "Set account: caddie github:account:set $auth_user"
-    elif [ "$auth_user" = "$stored_account" ]; then
-        caddie cli:check "Authenticated as: $auth_user (matches stored account)"
-    else
-        caddie cli:yellow "Authenticated as: $auth_user (stored account: $stored_account)"
-        caddie cli:indent "Update account: caddie github:account:set $auth_user"
-    fi
-    
-    return 0
-}
-
-function caddie_github_auth_status() {
-    # Return status for prompt display
-    # Returns: "none", "account:unauthenticated", or "account:authenticated"
-    
-    if ! command -v gh > /dev/null 2>&1; then
-        echo "none"
-        return
-    fi
-    
-    local account=$(caddie_github_account_get)
-    
-    if ! gh auth status > /dev/null 2>&1; then
-        if [ -z "$account" ]; then
-            echo "none"
-        else
-            echo "$account:unauthenticated"
-        fi
-        return
-    fi
-    
-    local auth_user=$(gh api user --jq .login 2>/dev/null)
-    if [ -z "$auth_user" ]; then
-        if [ -z "$account" ]; then
-            echo "none"
-        else
-            echo "$account:unauthenticated"
-        fi
-        return
-    fi
-    
-    echo "$auth_user:authenticated"
 }
 
 # Export GitHub functions
 export -f caddie_github_account_set
 export -f caddie_github_account_get
 export -f caddie_github_account_unset
-export -f caddie_github_auth_check
-export -f caddie_github_auth_status
 export -f caddie_github_repo_create
 export -f caddie_github_repo_url
 export -f caddie_github_help
