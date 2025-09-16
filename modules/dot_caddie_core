@@ -267,9 +267,9 @@ function caddie_core_lint() {
     # Find all shell files
     local files
     if [ -d "$target" ]; then
-        local files=$(find "$target" -name "*.sh" -o -name "dot_caddie*" | grep -v ".git" | sort)
+        files=$(find "$target" -name "*.sh" -o -name "dot_caddie*" | grep -v ".git" | sort)
     else
-        local files="$target"
+        files="$target"
     fi
     
     if [ -z "$files" ]; then
@@ -405,13 +405,60 @@ function caddie_core_lint() {
             done < "$file"
             
             # Now check for undeclared variables only in bash code sections
-            undeclared_vars=$(grep "^BASH_CODE:" "$temp_file" | sed 's/^BASH_CODE://' | grep -n '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=' | grep -v '^[[:space:]]*local ' | grep -v '^[[:space:]]*export ' | grep -v '^[[:space:]]*readonly ' | head -3 || true)
+            # Use improved logic that tracks local declarations within function scope
+            undeclared_vars=$(grep "^BASH_CODE:" "$temp_file" | sed 's/^BASH_CODE://' | awk '
+                BEGIN { in_function = 0; local_vars = "" }
+                /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
+                /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
+                in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+                    # Extract variable name from local declaration
+                    gsub(/^[[:space:]]*local[[:space:]]+/, "")
+                    gsub(/[[:space:]]*=.*$/, "")
+                    gsub(/[[:space:]]+.*$/, "")
+                    if (local_vars == "") local_vars = $0
+                    else local_vars = local_vars " " $0
+                    next
+                }
+                in_function && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
+                    # Extract variable name from assignment
+                    gsub(/^[[:space:]]*/, "")
+                    gsub(/[[:space:]]*=.*$/, "")
+                    # Check if this variable was declared as local earlier in the function
+                    # Use a more reliable pattern that checks for word boundaries
+                    if (local_vars !~ "(^| )" $0 "( |$)") {
+                        print NR ": " $0 "="
+                    }
+                }
+            ' | head -3 || true)
             
             # Clean up temp file
             rm -f "$temp_file"
         else
-            # No heredocs - use fast simple method
-            undeclared_vars=$(grep -n '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=' "$file" | grep -v '^[[:space:]]*local ' | grep -v '^[[:space:]]*export ' | grep -v '^[[:space:]]*readonly ' | head -3 || true)
+            # No heredocs - use fast method with improved local variable tracking
+            undeclared_vars=$(awk '
+                BEGIN { in_function = 0; local_vars = "" }
+                /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
+                /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
+                in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+                    # Extract variable name from local declaration
+                    gsub(/^[[:space:]]*local[[:space:]]+/, "")
+                    gsub(/[[:space:]]*=.*$/, "")
+                    gsub(/[[:space:]]+.*$/, "")
+                    if (local_vars == "") local_vars = $0
+                    else local_vars = local_vars " " $0
+                    next
+                }
+                in_function && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
+                    # Extract variable name from assignment
+                    gsub(/^[[:space:]]*/, "")
+                    gsub(/[[:space:]]*=.*$/, "")
+                    # Check if this variable was declared as local earlier in the function
+                    # Use a more reliable pattern that checks for word boundaries
+                    if (local_vars !~ "(^| )" $0 "( |$)") {
+                        print NR ": " $0 "="
+                    }
+                }
+            ' "$file" | head -3 || true)
         fi
         
         if [ -n "$undeclared_vars" ]; then
