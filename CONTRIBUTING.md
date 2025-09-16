@@ -1,35 +1,145 @@
 # Contributing to Caddie.sh
 
-Thank you for your interest in contributing to Caddie.sh! 🏌️‍♂️
+## Code Standards and Linting
 
-## Quick Start
+### Shebang Requirements
 
-For detailed information about contributing, please see our comprehensive [Contributing Guide](docs/contributing.md).
+**Why shebangs are NOT required for caddie modules:**
 
-## Getting Started
+Caddie modules are **sourced** by the bash profile, not executed as standalone scripts. When a module is sourced with `source ~/.caddie_modules/dot_caddie_rust`, the shebang line is ignored by bash. The shebang is only relevant for executable scripts that are run directly.
 
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally
-3. **Create a feature branch** for your changes
-4. **Make your changes** following our guidelines
-5. **Test your changes** thoroughly
-6. **Submit a pull request** with a clear description
+**Module Loading Process:**
+1. `~/.bash_profile` sources `~/.caddie_modules/dot_caddie_core`
+2. Core module sources other modules as needed
+3. All modules are loaded into the current bash session
+4. No shebang is needed or used in this process
 
-## Need Help?
+**Exception:** Only standalone executable scripts (like the main `caddie` script) need shebangs.
 
-- 📚 **Documentation**: [docs/](docs/)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/parnotfar/caddie.sh/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/parnotfar/caddie.sh/discussions)
-- 📖 **User Guide**: [docs/user-guide.md](docs/user-guide.md)
+### Explicit Return Statements
 
-## Code of Conduct
+**Why explicit returns are recommended (but not required):**
 
-This project adheres to our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+Bash functions automatically return the exit status of the last executed command. However, explicit returns improve code clarity and make intent obvious.
 
-## Security
+**Examples:**
 
-If you discover a security vulnerability, please see our [Security Policy](SECURITY.md) for reporting instructions.
+```bash
+# Implicit return (works fine)
+function caddie_rust_check() {
+    cargo check
+    # Returns exit status of cargo check automatically
+}
 
----
+# Explicit return (preferred for clarity)
+function caddie_rust_check() {
+    if cargo check; then
+        caddie cli:check "Rust project check passed"
+        return 0
+    else
+        caddie cli:red "Rust project check failed"
+        return 1
+    fi
+}
+```
 
-**Happy contributing! 🚀**
+**Benefits of explicit returns:**
+- Makes success/failure paths clear
+- Easier to debug and maintain
+- Consistent with other programming languages
+- Helps with error handling in calling functions
+
+### Local Variable Declarations
+
+**Why `local` is required:**
+
+Using `local` prevents variable name conflicts and makes functions more predictable.
+
+```bash
+# Bad - pollutes global namespace
+function caddie_rust_build() {
+    project_name="my-project"  # Global variable!
+    cargo build
+}
+
+# Good - keeps variables local
+function caddie_rust_build() {
+    local project_name="my-project"  # Local variable
+    cargo build
+}
+```
+
+### Variable Braces
+
+**Why `${var}` is preferred over `$var`:**
+
+Braces prevent ambiguity and make variable boundaries clear.
+
+```bash
+# Ambiguous - is this $var_suffix or ${var}suffix?
+echo $var_suffix
+
+# Clear - definitely ${var}suffix
+echo ${var}_suffix
+```
+
+### Error Handling
+
+**Why use `caddie cli:red` instead of `echo "Error:"`:**
+
+The caddie CLI module provides consistent formatting and color coding across all modules.
+
+```bash
+# Bad - inconsistent formatting
+echo "Error: Something went wrong"
+
+# Good - consistent with caddie standards
+caddie cli:red "Error: Something went wrong"
+```
+
+### Function Naming Convention
+
+**Standard: `caddie_<module>_<command>`**
+
+Examples:
+- `caddie_rust_build`
+- `caddie_python_test`
+- `caddie_git_commit`
+
+**Exception:** The debug module uses `caddie_debug()` as a utility function, which is exempt from this convention.
+
+### Module Exemptions
+
+Some modules may be exempt from certain linting rules:
+
+- **Debug Module**: Uses `caddie_debug()` instead of `caddie_debug_<command>` for utility purposes
+- **Core Module**: May have special functions that don't follow standard naming
+
+Exemptions are handled in the linter with exemption flags.
+
+## Running the Linter
+
+```bash
+caddie core:lint
+```
+
+This will check all modules against the standards and report any issues.
+
+## Fixing Common Issues
+
+1. **Missing help function**: Add `caddie_<module>_help()` function
+2. **Missing local declarations**: Add `local` keyword to variable assignments
+3. **Missing return statements**: Add explicit `return 0` or `return 1`
+4. **Echo errors**: Replace with `caddie cli:red`
+5. **Variable braces**: Use `${var}` instead of `$var`
+
+## Testing Changes
+
+After making changes, run:
+
+```bash
+caddie core:lint
+caddie core:test
+```
+
+This ensures your changes don't break existing functionality and meet code standards.

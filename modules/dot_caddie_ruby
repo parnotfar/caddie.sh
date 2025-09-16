@@ -133,7 +133,7 @@ function caddie_ruby_use() {
     local version="$1"
     
     if [ -z "$version" ]; then
-        echo "Error: Please provide a Ruby version"
+        caddie cli:red "Error: Please provide a Ruby version"
         echo "Usage: caddie ruby:use <version>"
         return 1
     fi
@@ -174,7 +174,7 @@ function caddie_ruby_gemset_create() {
     local gemset_name="$1"
     
     if [ -z "$gemset_name" ]; then
-        echo "Error: Please provide a gemset name"
+        caddie cli:red "Error: Please provide a gemset name"
         echo "Usage: caddie ruby:gemset:create <name>"
         return 1
     fi
@@ -195,7 +195,7 @@ function caddie_ruby_gemset_use() {
     local gemset_name="$1"
     
     if [ -z "$gemset_name" ]; then
-        echo "Error: Please provide a gemset name"
+        caddie cli:red "Error: Please provide a gemset name"
         echo "Usage: caddie ruby:gemset:use <name>"
         return 1
     fi
@@ -223,7 +223,7 @@ function caddie_ruby_gemset_delete() {
     local gemset_name="$1"
     
     if [ -z "$gemset_name" ]; then
-        echo "Error: Please provide a gemset name"
+        caddie cli:red "Error: Please provide a gemset name"
         echo "Usage: caddie ruby:gemset:delete <name>"
         return 1
     fi
@@ -243,7 +243,7 @@ function caddie_ruby_gem_install() {
     local gem_name="$1"
     
     if [ -z "$gem_name" ]; then
-        echo "Error: Please provide a gem name"
+        caddie cli:red "Error: Please provide a gem name"
         echo "Usage: caddie ruby:gem:install <gem>"
         return 1
     fi
@@ -263,7 +263,7 @@ function caddie_ruby_gem_uninstall() {
     local gem_name="$1"
     
     if [ -z "$gem_name" ]; then
-        echo "Error: Please provide a gem name"
+        caddie cli:red "Error: Please provide a gem name"
         echo "Usage: caddie ruby:gem:uninstall <gem>"
         return 1
     fi
@@ -290,7 +290,7 @@ function caddie_ruby_gem_update() {
     local gem_name="$1"
     
     if [ -z "$gem_name" ]; then
-        echo "Error: Please provide a gem name"
+        caddie cli:red "Error: Please provide a gem name"
         echo "Usage: caddie ruby:gem:update <gem>"
         return 1
     fi
@@ -317,7 +317,7 @@ function caddie_ruby_project_init() {
     local project_name="$1"
     
     if [ -z "$project_name" ]; then
-        project_name="my-ruby-project"
+        local project_name="my-ruby-project"
     fi
     
     echo "Initializing Ruby project: $project_name"
@@ -406,7 +406,7 @@ EOF
 # Function to run Ruby tests
 function caddie_ruby_project_test() {
     if [ ! -f "Gemfile" ]; then
-        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        caddie cli:red "Error: Not in a Ruby project directory (Gemfile not found)"
         return 1
     fi
     
@@ -425,7 +425,7 @@ function caddie_ruby_project_test() {
 # Function to build Ruby project
 function caddie_ruby_project_build() {
     if [ ! -f "Gemfile" ]; then
-        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        caddie cli:red "Error: Not in a Ruby project directory (Gemfile not found)"
         return 1
     fi
     
@@ -445,7 +445,7 @@ function caddie_ruby_project_build() {
 # Function to serve Ruby web application
 function caddie_ruby_project_serve() {
     if [ ! -f "Gemfile" ]; then
-        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        caddie cli:red "Error: Not in a Ruby project directory (Gemfile not found)"
         return 1
     fi
     
@@ -470,7 +470,7 @@ function caddie_ruby_project_serve() {
 # Function to install Bundler dependencies
 function caddie_ruby_bundler_install() {
     if [ ! -f "Gemfile" ]; then
-        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        caddie cli:red "Error: Not in a Ruby project directory (Gemfile not found)"
         return 1
     fi
     
@@ -487,7 +487,7 @@ function caddie_ruby_bundler_install() {
 # Function to update Bundler dependencies
 function caddie_ruby_bundler_update() {
     if [ ! -f "Gemfile" ]; then
-        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        caddie cli:red "Error: Not in a Ruby project directory (Gemfile not found)"
         return 1
     fi
     
@@ -506,13 +506,13 @@ function caddie_ruby_bundler_exec() {
     local command="$1"
     
     if [ -z "$command" ]; then
-        echo "Error: Please provide a command to execute"
+        caddie cli:red "Error: Please provide a command to execute"
         echo "Usage: caddie ruby:bundler:exec <command>"
         return 1
     fi
     
     if [ ! -f "Gemfile" ]; then
-        echo "Error: Not in a Ruby project directory (Gemfile not found)"
+        caddie cli:red "Error: Not in a Ruby project directory (Gemfile not found)"
         return 1
     fi
     
@@ -525,7 +525,7 @@ function caddie_ruby_rails_new() {
     local app_name="$1"
     
     if [ -z "$app_name" ]; then
-        echo "Error: Please provide an application name"
+        caddie cli:red "Error: Please provide an application name"
         echo "Usage: caddie ruby:rails:new <app-name>"
         return 1
     fi
@@ -553,7 +553,7 @@ function caddie_ruby_rails_new() {
 # Function to start Rails server
 function caddie_ruby_rails_server() {
     if [ ! -f "config/application.rb" ]; then
-        echo "Error: Not in a Rails application directory"
+        caddie cli:red "Error: Not in a Rails application directory"
         return 1
     fi
     
@@ -564,7 +564,7 @@ function caddie_ruby_rails_server() {
 # Function to start Rails console
 function caddie_ruby_rails_console() {
     if [ ! -f "config/application.rb" ]; then
-        echo "Error: Not in a Rails application directory"
+        caddie cli:red "Error: Not in a Rails application directory"
         return 1
     fi
     
@@ -578,14 +578,14 @@ function caddie_ruby_rails_generate() {
     local name="$2"
     
     if [ -z "$generator" ] || [ -z "$name" ]; then
-        echo "Error: Please provide generator and name"
+        caddie cli:red "Error: Please provide generator and name"
         echo "Usage: caddie ruby:rails:generate <generator> <name>"
         echo "Examples: model User, controller Users, scaffold Post"
         return 1
     fi
     
     if [ ! -f "config/application.rb" ]; then
-        echo "Error: Not in a Rails application directory"
+        caddie cli:red "Error: Not in a Rails application directory"
         return 1
     fi
     
@@ -596,7 +596,7 @@ function caddie_ruby_rails_generate() {
 # Function to run Rails migrations
 function caddie_ruby_rails_migrate() {
     if [ ! -f "config/application.rb" ]; then
-        echo "Error: Not in a Rails application directory"
+        caddie cli:red "Error: Not in a Rails application directory"
         return 1
     fi
     
@@ -607,7 +607,7 @@ function caddie_ruby_rails_migrate() {
 # Function to show Rails routes
 function caddie_ruby_rails_routes() {
     if [ ! -f "config/application.rb" ]; then
-        echo "Error: Not in a Rails application directory"
+        caddie cli:red "Error: Not in a Rails application directory"
         return 1
     fi
     

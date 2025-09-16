@@ -81,7 +81,7 @@ function caddie_ios_run() {
     
     # Get the first available simulator
     local simulator
-    simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
+    local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
         caddie cli:red "Error: No iOS simulator found"
@@ -111,7 +111,7 @@ function caddie_ios_test() {
     
     # Get the first available simulator
     local simulator
-    simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
+    local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
         caddie cli:red "Error: No iOS simulator found"
