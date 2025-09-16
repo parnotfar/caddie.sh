@@ -774,7 +774,7 @@ function caddie_cross_deploy_local() {
     cat > deploy.sh << 'EOF'
 #!/bin/bash
 
-echo "Deploying locally..."
+caddie cli:title "Deploying locally..."
 
 # Build the project
 npm run build
@@ -984,7 +984,7 @@ function caddie_cross_help() {
 
 # Function to show cross module description
 function caddie_cross_description() {
-    echo "Cross-language development utilities and environment management"
+    caddie cli:title "Cross-language development utilities and environment management"
     return 0
 }
 

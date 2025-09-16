@@ -895,7 +895,7 @@ function caddie_cursor_help() {
 
 # Function to show cursor module description
 function caddie_cursor_description() {
-    echo "Cursor IDE integration and project management utilities"
+    caddie cli:title "Cursor IDE integration and project management utilities"
     return 0
 }
 
