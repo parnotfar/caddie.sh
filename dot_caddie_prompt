@@ -50,7 +50,7 @@ function set_caddie_prompt() {
     local github_info=""
     
     # Add GitHub CLI authentication status
-    local github_status=$(caddie_github_auth_status 2>/dev/null)
+    local github_status=$(gh auth status 2>/dev/null)
     
     if [ -n "${github_status}" ]; then
         case "${github_status}" in
