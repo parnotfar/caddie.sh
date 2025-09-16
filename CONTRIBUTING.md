@@ -321,6 +321,48 @@ function my_function() {
 - **Keep blocks small**: Wrap only the specific code that needs to be ignored
 - **Review regularly**: Remove ignore blocks when the underlying issue is fixed
 
+## Pull Request Guidelines
+
+### Pre-PR Quality Check
+
+**MANDATORY**: Before creating any pull request, run the linter to ensure code quality:
+
+```bash
+# Lint all modified files (recommended)
+caddie core:lint
+
+# Or lint specific files you've changed
+caddie core:lint modules/dot_caddie_<module>
+
+# For focused debugging with limited output
+caddie core:lint:limit 5 modules/dot_caddie_<module>
+```
+
+### PR Approval Requirements
+
+All pull requests must meet these quality standards:
+
+- ✅ **All linter checks must pass with zero warnings**
+- ✅ **No echo statements** (use `caddie cli:*` functions)
+- ✅ **All functions have explicit return statements** (`return 0` or `return 1`)
+- ✅ **No variable shadowing issues** (local variables in conditional blocks)
+- ✅ **Proper local variable declarations** (use `local` for function variables)
+
+### Creating Pull Requests
+
+Use the caddie Git workflow for consistent PR creation:
+
+```bash
+# Create and publish feature branch
+caddie git:new:branch feature/your-feature-name
+
+# Make your changes, then commit
+caddie git:gacp "Add your feature description"
+
+# Create pull request
+caddie git:pr:create "Your PR Title" "Detailed description of changes"
+```
+
 ## Testing Changes
 
 After making changes, run:

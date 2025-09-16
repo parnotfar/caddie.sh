@@ -154,8 +154,30 @@ caddie core:lint:limit <n> <path>  # lint with limited output (max n issues per 
 caddie reload                # reload after changes
 ```
 
-#### **Enhanced Linter (v1.10)**
-The linter now includes comprehensive echo message detection and flexible output:
+### Pre-PR Quality Check
+
+**MANDATORY**: Before creating any pull request, run the linter to ensure code quality:
+
+```sh
+# Lint all modified files (recommended)
+caddie core:lint
+
+# Or lint specific files you've changed
+caddie core:lint modules/dot_caddie_<module>
+
+# For focused debugging with limited output
+caddie core:lint:limit 5 modules/dot_caddie_<module>
+```
+
+**PR Approval Requirements:**
+- ✅ All linter checks must pass with zero warnings
+- ✅ No echo statements (use `caddie cli:*` functions)
+- ✅ All functions have explicit return statements
+- ✅ No variable shadowing issues
+- ✅ Proper local variable declarations
+
+#### **Universal Shell Linter (v2.0)**
+The linter is now universal - it can lint any shell script, not just caddie modules. It includes comprehensive echo message detection and flexible output:
 - **Usage Messages**: `echo "Usage..."` → `caddie cli:usage`
 - **Success Messages**: `echo "✓..."` → `caddie cli:check`
 - **Failure Messages**: `echo "✗..."` → `caddie cli:red`
@@ -245,6 +267,7 @@ The Makefile handles module installation automatically:
 
 * **Error handling**: Always check for errors and provide meaningful messages
 * **Input validation**: Validate all arguments with clear error messages
+* **Explicit return statements**: Always include explicit `return 0` or `return 1` statements instead of relying on the exit status of the last command
 * **CLI integration**: Use `caddie cli:*` functions for consistent output formatting
 * **Echo message standards**: Use appropriate caddie CLI functions instead of raw echo
   * `echo "Error:` → `caddie cli:red`
@@ -311,8 +334,9 @@ The Makefile handles module installation automatically:
 
 ### Testing Requirements
 
-* Run `caddie core:lint` on all modified files (ENHANCED in v1.10)
-  * Now includes comprehensive echo message detection
+* Run `caddie core:lint` on all modified files (UNIVERSAL in v2.0)
+  * Can now lint any shell script, not just caddie modules
+  * Comprehensive echo message detection and enforcement
   * Variable shadowing detection for subtle bug prevention
   * Flexible output: `caddie core:lint` (all issues) or `caddie core:lint:limit <n>` (limited)
   * Optimized performance with smart heredoc detection
@@ -329,7 +353,9 @@ The Makefile handles module installation automatically:
 1. Run all `caddie *:test` commands for enabled modules
 2. Verify `caddie help` and `caddie <module>:help` produce expected output
 3. Test tab completion functionality
-4. Run `caddie core:lint` on all modified files (NEW in v1.9)
+4. **MANDATORY**: Run `caddie core:lint` on all modified files (UNIVERSAL in v2.0)
+   - Must pass with zero warnings before PR approval
+   - Ensures code quality and consistency across all shell scripts
 5. Verify Makefile installation process
 
 ---
