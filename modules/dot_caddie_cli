@@ -1,12 +1,6 @@
 # Caddie.sh CLI Color Module
 # This provides reliable color definitions and CLI utilities for the prompt system
 
-# Module description
-function caddie_cli_description() {
-    caddie cli:title "CLI color utilities and formatting"
-    return 0
-}
-
 # Common colors for reference
 export BOLD=$(tput bold)
 export RED=$(tput setaf 1)
@@ -19,6 +13,15 @@ export WHITE=$(tput setaf 7)
 export GREY=$(tput setaf 8)
 export ORANGE=$(tput setaf 9)
 export RESET=$(tput sgr0)
+
+# Module description
+function caddie_cli_description() {
+    # caddie:lint:disable
+    echo "${BOLD}${BLUE}CLI color utilities and formatting${RESET}"
+    # caddie:lint:enable
+
+    return 0
+}
 
 # CLI color output functions
 function caddie_cli_red() {

@@ -4,7 +4,7 @@
 # This file contains the main caddie function and core functionality
 
 # Default caddie home file location
-local CADDIE_HOME_FILE="$HOME/.caddie_home"
+CADDIE_HOME_FILE="$HOME/.caddie_home"
 
 # Function to set the caddie home directory
 function caddie_core_set_home() {
