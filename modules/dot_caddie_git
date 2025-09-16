@@ -248,10 +248,11 @@ function caddie_git_pr() {
         return 1
     fi
     
-    # Check if user is authenticated with GitHub CLI
-    if ! gh auth status > /dev/null 2>&1; then
-        caddie cli:red "Error: Not authenticated with GitHub CLI"
-        caddie cli:indent "Run: gh auth login"
+    # Check GitHub CLI authentication using caddie function
+    if ! caddie_github_auth_check > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI authentication required"
+        caddie cli:indent "Run: caddie git:auth:login to authenticate"
+        caddie cli:indent "Or check status: caddie github:auth:check"
         return 1
     fi
     
@@ -312,6 +313,73 @@ function caddie_git_pr() {
     return 0
 }
 
+function caddie_git_auth_login() {
+    # Check if GitHub CLI is installed
+    if ! command -v gh > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI (gh) is not installed"
+        caddie cli:indent "Install with: brew install gh"
+        caddie cli:indent "Or run: make setup-github"
+        return 1
+    fi
+    
+    # Check if already authenticated
+    if gh auth status > /dev/null 2>&1; then
+        local auth_user=$(gh api user --jq .login 2>/dev/null)
+        caddie cli:yellow "Already authenticated with GitHub CLI as: $auth_user"
+        caddie cli:indent "To re-authenticate, run: gh auth logout && gh auth login"
+        return 0
+    fi
+    
+    caddie cli:title "GitHub CLI Authentication"
+    caddie cli:blank
+    caddie cli:indent "This will open your browser to authenticate with GitHub"
+    caddie cli:indent "Choose your preferred authentication method:"
+    caddie cli:blank
+    caddie cli:indent "1. Login with a web browser (recommended)"
+    caddie cli:indent "2. Paste an authentication token"
+    caddie cli:indent "3. Login via SSH key"
+    caddie cli:blank
+    
+    # Start the authentication process
+    caddie cli:indent "Starting GitHub CLI authentication..."
+    
+    if gh auth login; then
+        caddie cli:check "Successfully authenticated with GitHub CLI"
+        
+        # Get the authenticated user
+        local auth_user=$(gh api user --jq .login 2>/dev/null)
+        if [ -n "$auth_user" ]; then
+            caddie cli:indent "Authenticated as: $auth_user"
+            
+            # Check if we should set this as the stored account
+            local stored_account=$(caddie_github_account_get)
+            if [ -z "$stored_account" ]; then
+                caddie cli:indent "Setting $auth_user as your default GitHub account..."
+                caddie_github_account_set "$auth_user"
+                caddie cli:check "GitHub account set to: $auth_user"
+            elif [ "$auth_user" != "$stored_account" ]; then
+                caddie cli:yellow "Authenticated as $auth_user but stored account is $stored_account"
+                caddie cli:indent "Update stored account: caddie github:account:set $auth_user"
+            else
+                caddie cli:check "Authenticated account matches stored account: $auth_user"
+            fi
+        fi
+        
+        caddie cli:blank
+        caddie cli:indent "You can now use:"
+        caddie cli:indent "  caddie git:pr 'Create pull request'"
+        caddie cli:indent "  caddie github:auth:check"
+        caddie cli:indent "  gh pr list, gh issue list, etc."
+        
+    else
+        caddie cli:red "Failed to authenticate with GitHub CLI"
+        caddie cli:indent "Try running 'gh auth login' manually for more details"
+        return 1
+    fi
+    
+    return 0
+}
+
 function caddie_git_help() {
     caddie cli:title "Git Module Commands"
     caddie cli:blank
@@ -325,6 +393,7 @@ function caddie_git_help() {
     caddie cli:indent "new:branch <name>   Create new branch and push to remote"
     caddie cli:indent "commit <message>    Add all changes and commit with message"
     caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
+    caddie cli:indent "auth:login          Authenticate with GitHub CLI"
     caddie cli:indent "pr [title] [body] [base]  Create pull request using GitHub CLI"
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
@@ -341,6 +410,7 @@ function caddie_git_help() {
     
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
+    caddie cli:indent "caddie git:auth:login"
     caddie cli:indent "caddie git:new:branch feature/new-feature"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
@@ -368,6 +438,7 @@ export -f caddie_git_branch
 export -f caddie_git_new_branch
 export -f caddie_git_commit
 export -f caddie_git_gacp
+export -f caddie_git_auth_login
 export -f caddie_git_pr
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream

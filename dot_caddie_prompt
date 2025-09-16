@@ -49,10 +49,26 @@ function set_caddie_prompt() {
     local git_info=""
     local github_info=""
     
-    # Add GitHub account info if set
-    local github_account=$(caddie_github_account_get)
-    if [ -n "${github_account}" ]; then
-        github_info="[${GREEN}gh:${github_account}${RESET}]"
+    # Add GitHub CLI authentication status
+    local github_status=$(caddie_github_auth_status 2>/dev/null)
+    
+    if [ -n "${github_status}" ]; then
+        case "${github_status}" in
+            "none")
+                github_info="[${RED}gh:none${RESET}]"
+                ;;
+            *":unauthenticated")
+                local account=$(echo "${github_status}" | cut -d: -f1)
+                github_info="[${RED}gh:${account}${RESET}]"
+                ;;
+            *":authenticated")
+                local account=$(echo "${github_status}" | cut -d: -f1)
+                github_info="[${GREEN}gh:${account}${RESET}]"
+                ;;
+            *)
+                github_info="[${YELLOW}gh:unknown${RESET}]"
+                ;;
+        esac
     fi
     
     if [ -d '.git' ]; then
