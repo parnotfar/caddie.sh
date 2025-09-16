@@ -158,8 +158,8 @@ function caddie_git_clone() {
     
     if [ -z "${repo_name}" ]; then
         caddie cli:red "Error: Please provide repository name"
-        echo "Usage: caddie git:clone <repo-name>"
-        echo "Example: caddie git:clone my-project"
+        caddie cli:usage "caddie git:clone <repo-name>"
+        caddie cli:indent "Example: caddie git:clone my-project"
         return 1
     fi
     
@@ -171,11 +171,61 @@ function caddie_git_clone() {
     
     local url="git@github.com:${github_account}/${repo_name}.git"
     
-    echo "Cloning repository: ${repo_name}"
-    echo "Using GitHub account: ${github_account}"
-    echo "URL: ${url}"
+    caddie cli:indent "Cloning repository: ${repo_name}"
+    caddie cli:indent "Using GitHub account: ${github_account}"
+    caddie cli:indent "URL: ${url}"
     
     git clone "${url}"
+    return 0
+}
+
+function caddie_git_new_branch() {
+    local branch_name="$1"
+    
+    if [ -z "${branch_name}" ]; then
+        caddie cli:red "Error: Please provide a branch name"
+        caddie cli:usage "caddie git:new:branch <branch-name>"
+        caddie cli:indent "Example: caddie git:new:branch feature/new-feature"
+        return 1
+    fi
+    
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+    
+    # Check if branch already exists locally
+    if git show-ref --verify --quiet refs/heads/"${branch_name}"; then
+        caddie cli:red "Error: Branch '${branch_name}' already exists locally"
+        return 1
+    fi
+    
+    # Check if branch already exists on remote
+    if git show-ref --verify --quiet refs/remotes/origin/"${branch_name}"; then
+        caddie cli:red "Error: Branch '${branch_name}' already exists on remote"
+        return 1
+    fi
+    
+    caddie cli:indent "Creating new branch: ${branch_name}"
+    
+    # Create and switch to new branch
+    if git checkout -b "${branch_name}"; then
+        caddie cli:check "Created and switched to branch '${branch_name}'"
+        
+        # Push branch to remote and set upstream
+        caddie cli:indent "Pushing branch to remote and setting upstream..."
+        if git push --set-upstream origin "${branch_name}"; then
+            caddie cli:check "Branch '${branch_name}' pushed to remote and upstream set"
+        else
+            caddie cli:red "Failed to push branch to remote"
+            return 1
+        fi
+    else
+        caddie cli:red "Failed to create branch '${branch_name}'"
+        return 1
+    fi
+    
     return 0
 }
 
@@ -189,6 +239,7 @@ function caddie_git_help() {
     caddie cli:title "Commands:"
     caddie cli:indent "status              Show git status"
     caddie cli:indent "branch              Show current and all branches"
+    caddie cli:indent "new:branch <name>   Create new branch and push to remote"
     caddie cli:indent "commit <message>    Add all changes and commit with message"
     caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
     caddie cli:indent "push               Push to remote repository"
@@ -206,6 +257,7 @@ function caddie_git_help() {
     
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
+    caddie cli:indent "caddie git:new:branch feature/new-feature"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
     caddie cli:indent "caddie git:remote:add"
@@ -228,6 +280,7 @@ function caddie_git_description() {
 export -f caddie_source_custom_files
 export -f caddie_git_status
 export -f caddie_git_branch
+export -f caddie_git_new_branch
 export -f caddie_git_commit
 export -f caddie_git_gacp
 export -f caddie_git_push

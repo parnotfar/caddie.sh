@@ -83,18 +83,71 @@ echo $var_suffix
 echo ${var}_suffix
 ```
 
-### Error Handling
+### Echo Message Standards
 
-**Why use `caddie cli:red` instead of `echo "Error:"`:**
+**Why use caddie CLI functions instead of raw `echo`:**
 
-The caddie CLI module provides consistent formatting and color coding across all modules.
+The caddie CLI module provides consistent formatting, color coding, and semantic meaning across all modules.
 
+#### **Error Messages**
 ```bash
 # Bad - inconsistent formatting
 echo "Error: Something went wrong"
 
 # Good - consistent with caddie standards
 caddie cli:red "Error: Something went wrong"
+```
+
+#### **Usage Messages**
+```bash
+# Bad - inconsistent formatting
+echo "Usage: caddie rust:build"
+
+# Good - consistent with caddie standards
+caddie cli:usage "caddie rust:build"
+```
+
+#### **Success Messages**
+```bash
+# Bad - inconsistent formatting
+echo "✓ Build completed successfully"
+
+# Good - consistent with caddie standards
+caddie cli:check "Build completed successfully"
+```
+
+#### **Failure Messages**
+```bash
+# Bad - inconsistent formatting
+echo "✗ Build failed"
+
+# Good - consistent with caddie standards
+caddie cli:red "Build failed"
+```
+
+#### **General Messages**
+```bash
+# Bad - inconsistent formatting
+echo "Installing dependencies..."
+
+# Good - consistent with caddie standards
+caddie cli:indent "Installing dependencies..."
+```
+
+#### **Complete Echo Message Standards**
+- **Error Messages**: `echo "Error:` → `caddie cli:red`
+- **Usage Messages**: `echo "Usage` → `caddie cli:usage`
+- **Success Messages**: `echo "✓` → `caddie cli:check`
+- **Failure Messages**: `echo "✗` → `caddie cli:red`
+- **General Messages**: `echo "..."` → `caddie cli:indent`
+
+#### **Technical Echo Statements (Excluded from Linting)**
+The linter intelligently excludes technical echo statements used for data processing:
+```bash
+# These are excluded from linting (technical use)
+echo "$build_files" | while read -r file; do
+echo "$data" | head -10
+echo "$count" | wc -l
 ```
 
 ### Function Naming Convention
@@ -130,8 +183,12 @@ This will check all modules against the standards and report any issues.
 1. **Missing help function**: Add `caddie_<module>_help()` function
 2. **Missing local declarations**: Add `local` keyword to variable assignments
 3. **Missing return statements**: Add explicit `return 0` or `return 1`
-4. **Echo errors**: Replace with `caddie cli:red`
-5. **Variable braces**: Use `${var}` instead of `$var`
+4. **Echo errors**: Replace `echo "Error:` with `caddie cli:red`
+5. **Echo usage**: Replace `echo "Usage` with `caddie cli:usage`
+6. **Echo success**: Replace `echo "✓` with `caddie cli:check`
+7. **Echo failure**: Replace `echo "✗` with `caddie cli:red`
+8. **Echo general**: Replace general `echo "..."` with `caddie cli:indent`
+9. **Variable braces**: Use `${var}` instead of `$var`
 
 ## Testing Changes
 

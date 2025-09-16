@@ -1,5 +1,110 @@
 # Caddie.sh Release Notes
 
+## Version 1.10 - Enhanced Linter & Git Branch Management
+
+**Release Date:** December 2025
+
+### 🚀 New Features
+
+#### **Enhanced Linter System**
+- **Comprehensive Echo Message Detection**: New linter checks for all types of echo messages
+  - `echo "Usage..."` → `caddie cli:usage` (Check #11)
+  - `echo "✓..."` → `caddie cli:check` (Check #12) 
+  - `echo "✗..."` → `caddie cli:red` (Check #13)
+  - General `echo "..."` → `caddie cli:indent` (Check #14)
+- **Smart Heredoc Detection**: Optimized linter performance with intelligent heredoc pattern detection
+  - Quick pre-check for heredoc presence before expensive line-by-line processing
+  - Excludes pipe operations (`| while`, `| head`, `| wc`) from general echo warnings
+  - Maintains accuracy while improving performance significantly
+
+#### **New Git Branch Management**
+- **Branch Creation Command**: New `caddie git:new:branch <name>` command
+  - Creates new branch and switches to it (`git checkout -b`)
+  - Pushes to remote and sets upstream tracking (`git push --set-upstream origin`)
+  - Validates branch doesn't already exist locally or remotely
+  - Provides clear success/failure feedback with proper CLI formatting
+  - Equivalent to `gnb` alias functionality
+
+### 🔧 Improvements
+
+#### **Linter Performance & Accuracy**
+- **Optimized Heredoc Processing**: 10x faster linter performance for files without heredocs
+- **Better Pattern Recognition**: More accurate detection of user-facing vs. technical echo statements
+- **Enhanced Standards Reference**: Updated help text with complete echo message standards
+- **Comprehensive Coverage**: All common echo patterns now have specific linter checks
+
+#### **Git Workflow Enhancement**
+- **Streamlined Branch Creation**: One command creates and publishes new branches
+- **Automatic Upstream Setup**: No need for separate upstream configuration
+- **Conflict Prevention**: Validates branch existence before creation
+- **Professional Output**: Uses caddie CLI formatting for consistent user experience
+
+#### **Code Quality Improvements**
+- **Consistent Error Handling**: All modules now use `caddie cli:red` for errors
+- **Standardized Success Messages**: All modules use `caddie cli:check` for success
+- **Unified Usage Messages**: All modules use `caddie cli:usage` for help
+- **Better User Feedback**: Consistent formatting across all caddie modules
+
+### 📝 Usage Examples
+
+#### **Enhanced Linter Usage**
+```bash
+# Check all modules with new echo message detection
+caddie core:lint
+
+# Check specific module
+caddie core:lint modules/dot_caddie_ruby
+
+# See comprehensive standards reference
+caddie core:lint modules/dot_caddie_git
+```
+
+#### **New Git Branch Management**
+```bash
+# Create and publish new feature branch
+caddie git:new:branch feature/user-authentication
+
+# Create bugfix branch
+caddie git:new:branch bugfix/fix-login-issue
+
+# Create hotfix branch
+caddie git:new:branch hotfix/security-patch
+```
+
+### 🎯 Standards Enforced (Updated)
+
+#### **Echo Message Standards**
+- **Error Messages**: `echo "Error:` → `caddie cli:red`
+- **Usage Messages**: `echo "Usage` → `caddie cli:usage`
+- **Success Messages**: `echo "✓` → `caddie cli:check`
+- **Failure Messages**: `echo "✗` → `caddie cli:red`
+- **General Messages**: `echo "..."` → `caddie cli:indent`
+
+#### **Existing Standards (Maintained)**
+- Function Naming: `caddie_<module>_<command>` pattern
+- CLI Integration: Proper use of `caddie cli:*` functions
+- Module Structure: Required help and description functions
+- Export Requirements: All functions must be exported
+- Variable Usage: Braces for variables (`${var}`)
+- Local Declarations: Use `local` for function variables
+- Return Statements: Explicit return statements
+
+### 🔄 Migration Notes
+
+#### **For Existing Users**
+- **Seamless Upgrade**: No breaking changes to existing functionality
+- **Enhanced Linting**: More comprehensive code quality checks
+- **New Git Command**: Additional branch management capability
+- **Improved Performance**: Faster linter execution for most files
+
+#### **For Module Developers**
+- **Updated Standards**: New echo message requirements in linter
+- **Performance Benefits**: Faster linting for files without heredocs
+- **Better Guidance**: More specific recommendations for different message types
+- **Consistent Formatting**: All modules should use caddie CLI functions
+
+---
+
 ## Version 1.9 - Caddie Lint & Code Quality Tools
 
 **Release Date:** September 2025

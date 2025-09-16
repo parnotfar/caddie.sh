@@ -148,9 +148,19 @@ caddie <module>:command1 test
 caddie core:debug on         # enable debug logging
 caddie <module>:help         # verify help output
 caddie <module>:command      # test functionality
-caddie core:lint             # run caddie-specific linting
+caddie core:lint             # run comprehensive caddie-specific linting
+caddie core:lint <path>      # lint specific file or directory
 caddie reload                # reload after changes
 ```
+
+#### **Enhanced Linter (v1.10)**
+The linter now includes comprehensive echo message detection:
+- **Usage Messages**: `echo "Usage..."` → `caddie cli:usage`
+- **Success Messages**: `echo "✓..."` → `caddie cli:check`
+- **Failure Messages**: `echo "✗..."` → `caddie cli:red`
+- **General Messages**: `echo "..."` → `caddie cli:indent`
+- **Smart Heredoc Detection**: Optimized performance with intelligent pattern detection
+- **Technical Echo Exclusion**: Excludes pipe operations from general echo warnings
 
 ---
 
@@ -160,9 +170,17 @@ caddie reload                # reload after changes
   ```sh
   caddie git:gacp "Add new <module> module"
   ```
+* Create and publish new branch:
+  ```sh
+  caddie git:new:branch feature/new-feature
+  ```
 * Check status:
   ```sh
   caddie git:status
+  ```
+* Clone repository:
+  ```sh
+  caddie git:clone my-project
   ```
 
 ---
@@ -217,6 +235,12 @@ The Makefile handles module installation automatically:
 * **Error handling**: Always check for errors and provide meaningful messages
 * **Input validation**: Validate all arguments with clear error messages
 * **CLI integration**: Use `caddie cli:*` functions for consistent output formatting
+* **Echo message standards**: Use appropriate caddie CLI functions instead of raw echo
+  * `echo "Error:` → `caddie cli:red`
+  * `echo "Usage` → `caddie cli:usage`
+  * `echo "✓` → `caddie cli:check`
+  * `echo "✗` → `caddie cli:red`
+  * `echo "..."` → `caddie cli:indent`
 * **Function structure**: Follow the established pattern with proper documentation
 
 ### Module Development Standards
@@ -276,7 +300,10 @@ The Makefile handles module installation automatically:
 
 ### Testing Requirements
 
-* Run `caddie core:lint` on all modified files (NEW in v1.9)
+* Run `caddie core:lint` on all modified files (ENHANCED in v1.10)
+  * Now includes comprehensive echo message detection
+  * Optimized performance with smart heredoc detection
+  * Covers usage, success, failure, and general message patterns
 * Test with `caddie <module>:help` and `caddie <module>:command`
 * Verify tab completion works
 * Test error cases and edge conditions
