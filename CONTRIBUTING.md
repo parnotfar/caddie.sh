@@ -178,6 +178,63 @@ caddie core:lint
 
 This will check all modules against the standards and report any issues.
 
+## Contributing Workflow
+
+When contributing to caddie.sh, follow this workflow:
+
+### 1. Setup Development Environment
+```bash
+# Clone the repository
+git clone https://github.com/parnotfar/caddie.sh.git
+cd caddie.sh
+
+# Install development dependencies
+make setup-dev
+
+# Install caddie locally
+make install
+source ~/.bash_profile
+```
+
+### 2. Create Feature Branch
+```bash
+# Create and switch to feature branch
+caddie git:new:branch feature/your-feature-name
+
+# Or use traditional git commands
+git checkout -b feature/your-feature-name
+```
+
+### 3. Make Changes
+- Follow the code standards outlined in this document
+- Use `caddie core:lint` to check your changes
+- Test your changes with `caddie core:test`
+
+### 4. Commit and Push
+```bash
+# Quick commit and push
+caddie git:gacp "Add your feature description"
+
+# Or traditional git workflow
+git add .
+git commit -m "Add your feature description"
+git push
+```
+
+### 5. Create Pull Request
+```bash
+# Create pull request with auto-generated content
+caddie git:pr:create
+
+# Or create with custom title and description
+caddie git:pr:create "Add your feature" "Detailed description of changes"
+```
+
+### 6. Review and Merge
+- Wait for code review
+- Address any feedback
+- Merge when approved
+
 ## Fixing Common Issues
 
 1. **Missing help function**: Add `caddie_<module>_help()` function

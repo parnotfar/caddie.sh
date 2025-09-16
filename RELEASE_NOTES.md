@@ -25,6 +25,15 @@
   - Provides clear success/failure feedback with proper CLI formatting
   - Equivalent to `gnb` alias functionality
 
+- **Pull Request Creation**: New `caddie git:pr:create [title] [body] [base]` command
+  - Creates pull requests using GitHub CLI (`gh pr create`)
+  - Auto-generates title from commit messages if not provided
+  - Auto-generates body with commit list and testing checklist
+  - Validates GitHub CLI authentication and repository status
+  - Prevents PR creation from main/master branches
+  - Ensures branch is pushed before creating PR
+  - Opens PR in browser after creation
+
 ### 🔧 Improvements
 
 #### **Linter Performance & Accuracy**
@@ -69,6 +78,15 @@ caddie git:new:branch bugfix/fix-login-issue
 
 # Create hotfix branch
 caddie git:new:branch hotfix/security-patch
+
+# Create pull request with auto-generated content
+caddie git:pr:create
+
+# Create pull request with custom title and body
+caddie git:pr:create "Add user authentication" "Implements OAuth2 login flow with JWT tokens"
+
+# Create pull request targeting specific base branch
+caddie git:pr:create "Fix login bug" "Resolves authentication timeout issue" develop
 ```
 
 ### 🎯 Standards Enforced (Updated)

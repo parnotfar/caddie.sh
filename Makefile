@@ -227,7 +227,7 @@ setup-github: setup-homebrew ## Setup GitHub CLI for pull request management
 	gh --version
 	echo "$(GREEN)✓$(NC) GitHub CLI setup completed"
 	echo "$(CYAN)  💡$(NC) To authenticate with GitHub: $(YELLOW)gh auth login$(NC)"
-	echo "$(CYAN)  💡$(NC) To create pull requests: $(YELLOW)caddie git:pr$(NC)"
+	echo "$(CYAN)  💡$(NC) To create pull requests: $(YELLOW)caddie git:pr:create$(NC)"
 
 uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or Rust)
 	echo "$(BLUE)🗑️$(NC) Uninstalling caddie.sh dot files..."

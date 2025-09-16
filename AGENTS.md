@@ -182,6 +182,10 @@ The linter now includes comprehensive echo message detection:
   ```sh
   caddie git:clone my-project
   ```
+* Create pull request:
+  ```sh
+  caddie git:pr:create "Add new feature" "Description of changes"
+  ```
 
 ---
 

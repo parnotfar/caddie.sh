@@ -25,6 +25,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **iOS Development**: Xcode integration and development tools
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
+- **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
@@ -275,6 +276,9 @@ caddie git:new:branch feature/new-feature
 
 # Quick commit and push
 caddie git:gacp "Add new feature"
+
+# Create pull request
+caddie git:pr:create "Add new feature" "Description of changes"
 
 # Check status and manage remotes
 caddie git:status

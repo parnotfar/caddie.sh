@@ -229,7 +229,7 @@ function caddie_git_new_branch() {
     return 0
 }
 
-function caddie_git_pr() {
+function caddie_git_pr_create() {
     local title="$1"
     local body="$2"
     local base_branch="${3:-main}"
@@ -367,7 +367,7 @@ function caddie_git_auth_login() {
         
         caddie cli:blank
         caddie cli:indent "You can now use:"
-        caddie cli:indent "  caddie git:pr 'Create pull request'"
+        caddie cli:indent "  caddie git:pr:create 'Create pull request'"
         caddie cli:indent "  caddie github:auth:check"
         caddie cli:indent "  gh pr list, gh issue list, etc."
         
@@ -394,7 +394,7 @@ function caddie_git_help() {
     caddie cli:indent "commit <message>    Add all changes and commit with message"
     caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
     caddie cli:indent "auth:login          Authenticate with GitHub CLI"
-    caddie cli:indent "pr [title] [body] [base]  Create pull request using GitHub CLI"
+    caddie cli:indent "pr:create [title] [body] [base]  Create pull request using GitHub CLI"
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
@@ -414,7 +414,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:new:branch feature/new-feature"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
-    caddie cli:indent "caddie git:pr 'Add new feature' 'Description of changes'"
+    caddie cli:indent "caddie git:pr:create 'Add new feature' 'Description of changes'"
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
@@ -439,7 +439,7 @@ export -f caddie_git_new_branch
 export -f caddie_git_commit
 export -f caddie_git_gacp
 export -f caddie_git_auth_login
-export -f caddie_git_pr
+export -f caddie_git_pr_create
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull

@@ -45,6 +45,7 @@ function caddie_core_get_home() {
     else
         caddie cli:red "No caddie home directory was set"
     fi
+    return 0
 }
 
 # Function to reset the caddie home directory
@@ -56,6 +57,7 @@ function caddie_core_reset_home() {
     else
         caddie cli:red "No caddie home directory was set"
     fi
+    return 0
 }
 
 # Function to navigate to caddie home directory
@@ -113,6 +115,7 @@ function caddie_core_alias_grep() {
     caddie cli:title "=============================="
     caddie cli:blank
     alias | grep -i "$keyword"
+    return 0
 }
 
 # Function to show aliases by family
@@ -121,6 +124,7 @@ function caddie_core_alias_git() {
     caddie cli:title "==================="
     caddie cli:blank
     alias | grep -E "(^g|git)" | sort
+    return 0
 }
 
 function caddie_core_alias_docker() {
@@ -128,6 +132,7 @@ function caddie_core_alias_docker() {
     caddie cli:title "=============="
     caddie cli:blank
     alias | grep -E "(^d|docker)" | sort
+    return 0
 }
 
 function caddie_core_alias_npm() {
@@ -135,6 +140,7 @@ function caddie_core_alias_npm() {
     caddie cli:title "==========="
     caddie cli:blank
     alias | grep -E "(^n|npm)" | sort
+    return 0
 }
 
 function caddie_core_alias_nav() {
@@ -154,6 +160,7 @@ function caddie_core_alias_nav() {
     caddie cli:title "Screen Management:"
     caddie cli:indent "c              clear"
     caddie cli:indent "cdc            cd; clear"
+    return 0
 }
 
 # Function to show available aliases
@@ -247,6 +254,7 @@ function caddie_core_aliases() {
     caddie cli:indent "ag             Search aliases by keyword"
     caddie cli:blank
     caddie cli:thought "Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
+    return 0
 }
 
 # Function to run caddie-specific linting
@@ -612,12 +620,14 @@ function caddie_core_help() {
 
 function caddie_core_description() {
     echo 'Core Caddie Functions'
+    return 0
 }
 
 # Auto-load caddie home on shell startup
 if [ -f "$CADDIE_HOME_FILE" ]; then
     caddie_home=$(cat "$CADDIE_HOME_FILE")
     export CADDIE_HOME="$caddie_home"
+    return 0
 fi
 
 # Export core functions

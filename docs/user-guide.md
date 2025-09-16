@@ -326,6 +326,12 @@ caddie git:commit "Add new feature"
 caddie git:gacp "Quick commit and push"
 caddie git:push
 caddie git:pull
+
+# Create and manage branches
+caddie git:new:branch feature/new-feature
+
+# Create pull requests
+caddie git:pr:create "Add new feature" "Description of changes"
 ```
 
 #### Cross-Platform Development
