@@ -121,7 +121,7 @@ function caddie_js_project_init() {
     local project_name="$1"
     
     if [ -z "$project_name" ]; then
-        local project_name="my-node-project"
+        project_name="my-node-project"
     fi
     
     caddie cli:title "Initializing Node.js project: $project_name"

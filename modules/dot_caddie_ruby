@@ -140,14 +140,14 @@ function caddie_ruby_use() {
         return 1
     fi
     
-    caddie cli:indent "Switching to Ruby $version..."
+    caddie cli:title "Switching to Ruby $version..."
     
     if rvm use "ruby-$version"; then
         caddie cli:check "Switched to Ruby $version"
         caddie cli:indent "Current Ruby: $(ruby --version)"
         caddie cli:indent "Current Gem: $(gem --version)"
     else
-        caddie cli:red "Failed to switch to Ruby $version"
+        caddie cli:x "Failed to switch to Ruby $version"
         return 1
     fi
 }
@@ -183,13 +183,13 @@ function caddie_ruby_gemset_create() {
         return 1
     fi
     
-    caddie cli:indent "Creating gemset '$gemset_name'..."
+    echo "Creating gemset '$gemset_name'..."
     
     if rvm gemset create "$gemset_name"; then
         caddie cli:check "Gemset '$gemset_name' created successfully"
         caddie cli:indent "Use 'caddie ruby:gemset:use $gemset_name' to switch to it"
     else
-        caddie cli:red "Failed to create gemset '$gemset_name'"
+        caddie cli:x "Failed to create gemset '$gemset_name'"
         return 1
     fi
     return 0
@@ -205,13 +205,13 @@ function caddie_ruby_gemset_use() {
         return 1
     fi
     
-    caddie cli:indent "Switching to gemset '$gemset_name'..."
+    caddie cli:title "Switching to gemset '$gemset_name'..."
     
     if rvm gemset use "$gemset_name"; then
         caddie cli:check "Switched to gemset '$gemset_name'"
         caddie cli:indent "Current gemset: $(rvm gemset name)"
     else
-        caddie cli:red "Failed to switch to gemset '$gemset_name'"
+        caddie cli:x "Failed to switch to gemset '$gemset_name'"
         return 1
     fi
     return 0
@@ -219,7 +219,7 @@ function caddie_ruby_gemset_use() {
 
 # Function to list available gemsets
 function caddie_ruby_gemset_list() {
-    caddie cli:title "Available gemsets"
+    caddie cli:title "Available gemsets:"
     caddie cli:blank
     rvm gemset list
     return 0
@@ -235,12 +235,12 @@ function caddie_ruby_gemset_delete() {
         return 1
     fi
     
-    caddie cli:indent "Deleting gemset '$gemset_name'..."
+    caddie cli:title "Deleting gemset '$gemset_name'..."
     
     if rvm gemset delete "$gemset_name"; then
         caddie cli:check "Gemset '$gemset_name' deleted successfully"
     else
-        caddie cli:red "Failed to delete gemset '$gemset_name'"
+        caddie cli:x "Failed to delete gemset '$gemset_name'"
         return 1
     fi
     return 0
@@ -256,12 +256,12 @@ function caddie_ruby_gem_install() {
         return 1
     fi
     
-    caddie cli:indent "Installing gem '$gem_name'..."
+    caddie cli:title "Installing gem '$gem_name'..."
     
     if gem install "$gem_name"; then
         caddie cli:check "Gem '$gem_name' installed successfully"
     else
-        caddie cli:red "Failed to install gem '$gem_name'"
+        caddie cli:x "Failed to install gem '$gem_name'"
         return 1
     fi
     return 0
@@ -277,19 +277,19 @@ function caddie_ruby_gem_uninstall() {
         return 1
     fi
     
-    caddie cli:indent "Uninstalling gem '$gem_name'..."
+    caddie cli:title "Uninstalling gem '$gem_name'..."
     
     if gem uninstall "$gem_name"; then
         caddie cli:check "Gem '$gem_name' uninstalled successfully"
     else
-        caddie cli:red "Failed to uninstall gem '$gem_name'"
+        caddie cli:x "Failed to uninstall gem '$gem_name'"
         return 1
     fi
 }
 
 # Function to list installed gems
 function caddie_ruby_gem_list() {
-    caddie cli:title "Installed gems"
+    caddie cli:title "Installed gems:"
     caddie cli:blank
     gem list
     return 0
@@ -305,12 +305,12 @@ function caddie_ruby_gem_update() {
         return 1
     fi
     
-    caddie cli:indent "Updating gem '$gem_name'..."
+    caddie cli:title "Updating gem '$gem_name'..."
     
     if gem update "$gem_name"; then
         caddie cli:check "Gem '$gem_name' updated successfully"
     else
-        caddie cli:red "Failed to update gem '$gem_name'"
+        caddie cli:x "Failed to update gem '$gem_name'"
         return 1
     fi
     return 0
@@ -318,8 +318,8 @@ function caddie_ruby_gem_update() {
 
 # Function to show outdated gems
 function caddie_ruby_gem_outdated() {
-    caddie cli:title "Outdated gems"
-    caddie cli:blank
+    echo "Outdated gems:"
+    echo "=============="
     gem outdated
     return 0
 }
@@ -329,10 +329,10 @@ function caddie_ruby_project_init() {
     local project_name="$1"
     
     if [ -z "$project_name" ]; then
-        local project_name="my-ruby-project"
+        project_name="my-ruby-project"
     fi
     
-    caddie cli:title "Initializing Ruby project: $project_name"
+    echo "Initializing Ruby project: $project_name"
     
     mkdir -p "$project_name"
     cd "$project_name" || exit
@@ -411,8 +411,8 @@ RSpec::Core::RakeTask.new(:spec)
 task default: :spec
 EOF
 
-    caddie cli:check "Ruby project '$project_name' initialized"
-    caddie cli:indent "Created: lib/, spec/, bin/, Gemfile, README.md, .gitignore, Rakefile"
+    echo "✓ Ruby project '$project_name' initialized"
+    echo "  Created: lib/, spec/, bin/, Gemfile, README.md, .gitignore, Rakefile"
     return 0
 }
 
@@ -423,14 +423,14 @@ function caddie_ruby_project_test() {
         return 1
     fi
     
-    caddie cli:indent "Running Ruby tests..."
+    echo "Running Ruby tests..."
     
     if [ -f "Rakefile" ]; then
         bundle exec rake spec
     elif [ -d "spec" ]; then
         bundle exec rspec
     else
-        caddie cli:red "No tests found. Create tests in the 'spec' directory"
+        echo "No tests found. Create tests in the 'spec' directory"
         return 1
     fi
     return 0
@@ -443,7 +443,7 @@ function caddie_ruby_project_build() {
         return 1
     fi
     
-    caddie cli:indent "Building Ruby project..."
+    echo "Building Ruby project..."
     
     # Install dependencies
     bundle install
@@ -453,7 +453,7 @@ function caddie_ruby_project_build() {
         bundle exec rspec
     fi
     
-    caddie cli:check "Ruby project built successfully"
+    echo "✓ Ruby project built successfully"
     return 0
 }
 
@@ -464,20 +464,20 @@ function caddie_ruby_project_serve() {
         return 1
     fi
     
-    caddie cli:indent "Starting Ruby web application..."
+    echo "Starting Ruby web application..."
     
     # Check if it's a Rails app
     if [ -f "config/application.rb" ]; then
-        caddie cli:indent "Detected Rails application"
+        echo "Detected Rails application"
         bundle exec rails server
     elif [ -f "config.ru" ]; then
-        caddie cli:indent "Detected Rack application"
+        echo "Detected Rack application"
         bundle exec rackup
     elif [ -f "app.rb" ]; then
-        caddie cli:indent "Detected Sinatra application"
+        echo "Detected Sinatra application"
         bundle exec ruby app.rb
     else
-        caddie cli:red "No web application detected"
+        echo "No web application detected"
         return 1
     fi
     return 0
@@ -490,12 +490,12 @@ function caddie_ruby_bundler_install() {
         return 1
     fi
     
-    caddie cli:indent "Installing Bundler dependencies..."
+    echo "Installing Bundler dependencies..."
     
     if bundle install; then
-        caddie cli:check "Dependencies installed successfully"
+        echo "✓ Dependencies installed successfully"
     else
-        caddie cli:red "Failed to install dependencies"
+        echo "✗ Failed to install dependencies"
         return 1
     fi
     return 0
@@ -508,12 +508,12 @@ function caddie_ruby_bundler_update() {
         return 1
     fi
     
-    caddie cli:indent "Updating Bundler dependencies..."
+    echo "Updating Bundler dependencies..."
     
     if bundle update; then
-        caddie cli:check "Dependencies updated successfully"
+        echo "✓ Dependencies updated successfully"
     else
-        caddie cli:red "Failed to update dependencies"
+        echo "✗ Failed to update dependencies"
         return 1
     fi
     return 0
@@ -525,7 +525,7 @@ function caddie_ruby_bundler_exec() {
     
     if [ -z "$command" ]; then
         caddie cli:red "Error: Please provide a command to execute"
-        caddie cli:usage "caddie ruby:bundler:exec <command>"
+        echo "Usage: caddie ruby:bundler:exec <command>"
         return 1
     fi
     
@@ -534,7 +534,7 @@ function caddie_ruby_bundler_exec() {
         return 1
     fi
     
-    caddie cli:indent "Executing with Bundler: $command"
+    echo "Executing with Bundler: $command"
     bundle exec "$command"
     return 0
 }
@@ -545,26 +545,26 @@ function caddie_ruby_rails_new() {
     
     if [ -z "$app_name" ]; then
         caddie cli:red "Error: Please provide an application name"
-        caddie cli:usage "caddie ruby:rails:new <app-name>"
+        echo "Usage: caddie ruby:rails:new <app-name>"
         return 1
     fi
     
-    caddie cli:indent "Creating new Rails application: $app_name"
+    echo "Creating new Rails application: $app_name"
     
     # Check if Rails is installed
     if ! gem list rails -i >/dev/null 2>&1; then
-        caddie cli:indent "Installing Rails..."
+        echo "Installing Rails..."
         gem install rails
     fi
     
     # Create new Rails app
     
     if rails new "$app_name"; then
-        caddie cli:check "Rails application '$app_name' created successfully"
-        caddie cli:indent "  Enter directory: cd $app_name"
-        caddie cli:indent "  Start server: caddie ruby:rails:server"
+        echo "✓ Rails application '$app_name' created successfully"
+        echo "  Enter directory: cd $app_name"
+        echo "  Start server: caddie ruby:rails:server"
     else
-        caddie cli:red "Failed to create Rails application"
+        echo "✗ Failed to create Rails application"
         return 1
     fi
     return 0
@@ -577,7 +577,7 @@ function caddie_ruby_rails_server() {
         return 1
     fi
     
-    caddie cli:indent "Starting Rails server..."
+    echo "Starting Rails server..."
     bundle exec rails server
     return 0
 }
@@ -589,7 +589,7 @@ function caddie_ruby_rails_console() {
         return 1
     fi
     
-    caddie cli:indent "Starting Rails console..."
+    echo "Starting Rails console..."
     bundle exec rails console
     return 0
 }
@@ -601,8 +601,8 @@ function caddie_ruby_rails_generate() {
     
     if [ -z "$generator" ] || [ -z "$name" ]; then
         caddie cli:red "Error: Please provide generator and name"
-        caddie cli:usage "caddie ruby:rails:generate <generator> <name>"
-        caddie cli:indent "Examples: model User, controller Users, scaffold Post"
+        echo "Usage: caddie ruby:rails:generate <generator> <name>"
+        echo "Examples: model User, controller Users, scaffold Post"
         return 1
     fi
     
@@ -611,7 +611,7 @@ function caddie_ruby_rails_generate() {
         return 1
     fi
     
-    caddie cli:indent "Generating Rails component: $generator $name"
+    echo "Generating Rails component: $generator $name"
     bundle exec rails generate "$generator" "$name"
     return 0
 }
@@ -623,7 +623,7 @@ function caddie_ruby_rails_migrate() {
         return 1
     fi
     
-    caddie cli:indent "Running Rails migrations..."
+    echo "Running Rails migrations..."
     bundle exec rails db:migrate
     return 0
 }
@@ -635,8 +635,8 @@ function caddie_ruby_rails_routes() {
         return 1
     fi
     
-    caddie cli:title "Rails routes"
-    caddie cli:blank
+    echo "Rails routes:"
+    echo "============="
     bundle exec rails routes
     return 0
 }

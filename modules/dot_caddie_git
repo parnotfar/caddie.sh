@@ -100,7 +100,8 @@ function caddie_git_remote_add() {
     
     # If no arguments provided, auto-detect repository and use stored GitHub account
     if [ -z "${name}" ] && [ -z "${url}" ]; then
-        local github_account=$(caddie_github_account_get)
+        github_account=$(caddie_github_account_get)
+
         if [ -z "${github_account}" ]; then
             caddie cli:red "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
             echo "Or provide manual arguments: caddie git:remote:add <name> <url>"
@@ -108,9 +109,9 @@ function caddie_git_remote_add() {
         fi
         
         # Auto-detect repository name from current directory
-        local repo_name=$(basename "$(pwd)")
-        local name="origin"
-        local url="git@github.com:${github_account}/${repo_name}.git"
+        repo_name=$(basename "$(pwd)")
+        name="origin"
+        url="git@github.com:${github_account}/${repo_name}.git"
         
         echo "Auto-detected repository: ${repo_name}"
         echo "Using GitHub account: ${github_account}"
@@ -130,13 +131,16 @@ function caddie_git_remote_add() {
 function caddie_git_remote_set_url() {
     local name="$1"
     local url="$2"
+
     if [ -z "$name" ] || [ -z "$url" ]; then
         caddie cli:red "Error: Please provide remote name and URL"
         echo "Usage: caddie git:remote:set-url <name> <url>"
         return 1
     fi
+
     git remote set-url "$name" "$url"
     echo "Set remote '$name' URL to '$url'"
+
     return 0
 }
 

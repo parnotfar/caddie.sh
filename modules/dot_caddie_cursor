@@ -125,7 +125,7 @@ function caddie_cursor_open() {
     local path="$1"
     
     if [ -z "$path" ]; then
-        local path="."
+        path="."
     fi
     
     if [ ! -d "$path" ]; then
@@ -299,7 +299,7 @@ function caddie_cursor_switch() {
     
     for dir in "$HOME/projects" "$HOME/work" "$HOME/development"; do
         if [ -d "$dir/$project" ]; then
-            local project_path="$dir/$project"
+            project_path="$dir/$project"
             break
         fi
     done

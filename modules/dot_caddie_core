@@ -537,7 +537,49 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 10. Check for proper return statements (functions should have explicit returns for clarity)
+        # 10. Check for variable shadowing (local variables declared inside conditional blocks)
+        local shadowed_vars=$(awk '
+            BEGIN { in_function = 0; local_vars = ""; in_if = 0 }
+            /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
+            /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
+            in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ && !in_if {
+                # Extract variable name from local declaration (only outside if blocks)
+                gsub(/^[[:space:]]*local[[:space:]]+/, "")
+                gsub(/[[:space:]]*=.*$/, "")
+                gsub(/[[:space:]]+.*$/, "")
+                if (local_vars == "") local_vars = $0
+                else local_vars = local_vars " " $0
+                next
+            }
+            in_function && /^[[:space:]]*if[[:space:]]/ {
+                # Check for local declarations inside if blocks
+                in_if = 1
+                next
+            }
+            in_function && in_if && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+                # Extract variable name from local declaration inside if
+                gsub(/^[[:space:]]*local[[:space:]]+/, "")
+                gsub(/[[:space:]]*=.*$/, "")
+                gsub(/[[:space:]]+.*$/, "")
+                # Check if this variable was already declared as local
+                if (local_vars ~ "(^| )" $0 "( |$)") {
+                    print NR ": " $0 " (shadows outer local variable)"
+                }
+            }
+            in_function && in_if && /^[[:space:]]*fi[[:space:]]*$/ {
+                in_if = 0
+            }
+        ' "$file" | head -3 || true)
+        
+        if [ -n "$shadowed_vars" ]; then
+            caddie cli:yellow "  ⚠ Variable shadowing detected (local variables declared inside conditional blocks):"
+            echo "$shadowed_vars" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
+        # 11. Check for proper return statements (functions should have explicit returns for clarity)
         # Note: This is a style preference for explicit returns, not a functional requirement
         # Bash functions return the exit status of the last command by default
         local functions_without_return=$(grep -n "^function caddie_.*()" "$file" | while read -r line; do
@@ -566,7 +608,7 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 11. Check for echo "Usage..." messages (should use caddie cli:usage)
+        # 12. Check for echo "Usage..." messages (should use caddie cli:usage)
         local usage_echoes=$(grep -n 'echo "Usage' "$file" | head -3 || true)
         if [ -n "$usage_echoes" ]; then
             caddie cli:yellow "  ⚠ Use 'caddie cli:usage' instead of 'echo \"Usage...\"':"
@@ -576,7 +618,7 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 12. Check for echo "✓..." messages (should use caddie cli:check)
+        # 13. Check for echo "✓..." messages (should use caddie cli:check)
         local check_echoes=$(grep -n 'echo "✓' "$file" | head -3 || true)
         if [ -n "$check_echoes" ]; then
             caddie cli:yellow "  ⚠ Use 'caddie cli:check' instead of 'echo \"✓...\"':"
@@ -586,7 +628,7 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 13. Check for echo "✗..." messages (should use caddie cli:red)
+        # 14. Check for echo "✗..." messages (should use caddie cli:red)
         local fail_echoes=$(grep -n 'echo "✗' "$file" | head -3 || true)
         if [ -n "$fail_echoes" ]; then
             caddie cli:yellow "  ⚠ Use 'caddie cli:red' instead of 'echo \"✗...\"':"
@@ -596,12 +638,12 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 14. Check for general echo messages (should use caddie cli:indent for consistency)
+        # 15. Check for general echo messages (should use caddie cli:indent for consistency)
         local general_echoes=$(grep -n '^[[:space:]]*echo "[^"]*"' "$file" | grep -v 'echo "Error:' | grep -v 'echo "Usage' | grep -v 'echo "HEREDOC' | grep -v 'echo "BASH_CODE' | grep -v '| while' | grep -v '| head' | grep -v '| wc' | head -3 || true)
         if [ -n "$general_echoes" ]; then
-            # Filter out lines in ignore blocks
+            # Filter out lines in ignore blocks using a more reliable approach
             local filtered_echoes=""
-            echo "$general_echoes" | while read -r line; do
+            while IFS= read -r line; do
                 local line_num=$(echo "$line" | cut -d: -f1)
                 if ! is_line_ignored "$line_num" "$ignore_blocks"; then
                     if [ -z "$filtered_echoes" ]; then
@@ -610,13 +652,13 @@ function caddie_core_lint() {
                         filtered_echoes="$filtered_echoes"$'\n'"$line"
                     fi
                 fi
-            done
+            done <<< "$general_echoes"
             
             if [ -n "$filtered_echoes" ]; then
                 caddie cli:yellow "  ⚠ Consider using 'caddie cli:indent' for consistent formatting:"
-                echo "$filtered_echoes" | while read -r line; do
+                while IFS= read -r line; do
                     caddie cli:yellow "    Line $line"
-                done
+                done <<< "$filtered_echoes"
                 ((file_warnings++))
             fi
         fi
