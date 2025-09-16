@@ -16,6 +16,7 @@ function caddie_github_account_set() {
     export CADDIE_GITHUB_ACCOUNT="${account}"
     
     caddie cli:check "GitHub account set to: ${account}"
+    return 0
 }
 
 function caddie_github_account_get() {
@@ -25,6 +26,7 @@ function caddie_github_account_get() {
 function caddie_github_account_unset() {
     unset CADDIE_GITHUB_ACCOUNT
     caddie cli:check "GitHub account unset"
+    return 0
 }
 
 # Repository management functions
@@ -79,6 +81,7 @@ function caddie_github_repo_create() {
         fi
         caddie cli:info "Visibility: $([ "${private}" = "true" ] && echo "Private" || echo "Public")"
     fi
+    return 0
 }
 
 function caddie_github_repo_url() {
@@ -97,6 +100,7 @@ function caddie_github_repo_url() {
     
     local url="https://github.com/${github_account}/${repo_name}.git"
     echo "${url}"
+    return 0
 }
 
 # Function to show GitHub module help
@@ -119,10 +123,12 @@ function caddie_github_help() {
     caddie cli:indent "caddie github:repo:create my-project 'My awesome project'"
     caddie cli:indent "caddie github:repo:url"
     caddie cli:blank
+    return 0
 }
 
 function caddie_github_description() {
     echo 'GitHub account and repository management'
+    return 0
 }
 
 # Export GitHub functions
