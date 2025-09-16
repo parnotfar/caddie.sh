@@ -258,7 +258,7 @@ function caddie_core_aliases() {
 }
 
 # Function to run caddie-specific linting
-# caddie:lint:ignore:begin
+# caddie:lint:disable
 function caddie_core_lint() {
     local target="${1:-modules/}"
     local limit_per_check="${2:-0}"  # 0 means no limit (show all)
@@ -307,7 +307,7 @@ function caddie_core_lint() {
         fi
         
         # Skip linting the linter itself if it has ignore blocks
-        if [[ "$file" == *"dot_caddie_core"* ]] && grep -q "caddie:lint:ignore:begin" "$file"; then
+        if [[ "$file" == *"dot_caddie_core"* ]] && grep -q "caddie:lint:disable" "$file"; then
             caddie cli:indent "Checking: $file"
             caddie cli:yellow "  ⚠ Skipping linter self-check (has ignore blocks)"
             continue
@@ -319,11 +319,11 @@ function caddie_core_lint() {
         
         # 1. Detect lint ignore blocks
         local ignore_blocks=""
-        if grep -q "caddie:lint:ignore:begin" "$file"; then
+        if grep -q "caddie:lint:disable" "$file"; then
             # Find all ignore block ranges
             ignore_blocks=$(awk '
-                /caddie:lint:ignore:begin/ { start = NR; next }
-                /caddie:lint:ignore:end/ && start { 
+                /caddie:lint:disable/ { start = NR; next }
+                /caddie:lint:enable/ && start { 
                     if (start != "") {
                         print start "-" NR
                         start = ""
@@ -715,7 +715,7 @@ function caddie_core_lint() {
         return 1
     fi
 }
-# caddie:lint:ignore:end
+# caddie:lint:enable
 
 # Function to run caddie-specific linting with limit
 function caddie_core_lint_limit() {

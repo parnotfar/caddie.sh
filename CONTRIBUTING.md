@@ -297,14 +297,14 @@ caddie git:pr:create "Add your feature" "Detailed description of changes"
 Sometimes you need to suppress linting warnings for specific code sections. Use lint ignore blocks to exclude code from linting:
 
 ```bash
-# caddie:lint:ignore:begin
+# caddie:lint:disable
 function my_function() {
     # This entire function will be ignored by the linter
     echo "This won't trigger warnings"
     local var=value  # This won't trigger local variable warnings
     # Any other code that would normally trigger warnings
 }
-# caddie:lint:ignore:end
+# caddie:lint:enable
 ```
 
 ### When to Use Ignore Blocks

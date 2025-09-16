@@ -164,7 +164,7 @@ The linter now includes comprehensive echo message detection and flexible output
 - **Flexible Output**: `caddie core:lint` shows ALL issues, `caddie core:lint:limit <n>` shows max n issues per check
 - **Smart Heredoc Detection**: Optimized performance with intelligent pattern detection
 - **Technical Echo Exclusion**: Excludes pipe operations from general echo warnings
-- **Lint Ignore Blocks**: Use `# caddie:lint:ignore:begin` and `# caddie:lint:ignore:end` to suppress warnings
+- **Lint Ignore Blocks**: Use `# caddie:lint:disable` and `# caddie:lint:enable` to suppress warnings
   - Prevents linter from flagging its own implementation code
   - Allows exceptions for legacy code, third-party code, or complex edge cases
   - Self-documenting and maintainable approach
