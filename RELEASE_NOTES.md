@@ -1,12 +1,12 @@
 # Caddie.sh Release Notes
 
-## Version 1.9 - Caddie Shellcheck & Code Quality Tools
+## Version 1.9 - Caddie Lint & Code Quality Tools
 
 **Release Date:** September 2025
 
 ### 🚀 New Features
 
-- Caddie Shellcheck: New caddie core:shellcheck [path] command for enforcing caddie-specific coding standards.
+- Caddie Lint: New caddie core:lint [path] command for enforcing caddie-specific coding standards.
 - Replaces generic shellcheck with caddie-aware linting
 - Enforces caddie function naming conventions (caddie_<module>_<command>)
 - Validates CLI module sourcing and function exports
@@ -25,13 +25,13 @@
 
 ```bash
 # Check all modules
-caddie core:shellcheck
+caddie core:lint
 
 # Check specific module
-caddie core:shellcheck modules/dot_caddie_rust
+caddie core:lint modules/dot_caddie_rust
 
 # Check specific file
-caddie core:shellcheck modules/dot_caddie_python
+caddie core:lint modules/dot_caddie_python
 ```
 
 ### 🎯 Standards Enforced

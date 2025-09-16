@@ -249,13 +249,13 @@ function caddie_core_aliases() {
     caddie cli:thought "Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
 }
 
-# Function to run caddie-specific shellcheck
-function caddie_core_shellcheck() {
+# Function to run caddie-specific linting
+function caddie_core_lint() {
     local target="${1:-modules/}"
     local errors=0
     local warnings=0
     
-    caddie cli:title "Caddie Shellcheck - Enforcing Caddie Standards"
+    caddie cli:title "Caddie Lint - Enforcing Caddie Standards"
     caddie cli:blank
     
     # Check if target exists
@@ -438,7 +438,7 @@ function caddie_core_help() {
     caddie cli:indent "debug:status        Show debug status"
     caddie cli:blank
     caddie cli:magnifying_glass "Code Quality:"
-    caddie cli:indent "shellcheck [path]   Run caddie-specific shellcheck"
+    caddie cli:indent "lint [path]         Run caddie-specific linting"
     caddie cli:blank
     caddie cli:magnifying_glass "Information:"
     caddie cli:indent "aliases             Show all available aliases"
@@ -456,8 +456,8 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:aliases"
     caddie cli:indent "caddie core:alias:grep git"
     caddie cli:indent "caddie core:alias:git"
-    caddie cli:indent "caddie core:shellcheck"
-    caddie cli:indent "caddie core:shellcheck modules/"
+    caddie cli:indent "caddie core:lint"
+    caddie cli:indent "caddie core:lint modules/"
 }
 
 function caddie_core_description() {
@@ -484,4 +484,4 @@ export -f caddie_core_alias_git
 export -f caddie_core_alias_docker
 export -f caddie_core_alias_npm
 export -f caddie_core_alias_nav
-export -f caddie_core_shellcheck
+export -f caddie_core_lint

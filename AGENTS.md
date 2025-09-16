@@ -148,7 +148,7 @@ caddie <module>:command1 test
 caddie core:debug on         # enable debug logging
 caddie <module>:help         # verify help output
 caddie <module>:command      # test functionality
-caddie core:shellcheck       # run caddie-specific linting
+caddie core:lint             # run caddie-specific linting
 caddie reload                # reload after changes
 ```
 
@@ -276,7 +276,7 @@ The Makefile handles module installation automatically:
 
 ### Testing Requirements
 
-* Run `caddie core:shellcheck` on all modified files (NEW in v1.9)
+* Run `caddie core:lint` on all modified files (NEW in v1.9)
 * Test with `caddie <module>:help` and `caddie <module>:command`
 * Verify tab completion works
 * Test error cases and edge conditions
@@ -289,7 +289,7 @@ The Makefile handles module installation automatically:
 1. Run all `caddie *:test` commands for enabled modules
 2. Verify `caddie help` and `caddie <module>:help` produce expected output
 3. Test tab completion functionality
-4. Run `caddie core:shellcheck` on all modified files (NEW in v1.9)
+4. Run `caddie core:lint` on all modified files (NEW in v1.9)
 5. Verify Makefile installation process
 
 ---
