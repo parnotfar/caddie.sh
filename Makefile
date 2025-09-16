@@ -33,7 +33,8 @@ help: ## Show this help message
 	echo "$(YELLOW)Usage:$(NC)"
 	echo "  make install        - Full installation (recommended)"
 	echo "  make install-dot    - Install only dot files (with backup)"
-	echo "  make setup-dev      - Setup development environment only"
+	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, GitHub CLI)"
+	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
 	echo "  make restore-backup - Restore from backup files"
 	echo "  make status         - Check installation status"
@@ -140,7 +141,7 @@ install-dot: backup-existing ## Install dot files to home directory
 	
 	echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
-setup-dev: setup-homebrew setup-python setup-rust ## Setup development environment (Homebrew, Python, Rust)
+setup-dev: setup-homebrew setup-python setup-rust setup-github ## Setup development environment (Homebrew, Python, Rust, GitHub CLI)
 	echo "$(GREEN)✓$(NC) Development environment setup completed"
 
 setup-homebrew: ## Install and update Homebrew
@@ -212,6 +213,21 @@ setup-rust: setup-homebrew ## Setup Rust development environment
 	echo "$(GREEN)✓$(NC) Rust development environment setup completed"
 	echo "$(CYAN)  💡$(NC) Rust will be available after restarting your terminal"
 	echo "$(CYAN)  💡$(NC) To create a new Rust project: $(YELLOW)cargo new myproject$(NC)"
+
+setup-github: setup-homebrew ## Setup GitHub CLI for pull request management
+	echo "$(BLUE)🐙$(NC) Setting up GitHub CLI..."
+	if ! command -v gh >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) GitHub CLI not found, installing via Homebrew..."; \
+		brew install gh; \
+		echo "$(GREEN)    ✓$(NC) GitHub CLI installed successfully"; \
+	else \
+		echo "$(GREEN)  ✓$(NC) GitHub CLI already installed"; \
+	fi
+	echo "$(YELLOW)  →$(NC) Checking GitHub CLI version..."
+	gh --version
+	echo "$(GREEN)✓$(NC) GitHub CLI setup completed"
+	echo "$(CYAN)  💡$(NC) To authenticate with GitHub: $(YELLOW)gh auth login$(NC)"
+	echo "$(CYAN)  💡$(NC) To create pull requests: $(YELLOW)caddie git:pr$(NC)"
 
 uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or Rust)
 	echo "$(BLUE)🗑️$(NC) Uninstalling caddie.sh dot files..."

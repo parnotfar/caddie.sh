@@ -147,7 +147,7 @@ _caddie_completion() {
         module_commands="$module_commands cross:template:create"
         ;;
       git)
-        module_commands="$module_commands git:status git:branch git:new:branch git:commit git:gacp git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
+        module_commands="$module_commands git:status git:branch git:new:branch git:commit git:gacp git:pr git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
         ;;
       github)
         module_commands="$module_commands github:account:set github:account:get github:account:unset github:repo:create github:repo:url"

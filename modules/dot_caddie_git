@@ -229,6 +229,89 @@ function caddie_git_new_branch() {
     return 0
 }
 
+function caddie_git_pr() {
+    local title="$1"
+    local body="$2"
+    local base_branch="${3:-main}"
+    
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+    
+    # Check if GitHub CLI is installed
+    if ! command -v gh > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI (gh) is not installed"
+        caddie cli:indent "Install with: brew install gh"
+        caddie cli:indent "Then authenticate with: gh auth login"
+        return 1
+    fi
+    
+    # Check if user is authenticated with GitHub CLI
+    if ! gh auth status > /dev/null 2>&1; then
+        caddie cli:red "Error: Not authenticated with GitHub CLI"
+        caddie cli:indent "Run: gh auth login"
+        return 1
+    fi
+    
+    # Check if we're on a branch (not main/master)
+    local current_branch=$(git branch --show-current)
+    if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
+        caddie cli:red "Error: Cannot create PR from main/master branch"
+        caddie cli:indent "Create a feature branch first: caddie git:new:branch feature/your-feature"
+        return 1
+    fi
+    
+    # Check if there are commits to push
+    local commits_ahead=$(git rev-list --count origin/$base_branch..HEAD 2>/dev/null || echo "0")
+    if [ "$commits_ahead" -eq 0 ]; then
+        caddie cli:red "Error: No commits to create PR with"
+        caddie cli:indent "Make some commits and push them first"
+        return 1
+    fi
+    
+    # Push current branch if not already pushed
+    caddie cli:indent "Ensuring branch is pushed to remote..."
+    if ! git push --set-upstream origin "$current_branch" 2>/dev/null; then
+        caddie cli:indent "Branch already up to date"
+    fi
+    
+    # Generate title from commit messages if not provided
+    if [ -z "$title" ]; then
+        title=$(git log --oneline -1 --pretty=format:"%s")
+        caddie cli:indent "Using commit message as title: $title"
+    fi
+    
+    # Generate body from commit messages if not provided
+    if [ -z "$body" ]; then
+        body="## Changes\n\n"
+        body+="$(git log --oneline origin/$base_branch..HEAD --pretty=format:"- %s")"
+        body+="\n\n## Description\n\n"
+        body+="This PR includes the changes from the current branch.\n\n"
+        body+="## Testing\n\n"
+        body+="- [ ] Code has been tested\n"
+        body+="- [ ] All tests pass\n"
+        body+="- [ ] Documentation updated (if needed)"
+    fi
+    
+    caddie cli:indent "Creating pull request..."
+    caddie cli:indent "Title: $title"
+    caddie cli:indent "Base branch: $base_branch"
+    caddie cli:indent "Head branch: $current_branch"
+    
+    # Create the pull request
+    if gh pr create --title "$title" --body "$body" --base "$base_branch" --head "$current_branch"; then
+        caddie cli:check "Pull request created successfully"
+        caddie cli:indent "View at: $(gh pr view --web --json url --jq .url 2>/dev/null || echo "Check GitHub")"
+    else
+        caddie cli:red "Failed to create pull request"
+        return 1
+    fi
+    
+    return 0
+}
+
 function caddie_git_help() {
     caddie cli:title "Git Module Commands"
     caddie cli:blank
@@ -242,6 +325,7 @@ function caddie_git_help() {
     caddie cli:indent "new:branch <name>   Create new branch and push to remote"
     caddie cli:indent "commit <message>    Add all changes and commit with message"
     caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
+    caddie cli:indent "pr [title] [body] [base]  Create pull request using GitHub CLI"
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
@@ -260,6 +344,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:new:branch feature/new-feature"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
+    caddie cli:indent "caddie git:pr 'Add new feature' 'Description of changes'"
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
@@ -283,6 +368,7 @@ export -f caddie_git_branch
 export -f caddie_git_new_branch
 export -f caddie_git_commit
 export -f caddie_git_gacp
+export -f caddie_git_pr
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull
