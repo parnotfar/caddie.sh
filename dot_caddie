@@ -138,7 +138,7 @@ _caddie_completion() {
         module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
         ;;
       core)
-        module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint"
+        module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
         ;;
       cursor)
         module_commands="$module_commands cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"

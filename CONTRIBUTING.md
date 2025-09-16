@@ -141,6 +141,32 @@ caddie cli:indent "Installing dependencies..."
 - **Failure Messages**: `echo "✗` → `caddie cli:red`
 - **General Messages**: `echo "..."` → `caddie cli:indent`
 
+#### **Variable Shadowing Detection**
+
+The linter now detects local variable shadowing, which can cause subtle bugs:
+
+```bash
+# BAD: Variable shadowing
+function caddie_example() {
+    local path="$1"
+    
+    if [ -z "$path" ]; then
+        local path="."  # This shadows the outer 'path' variable!
+    fi
+}
+
+# GOOD: No shadowing
+function caddie_example() {
+    local path="$1"
+    
+    if [ -z "$path" ]; then
+        path="."  # Just assign to the existing local variable
+    fi
+}
+```
+
+**Why this matters:** The inner `local path="."` creates a new local variable that shadows the outer one, potentially causing unexpected behavior.
+
 #### **Technical Echo Statements (Excluded from Linting)**
 The linter intelligently excludes technical echo statements used for data processing:
 ```bash
@@ -172,11 +198,30 @@ Exemptions are handled in the linter with exemption flags.
 
 ## Running the Linter
 
+### Basic Linting
 ```bash
-caddie core:lint
+caddie core:lint [path]
 ```
 
-This will check all modules against the standards and report any issues.
+This will check all modules (or specified path) against the standards and report **ALL** issues found.
+
+### Limited Linting
+```bash
+caddie core:lint:limit <n> [path]
+```
+
+This will check modules but limit output to maximum `n` issues per check type. Useful for:
+- Focused debugging without overwhelming output
+- CI/CD environments where you want to see progress incrementally
+- Large files with many issues
+
+**Examples:**
+```bash
+caddie core:lint modules/                    # Show all issues in all modules
+caddie core:lint modules/dot_caddie_ruby     # Show all issues in ruby module
+caddie core:lint:limit 5 modules/            # Show max 5 issues per check type
+caddie core:lint:limit 3 modules/dot_caddie_ruby  # Show max 3 issues per check type
+```
 
 ## Contributing Workflow
 

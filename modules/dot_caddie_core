@@ -261,8 +261,19 @@ function caddie_core_aliases() {
 # caddie:lint:ignore:begin
 function caddie_core_lint() {
     local target="${1:-modules/}"
+    local limit_per_check="${2:-0}"  # 0 means no limit (show all)
     local errors=0
     local warnings=0
+    
+    # Helper function to apply limit to grep results
+    apply_limit() {
+        local input="$1"
+        if [ "$limit_per_check" -eq 0 ]; then
+            echo "$input"
+        else
+            echo "$input" | head -"$limit_per_check"
+        fi
+    }
     
     caddie cli:title "Caddie Lint - Enforcing Caddie Standards"
     caddie cli:blank
@@ -364,7 +375,7 @@ function caddie_core_lint() {
         fi
         
         # 4. Check for proper error handling patterns
-        local functions_without_validation=$(grep -A 10 "^function caddie_.*()" "$file" | grep -B 10 -A 10 "local.*=\$1" | grep -v "if.*-z.*\$1" | grep -v "caddie cli:red.*Error" | head -5 || true)
+        local functions_without_validation=$(apply_limit "$(grep -A 10 "^function caddie_.*()" "$file" | grep -B 10 -A 10 "local.*=\$1" | grep -v "if.*-z.*\$1" | grep -v "caddie cli:red.*Error" || true)")
         if [ -n "$functions_without_validation" ]; then
             caddie cli:yellow "  ⚠ Functions should validate input arguments"
             ((file_warnings++))
@@ -405,7 +416,7 @@ function caddie_core_lint() {
         fi
         
         # 8. Check for proper variable usage with braces
-        local unbraced_vars=$(grep -n '\$[a-zA-Z_][a-zA-Z0-9_]*[^}]' "$file" | grep -v '\${' | grep -v '\$(' | grep -v '\$#' | grep -v '\$@' | grep -v '\$*' | grep -v '\$?' | grep -v '\$!' | grep -v '\$0' | grep -v '\$1' | grep -v '\$2' | grep -v '\$3' | grep -v '\$4' | grep -v '\$5' | grep -v '\$6' | grep -v '\$7' | grep -v '\$8' | grep -v '\$9' | head -3 || true)
+        local unbraced_vars=$(apply_limit "$(grep -n '\$[a-zA-Z_][a-zA-Z0-9_]*[^}]' "$file" | grep -v '\${' | grep -v '\$(' | grep -v '\$#' | grep -v '\$@' | grep -v '\$*' | grep -v '\$?' | grep -v '\$!' | grep -v '\$0' | grep -v '\$1' | grep -v '\$2' | grep -v '\$3' | grep -v '\$4' | grep -v '\$5' | grep -v '\$6' | grep -v '\$7' | grep -v '\$8' | grep -v '\$9' || true)")
         if [ -n "$unbraced_vars" ]; then
             caddie cli:yellow "  ⚠ Consider using braces for variable names (e.g., \${var}):"
             echo "$unbraced_vars" | while read -r line; do
@@ -452,7 +463,7 @@ function caddie_core_lint() {
             
             # Now check for undeclared variables only in bash code sections
             # Use improved logic that tracks local declarations within function scope and global variables
-            undeclared_vars=$(grep "^BASH_CODE:" "$temp_file" | sed 's/^BASH_CODE://' | awk '
+            undeclared_vars=$(apply_limit "$(grep "^BASH_CODE:" "$temp_file" | sed 's/^BASH_CODE://' | awk '
                 BEGIN { in_function = 0; local_vars = ""; global_vars = "" }
                 
                 # First pass: collect global variables (declared outside functions)
@@ -486,13 +497,13 @@ function caddie_core_lint() {
                         print NR ": " $0 "="
                     }
                 }
-            ' | head -3 || true)
+            ' || true)")
             
             # Clean up temp file
             rm -f "$temp_file"
         else
             # No heredocs - use fast method with improved local variable tracking and global variable detection
-            undeclared_vars=$(awk '
+            undeclared_vars=$(apply_limit "$(awk '
                 BEGIN { in_function = 0; local_vars = ""; global_vars = "" }
                 
                 # First pass: collect global variables (declared outside functions)
@@ -526,7 +537,7 @@ function caddie_core_lint() {
                         print NR ": " $0 "="
                     }
                 }
-            ' "$file" | head -3 || true)
+            ' "$file" || true)")
         fi
         
         if [ -n "$undeclared_vars" ]; then
@@ -538,7 +549,7 @@ function caddie_core_lint() {
         fi
         
         # 10. Check for variable shadowing (local variables declared inside conditional blocks)
-        local shadowed_vars=$(awk '
+        local shadowed_vars=$(apply_limit "$(awk '
             BEGIN { in_function = 0; local_vars = ""; in_if = 0 }
             /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
             /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
@@ -569,7 +580,7 @@ function caddie_core_lint() {
             in_function && in_if && /^[[:space:]]*fi[[:space:]]*$/ {
                 in_if = 0
             }
-        ' "$file" | head -3 || true)
+        ' "$file" || true)")
         
         if [ -n "$shadowed_vars" ]; then
             caddie cli:yellow "  ⚠ Variable shadowing detected (local variables declared inside conditional blocks):"
@@ -582,7 +593,7 @@ function caddie_core_lint() {
         # 11. Check for proper return statements (functions should have explicit returns for clarity)
         # Note: This is a style preference for explicit returns, not a functional requirement
         # Bash functions return the exit status of the last command by default
-        local functions_without_return=$(grep -n "^function caddie_.*()" "$file" | while read -r line; do
+        local functions_without_return=$(apply_limit "$(grep -n "^function caddie_.*()" "$file" | while read -r line; do
             local func_line=$(echo "$line" | cut -d: -f1)
             local func_name=$(echo "$line" | cut -d: -f2- | sed 's/^function //' | sed 's/()$//')
             
@@ -599,7 +610,7 @@ function caddie_core_lint() {
             if ! sed -n "${func_line},${func_end_line}p" "$file" | grep -q "return"; then
                 echo "Line $func_line: $func_name"
             fi
-        done | head -3)
+        done)")
         if [ -n "$functions_without_return" ]; then
             caddie cli:yellow "  ⚠ Functions should have explicit return statements (style preference for clarity)"
             echo "$functions_without_return" | while read -r line; do
@@ -609,7 +620,7 @@ function caddie_core_lint() {
         fi
         
         # 12. Check for echo "Usage..." messages (should use caddie cli:usage)
-        local usage_echoes=$(grep -n 'echo "Usage' "$file" | head -3 || true)
+        local usage_echoes=$(apply_limit "$(grep -n 'echo "Usage' "$file" || true)")
         if [ -n "$usage_echoes" ]; then
             caddie cli:yellow "  ⚠ Use 'caddie cli:usage' instead of 'echo \"Usage...\"':"
             echo "$usage_echoes" | while read -r line; do
@@ -619,7 +630,7 @@ function caddie_core_lint() {
         fi
         
         # 13. Check for echo "✓..." messages (should use caddie cli:check)
-        local check_echoes=$(grep -n 'echo "✓' "$file" | head -3 || true)
+        local check_echoes=$(apply_limit "$(grep -n 'echo "✓' "$file" || true)")
         if [ -n "$check_echoes" ]; then
             caddie cli:yellow "  ⚠ Use 'caddie cli:check' instead of 'echo \"✓...\"':"
             echo "$check_echoes" | while read -r line; do
@@ -629,7 +640,7 @@ function caddie_core_lint() {
         fi
         
         # 14. Check for echo "✗..." messages (should use caddie cli:red)
-        local fail_echoes=$(grep -n 'echo "✗' "$file" | head -3 || true)
+        local fail_echoes=$(apply_limit "$(grep -n 'echo "✗' "$file" || true)")
         if [ -n "$fail_echoes" ]; then
             caddie cli:yellow "  ⚠ Use 'caddie cli:red' instead of 'echo \"✗...\"':"
             echo "$fail_echoes" | while read -r line; do
@@ -639,7 +650,7 @@ function caddie_core_lint() {
         fi
         
         # 15. Check for general echo messages (should use caddie cli:indent for consistency)
-        local general_echoes=$(grep -n '^[[:space:]]*echo "[^"]*"' "$file" | grep -v 'echo "Error:' | grep -v 'echo "Usage' | grep -v 'echo "HEREDOC' | grep -v 'echo "BASH_CODE' | grep -v '| while' | grep -v '| head' | grep -v '| wc' | head -3 || true)
+        local general_echoes=$(apply_limit "$(grep -n '^[[:space:]]*echo "[^"]*"' "$file" | grep -v 'echo "Error:' | grep -v 'echo "Usage' | grep -v 'echo "HEREDOC' | grep -v 'echo "BASH_CODE' | grep -v '| while' | grep -v '| head' | grep -v '| wc' || true)")
         if [ -n "$general_echoes" ]; then
             # Filter out lines in ignore blocks using a more reliable approach
             local filtered_echoes=""
@@ -706,6 +717,27 @@ function caddie_core_lint() {
 }
 # caddie:lint:ignore:end
 
+# Function to run caddie-specific linting with limit
+function caddie_core_lint_limit() {
+    local limit="$1"
+    local target="$2"
+    
+    if [ -z "$limit" ] || [ -z "$target" ]; then
+        caddie cli:red "Error: Both limit and target are required"
+        caddie cli:usage "caddie core:lint:limit <limit> <target>"
+        caddie cli:indent "Example: caddie core:lint:limit 5 modules/dot_caddie_ruby"
+        return 1
+    fi
+    
+    # Validate limit is a number
+    if ! [[ "$limit" =~ ^[0-9]+$ ]]; then
+        caddie cli:red "Error: Limit must be a positive number"
+        return 1
+    fi
+    
+    caddie_core_lint "$target" "$limit"
+}
+
 # Function to show core caddie help
 function caddie_core_help() {
     caddie cli:title "Core Caddie Functions"
@@ -724,7 +756,8 @@ function caddie_core_help() {
     caddie cli:indent "debug:status        Show debug status"
     caddie cli:blank
     caddie cli:magnifying_glass "Code Quality:"
-    caddie cli:indent "lint [path]         Run caddie-specific linting"
+    caddie cli:indent "lint [path]         Run caddie-specific linting (shows all issues)"
+    caddie cli:indent "lint:limit <n> <path> Run linting with limit (shows max n issues per check)"
     caddie cli:blank
     caddie cli:magnifying_glass "Information:"
     caddie cli:indent "aliases             Show all available aliases"
@@ -744,6 +777,7 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:alias:git"
     caddie cli:indent "caddie core:lint"
     caddie cli:indent "caddie core:lint modules/"
+    caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
 }
 
 function caddie_core_description() {
@@ -772,3 +806,4 @@ export -f caddie_core_alias_docker
 export -f caddie_core_alias_npm
 export -f caddie_core_alias_nav
 export -f caddie_core_lint
+export -f caddie_core_lint_limit

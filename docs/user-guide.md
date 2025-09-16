@@ -811,9 +811,12 @@ caddie help
 ### Code Quality
 
 1. **Use the linter**: Run `caddie core:lint` regularly to maintain code standards
+   - `caddie core:lint` - Shows ALL issues (comprehensive view)
+   - `caddie core:lint:limit <n>` - Shows max n issues per check (focused debugging)
 2. **Follow caddie conventions**: Use `caddie cli:*` functions for consistent output
-3. **Lint ignore blocks**: Use `# caddie:lint:ignore:begin` and `# caddie:lint:ignore:end` for exceptions
-4. **Document exceptions**: Always explain why you're using ignore blocks
+3. **Avoid variable shadowing**: Don't declare `local` variables inside conditional blocks that shadow outer variables
+4. **Lint ignore blocks**: Use `# caddie:lint:ignore:begin` and `# caddie:lint:ignore:end` for exceptions
+5. **Document exceptions**: Always explain why you're using ignore blocks
 
 #### Lint Ignore Blocks
 

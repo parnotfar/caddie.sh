@@ -16,6 +16,17 @@
   - Quick pre-check for heredoc presence before expensive line-by-line processing
   - Excludes pipe operations (`| while`, `| head`, `| wc`) from general echo warnings
   - Maintains accuracy while improving performance significantly
+- **Flexible Linting Output**: New `caddie core:lint:limit <n> <path>` command
+  - `caddie core:lint <path>` - Shows ALL issues (no limits)
+  - `caddie core:lint:limit <n> <path>` - Shows maximum n issues per check type
+  - Eliminates hidden issues that required multiple linter runs
+  - Provides complete transparency about total issue count
+  - Enables focused debugging with manageable output
+- **Variable Shadowing Detection**: New linter check for local variable shadowing
+  - Detects `local` declarations inside conditional blocks that shadow outer variables
+  - Prevents subtle bugs from variable scope confusion
+  - Example: `local path="$1"; if [ -z "$path" ]; then local path="."; fi` (shadows outer path)
+  - Recommends removing `local` keyword from inner declarations
 
 #### **New Git Branch Management**
 - **Branch Creation Command**: New `caddie git:new:branch <name>` command

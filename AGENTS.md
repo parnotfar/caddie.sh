@@ -148,17 +148,20 @@ caddie <module>:command1 test
 caddie core:debug on         # enable debug logging
 caddie <module>:help         # verify help output
 caddie <module>:command      # test functionality
-caddie core:lint             # run comprehensive caddie-specific linting
-caddie core:lint <path>      # lint specific file or directory
+caddie core:lint             # run comprehensive caddie-specific linting (shows ALL issues)
+caddie core:lint <path>      # lint specific file or directory (shows ALL issues)
+caddie core:lint:limit <n> <path>  # lint with limited output (max n issues per check)
 caddie reload                # reload after changes
 ```
 
 #### **Enhanced Linter (v1.10)**
-The linter now includes comprehensive echo message detection:
+The linter now includes comprehensive echo message detection and flexible output:
 - **Usage Messages**: `echo "Usage..."` → `caddie cli:usage`
 - **Success Messages**: `echo "✓..."` → `caddie cli:check`
 - **Failure Messages**: `echo "✗..."` → `caddie cli:red`
 - **General Messages**: `echo "..."` → `caddie cli:indent`
+- **Variable Shadowing Detection**: Detects `local` declarations inside conditional blocks that shadow outer variables
+- **Flexible Output**: `caddie core:lint` shows ALL issues, `caddie core:lint:limit <n>` shows max n issues per check
 - **Smart Heredoc Detection**: Optimized performance with intelligent pattern detection
 - **Technical Echo Exclusion**: Excludes pipe operations from general echo warnings
 - **Lint Ignore Blocks**: Use `# caddie:lint:ignore:begin` and `# caddie:lint:ignore:end` to suppress warnings
@@ -310,6 +313,8 @@ The Makefile handles module installation automatically:
 
 * Run `caddie core:lint` on all modified files (ENHANCED in v1.10)
   * Now includes comprehensive echo message detection
+  * Variable shadowing detection for subtle bug prevention
+  * Flexible output: `caddie core:lint` (all issues) or `caddie core:lint:limit <n>` (limited)
   * Optimized performance with smart heredoc detection
   * Covers usage, success, failure, and general message patterns
 * Test with `caddie <module>:help` and `caddie <module>:command`

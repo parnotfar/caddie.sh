@@ -29,7 +29,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
-- **Code Quality Tools**: Comprehensive linter with caddie-specific standards and performance optimizations
+- **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
@@ -298,14 +298,17 @@ caddie cursor:ai:explain src/main.rs
 ### Code Quality
 
 ```bash
-# Run comprehensive linter on all modules
+# Run comprehensive linter on all modules (shows ALL issues)
 caddie core:lint
 
-# Check specific module
+# Check specific module (shows ALL issues)
 caddie core:lint modules/dot_caddie_rust
 
-# See detailed standards reference
-caddie core:lint modules/dot_caddie_git
+# Limited output (shows max 5 issues per check type)
+caddie core:lint:limit 5 modules/dot_caddie_ruby
+
+# Focused debugging (shows max 3 issues per check type)
+caddie core:lint:limit 3 modules/
 ```
 
 The linter enforces caddie-specific standards including:
