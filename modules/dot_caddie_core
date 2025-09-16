@@ -451,13 +451,24 @@ function caddie_core_lint() {
             done < "$file"
             
             # Now check for undeclared variables only in bash code sections
-            # Use improved logic that tracks local declarations within function scope
+            # Use improved logic that tracks local declarations within function scope and global variables
             undeclared_vars=$(grep "^BASH_CODE:" "$temp_file" | sed 's/^BASH_CODE://' | awk '
-                BEGIN { in_function = 0; local_vars = "" }
+                BEGIN { in_function = 0; local_vars = ""; global_vars = "" }
+                
+                # First pass: collect global variables (declared outside functions)
+                !in_function && /^[[:space:]]*[A-Z_][A-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
+                    gsub(/^[[:space:]]*/, "")
+                    gsub(/[[:space:]]*=.*$/, "")
+                    if (global_vars == "") global_vars = $0
+                    else global_vars = global_vars " " $0
+                }
+                
+                # Track function boundaries
                 /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
                 /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
+                
+                # Track local variables within functions
                 in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
-                    # Extract variable name from local declaration
                     gsub(/^[[:space:]]*local[[:space:]]+/, "")
                     gsub(/[[:space:]]*=.*$/, "")
                     gsub(/[[:space:]]+.*$/, "")
@@ -465,13 +476,13 @@ function caddie_core_lint() {
                     else local_vars = local_vars " " $0
                     next
                 }
+                
+                # Check function variable assignments
                 in_function && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
-                    # Extract variable name from assignment
                     gsub(/^[[:space:]]*/, "")
                     gsub(/[[:space:]]*=.*$/, "")
-                    # Check if this variable was declared as local earlier in the function
-                    # Use a more reliable pattern that checks for word boundaries
-                    if (local_vars !~ "(^| )" $0 "( |$)") {
+                    # Check if this variable was declared as local earlier in the function OR is a global variable
+                    if (local_vars !~ "(^| )" $0 "( |$)" && global_vars !~ "(^| )" $0 "( |$)") {
                         print NR ": " $0 "="
                     }
                 }
@@ -480,13 +491,24 @@ function caddie_core_lint() {
             # Clean up temp file
             rm -f "$temp_file"
         else
-            # No heredocs - use fast method with improved local variable tracking
+            # No heredocs - use fast method with improved local variable tracking and global variable detection
             undeclared_vars=$(awk '
-                BEGIN { in_function = 0; local_vars = "" }
+                BEGIN { in_function = 0; local_vars = ""; global_vars = "" }
+                
+                # First pass: collect global variables (declared outside functions)
+                !in_function && /^[[:space:]]*[A-Z_][A-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
+                    gsub(/^[[:space:]]*/, "")
+                    gsub(/[[:space:]]*=.*$/, "")
+                    if (global_vars == "") global_vars = $0
+                    else global_vars = global_vars " " $0
+                }
+                
+                # Track function boundaries
                 /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
                 /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
+                
+                # Track local variables within functions
                 in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
-                    # Extract variable name from local declaration
                     gsub(/^[[:space:]]*local[[:space:]]+/, "")
                     gsub(/[[:space:]]*=.*$/, "")
                     gsub(/[[:space:]]+.*$/, "")
@@ -494,13 +516,13 @@ function caddie_core_lint() {
                     else local_vars = local_vars " " $0
                     next
                 }
+                
+                # Check function variable assignments
                 in_function && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
-                    # Extract variable name from assignment
                     gsub(/^[[:space:]]*/, "")
                     gsub(/[[:space:]]*=.*$/, "")
-                    # Check if this variable was declared as local earlier in the function
-                    # Use a more reliable pattern that checks for word boundaries
-                    if (local_vars !~ "(^| )" $0 "( |$)") {
+                    # Check if this variable was declared as local earlier in the function OR is a global variable
+                    if (local_vars !~ "(^| )" $0 "( |$)" && global_vars !~ "(^| )" $0 "( |$)") {
                         print NR ": " $0 "="
                     }
                 }
