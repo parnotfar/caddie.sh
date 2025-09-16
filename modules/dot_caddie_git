@@ -253,11 +253,11 @@ function caddie_git_pr_create() {
         return 1
     fi
     
-    # Check GitHub CLI authentication using caddie function
-    if ! caddie_github_auth_check > /dev/null 2>&1; then
+    # Check GitHub CLI authentication
+    if ! gh auth status > /dev/null 2>&1; then
         caddie cli:red "Error: GitHub CLI authentication required"
         caddie cli:indent "Run: caddie git:auth:login to authenticate"
-        caddie cli:indent "Or check status: caddie github:auth:check"
+        caddie cli:indent "Or check status: gh auth status"
         return 1
     fi
     
