@@ -41,6 +41,11 @@
 - **Better Pattern Recognition**: More accurate detection of user-facing vs. technical echo statements
 - **Enhanced Standards Reference**: Updated help text with complete echo message standards
 - **Comprehensive Coverage**: All common echo patterns now have specific linter checks
+- **Lint Ignore Blocks**: New `# caddie:lint:ignore:begin` and `# caddie:lint:ignore:end` comments
+  - Suppress linting warnings for specific code sections
+  - Prevents linter from flagging its own implementation code
+  - Follows common linting patterns used by other tools
+  - Self-documenting and maintainable approach
 
 #### **Git Workflow Enhancement**
 - **Streamlined Branch Creation**: One command creates and publishes new branches
@@ -66,6 +71,14 @@ caddie core:lint modules/dot_caddie_ruby
 
 # See comprehensive standards reference
 caddie core:lint modules/dot_caddie_git
+
+# Use lint ignore blocks for specific code sections
+# caddie:lint:ignore:begin
+function complex_function() {
+    echo "This won't trigger warnings"
+    # Complex code that needs to break standards
+}
+# caddie:lint:ignore:end
 ```
 
 #### **New Git Branch Management**

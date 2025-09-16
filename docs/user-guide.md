@@ -808,6 +808,34 @@ caddie help
 3. **Debug off**: Keep debug mode off in production
 4. **Regular maintenance**: Clean up old files and environments
 
+### Code Quality
+
+1. **Use the linter**: Run `caddie core:lint` regularly to maintain code standards
+2. **Follow caddie conventions**: Use `caddie cli:*` functions for consistent output
+3. **Lint ignore blocks**: Use `# caddie:lint:ignore:begin` and `# caddie:lint:ignore:end` for exceptions
+4. **Document exceptions**: Always explain why you're using ignore blocks
+
+#### Lint Ignore Blocks
+
+When you need to suppress linting warnings for specific code sections:
+
+```bash
+# caddie:lint:ignore:begin
+function complex_function() {
+    # This entire function will be ignored by the linter
+    echo "This won't trigger warnings"
+    local var=value  # This won't trigger local variable warnings
+    # Any other code that would normally trigger warnings
+}
+# caddie:lint:ignore:end
+```
+
+**Use cases:**
+- Linter implementation code (prevents self-flagging)
+- Legacy code during refactoring
+- Third-party code that doesn't follow caddie standards
+- Complex edge cases that legitimately need to break standards
+
 ## Integration with Other Tools
 
 ### Version Control

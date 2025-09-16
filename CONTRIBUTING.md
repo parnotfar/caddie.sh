@@ -247,6 +247,35 @@ caddie git:pr:create "Add your feature" "Detailed description of changes"
 8. **Echo general**: Replace general `echo "..."` with `caddie cli:indent`
 9. **Variable braces**: Use `${var}` instead of `$var`
 
+## Lint Ignore Blocks
+
+Sometimes you need to suppress linting warnings for specific code sections. Use lint ignore blocks to exclude code from linting:
+
+```bash
+# caddie:lint:ignore:begin
+function my_function() {
+    # This entire function will be ignored by the linter
+    echo "This won't trigger warnings"
+    local var=value  # This won't trigger local variable warnings
+    # Any other code that would normally trigger warnings
+}
+# caddie:lint:ignore:end
+```
+
+### When to Use Ignore Blocks
+
+- **Linter implementation**: The linter itself uses ignore blocks to prevent self-flagging
+- **Legacy code**: Temporarily suppress warnings while refactoring
+- **Third-party code**: Exclude external code that doesn't follow caddie standards
+- **Complex edge cases**: Code that legitimately needs to break standards
+
+### Best Practices
+
+- **Use sparingly**: Only when absolutely necessary
+- **Document why**: Add comments explaining why the ignore block is needed
+- **Keep blocks small**: Wrap only the specific code that needs to be ignored
+- **Review regularly**: Remove ignore blocks when the underlying issue is fixed
+
 ## Testing Changes
 
 After making changes, run:

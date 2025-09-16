@@ -258,6 +258,7 @@ function caddie_core_aliases() {
 }
 
 # Function to run caddie-specific linting
+# caddie:lint:ignore:begin
 function caddie_core_lint() {
     local target="${1:-modules/}"
     local errors=0
@@ -294,11 +295,48 @@ function caddie_core_lint() {
             continue
         fi
         
+        # Skip linting the linter itself if it has ignore blocks
+        if [[ "$file" == *"dot_caddie_core"* ]] && grep -q "caddie:lint:ignore:begin" "$file"; then
+            caddie cli:indent "Checking: $file"
+            caddie cli:yellow "  ⚠ Skipping linter self-check (has ignore blocks)"
+            continue
+        fi
+        
         caddie cli:indent "Checking: $file"
         local file_errors=0
         local file_warnings=0
         
-        # 1. Check for linter exemptions (skip certain checks for specific modules)
+        # 1. Detect lint ignore blocks
+        local ignore_blocks=""
+        if grep -q "caddie:lint:ignore:begin" "$file"; then
+            # Find all ignore block ranges
+            ignore_blocks=$(awk '
+                /caddie:lint:ignore:begin/ { start = NR; next }
+                /caddie:lint:ignore:end/ && start { 
+                    if (start != "") {
+                        print start "-" NR
+                        start = ""
+                    }
+                }
+            ' "$file")
+        fi
+        
+        # Helper function to check if a line is in an ignore block
+        is_line_ignored() {
+            local line_num="$1"
+            local blocks="$2"
+            if [ -z "$blocks" ]; then
+                return 1
+            fi
+            echo "$blocks" | while IFS='-' read -r start end; do
+                if [ "$line_num" -ge "$start" ] && [ "$line_num" -le "$end" ]; then
+                    return 0
+                fi
+            done
+            return 1
+        }
+        
+        # 2. Check for linter exemptions (skip certain checks for specific modules)
         local exempt_from_shebang=false
         local exempt_from_naming=false
         if [[ "$file" == *"dot_caddie_debug"* ]]; then
@@ -529,11 +567,26 @@ function caddie_core_lint() {
         # 14. Check for general echo messages (should use caddie cli:indent for consistency)
         local general_echoes=$(grep -n '^[[:space:]]*echo "[^"]*"' "$file" | grep -v 'echo "Error:' | grep -v 'echo "Usage' | grep -v 'echo "HEREDOC' | grep -v 'echo "BASH_CODE' | grep -v '| while' | grep -v '| head' | grep -v '| wc' | head -3 || true)
         if [ -n "$general_echoes" ]; then
-            caddie cli:yellow "  ⚠ Consider using 'caddie cli:indent' for consistent formatting:"
+            # Filter out lines in ignore blocks
+            local filtered_echoes=""
             echo "$general_echoes" | while read -r line; do
-                caddie cli:yellow "    Line $line"
+                local line_num=$(echo "$line" | cut -d: -f1)
+                if ! is_line_ignored "$line_num" "$ignore_blocks"; then
+                    if [ -z "$filtered_echoes" ]; then
+                        filtered_echoes="$line"
+                    else
+                        filtered_echoes="$filtered_echoes"$'\n'"$line"
+                    fi
+                fi
             done
-            ((file_warnings++))
+            
+            if [ -n "$filtered_echoes" ]; then
+                caddie cli:yellow "  ⚠ Consider using 'caddie cli:indent' for consistent formatting:"
+                echo "$filtered_echoes" | while read -r line; do
+                    caddie cli:yellow "    Line $line"
+                done
+                ((file_warnings++))
+            fi
         fi
         
         # Summary for this file
@@ -577,6 +630,7 @@ function caddie_core_lint() {
         return 1
     fi
 }
+# caddie:lint:ignore:end
 
 # Function to show core caddie help
 function caddie_core_help() {
@@ -627,7 +681,6 @@ function caddie_core_description() {
 if [ -f "$CADDIE_HOME_FILE" ]; then
     caddie_home=$(cat "$CADDIE_HOME_FILE")
     export CADDIE_HOME="$caddie_home"
-    return 0
 fi
 
 # Export core functions
