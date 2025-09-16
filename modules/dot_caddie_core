@@ -339,11 +339,11 @@ function caddie_core_lint() {
             if [ -z "$blocks" ]; then
                 return 1
             fi
-            echo "$blocks" | while IFS='-' read -r start end; do
+            while IFS='-' read -r start end; do
                 if [ "$line_num" -ge "$start" ] && [ "$line_num" -le "$end" ]; then
                     return 0
                 fi
-            done
+            done <<< "$blocks"
             return 1
         }
         
