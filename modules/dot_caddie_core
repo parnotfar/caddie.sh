@@ -543,8 +543,18 @@ function caddie_core_lint() {
         local functions_without_return=$(grep -n "^function caddie_.*()" "$file" | while read -r line; do
             local func_line=$(echo "$line" | cut -d: -f1)
             local func_name=$(echo "$line" | cut -d: -f2- | sed 's/^function //' | sed 's/()$//')
+            
+            # Use a simpler approach: find the function end by looking for the next function or end of file
+            local next_func_line=$(grep -n "^function caddie_.*()" "$file" | awk -F: '$1 > '"$func_line"' { print $1; exit }')
+            if [ -z "$next_func_line" ]; then
+                # No next function, check to end of file
+                local func_end_line=$(wc -l < "$file")
+            else
+                local func_end_line=$((next_func_line - 1))
+            fi
+            
             # Check if this function has any return statement
-            if ! sed -n "${func_line},/^}/p" "$file" | grep -q "return"; then
+            if ! sed -n "${func_line},${func_end_line}p" "$file" | grep -q "return"; then
                 echo "Line $func_line: $func_name"
             fi
         done | head -3)

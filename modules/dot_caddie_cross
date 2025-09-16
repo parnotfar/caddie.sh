@@ -81,6 +81,7 @@ function caddie_cross_env_status() {
     else
         caddie cli:x "Docker not found"
     fi
+    return 0
 }
 
 # Function to setup development environment
@@ -110,6 +111,7 @@ function caddie_cross_env_setup() {
     npm install -g npm@latest
     
     caddie cli:check "Development environment setup complete"
+    return 0
 }
 
 # Function to reset all environments
@@ -141,6 +143,7 @@ function caddie_cross_env_reset() {
     fi
     
     caddie cli:check "All environments reset"
+    return 0
 }
 
 # Function to backup current configurations
@@ -175,6 +178,7 @@ function caddie_cross_env_backup() {
     cp "$HOME/.zshrc" "$backup_dir/" 2>/dev/null || true
     
     caddie cli:check "Backup created: $backup_dir"
+    return 0
 }
 
 # Function to list available templates
@@ -201,6 +205,7 @@ function caddie_cross_template_list() {
     caddie cli:indent "wasm         - WebAssembly project"
     caddie cli:blank
     caddie cli:usage "caddie template:create <type> <name>"
+    return 0
 }
 
 # Function to create project from template
@@ -262,6 +267,7 @@ function caddie_cross_template_create() {
             return 1
             ;;
     esac
+    return 0
 }
 
 # Template creation functions
@@ -310,7 +316,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ Web project '$name' created"
+    caddie cli:check "Web project '$name' created"
+    return 0
 }
 
 function caddie_cross_template_api() {
@@ -357,7 +364,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ API project '$name' created"
+    caddie cli:check "API project '$name' created"
+    return 0
 }
 
 caddie_cross_template_mobile() {
@@ -401,7 +409,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ Mobile project '$name' created"
+    caddie cli:check "Mobile project '$name' created"
+    return 0
 }
 
 caddie_cross_template_ios_app() {
@@ -419,7 +428,8 @@ caddie_cross_template_ios_app() {
     touch "$name/Info.plist"
     touch README.md
     
-    echo "✓ iOS app '$name' created"
+    caddie cli:check "iOS app '$name' created"
+    return 0
 }
 
 caddie_cross_template_ios_framework() {
@@ -436,7 +446,8 @@ caddie_cross_template_ios_framework() {
     touch "$name/Info.plist"
     touch README.md
     
-    echo "✓ iOS framework '$name' created"
+    caddie cli:check "iOS framework '$name' created"
+    return 0
 }
 
 caddie_cross_template_ios_extension() {
@@ -453,7 +464,8 @@ caddie_cross_template_ios_extension() {
     touch "$name/Info.plist"
     touch README.md
     
-    echo "✓ iOS extension '$name' created"
+    caddie cli:check "iOS extension '$name' created"
+    return 0
 }
 
 caddie_cross_template_data() {
@@ -481,7 +493,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ Data project '$name' created"
+    caddie cli:check "Data project '$name' created"
+    return 0
 }
 
 caddie_cross_template_ml() {
@@ -513,7 +526,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ ML project '$name' created"
+    caddie cli:check "ML project '$name' created"
+    return 0
 }
 
 caddie_cross_template_cli() {
@@ -556,7 +570,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ CLI project '$name' created"
+    caddie cli:check "CLI project '$name' created"
+    return 0
 }
 
 function caddie_cross_template_lib() {
@@ -597,7 +612,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ Library project '$name' created"
+    caddie cli:check "Library project '$name' created"
+    return 0
 }
 
 function caddie_cross_template_wasm() {
@@ -648,7 +664,8 @@ EOF
     touch README.md
     touch .gitignore
     
-    echo "✓ WebAssembly project '$name' created"
+    caddie cli:check "WebAssembly project '$name' created"
+    return 0
 }
 
 # Build functions
@@ -674,6 +691,7 @@ function caddie_cross_build_all() {
     fi
     
     caddie cli:check "All projects built"
+    return 0
 }
 
 function caddie_cross_build_python() {
@@ -686,6 +704,7 @@ function caddie_cross_build_python() {
     else
         caddie cli:warning "No Python build configuration found"
     fi
+    return 0
 }
 
 function caddie_cross_build_rust() {
@@ -695,6 +714,7 @@ function caddie_cross_build_rust() {
     else
         caddie cli:warning "No Rust project found"
     fi
+    return 0
 }
 
 function caddie_cross_build_ios() {
@@ -704,6 +724,7 @@ function caddie_cross_build_ios() {
     else
         caddie cli:warning "No iOS project found"
     fi
+    return 0
 }
 
 # Deployment functions
@@ -743,6 +764,7 @@ services:
 EOF
     
     caddie cli:check "Docker deployment setup created"
+    return 0
 }
 
 function caddie_cross_deploy_local() {
@@ -764,6 +786,7 @@ EOF
     chmod +x deploy.sh
     
     caddie cli:check "Local deployment setup created"
+    return 0
 }
 
 # Tools functions
@@ -789,6 +812,7 @@ function caddie_cross_tools_install() {
     fi
     
     caddie cli:check "Development tools installed"
+    return 0
 }
 
 function caddie_cross_tools_setup() {
@@ -807,6 +831,7 @@ function caddie_cross_tools_setup() {
     fi
     
     caddie cli:check "Development tools setup complete"
+    return 0
 }
 
 function caddie_cross_tools_lint() {
@@ -832,6 +857,7 @@ function caddie_cross_tools_lint() {
     fi
     
     caddie cli:check "All linters completed"
+    return 0
 }
 
 function caddie_cross_tools_format() {
@@ -854,6 +880,7 @@ function caddie_cross_tools_format() {
     fi
     
     caddie cli:check "All code formatted"
+    return 0
 }
 
 # Function to display cross-language module help
@@ -906,10 +933,12 @@ caddie_cross_help() {
     caddie cli:indent "caddie build:all"
     caddie cli:indent "caddie tools:lint"
     caddie cli:blank
+    return 0
 }
 
 function caddie_cross_description() {
     echo 'Cross-Language Features & Templates'
+    return 0
 }
 
 # Export cross-language functions
