@@ -9,6 +9,7 @@ source "$HOME/.caddie_modules/.caddie_cli"
 # Register help information
 function caddie_js_description() {
     echo 'JavaScript/Node.js environment management with NVM'
+    return 0
 }
 
 # Function to setup Node.js development environment
@@ -54,6 +55,7 @@ function caddie_js_setup() {
     
     caddie cli:check "Node.js development environment setup complete"
     caddie_js_version
+    return 0
 }
 
 # Function to install specific Node.js version
@@ -76,6 +78,7 @@ function caddie_js_install() {
         caddie cli:x "Failed to install Node.js $version"
         return 1
     fi
+    return 0
 }
 
 # Function to switch to specific Node.js version
@@ -98,6 +101,7 @@ function caddie_js_use() {
         caddie cli:x "Failed to switch to Node.js $version"
         return 1
     fi
+    return 0
 }
 
 # Function to list installed Node.js versions
@@ -107,6 +111,7 @@ function caddie_js_list() {
     nvm list
     caddie cli:blank
     caddie cli:indent "Current version: $(node --version)"
+    return 0
 }
 
 
@@ -207,6 +212,7 @@ EOF
     
     caddie cli:check "Node.js project '$project_name' initialized"
     caddie cli:indent "Created: src/, tests/, docs/, package.json, README.md, .gitignore"
+    return 0
 }
 
 # Function to install project dependencies
@@ -232,6 +238,7 @@ function caddie_js_project_install() {
         caddie cli:x "Failed to install dependencies"
         return 1
     fi
+    return 0
 }
 
 # Function to update project dependencies
@@ -257,6 +264,7 @@ function caddie_js_project_update() {
         caddie cli:x "Failed to update dependencies"
         return 1
     fi
+    return 0
 }
 
 # Function to run Node.js tests
@@ -276,6 +284,7 @@ function caddie_js_project_test() {
         caddie cli:warning "No tests found. Create tests in the 'tests' directory"
         return 1
     fi
+    return 0
 }
 
 # Function to build Node.js project
@@ -301,6 +310,7 @@ function caddie_js_project_build() {
     fi
     
     caddie cli:check "Node.js project built successfully"
+    return 0
 }
 
 # Function to serve Node.js application
@@ -323,6 +333,7 @@ function caddie_js_project_serve() {
         caddie cli:warning "No start script found. Add 'start' or 'dev' script to package.json"
         return 1
     fi
+    return 0
 }
 
 # Function to install npm package
@@ -343,6 +354,7 @@ function caddie_js_package_install() {
         caddie cli:x "Failed to install package '$package'"
         return 1
     fi
+    return 0
 }
 
 # Function to uninstall npm package
@@ -363,6 +375,7 @@ function caddie_js_package_uninstall() {
         caddie cli:x "Failed to uninstall package '$package'"
         return 1
     fi
+    return 0
 }
 
 # Function to list installed packages
@@ -370,6 +383,7 @@ function caddie_js_package_list() {
     caddie cli:title "Installed packages"
     caddie cli:blank
     npm list --depth=0
+    return 0
 }
 
 # Function to update npm package
@@ -397,12 +411,14 @@ function caddie_js_package_outdated() {
     caddie cli:title "Outdated packages"
     caddie cli:blank
     npm outdated
+    return 0
 }
 
 # Function to audit package security
 function caddie_js_package_audit() {
     caddie cli:title "Auditing package security..."
     npm audit
+    return 0
 }
 
 # Function to run npm script
@@ -422,6 +438,7 @@ function caddie_js_package_run() {
     
     caddie cli:title "Running script: $script"
     npm run "$script"
+    return 0
 }
 
 # Function to publish npm package
@@ -447,6 +464,7 @@ function caddie_js_package_publish() {
         caddie cli:x "Failed to publish package"
         return 1
     fi
+    return 0
 }
 
 # Function to create framework project
@@ -551,6 +569,7 @@ function caddie_js_framework_serve() {
         caddie cli:warning "No development script found. Check package.json for available scripts"
         return 1
     fi
+    return 0
 }
 
 # Function to build framework application
@@ -569,6 +588,7 @@ function caddie_js_framework_build() {
         caddie cli:warning "No build script found. Add 'build' script to package.json"
         return 1
     fi
+    return 0
 }
 
 # Function to show Node.js and NVM version information
@@ -581,6 +601,7 @@ function caddie_js_version() {
     caddie cli:indent "Yarn: $(yarn --version 2>/dev/null || echo 'not installed')"
     caddie cli:indent "pnpm: $(pnpm --version 2>/dev/null || echo 'not installed')"
     caddie cli:indent "TypeScript: $(tsc --version 2>/dev/null || echo 'not installed')"
+    return 0
 }
 
 # Function to show JavaScript module help
@@ -623,6 +644,7 @@ function caddie_js_help() {
     caddie cli:indent "caddie js:project:init my-app"
     caddie cli:indent "caddie js:framework:create react my-react-app"
     caddie cli:blank
+    return 0
 }
 
 # Export JavaScript functions
