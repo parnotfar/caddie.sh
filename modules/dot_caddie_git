@@ -16,6 +16,8 @@ caddie_source_custom_files() {
     if [ -f "$HOME/.bashrc-caddie-custom" ]; then
         source "$HOME/.bashrc-caddie-custom"
     fi
+
+    return 0
 }
 
 # Set product name
@@ -32,27 +34,31 @@ caddie_source_custom_files
 function caddie_git_status() {
     echo "Git Status:"
     git status --short
+    return 0
 }
 
 function caddie_git_branch() {
     echo "Current branch: $(git branch --show-current)"
     echo "All branches:"
     git branch -a
+    return 0
 }
 
 function caddie_git_commit() {
     local message="$1"
     if [ -z "$message" ]; then
-        echo "Error: Please provide a commit message"
+        caddie cli:red "Error: Please provide a commit message"
         echo "Usage: caddie git:commit <message>"
         return 1
     fi
     git add .
     git commit -m "$message"
+    return 0
 }
 
 function caddie_git_push() {
     git push
+    return 0
 }
 
 function caddie_git_push_set_upstream() {
@@ -61,16 +67,18 @@ function caddie_git_push_set_upstream() {
     
     echo "Setting upstream for branch '${branch}' to '${remote}/${branch}'"
     git push --set-upstream "${remote}" "${branch}"
+    return 0
 }
 
 function caddie_git_pull() {
     git pull
+    return 0
 }
 
 function caddie_git_gacp() {
     local message="$1"
     if [ -z "$message" ]; then
-        echo "Error: Please provide a commit message"
+        caddie cli:red "Error: Please provide a commit message"
         echo "Usage: caddie git:gacp <message>"
         return 1
     fi
@@ -83,6 +91,7 @@ function caddie_git_gacp() {
     
     echo "Pushing to remote..."
     git push
+    return 0
 }
 
 function caddie_git_remote_add() {
@@ -93,21 +102,21 @@ function caddie_git_remote_add() {
     if [ -z "${name}" ] && [ -z "${url}" ]; then
         local github_account=$(caddie_github_account_get)
         if [ -z "${github_account}" ]; then
-            echo "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
+            caddie cli:red "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
             echo "Or provide manual arguments: caddie git:remote:add <name> <url>"
             return 1
         fi
         
         # Auto-detect repository name from current directory
         local repo_name=$(basename "$(pwd)")
-        name="origin"
-        url="git@github.com:${github_account}/${repo_name}.git"
+        local name="origin"
+        local url="git@github.com:${github_account}/${repo_name}.git"
         
         echo "Auto-detected repository: ${repo_name}"
         echo "Using GitHub account: ${github_account}"
         echo "Adding remote '${name}' pointing to '${url}'"
     elif [ -z "${name}" ] || [ -z "${url}" ]; then
-        echo "Error: Please provide both remote name and URL"
+        caddie cli:red "Error: Please provide both remote name and URL"
         echo "Usage: caddie git:remote:add <name> <url>"
         echo "Or use auto-detection: caddie git:remote:add"
         return 1
@@ -115,36 +124,40 @@ function caddie_git_remote_add() {
     
     git remote add "${name}" "${url}"
     echo "Added remote '${name}' pointing to '${url}'"
+    return 0
 }
 
 function caddie_git_remote_set_url() {
     local name="$1"
     local url="$2"
     if [ -z "$name" ] || [ -z "$url" ]; then
-        echo "Error: Please provide remote name and URL"
+        caddie cli:red "Error: Please provide remote name and URL"
         echo "Usage: caddie git:remote:set-url <name> <url>"
         return 1
     fi
     git remote set-url "$name" "$url"
     echo "Set remote '$name' URL to '$url'"
+    return 0
 }
 
 function caddie_git_remote_list() {
     echo "Remote repositories:"
     git remote -v
+    return 0
 }
 
 function caddie_git_remote_remove() {
     local name="${1:-origin}"
     git remote remove "$name"
     echo "Removed remote '$name'"
+    return 0
 }
 
 function caddie_git_clone() {
     local repo_name="$1"
     
     if [ -z "${repo_name}" ]; then
-        echo "Error: Please provide repository name"
+        caddie cli:red "Error: Please provide repository name"
         echo "Usage: caddie git:clone <repo-name>"
         echo "Example: caddie git:clone my-project"
         return 1
@@ -152,7 +165,7 @@ function caddie_git_clone() {
     
     local github_account=$(caddie_github_account_get)
     if [ -z "${github_account}" ]; then
-        echo "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
+        caddie cli:red "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
         return 1
     fi
     
@@ -163,6 +176,7 @@ function caddie_git_clone() {
     echo "URL: ${url}"
     
     git clone "${url}"
+    return 0
 }
 
 function caddie_git_help() {
@@ -202,10 +216,12 @@ function caddie_git_help() {
     caddie cli:indent "caddie github:account:set <account>  Set GitHub account"
     caddie cli:indent "caddie git:remote:add                Auto-add remote"
     caddie cli:blank
+    return 0
 }
 
 function caddie_git_description() {
     echo 'Git workflow enhancements'
+    return 0
 }
 
 # Export functions for external use

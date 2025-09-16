@@ -441,6 +441,26 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
+        # 11. Check for echo "Usage..." messages (should use caddie cli:usage)
+        local usage_echoes=$(grep -n 'echo "Usage' "$file" | head -3 || true)
+        if [ -n "$usage_echoes" ]; then
+            caddie cli:yellow "  ⚠ Use 'caddie cli:usage' instead of 'echo \"Usage...\"':"
+            echo "$usage_echoes" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
+        # 12. Check for general echo messages (should use caddie cli:indent for consistency)
+        local general_echoes=$(grep -n '^[[:space:]]*echo "[^"]*"' "$file" | grep -v 'echo "Error:' | grep -v 'echo "Usage' | grep -v 'echo "HEREDOC' | grep -v 'echo "BASH_CODE' | head -3 || true)
+        if [ -n "$general_echoes" ]; then
+            caddie cli:yellow "  ⚠ Consider using 'caddie cli:indent' for consistent formatting:"
+            echo "$general_echoes" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
         # Summary for this file
         if [ $file_errors -eq 0 ] && [ $file_warnings -eq 0 ]; then
             caddie cli:check "  ✓ All checks passed"
@@ -471,6 +491,8 @@ function caddie_core_lint() {
         caddie cli:indent "• Export all functions: export -f caddie_<module>_<command>"
         caddie cli:indent "• Provide help and description functions"
         caddie cli:indent "• Use caddie cli:* functions for output"
+        caddie cli:indent "• Use caddie cli:usage for usage messages"
+        caddie cli:indent "• Use caddie cli:indent for general messages"
         caddie cli:indent "• Validate input arguments"
         caddie cli:indent "• Use braces for variables: \${var}"
         caddie cli:indent "• Declare local variables: local var=\$1"
