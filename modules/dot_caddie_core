@@ -548,7 +548,35 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 10. Check for variable shadowing (local variables declared inside conditional blocks)
+        # 10. Check for redundant variable declarations (same variable declared multiple times)
+        local redundant_vars=$(apply_limit "$(awk '
+            BEGIN { in_function = 0; declared_vars = "" }
+            /^function caddie_.*\(\)/ { in_function = 1; declared_vars = ""; next }
+            /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; declared_vars = ""; next }
+            in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+                # Extract variable name from local declaration
+                gsub(/^[[:space:]]*local[[:space:]]+/, "")
+                gsub(/[[:space:]]*=.*$/, "")
+                gsub(/[[:space:]]+.*$/, "")
+                # Check if this variable was already declared in this function
+                if (declared_vars ~ "(^| )" $0 "( |$)") {
+                    print NR ": " $0 " (redundant declaration)"
+                } else {
+                    if (declared_vars == "") declared_vars = $0
+                    else declared_vars = declared_vars " " $0
+                }
+            }
+        ' "$file" || true)")
+        
+        if [ -n "$redundant_vars" ]; then
+            caddie cli:yellow "  ⚠ Redundant variable declarations (remove duplicate local declarations):"
+            echo "$redundant_vars" | while read -r line; do
+                caddie cli:yellow "    Line $line"
+            done
+            ((file_warnings++))
+        fi
+        
+        # 11. Check for variable shadowing (local variables declared inside conditional blocks)
         local shadowed_vars=$(apply_limit "$(awk '
             BEGIN { in_function = 0; local_vars = ""; in_if = 0 }
             /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
@@ -711,6 +739,7 @@ function caddie_core_lint() {
         caddie cli:indent "• Validate input arguments"
         caddie cli:indent "• Use braces for variables: \${var}"
         caddie cli:indent "• Declare local variables: local var=\$1"
+        caddie cli:indent "• Avoid redundant variable declarations (declare once per function)"
         caddie cli:indent "• Include explicit return statements (style preference for clarity)"
         return 1
     fi

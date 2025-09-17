@@ -84,7 +84,6 @@ function caddie_ios_run() {
     caddie cli:title "Running iOS project..."
     
     # Get the first available simulator
-    local simulator
     local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
@@ -115,7 +114,6 @@ function caddie_ios_test() {
     caddie cli:title "Running iOS tests..."
     
     # Get the first available simulator
-    local simulator
     local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then

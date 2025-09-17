@@ -331,7 +331,6 @@ function caddie_cursor_ai_explain() {
     
     caddie cli:title "Asking AI to explain: $file"
     
-    local ai_prompt_file
     local ai_prompt_file=".cursor/ai-explain-$(basename "$file").md"
     mkdir -p .cursor
     

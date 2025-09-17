@@ -352,7 +352,7 @@ function caddie_git_auth_login() {
         caddie cli:check "Successfully authenticated with GitHub CLI"
         
         # Get the authenticated user
-        local auth_user=$(gh api user --jq .login 2>/dev/null)
+        auth_user=$(gh api user --jq .login 2>/dev/null)
         if [ -n "$auth_user" ]; then
             caddie cli:indent "Authenticated as: $auth_user"
             

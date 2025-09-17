@@ -86,8 +86,8 @@ function caddie_python_list() {
     
     for env in "$venv_dir"/*; do
         if [ -d "$env" ]; then
-            local env_name
             local env_name=$(basename "$env")
+
             if [ "$env" = "$VIRTUAL_ENV" ]; then
                 caddie cli:check "$env_name (active)"
             else
@@ -95,6 +95,7 @@ function caddie_python_list() {
             fi
         fi
     done
+
     return 0
 }
 
