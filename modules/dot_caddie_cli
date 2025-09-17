@@ -15,193 +15,146 @@ export ORANGE=$(tput setaf 9)
 export RESET=$(tput sgr0)
 
 # Module description
+# caddie:lint:disable
 function caddie_cli_description() {
-    # caddie:lint:disable
     echo "CLI color utilities and formatting"
-    # caddie:lint:enable
-
     return 0
 }
 
 # CLI color output functions
 function caddie_cli_red() {
     local text="$1"
-    # caddie:lint:disable
     echo "${RED}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_green() {
     local text="$1"
-    # caddie:lint:disable
     echo "${GREEN}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_yellow() {
     local text="$1"
-    # caddie:lint:disable
     echo "${YELLOW}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_blue() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_purple() {
     local text="$1"
-    # caddie:lint:disable
     echo "${PURPLE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_cyan() {
     local text="$1"
-    # caddie:lint:disable
     echo "${CYAN}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_grey() {
     local text="$1"
-    # caddie:lint:disable
     echo "${GREY}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_orange() {
     local text="$1"
-    # caddie:lint:disable
     echo "${ORANGE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_white() {
     local text="$1"
-    # caddie:lint:disable
     echo "${WHITE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 # Bold color functions
 function caddie_cli_red_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${RED}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_green_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${GREEN}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_yellow_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${YELLOW}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_blue_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${BLUE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_purple_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${PURPLE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_cyan_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${CYAN}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_grey_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${GREY}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_orange_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${ORANGE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_white_bold() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${WHITE}${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 # Utility functions
 function caddie_cli_usage() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${BLUE}Usage: ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_installed() {
-    # caddie:lint:disable
     echo "${BOLD}${BLUE}installed${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_complete() {
-    # caddie:lint:disable
     echo "${BOLD}${BLUE}complete${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_title() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BOLD}${GREEN}== ${text} ==${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_colorlist() {
-    # caddie:lint:disable
     echo "${BOLD}BOLD${RESET}"
     echo "${RED}RED${RESET}"
     echo "${GREEN}GREEN${RESET}"
@@ -213,202 +166,154 @@ function caddie_cli_colorlist() {
     echo "${ORANGE}ORANGE${RESET}"
     echo "${WHITE}WHITE${RESET}"
     echo "${WHITE}RESET${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 # UTF-8 character utility functions
 function caddie_cli_check() {
     local text="$1"
-    # caddie:lint:disable
     echo "${GREEN}✓ ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_x() {
     local text="$1"
-    # caddie:lint:disable
     echo "${RED}✗ ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_arrow() {
     local text="$1"
-    # caddie:lint:disable
     echo "${YELLOW}→ ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_folder() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}📁 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_beer() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🍺 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_snake() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🐍 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_crab() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🦀 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_trash() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🗑️ ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_rotate() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🔄 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_chart() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}📊 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_magnify() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🔍 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_save() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}💾 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_warning() {
     local text="$1"
-    # caddie:lint:disable
     echo "${YELLOW}⚠ ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_debug() {
     local text="$1"
-    # caddie:lint:disable
     echo "${CYAN}🐛 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 # Additional UTF-8 character utility functions
 function caddie_cli_wrench() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🔧 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_whale() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🐳 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_package() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}📦 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_git() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🌐 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_rocket() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🚀 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_thought() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}💡 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_lightbulb() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}💡 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_magnifying_glass() {
     local text="$1"
-    # caddie:lint:disable
     echo "${BLUE}🔍 ${text}${RESET}"
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_blank() {
-    # caddie:lint:disable
     echo ""
-    # caddie:lint:enable
     return 0
 }
 
 function caddie_cli_indent() {
     local text="$1"
-    # caddie:lint:disable
     echo "  ${text}"
-    # caddie:lint:enable
     return 0
 }
+# caddie:lint:enable
 
 function caddie_cli_help() {
     caddie cli:usage "caddie cli:<command> [text]"
