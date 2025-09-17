@@ -25,9 +25,11 @@ shortcuts to make your coding experience smooth and efficient.
 - **iOS Development**: Xcode integration and development tools
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
+- **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **IDE Integration**: Cursor IDE integration with AI-powered development
-- **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
+- **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
+- **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
@@ -260,6 +262,29 @@ caddie rust:build
 caddie rust:run
 ```
 
+### Git Workflow
+
+```bash
+# Set up GitHub account
+caddie github:account:set parnotfar
+
+# Clone repository
+caddie git:clone my-project
+
+# Create and publish new branch
+caddie git:new:branch feature/new-feature
+
+# Quick commit and push
+caddie git:gacp "Add new feature"
+
+# Create pull request
+caddie git:pr:create "Add new feature" "Description of changes"
+
+# Check status and manage remotes
+caddie git:status
+caddie git:remote:add
+```
+
 ### Project Management
 
 ```bash
@@ -269,6 +294,29 @@ caddie cursor:open ~/my-project
 # Get AI-powered code explanation
 caddie cursor:ai:explain src/main.rs
 ```
+
+### Code Quality
+
+```bash
+# Run comprehensive linter on all modules (shows ALL issues)
+caddie core:lint
+
+# Check specific module (shows ALL issues)
+caddie core:lint modules/dot_caddie_rust
+
+# Limited output (shows max 5 issues per check type)
+caddie core:lint:limit 5 modules/dot_caddie_ruby
+
+# Focused debugging (shows max 3 issues per check type)
+caddie core:lint:limit 3 modules/
+```
+
+The linter enforces caddie-specific standards including:
+- Consistent CLI formatting (`caddie cli:*` functions)
+- Proper echo message handling (usage, success, error, general)
+- Function naming conventions
+- Local variable declarations
+- Explicit return statements
 
 ## Contributing
 

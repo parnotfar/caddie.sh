@@ -49,10 +49,23 @@ function set_caddie_prompt() {
     local git_info=""
     local github_info=""
     
-    # Add GitHub account info if set
-    local github_account=$(caddie_github_account_get)
-    if [ -n "${github_account}" ]; then
-        github_info="[${GREEN}gh:${github_account}${RESET}]"
+    # Add GitHub CLI authentication status
+    local github_status=$(gh auth status 2>/dev/null)
+    
+    if [ -n "${github_status}" ]; then
+        # Parse the actual gh auth status output format
+        if echo "${github_status}" | grep -q "Logged in to github.com account"; then
+            # Extract account name from "Logged in to github.com account wbailey (keyring)"
+            local account=$(echo "${github_status}" | grep "Logged in to github.com account" | sed 's/.*account \([^ ]*\).*/\1/')
+            github_info="[${GREEN}gh:${account}${RESET}]"
+        elif echo "${github_status}" | grep -q "Not logged in"; then
+            github_info="[${RED}gh:none${RESET}]"
+        else
+            github_info="[${YELLOW}gh:unknown${RESET}]"
+        fi
+    else
+        # gh auth status failed (not installed or not authenticated)
+        github_info="[${RED}gh:none${RESET}]"
     fi
     
     if [ -d '.git' ]; then

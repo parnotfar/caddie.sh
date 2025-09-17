@@ -13,6 +13,7 @@ function caddie_debug_on() {
     CADDIE_DEBUG=1
     export CADDIE_DEBUG
     caddie cli:check "Debug mode enabled"
+    return 0
 }
 
 # Set debug mode off (0)
@@ -20,6 +21,7 @@ function caddie_debug_off() {
     CADDIE_DEBUG=0
     export CADDIE_DEBUG
     caddie cli:check "Debug mode disabled"
+    return 0
 }
 
 # Get current debug status
@@ -29,11 +31,13 @@ function caddie_debug_status() {
     else
         caddie cli:red "Debug mode is: disabled"
     fi
+    return 0
 }
 
 # Check if debug is enabled
 function caddie_debug_is_enabled() {
     [ "$CADDIE_DEBUG" -eq 1 ]
+    return 0
 }
 
 # Function to output debug messages (only when debug is enabled)
@@ -44,6 +48,7 @@ function caddie_debug() {
         # Always write debug output to stderr
         caddie cli:debug "$message" >&2
     fi
+    return 0
 }
 
 # Function to show debug help
@@ -67,11 +72,15 @@ function caddie_debug_help() {
     caddie cli:indent "caddie debug:status"
     caddie cli:indent "caddie debug:help"
     caddie cli:blank
+    return 0
 }
 
 # Function to show debug description
 function caddie_debug_description() {
+    # caddie:lint:disable
     echo 'Debug control and output functions'
+    # caddie:lint:enable
+    return 0
 }
 
 # Export functions for external use

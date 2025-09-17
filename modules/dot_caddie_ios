@@ -33,6 +33,7 @@ function caddie_ios_setup() {
     caddie cli:indent "Xcode: $(xcodebuild -version | head -n1)"
     caddie cli:indent "Swift: $(swift --version | head -n1)"
     caddie cli:indent "CocoaPods: $(pod --version)"
+    return 0
 }
 
 # Function to list available simulators
@@ -40,6 +41,7 @@ function caddie_ios_simulator() {
     caddie cli:title "Available iOS Simulators"
     caddie cli:blank
     xcrun simctl list devices
+    return 0
 }
 
 # Function to list connected devices
@@ -47,6 +49,7 @@ function caddie_ios_device() {
     caddie cli:title "Connected iOS Devices"
     caddie cli:blank
     xcrun devicectl list devices
+    return 0
 }
 
 # Function to build iOS project
@@ -68,6 +71,7 @@ function caddie_ios_build() {
     fi
     
     caddie cli:check "iOS project built successfully"
+    return 0
 }
 
 # Function to run iOS project
@@ -80,8 +84,7 @@ function caddie_ios_run() {
     caddie cli:title "Running iOS project..."
     
     # Get the first available simulator
-    local simulator
-    simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
+    local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
         caddie cli:red "Error: No iOS simulator found"
@@ -98,6 +101,7 @@ function caddie_ios_run() {
     fi
     
     caddie cli:check "iOS project ran successfully on simulator"
+    return 0
 }
 
 # Function to run iOS tests
@@ -110,8 +114,7 @@ function caddie_ios_test() {
     caddie cli:title "Running iOS tests..."
     
     # Get the first available simulator
-    local simulator
-    simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
+    local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
     
     if [ -z "$simulator" ]; then
         caddie cli:red "Error: No iOS simulator found"
@@ -133,6 +136,7 @@ function caddie_ios_test() {
         caddie cli:x "Some iOS tests failed"
         return 1
     fi
+    return 0
 }
 
 # Function to create iOS archive
@@ -156,6 +160,7 @@ function caddie_ios_archive() {
     
     caddie cli:check "iOS archive created successfully"
     caddie cli:indent "Location: build/archive/App.xcarchive"
+    return 0
 }
 
 # Function to clean iOS build artifacts
@@ -178,6 +183,7 @@ function caddie_ios_clean() {
     rm -rf build/
     
     caddie cli:check "iOS build artifacts cleaned"
+    return 0
 }
 
 # Function to install CocoaPods dependencies
@@ -192,6 +198,7 @@ function caddie_ios_pod_install() {
     
     caddie cli:check "CocoaPods dependencies installed successfully"
     caddie cli:thought "Use the .xcworkspace file to open the project"
+    return 0
 }
 
 # Function to update CocoaPods dependencies
@@ -205,6 +212,7 @@ function caddie_ios_pod_update() {
     pod update
     
     caddie cli:check "CocoaPods dependencies updated successfully"
+    return 0
 }
 
 # Function to show Swift version
@@ -218,6 +226,7 @@ function caddie_ios_swift_version() {
         caddie cli:thought "Run: xcode-select --install"
         return 1
     fi
+    return 0
 }
 
 # Function to show Xcode version
@@ -230,6 +239,7 @@ function caddie_ios_xcode_version() {
         caddie cli:x "Xcode not found. Please install Xcode from the App Store"
         return 1
     fi
+    return 0
 }
 
 # Function to setup Rust development environment for iOS
@@ -281,6 +291,7 @@ function caddie_ios_rust_setup() {
     caddie cli:indent "1. Build Rust library: cargo build --target aarch64-apple-ios --release --lib"
     caddie cli:indent "2. Create iOS framework structure for Swift integration"
     caddie cli:indent "3. Use the generated .a static libraries in your iOS project"
+    return 0
 }
 
 # Function to display iOS module help
@@ -318,10 +329,14 @@ function caddie_ios_help() {
     caddie cli:indent "caddie ios:pod:install"
     caddie cli:indent "caddie ios:swift:version"
     caddie cli:blank
+    return 0
 }
 
 function caddie_ios_description() {
+    # caddie:lint:disable
     echo 'iOS Development'
+    # caddie:lint:enable
+    return 0
 }
 
 # Export iOS functions

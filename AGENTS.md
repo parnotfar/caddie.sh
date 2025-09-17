@@ -148,9 +148,48 @@ caddie <module>:command1 test
 caddie core:debug on         # enable debug logging
 caddie <module>:help         # verify help output
 caddie <module>:command      # test functionality
-caddie core:lint             # run caddie-specific linting
+caddie core:lint             # run comprehensive caddie-specific linting (shows ALL issues)
+caddie core:lint <path>      # lint specific file or directory (shows ALL issues)
+caddie core:lint:limit <n> <path>  # lint with limited output (max n issues per check)
 caddie reload                # reload after changes
 ```
+
+### Pre-PR Quality Check
+
+**MANDATORY**: Before creating any pull request, run the linter to ensure code quality:
+
+```sh
+# Lint all modified files (recommended)
+caddie core:lint
+
+# Or lint specific files you've changed
+caddie core:lint modules/dot_caddie_<module>
+
+# For focused debugging with limited output
+caddie core:lint:limit 5 modules/dot_caddie_<module>
+```
+
+**PR Approval Requirements:**
+- ✅ All linter checks must pass with zero warnings
+- ✅ No echo statements (use `caddie cli:*` functions)
+- ✅ All functions have explicit return statements
+- ✅ No variable shadowing issues
+- ✅ Proper local variable declarations
+
+#### **Universal Shell Linter (v2.0)**
+The linter is now universal - it can lint any shell script, not just caddie modules. It includes comprehensive echo message detection and flexible output:
+- **Usage Messages**: `echo "Usage..."` → `caddie cli:usage`
+- **Success Messages**: `echo "✓..."` → `caddie cli:check`
+- **Failure Messages**: `echo "✗..."` → `caddie cli:red`
+- **General Messages**: `echo "..."` → `caddie cli:indent`
+- **Variable Shadowing Detection**: Detects `local` declarations inside conditional blocks that shadow outer variables
+- **Flexible Output**: `caddie core:lint` shows ALL issues, `caddie core:lint:limit <n>` shows max n issues per check
+- **Smart Heredoc Detection**: Optimized performance with intelligent pattern detection
+- **Technical Echo Exclusion**: Excludes pipe operations from general echo warnings
+- **Lint Ignore Blocks**: Use `# caddie:lint:disable` and `# caddie:lint:enable` to suppress warnings
+  - Prevents linter from flagging its own implementation code
+  - Allows exceptions for legacy code, third-party code, or complex edge cases
+  - Self-documenting and maintainable approach
 
 ---
 
@@ -160,9 +199,21 @@ caddie reload                # reload after changes
   ```sh
   caddie git:gacp "Add new <module> module"
   ```
+* Create and publish new branch:
+  ```sh
+  caddie git:new:branch feature/new-feature
+  ```
 * Check status:
   ```sh
   caddie git:status
+  ```
+* Clone repository:
+  ```sh
+  caddie git:clone my-project
+  ```
+* Create pull request:
+  ```sh
+  caddie git:pr:create "Add new feature" "Description of changes"
   ```
 
 ---
@@ -216,7 +267,14 @@ The Makefile handles module installation automatically:
 
 * **Error handling**: Always check for errors and provide meaningful messages
 * **Input validation**: Validate all arguments with clear error messages
+* **Explicit return statements**: Always include explicit `return 0` or `return 1` statements instead of relying on the exit status of the last command
 * **CLI integration**: Use `caddie cli:*` functions for consistent output formatting
+* **Echo message standards**: Use appropriate caddie CLI functions instead of raw echo
+  * `echo "Error:` → `caddie cli:red`
+  * `echo "Usage` → `caddie cli:usage`
+  * `echo "✓` → `caddie cli:check`
+  * `echo "✗` → `caddie cli:red`
+  * `echo "..."` → `caddie cli:indent`
 * **Function structure**: Follow the established pattern with proper documentation
 
 ### Module Development Standards
@@ -276,7 +334,13 @@ The Makefile handles module installation automatically:
 
 ### Testing Requirements
 
-* Run `caddie core:lint` on all modified files (NEW in v1.9)
+* Run `caddie core:lint` on all modified files (UNIVERSAL in v2.0)
+  * Can now lint any shell script, not just caddie modules
+  * Comprehensive echo message detection and enforcement
+  * Variable shadowing detection for subtle bug prevention
+  * Flexible output: `caddie core:lint` (all issues) or `caddie core:lint:limit <n>` (limited)
+  * Optimized performance with smart heredoc detection
+  * Covers usage, success, failure, and general message patterns
 * Test with `caddie <module>:help` and `caddie <module>:command`
 * Verify tab completion works
 * Test error cases and edge conditions
@@ -289,7 +353,9 @@ The Makefile handles module installation automatically:
 1. Run all `caddie *:test` commands for enabled modules
 2. Verify `caddie help` and `caddie <module>:help` produce expected output
 3. Test tab completion functionality
-4. Run `caddie core:lint` on all modified files (NEW in v1.9)
+4. **MANDATORY**: Run `caddie core:lint` on all modified files (UNIVERSAL in v2.0)
+   - Must pass with zero warnings before PR approval
+   - Ensures code quality and consistency across all shell scripts
 5. Verify Makefile installation process
 
 ---

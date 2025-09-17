@@ -16,6 +16,8 @@ caddie_source_custom_files() {
     if [ -f "$HOME/.bashrc-caddie-custom" ]; then
         source "$HOME/.bashrc-caddie-custom"
     fi
+
+    return 0
 }
 
 # Set product name
@@ -30,59 +32,66 @@ caddie_source_custom_files
 
 # Git workflow functions
 function caddie_git_status() {
-    echo "Git Status:"
+    caddie cli:title "Git Status:"
     git status --short
+    return 0
 }
 
 function caddie_git_branch() {
-    echo "Current branch: $(git branch --show-current)"
-    echo "All branches:"
+    caddie cli:title "Current branch: $(git branch --show-current)"
+    caddie cli:title "All branches:"
     git branch -a
+    return 0
 }
 
 function caddie_git_commit() {
     local message="$1"
     if [ -z "$message" ]; then
-        echo "Error: Please provide a commit message"
-        echo "Usage: caddie git:commit <message>"
+        caddie cli:red "Error: Please provide a commit message"
+        caddie cli:usage "caddie git:commit <message>"
         return 1
     fi
     git add .
     git commit -m "$message"
+    return 0
 }
 
 function caddie_git_push() {
     git push
+    return 0
 }
 
 function caddie_git_push_set_upstream() {
     local remote="${1:-origin}"
     local branch="${2:-main}"
     
-    echo "Setting upstream for branch '${branch}' to '${remote}/${branch}'"
+    caddie cli:title "Setting upstream for branch '${branch}' to '${remote}/${branch}'"
     git push --set-upstream "${remote}" "${branch}"
+    return 0
 }
 
 function caddie_git_pull() {
     git pull
+    return 0
 }
 
 function caddie_git_gacp() {
     local message="$1"
     if [ -z "$message" ]; then
-        echo "Error: Please provide a commit message"
-        echo "Usage: caddie git:gacp <message>"
+        caddie cli:red "Error: Please provide a commit message"
+        caddie cli:usage "caddie git:gacp <message>"
         return 1
     fi
     
-    echo "Adding all changes..."
+    caddie cli:title "Adding all changes..."
     git add .
     
-    echo "Committing with message: '${message}'"
+    caddie cli:title "Committing with message: '${message}'"
     git commit -m "$message"
     
-    echo "Pushing to remote..."
+    caddie cli:title "Pushing to remote..."
     git push
+    return 0
 }
 
 function caddie_git_remote_add() {
@@ -92,9 +101,10 @@ function caddie_git_remote_add() {
     # If no arguments provided, auto-detect repository and use stored GitHub account
     if [ -z "${name}" ] && [ -z "${url}" ]; then
         local github_account=$(caddie_github_account_get)
+
         if [ -z "${github_account}" ]; then
-            echo "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
-            echo "Or provide manual arguments: caddie git:remote:add <name> <url>"
+            caddie cli:red "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
+            caddie cli:usage "Or provide manual arguments: caddie git:remote:add <name> <url>"
             return 1
         fi
         
@@ -103,66 +113,276 @@ function caddie_git_remote_add() {
         name="origin"
         url="git@github.com:${github_account}/${repo_name}.git"
         
-        echo "Auto-detected repository: ${repo_name}"
-        echo "Using GitHub account: ${github_account}"
-        echo "Adding remote '${name}' pointing to '${url}'"
+        caddie cli:title "Auto-detected repository: ${repo_name}"
+        caddie cli:title "Using GitHub account: ${github_account}"
+        caddie cli:title "Adding remote '${name}' pointing to '${url}'"
     elif [ -z "${name}" ] || [ -z "${url}" ]; then
-        echo "Error: Please provide both remote name and URL"
-        echo "Usage: caddie git:remote:add <name> <url>"
-        echo "Or use auto-detection: caddie git:remote:add"
+        caddie cli:red "Error: Please provide both remote name and URL"
+        caddie cli:usage "caddie git:remote:add <name> <url>"
+        caddie cli:usage "Or use auto-detection: caddie git:remote:add"
         return 1
     fi
     
     git remote add "${name}" "${url}"
-    echo "Added remote '${name}' pointing to '${url}'"
+    caddie cli:title "Added remote '${name}' pointing to '${url}'"
+    return 0
 }
 
 function caddie_git_remote_set_url() {
     local name="$1"
     local url="$2"
+
     if [ -z "$name" ] || [ -z "$url" ]; then
-        echo "Error: Please provide remote name and URL"
-        echo "Usage: caddie git:remote:set-url <name> <url>"
+        caddie cli:red "Error: Please provide remote name and URL"
+        caddie cli:usage "caddie git:remote:set-url <name> <url>"
         return 1
     fi
+
     git remote set-url "$name" "$url"
-    echo "Set remote '$name' URL to '$url'"
+    caddie cli:title "Set remote '$name' URL to '$url'"
+
+    return 0
 }
 
 function caddie_git_remote_list() {
-    echo "Remote repositories:"
+    caddie cli:title "Remote repositories:"
     git remote -v
+    return 0
 }
 
 function caddie_git_remote_remove() {
     local name="${1:-origin}"
     git remote remove "$name"
-    echo "Removed remote '$name'"
+    caddie cli:title "Removed remote '$name'"
+    return 0
 }
 
 function caddie_git_clone() {
     local repo_name="$1"
     
     if [ -z "${repo_name}" ]; then
-        echo "Error: Please provide repository name"
-        echo "Usage: caddie git:clone <repo-name>"
-        echo "Example: caddie git:clone my-project"
+        caddie cli:red "Error: Please provide repository name"
+        caddie cli:usage "caddie git:clone <repo-name>"
+        caddie cli:indent "Example: caddie git:clone my-project"
         return 1
     fi
     
     local github_account=$(caddie_github_account_get)
     if [ -z "${github_account}" ]; then
-        echo "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
+        caddie cli:red "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
         return 1
     fi
     
     local url="git@github.com:${github_account}/${repo_name}.git"
     
-    echo "Cloning repository: ${repo_name}"
-    echo "Using GitHub account: ${github_account}"
-    echo "URL: ${url}"
+    caddie cli:title "Cloning repository: ${repo_name}"
+    caddie cli:indent "Using GitHub account: ${github_account}"
+    caddie cli:indent "URL: ${url}"
     
     git clone "${url}"
+    return 0
+}
+
+function caddie_git_new_branch() {
+    local branch_name="$1"
+    
+    if [ -z "${branch_name}" ]; then
+        caddie cli:red "Error: Please provide a branch name"
+        caddie cli:usage "caddie git:new:branch <branch-name>"
+        caddie cli:indent "Example: caddie git:new:branch feature/new-feature"
+        return 1
+    fi
+    
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+    
+    # Check if branch already exists locally
+    if git show-ref --verify --quiet refs/heads/"${branch_name}"; then
+        caddie cli:red "Error: Branch '${branch_name}' already exists locally"
+        return 1
+    fi
+    
+    # Check if branch already exists on remote
+    if git show-ref --verify --quiet refs/remotes/origin/"${branch_name}"; then
+        caddie cli:red "Error: Branch '${branch_name}' already exists on remote"
+        return 1
+    fi
+    
+    caddie cli:indent "Creating new branch: ${branch_name}"
+    
+    # Create and switch to new branch
+    if git checkout -b "${branch_name}"; then
+        caddie cli:check "Created and switched to branch '${branch_name}'"
+        
+        # Push branch to remote and set upstream
+        caddie cli:indent "Pushing branch to remote and setting upstream..."
+
+        if git push --set-upstream origin "${branch_name}"; then
+            caddie cli:check "Branch '${branch_name}' pushed to remote and upstream set"
+        else
+            caddie cli:red "Failed to push branch to remote"
+            return 1
+        fi
+    else
+        caddie cli:red "Failed to create branch '${branch_name}'"
+        return 1
+    fi
+    
+    return 0
+}
+
+function caddie_git_pr_create() {
+    local title="$1"
+    local body="$2"
+    local base_branch="${3:-main}"
+    
+    # Check if we're in a git repository
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+    
+    # Check if GitHub CLI is installed
+    if ! command -v gh > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI (gh) is not installed"
+        caddie cli:indent "Install with: brew install gh"
+        caddie cli:indent "Then authenticate with: gh auth login"
+        return 1
+    fi
+    
+    # Check GitHub CLI authentication
+    if ! gh auth status > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI authentication required"
+        caddie cli:indent "Run: caddie git:auth:login to authenticate"
+        caddie cli:indent "Or check status: gh auth status"
+        return 1
+    fi
+    
+    # Check if we're on a branch (not main/master)
+    local current_branch=$(git branch --show-current)
+    if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
+        caddie cli:red "Error: Cannot create PR from main/master branch"
+        caddie cli:indent "Create a feature branch first: caddie git:new:branch feature/your-feature"
+        return 1
+    fi
+    
+    # Check if there are commits to push
+    local commits_ahead=$(git rev-list --count origin/$base_branch..HEAD 2>/dev/null || echo "0")
+    if [ "$commits_ahead" -eq 0 ]; then
+        caddie cli:red "Error: No commits to create PR with"
+        caddie cli:indent "Make some commits and push them first"
+        return 1
+    fi
+    
+    # Push current branch if not already pushed
+    caddie cli:indent "Ensuring branch is pushed to remote..."
+    if ! git push --set-upstream origin "$current_branch" 2>/dev/null; then
+        caddie cli:indent "Branch already up to date"
+    fi
+    
+    # Generate title from commit messages if not provided
+    if [ -z "$title" ]; then
+        title=$(git log --oneline -1 --pretty=format:"%s")
+        caddie cli:indent "Using commit message as title: $title"
+    fi
+    
+    # Generate body from commit messages if not provided
+    if [ -z "$body" ]; then
+        body="## Changes\n\n"
+        body+="$(git log --oneline origin/$base_branch..HEAD --pretty=format:"- %s")"
+        body+="\n\n## Description\n\n"
+        body+="This PR includes the changes from the current branch.\n\n"
+        body+="## Testing\n\n"
+        body+="- [ ] Code has been tested\n"
+        body+="- [ ] All tests pass\n"
+        body+="- [ ] Documentation updated (if needed)"
+    fi
+    
+    caddie cli:indent "Creating pull request..."
+    caddie cli:indent "Title: $title"
+    caddie cli:indent "Base branch: $base_branch"
+    caddie cli:indent "Head branch: $current_branch"
+    
+    # Create the pull request
+    if gh pr create --title "$title" --body "$body" --base "$base_branch" --head "$current_branch"; then
+        caddie cli:check "Pull request created successfully"
+        caddie cli:indent "View at: $(gh pr view --web --json url --jq .url 2>/dev/null || echo "Check GitHub")"
+    else
+        caddie cli:red "Failed to create pull request"
+        return 1
+    fi
+    
+    return 0
+}
+
+function caddie_git_auth_login() {
+    # Check if GitHub CLI is installed
+    if ! command -v gh > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI (gh) is not installed"
+        caddie cli:indent "Install with: brew install gh"
+        caddie cli:indent "Or run: make setup-github"
+        return 1
+    fi
+    
+    # Check if already authenticated
+    if gh auth status > /dev/null 2>&1; then
+        local auth_user=$(gh api user --jq .login 2>/dev/null)
+        caddie cli:yellow "Already authenticated with GitHub CLI as: $auth_user"
+        caddie cli:indent "To re-authenticate, run: gh auth logout && gh auth login"
+        return 0
+    fi
+    
+    caddie cli:title "GitHub CLI Authentication"
+    caddie cli:blank
+    caddie cli:indent "This will open your browser to authenticate with GitHub"
+    caddie cli:indent "Choose your preferred authentication method:"
+    caddie cli:blank
+    caddie cli:indent "1. Login with a web browser (recommended)"
+    caddie cli:indent "2. Paste an authentication token"
+    caddie cli:indent "3. Login via SSH key"
+    caddie cli:blank
+    
+    # Start the authentication process
+    caddie cli:indent "Starting GitHub CLI authentication..."
+    
+    if gh auth login; then
+        caddie cli:check "Successfully authenticated with GitHub CLI"
+        
+        # Get the authenticated user
+        auth_user=$(gh api user --jq .login 2>/dev/null)
+        if [ -n "$auth_user" ]; then
+            caddie cli:indent "Authenticated as: $auth_user"
+            
+            # Check if we should set this as the stored account
+            local stored_account=$(caddie_github_account_get)
+            if [ -z "$stored_account" ]; then
+                caddie cli:indent "Setting $auth_user as your default GitHub account..."
+                caddie_github_account_set "$auth_user"
+                caddie cli:check "GitHub account set to: $auth_user"
+            elif [ "$auth_user" != "$stored_account" ]; then
+                caddie cli:yellow "Authenticated as $auth_user but stored account is $stored_account"
+                caddie cli:indent "Update stored account: caddie github:account:set $auth_user"
+            else
+                caddie cli:check "Authenticated account matches stored account: $auth_user"
+            fi
+        fi
+        
+        caddie cli:blank
+        caddie cli:indent "You can now use:"
+        caddie cli:indent "  caddie git:pr:create 'Create pull request'"
+        caddie cli:indent "  caddie github:auth:check"
+        caddie cli:indent "  gh pr list, gh issue list, etc."
+        
+    else
+        caddie cli:red "Failed to authenticate with GitHub CLI"
+        caddie cli:indent "Try running 'gh auth login' manually for more details"
+        return 1
+    fi
+    
+    return 0
 }
 
 function caddie_git_help() {
@@ -175,8 +395,11 @@ function caddie_git_help() {
     caddie cli:title "Commands:"
     caddie cli:indent "status              Show git status"
     caddie cli:indent "branch              Show current and all branches"
+    caddie cli:indent "new:branch <name>   Create new branch and push to remote"
     caddie cli:indent "commit <message>    Add all changes and commit with message"
     caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
+    caddie cli:indent "auth:login          Authenticate with GitHub CLI"
+    caddie cli:indent "pr:create [title] [body] [base]  Create pull request using GitHub CLI"
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
@@ -192,8 +415,11 @@ function caddie_git_help() {
     
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
+    caddie cli:indent "caddie git:auth:login"
+    caddie cli:indent "caddie git:new:branch feature/new-feature"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
+    caddie cli:indent "caddie git:pr:create 'Add new feature' 'Description of changes'"
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
@@ -202,18 +428,25 @@ function caddie_git_help() {
     caddie cli:indent "caddie github:account:set <account>  Set GitHub account"
     caddie cli:indent "caddie git:remote:add                Auto-add remote"
     caddie cli:blank
+    return 0
 }
 
 function caddie_git_description() {
+    # caddie:lint:disable
     echo 'Git workflow enhancements'
+    # caddie:lint:enable
+    return 0
 }
 
 # Export functions for external use
 export -f caddie_source_custom_files
 export -f caddie_git_status
 export -f caddie_git_branch
+export -f caddie_git_new_branch
 export -f caddie_git_commit
 export -f caddie_git_gacp
+export -f caddie_git_auth_login
+export -f caddie_git_pr_create
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull

@@ -76,8 +76,20 @@ Clone a repository using the stored GitHub account. Constructs SSH URL automatic
 ```bash
 # Clone a repository (requires GitHub account to be set)
 caddie git:clone my-awesome-project
+```
 
-# This creates: git@github.com:<account>/my-awesome-project.git
+#### `caddie git:pr:create [title] [body] [base]`
+Create a pull request using GitHub CLI. Auto-generates content if not provided.
+
+```bash
+# Create PR with auto-generated title and body
+caddie git:pr:create
+
+# Create PR with custom title and body
+caddie git:pr:create "Add new feature" "Implements user authentication with OAuth2"
+
+# Create PR targeting specific base branch
+caddie git:pr:create "Fix bug" "Resolves login timeout issue" develop
 ```
 
 **Prerequisites:**
@@ -151,6 +163,9 @@ caddie git:gacp "Initial commit"
 
 # 4. Future changes are simple
 caddie git:gacp "Add new feature"
+
+# 5. Create pull requests
+caddie git:pr:create "Add new feature" "Description of changes"
 ```
 
 ## SSH vs HTTPS

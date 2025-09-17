@@ -326,6 +326,12 @@ caddie git:commit "Add new feature"
 caddie git:gacp "Quick commit and push"
 caddie git:push
 caddie git:pull
+
+# Create and manage branches
+caddie git:new:branch feature/new-feature
+
+# Create pull requests
+caddie git:pr:create "Add new feature" "Description of changes"
 ```
 
 #### Cross-Platform Development
@@ -801,6 +807,37 @@ caddie help
 2. **Efficient commands**: Use specific commands rather than general ones
 3. **Debug off**: Keep debug mode off in production
 4. **Regular maintenance**: Clean up old files and environments
+
+### Code Quality
+
+1. **Use the linter**: Run `caddie core:lint` regularly to maintain code standards
+   - `caddie core:lint` - Shows ALL issues (comprehensive view)
+   - `caddie core:lint:limit <n>` - Shows max n issues per check (focused debugging)
+2. **Follow caddie conventions**: Use `caddie cli:*` functions for consistent output
+3. **Avoid variable shadowing**: Don't declare `local` variables inside conditional blocks that shadow outer variables
+4. **Lint ignore blocks**: Use `# caddie:lint:disable` and `# caddie:lint:enable` for exceptions
+5. **Document exceptions**: Always explain why you're using ignore blocks
+
+#### Lint Ignore Blocks
+
+When you need to suppress linting warnings for specific code sections:
+
+```bash
+# caddie:lint:disable
+function complex_function() {
+    # This entire function will be ignored by the linter
+    echo "This won't trigger warnings"
+    local var=value  # This won't trigger local variable warnings
+    # Any other code that would normally trigger warnings
+}
+# caddie:lint:enable
+```
+
+**Use cases:**
+- Linter implementation code (prevents self-flagging)
+- Legacy code during refactoring
+- Third-party code that doesn't follow caddie standards
+- Complex edge cases that legitimately need to break standards
 
 ## Integration with Other Tools
 

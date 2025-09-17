@@ -28,6 +28,7 @@ function caddie_python_create() {
     caddie cli:check "Virtual environment '$env_name' created successfully"
     caddie cli:indent "Location: $env_path"
     caddie cli:indent "Activate with: caddie python:activate $env_name"
+    return 0
 }
 
 # Function to activate a Python virtual environment
@@ -54,6 +55,7 @@ function caddie_python_activate() {
     caddie cli:check "Virtual environment '$env_name' activated"
     caddie cli:indent "Python: $(which python)"
     caddie cli:indent "Pip: $(which pip)"
+    return 0
 }
 
 # Function to deactivate current Python virtual environment
@@ -66,6 +68,7 @@ function caddie_python_deactivate() {
     caddie cli:title "Deactivating virtual environment..."
     deactivate
     caddie cli:check "Virtual environment deactivated"
+    return 0
 }
 
 # Function to list all Python virtual environments
@@ -83,8 +86,8 @@ function caddie_python_list() {
     
     for env in "$venv_dir"/*; do
         if [ -d "$env" ]; then
-            local env_name
-            env_name=$(basename "$env")
+            local env_name=$(basename "$env")
+
             if [ "$env" = "$VIRTUAL_ENV" ]; then
                 caddie cli:check "$env_name (active)"
             else
@@ -92,6 +95,8 @@ function caddie_python_list() {
             fi
         fi
     done
+
+    return 0
 }
 
 # Function to remove a Python virtual environment
@@ -120,6 +125,7 @@ function caddie_python_remove() {
     caddie cli:title "Removing virtual environment '$env_name'..."
     rm -rf "$env_path"
     caddie cli:check "Virtual environment '$env_name' removed successfully"
+    return 0
 }
 
 # Function to show current Python environment
@@ -136,6 +142,7 @@ function caddie_python_current() {
         caddie cli:indent "System Python: $(which python3)"
         caddie cli:indent "System Python Version: $(python3 --version)"
     fi
+    return 0
 }
 
 # Function to install a Python package
@@ -161,6 +168,7 @@ function caddie_python_install() {
     caddie cli:title "Installing package '$package'..."
     pip install "$package"
     caddie cli:check "Package '$package' installed successfully"
+    return 0
 }
 
 # Function to uninstall a Python package
@@ -186,6 +194,7 @@ function caddie_python_uninstall() {
     caddie cli:title "Uninstalling package '$package'..."
     pip uninstall -y "$package"
     caddie cli:check "Package '$package' uninstalled successfully"
+    return 0
 }
 
 # Function to freeze current Python environment
@@ -209,6 +218,7 @@ function caddie_python_freeze() {
         caddie cli:x "Failed to generate requirements.txt"
         return 1
     fi
+    return 0
 }
 
 # Function to sync Python environment from requirements.txt
@@ -231,6 +241,7 @@ function caddie_python_sync() {
     caddie cli:title "Installing packages from requirements.txt..."
     pip install -r requirements.txt
     caddie cli:check "Packages installed successfully from requirements.txt"
+    return 0
 }
 
 # Function to upgrade a Python package
@@ -256,6 +267,7 @@ function caddie_python_upgrade() {
     caddie cli:title "Upgrading package '$package'..."
     pip install --upgrade "$package"
     caddie cli:check "Package '$package' upgraded successfully"
+    return 0
 }
 
 # Function to show outdated Python packages
@@ -272,6 +284,7 @@ function caddie_python_outdated() {
     
     caddie cli:title "Checking for outdated packages..."
     pip list --outdated
+    return 0
 }
 
 # Function to initialize Python project structure
@@ -355,6 +368,7 @@ EOF
     
     caddie cli:check "Python project structure initialized"
     caddie cli:indent "Created: src/, tests/, docs/, README.md, .gitignore, setup.py"
+    return 0
 }
 
 # Function to run Python tests
@@ -375,6 +389,7 @@ function caddie_python_test() {
         caddie cli:warning "No tests found. Create tests in the 'tests' directory"
         return 1
     fi
+    return 0
 }
 
 # Function to run Python linting
@@ -395,6 +410,7 @@ function caddie_python_lint() {
         caddie cli:warning "No linter found. Install flake8 or pylint"
         return 1
     fi
+    return 0
 }
 
 # Function to format Python code
@@ -415,10 +431,14 @@ function caddie_python_format() {
         caddie cli:warning "No formatter found. Install black or autopep8"
         return 1
     fi
+    return 0
 }
 
 function caddie_python_description() {
+    # caddie:lint:disable
     echo 'Python environment management'
+    # caddie:lint:enable
+    return 0
 }
 
 # Function to display Python module help
@@ -456,6 +476,7 @@ function caddie_python_help() {
     caddie cli:indent "caddie python:freeze"
     caddie cli:indent "caddie python:init"
     caddie cli:blank
+    return 0
 }
 
 # Export Python functions

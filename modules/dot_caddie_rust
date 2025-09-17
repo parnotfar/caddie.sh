@@ -873,10 +873,14 @@ function caddie_rust_help() {
     caddie cli:indent "caddie rust:toolchain nightly"
     caddie cli:indent "caddie rust:component clippy"
     caddie cli:blank
+    return 0
 }
 
 function caddie_rust_description() {
+    # caddie:lint:disable
     echo 'Rust development tools'
+    # caddie:lint:enable
+    return 0
 }
 
 # Export Rust functions
