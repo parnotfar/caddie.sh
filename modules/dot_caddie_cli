@@ -17,7 +17,7 @@ export RESET=$(tput sgr0)
 # Module description
 function caddie_cli_description() {
     # caddie:lint:disable
-    echo "${BOLD}${BLUE}CLI color utilities and formatting${RESET}"
+    echo "CLI color utilities and formatting"
     # caddie:lint:enable
 
     return 0

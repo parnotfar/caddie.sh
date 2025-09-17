@@ -8,7 +8,9 @@ source "$HOME/.caddie_modules/.caddie_cli"
 
 # Register help information
 function caddie_js_description() {
+    # caddie:lint:disable
     echo 'JavaScript/Node.js environment management with NVM'
+    # caddie:lint:enable
     return 0
 }
 

@@ -134,7 +134,9 @@ function caddie_github_help() {
 }
 
 function caddie_github_description() {
-    caddie cli:title 'GitHub account and repository management'
+    # caddie:lint:disable
+    echo 'GitHub account and repository management'
+    # caddie:lint:enable
     return 0
 }
 

@@ -335,7 +335,9 @@ function caddie_ios_help() {
 }
 
 function caddie_ios_description() {
+    # caddie:lint:disable
     echo 'iOS Development'
+    # caddie:lint:enable
     return 0
 }
 

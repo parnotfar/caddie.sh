@@ -432,7 +432,9 @@ function caddie_git_help() {
 }
 
 function caddie_git_description() {
+    # caddie:lint:disable
     echo 'Git workflow enhancements'
+    # caddie:lint:enable
     return 0
 }
 

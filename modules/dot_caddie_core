@@ -781,7 +781,9 @@ function caddie_core_help() {
 }
 
 function caddie_core_description() {
+    # caddie:lint:disable
     echo 'Core Caddie Functions'
+    # caddie:lint:enable
     return 0
 }
 

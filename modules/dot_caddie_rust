@@ -877,7 +877,9 @@ function caddie_rust_help() {
 }
 
 function caddie_rust_description() {
+    # caddie:lint:disable
     echo 'Rust development tools'
+    # caddie:lint:enable
     return 0
 }
 

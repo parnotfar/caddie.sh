@@ -434,7 +434,9 @@ function caddie_python_format() {
 }
 
 function caddie_python_description() {
+    # caddie:lint:disable
     echo 'Python environment management'
+    # caddie:lint:enable
     return 0
 }
 

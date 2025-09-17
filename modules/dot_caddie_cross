@@ -984,7 +984,9 @@ function caddie_cross_help() {
 
 # Function to show cross module description
 function caddie_cross_description() {
-    caddie cli:title "Cross-language development utilities and environment management"
+    # caddie:lint:disable
+    echo "Cross-language development utilities and environment management"
+    # caddie:lint:enable
     return 0
 }
 

@@ -7,7 +7,9 @@
 source "$HOME/.caddie_modules/.caddie_cli"
 
 function caddie_ruby_description() {
+    # caddie:lint:disable
     echo 'Ruby environment management with RVM'
+    # caddie:lint:enable
     return 0
 }
 

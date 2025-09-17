@@ -895,7 +895,9 @@ function caddie_cursor_help() {
 
 # Function to show cursor module description
 function caddie_cursor_description() {
-    caddie cli:title "Cursor IDE integration and project management utilities"
+    # caddie:lint:disable
+    echo "Cursor IDE integration and project management utilities"
+    # caddie:lint:enable
     return 0
 }
 
