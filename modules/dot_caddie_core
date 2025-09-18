@@ -1,748 +1,432 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Caddie.sh - Core Functions
-# This file contains the main caddie function and core functionality
+# Caddie.sh - Core Environment Management
+# This file contains all core functions and the debug system
 
-# Default caddie home file location
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
+# Global variables
 CADDIE_HOME_FILE="$HOME/.caddie_home"
 
-# Function to set the caddie home directory
-function caddie_core_set_home() {
-    local path="$1"
-    
-    if [ -z "$path" ]; then
-        caddie cli:red "Error: Please provide a path for caddie home"
-        caddie cli:usage "caddie core:set:home <path>"
-        return 1
-    fi
-    
-    # Expand the path (handle ~, relative paths, etc.)
-    local expanded_path=$(eval echo "$path")
-    
-    # Check if the path exists
-    if [ ! -d "$expanded_path" ]; then
-        caddie cli:red "Error: Directory '$expanded_path' does not exist"
-        return 1
-    fi
-    
-    # Get the absolute path
-    local absolute_path=$(cd "$expanded_path" && pwd)
-    
-    # Save the path to the caddie home file
-    echo "$absolute_path" > "$CADDIE_HOME_FILE"
-    
-    export CADDIE_HOME="$absolute_path"
-    
-    caddie cli:check "Caddie home directory set to: $absolute_path"
-}
-
-# Function to get the caddie home directory
-function caddie_core_get_home() {
-    if [ -f "$CADDIE_HOME_FILE" ]; then
-        local caddie_home=$(cat "$CADDIE_HOME_FILE")
-
-        caddie cli:green "Current caddie home: $caddie_home"
-    else
-        caddie cli:red "No caddie home directory was set"
-    fi
+# Function to provide module description
+function caddie_core_description() {
+    echo 'Core system functions and debugging utilities'
     return 0
 }
 
-# Function to reset the caddie home directory
-function caddie_core_reset_home() {
-    if [ -f "$CADDIE_HOME_FILE" ]; then
-        rm "$CADDIE_HOME_FILE"
-        unset CADDIE_HOME
-        caddie cli:check "Caddie home directory has been reset"
-    else
-        caddie cli:red "No caddie home directory was set"
-    fi
+function caddie_core_help() {
+    echo 'core:debug <on|off> - Enable or disable debug logging'
+    echo 'core:version - Show caddie version information'
+    echo 'core:reload - Reload caddie environment'
+    echo 'core:home - Set or show caddie home directory'
+    echo 'core:lint [target] - Lint shell scripts with ShellCheck + custom rules'
+    echo 'core:lint:limit <n> <target> - Lint with limited output per check'
     return 0
 }
 
-# Function to navigate to caddie home directory
-function caddie_core_go_home() {
-    if [ -f "$CADDIE_HOME_FILE" ]; then
-        local caddie_home=$(cat "$CADDIE_HOME_FILE")
-        
-        if [ -d "$caddie_home" ]; then
-            cd "$caddie_home"
-            caddie cli:check "Navigated to caddie home: $caddie_home"
-        else
-            caddie cli:red "Error: Caddie home directory '$caddie_home' does not exist"
-            return 1
-        fi
-    else
-        caddie cli:red "Error: No caddie home directory was set"
-        caddie cli:usage "caddie core:set:home <path> to set a home directory"
-        return 1
-    fi
-}
-
-# Function to handle debug commands
+# Function to enable/disable debug logging
 function caddie_core_debug() {
     local action="$1"
     
-    case "$action" in
-        "on")
-            caddie_debug_on
-            ;;
-        "off")
-            caddie_debug_off
-            ;;
-        "status")
-            caddie_debug_status
-            ;;
-        *)
-            caddie cli:red "Error: Invalid debug action '$action'"
-            caddie cli:usage "caddie core:debug <on|off|status>"
-            return 1
-            ;;
-    esac
-}
-
-# Function to grep aliases by keyword
-function caddie_core_alias_grep() {
-    local keyword="$1"
-    
-    if [ -z "$keyword" ]; then
-        caddie cli:usage "caddie core:alias:grep <keyword>"
-        caddie cli:usage "Example: caddie core:alias:grep git"
+    if [ -z "$action" ]; then
+        caddie cli:red "Error: Action required"
+        caddie cli:usage "caddie core:debug <on|off>"
         return 1
     fi
     
-    caddie cli:title "Aliases containing '$keyword':"
-    caddie cli:title "=============================="
-    caddie cli:blank
-    alias | grep -i "$keyword"
+    case "$action" in
+        on)
+            export CADDIE_DEBUG=1
+            caddie cli:check "Debug logging enabled"
+            ;;
+        off)
+            export CADDIE_DEBUG=0
+            caddie cli:check "Debug logging disabled"
+            ;;
+        *)
+            caddie cli:red "Error: Invalid action '$action'"
+            caddie cli:usage "caddie core:debug <on|off>"
+            return 1
+            ;;
+    esac
     return 0
 }
 
-# Function to show aliases by family
-function caddie_core_alias_git() {
-    caddie cli:title "Git Workflow Aliases"
-    caddie cli:title "==================="
+# Function to show version information
+function caddie_core_version() {
+    caddie cli:title "Caddie.sh Version Information"
     caddie cli:blank
-    alias | grep -E "(^g|git)" | sort
+    
+    if [ -f "$HOME/.caddie_version" ]; then
+        source "$HOME/.caddie_version"
+        caddie_version_show
+    else
+        caddie cli:red "Version file not found"
+        return 1
+    fi
+    
+    caddie cli:blank
+    caddie cli:indent "Shell: $SHELL"
+    caddie cli:indent "Bash version: $BASH_VERSION"
+    caddie cli:indent "Home directory: $HOME"
+    caddie cli:indent "Caddie modules: $HOME/.caddie_modules"
+    
     return 0
 }
 
-function caddie_core_alias_docker() {
-    caddie cli:title "Docker Aliases"
-    caddie cli:title "=============="
-    caddie cli:blank
-    alias | grep -E "(^d|docker)" | sort
+# Function to reload caddie environment
+function caddie_core_reload() {
+    caddie cli:title "Reloading Caddie Environment"
+    
+    # Source the main caddie file
+    if [ -f "$HOME/.caddie.sh" ]; then
+        source "$HOME/.caddie.sh"
+        caddie cli:check "Caddie environment reloaded"
+    else
+        caddie cli:red "Error: Main caddie file not found at $HOME/.caddie.sh"
+        return 1
+    fi
+    
     return 0
 }
 
-function caddie_core_alias_npm() {
-    caddie cli:title "NPM Aliases"
-    caddie cli:title "==========="
-    caddie cli:blank
-    alias | grep -E "(^n|npm)" | sort
+# Function to set or show caddie home directory
+function caddie_core_home() {
+    local new_home="$1"
+    
+    if [ -n "$new_home" ]; then
+        # Set new home directory
+        if [ -d "$new_home" ]; then
+            echo "$new_home" > "$CADDIE_HOME_FILE"
+            caddie cli:check "Caddie home set to: $new_home"
+        else
+            caddie cli:red "Error: Directory '$new_home' does not exist"
+            return 1
+        fi
+    else
+        # Show current home directory
+        if [ -f "$CADDIE_HOME_FILE" ]; then
+            local current_home=$(cat "$CADDIE_HOME_FILE")
+            caddie cli:blue "Current caddie home: $current_home"
+        else
+            caddie cli:blue "Current caddie home: $HOME"
+        fi
+    fi
+    
     return 0
 }
 
-function caddie_core_alias_nav() {
-    caddie cli:title "Navigation Aliases"
-    caddie cli:title "================="
-    caddie cli:blank
-    caddie cli:title "Directory Navigation:"
-    caddie cli:indent "bu, ud, dud    cd .. (go back)"
-    caddie cli:indent "pcd            pushd"
-    caddie cli:blank
-    caddie cli:title "File Listing:"
-    caddie cli:indent "dir            ls -FH"
-    caddie cli:indent "la             ll (ls -laGFH)"
-    caddie cli:indent "ll             ls -laGFH"
-    caddie cli:indent "ls             ls -GFH"
-    caddie cli:blank
-    caddie cli:title "Screen Management:"
-    caddie cli:indent "c              clear"
-    caddie cli:indent "cdc            cd; clear"
-    return 0
-}
-
-# Function to show available aliases
-function caddie_core_aliases() {
-    caddie cli:title "Caddie.sh Available Aliases"
-    caddie cli:title "==========================="
-    caddie cli:blank
-    caddie cli:title "Caddie.sh comes with a comprehensive set of aliases that make development faster:"
-    caddie cli:blank
-    caddie cli:folder "Navigation & File Management:"
-    caddie cli:indent "bu, ud, dud    cd .. (go back)"
-    caddie cli:indent "c              clear"
-    caddie cli:indent "cdc            cd; clear"
-    caddie cli:indent "dir            ls -FH"
-    caddie cli:indent "la             ll (ls -laGFH)"
-    caddie cli:indent "ll             ls -laGFH"
-    caddie cli:indent "ls             ls -GFH"
-    caddie cli:indent "pcd            pushd"
-    caddie cli:blank
-    caddie cli:wrench "Development Tools:"
-    caddie cli:indent "maek, amek     make (typo correction)"
-    caddie cli:indent "bim            vim (typo correction)"
-    caddie cli:indent "ss             source ~/.bashrc"
-    caddie cli:indent "shitory        search history"
-    caddie cli:indent "externalip     curl whatismyip.org"
-    caddie cli:blank
-    caddie cli:whale "Docker Commands:"
-    caddie cli:indent "d              docker"
-    caddie cli:indent "dps            docker ps"
-    caddie cli:indent "dsp            docker system prune"
-    caddie cli:indent "di             docker images"
-    caddie cli:indent "dcb            docker compose build"
-    caddie cli:indent "dcu            docker compose up"
-    caddie cli:indent "dcd            docker compose down"
-    caddie cli:blank
-    caddie cli:package "Package Management:"
-    caddie cli:indent "bsl            brew services list"
-    caddie cli:indent "ni             npm install"
-    caddie cli:indent "nid            npm install --save-dev"
-    caddie cli:indent "ns             npm start"
-    caddie cli:indent "nr             npm run"
-    caddie cli:indent "nrl            npm run lint"
-    caddie cli:indent "nrlf           npm run --fix"
-    caddie cli:indent "nrt            npm run test"
-    caddie cli:indent "nrtu           npm run test -- --updateSnapshot"
-    caddie cli:indent "nrtw           npm run test -- --watch"
-    caddie cli:blank
-    caddie cli:git "Git Workflow:"
-    caddie cli:indent "g              git"
-    caddie cli:indent "gst            git status"
-    caddie cli:indent "gl             git pull"
-    caddie cli:indent "gp             git push"
-    caddie cli:indent "ggfl           git push --force-with-lease"
-    caddie cli:indent "gd             git diff"
-    caddie cli:indent "ga             git add"
-    caddie cli:indent "gaa            git add -A"
-    caddie cli:indent "gba            git branch -a"
-    caddie cli:indent "gc             git commit"
-    caddie cli:indent "gc!            git commit --amend"
-    caddie cli:indent "gca            git commit --all"
-    caddie cli:indent "gca!           git commit --all --amend"
-    caddie cli:indent "gcm            git commit --message"
-    caddie cli:indent "gdrop          git add .; git stash; git stash drop"
-    caddie cli:indent "gpop           git stash pop"
-    caddie cli:indent "gf             git fetch"
-    caddie cli:indent "gfp            git fetch -p"
-    caddie cli:indent "glo            git log --oneline"
-    caddie cli:indent "glgga          git log --graph --decorate --all"
-    caddie cli:indent "gbcln          git branch -d (clean merged branches)"
-    caddie cli:indent "gsp            git stash pop"
-    caddie cli:indent "gsc            git stash clear"
-    caddie cli:blank
-    caddie cli:rocket "Rails Development:"
-    caddie cli:indent "r              rails"
-    caddie cli:blank
-    caddie cli:thought "Custom Caddie Aliases (add to ~/.bash_profile):"
-    caddie cli:indent "c              caddie"
-    caddie cli:indent "cp             caddie python:create"
-    caddie cli:indent "ca             caddie python:activate"
-    caddie cli:indent "cr             caddie rust:new"
-    caddie cli:indent "cj             caddie js:install"
-    caddie cli:blank
-    caddie cli:magnifying_glass "Utility Functions:"
-    caddie cli:indent "blanks         Add blank lines to output"
-    caddie cli:indent "path           Show PATH entries"
-    caddie cli:indent "bash-stats     Show command usage statistics"
-    caddie cli:indent "take           mkdir -p and cd into directory"
-    caddie cli:indent "lessdown       View markdown files in terminal"
-    caddie cli:indent "readless       Alias for lessdown"
-    caddie cli:indent "hg             Search history with regex"
-    caddie cli:indent "ag             Search aliases by keyword"
-    caddie cli:blank
-    caddie cli:thought "Tip: Use 'ag <keyword>' or 'caddie core:alias:grep <keyword>' to find specific aliases"
-    return 0
-}
-
-# Function to run caddie-specific linting
 # caddie:lint:disable
 function caddie_core_lint() {
     local target="${1:-modules/}"
     local limit_per_check="${2:-0}"  # 0 means no limit (show all)
-    local errors=0
-    local warnings=0
-    
-    # Helper function to apply limit to grep results
-    apply_limit() {
-        local input="$1"
-        if [ "$limit_per_check" -eq 0 ]; then
-            echo "$input"
-        else
-            echo "$input" | head -"$limit_per_check"
-        fi
-    }
-    
-    caddie cli:title "Caddie Lint - Enforcing Caddie Standards"
+    local total_issues=0
+
+    caddie cli:title "Caddie Lint - ShellCheck + Custom Rules"
     caddie cli:blank
-    
-    # Check if target exists
+
     if [ ! -e "$target" ]; then
         caddie cli:red "Error: Target '$target' does not exist"
         return 1
     fi
-    
-    # Find all shell files
-    local files
+
+    # Build an array of files safely (handles spaces/newlines)
+    local -a files=()
     if [ -d "$target" ]; then
-        files=$(find "$target" -name "*.sh" -o -name "dot_caddie*" | grep -v "/\.git/" | sort)
+        while IFS= read -r -d '' f; do
+            files+=("$f")
+        done < <(find "$target" -type f \( -name "*.sh" -o -name "dot_caddie*" \) -print0 | sort -z)
     else
-        files="$target"
+        files+=("$target")
     fi
-    
-    if [ -z "$files" ]; then
+
+    if [ "${#files[@]}" -eq 0 ]; then
         caddie cli:warning "No shell files found in '$target'"
         return 0
     fi
-    
-    caddie cli:folder "Checking $(echo "$files" | wc -l | tr -d ' ') file(s)..."
+
+    caddie cli:folder "Checking ${#files[@]} file(s)..."
     caddie cli:blank
-    
-    # Check each file
-    for file in $files; do
-        if [ ! -f "$file" ]; then
-            continue
-        fi
-        
-        # Skip linting the linter itself if it has ignore blocks
+
+    if ! command -v shellcheck >/dev/null 2>&1; then
+        caddie cli:red "ShellCheck not found. Please run: make install"
+        caddie cli:indent "This will install ShellCheck via Homebrew as part of the development setup"
+        return 1
+    fi
+
+    for file in "${files[@]}"; do
+        # skip nonexistent (just in case)
+        [ -f "$file" ] || continue
+
+        # skip if linter self-check marker exists
         if [[ "$file" == *"dot_caddie_core"* ]] && grep -q "caddie:lint:disable" "$file"; then
             caddie cli:indent "Checking: $file"
             caddie cli:yellow "  ⚠ Skipping linter self-check (has ignore blocks)"
             continue
         fi
-        
+
         caddie cli:indent "Checking: $file"
-        local file_errors=0
-        local file_warnings=0
-        
-        # 1. Detect lint ignore blocks
-        local ignore_blocks=""
-        if grep -q "caddie:lint:disable" "$file"; then
-            # Find all ignore block ranges
-            ignore_blocks=$(awk '
-                /caddie:lint:disable/ { start = NR; next }
-                /caddie:lint:enable/ && start { 
-                    if (start != "") {
-                        print start "-" NR
-                        start = ""
-                    }
-                }
-            ' "$file")
-        fi
-        
-        # Helper function to check if a line is in an ignore block
-        is_line_ignored() {
-            local line_num="$1"
-            local blocks="$2"
-            if [ -z "$blocks" ]; then
-                return 1
-            fi
-            while IFS='-' read -r start end; do
-                if [ "$line_num" -ge "$start" ] && [ "$line_num" -le "$end" ]; then
-                    return 0
-                fi
-            done <<< "$blocks"
-            return 1
-        }
-        
-        # 2. Check for linter exemptions (skip certain checks for specific modules)
-        local exempt_from_shebang=false
-        local exempt_from_naming=false
-        if [[ "$file" == *"dot_caddie_debug"* ]]; then
-            exempt_from_naming=true
-        fi
-        
-        # 2. Check for CLI module sourcing (for modules)
-        if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_cli"* ]]; then
-            if ! grep -q 'source.*\.caddie_cli' "$file"; then
-                caddie cli:red "  ✗ Missing CLI module sourcing (should source ~/.caddie_modules/.caddie_cli)"
-                ((file_errors++))
-            fi
-        fi
-        
-        # 3. Check function naming convention (unless exempt)
-        if [ "$exempt_from_naming" = false ]; then
-            local bad_functions=$(grep -n "^function caddie_[^_]*[^_].*()" "$file" | grep -v "caddie_[a-z]*_[a-z]" | grep -v "^function caddie_[a-z]*_[a-z]" || true)
-            if [ -n "$bad_functions" ]; then
-                caddie cli:red "  ✗ Invalid function naming (should be caddie_<module>_<command>):"
-                echo "$bad_functions" | while read -r line; do
-                    caddie cli:red "    Line $line"
-                done
-                ((file_errors++))
-            fi
-        fi
-        
-        # 4. Check for proper error handling patterns
-        local functions_without_validation=$(apply_limit "$(grep -A 10 "^function caddie_.*()" "$file" | grep -B 10 -A 10 "local.*=\$1" | grep -v "if.*-z.*\$1" | grep -v "caddie cli:red.*Error" || true)")
-        if [ -n "$functions_without_validation" ]; then
-            caddie cli:yellow "  ⚠ Functions should validate input arguments"
-            ((file_warnings++))
-        fi
-        
-        # 5. Check for proper CLI function usage
-        local echo_usage=$(grep -n "echo.*Error" "$file" | grep -v "caddie cli:red" || true)
-        if [ -n "$echo_usage" ]; then
-            caddie cli:yellow "  ⚠ Use 'caddie cli:red' instead of 'echo' for errors:"
-            echo "$echo_usage" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 6. Check for function exports
-        local functions=$(grep "^function caddie_.*()" "$file" | sed 's/function //' | sed 's/()//' | grep -v '{' || true)
-        local exports=$(grep "^export -f caddie_" "$file" || true)
-        
-        for func in $functions; do
-            if ! echo "$exports" | grep -q "export -f $func"; then
-                caddie cli:red "  ✗ Function '$func' is not exported"
-                ((file_errors++))
-            fi
-        done
-        
-        # 7. Check for help and description functions
-        local module_name=$(basename "$file" | sed 's/dot_caddie_//')
-        if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_core"* ]]; then
-            if ! grep -q "function caddie_${module_name}_help()" "$file"; then
-                caddie cli:red "  ✗ Missing help function (caddie_${module_name}_help)"
-                ((file_errors++))
-            fi
-            if ! grep -q "function caddie_${module_name}_description()" "$file"; then
-                caddie cli:red "  ✗ Missing description function (caddie_${module_name}_description)"
-                ((file_errors++))
-            fi
-        fi
-        
-        # 8. Check for proper variable usage with braces
-        local unbraced_vars=$(apply_limit "$(grep -n '\$[a-zA-Z_][a-zA-Z0-9_]*[^}]' "$file" | grep -v '\${' | grep -v '\$(' | grep -v '\$#' | grep -v '\$@' | grep -v '\$*' | grep -v '\$?' | grep -v '\$!' | grep -v '\$0' | grep -v '\$1' | grep -v '\$2' | grep -v '\$3' | grep -v '\$4' | grep -v '\$5' | grep -v '\$6' | grep -v '\$7' | grep -v '\$8' | grep -v '\$9' || true)")
-        if [ -n "$unbraced_vars" ]; then
-            caddie cli:yellow "  ⚠ Consider using braces for variable names (e.g., \${var}):"
-            echo "$unbraced_vars" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 9. Check for proper local variable declarations (excluding heredoc content)
-        local undeclared_vars=""
-        
-        # Quick check: does this file contain heredoc patterns?
-        if grep -q '<<[[:space:]]*[A-Z_][A-Z0-9_]*$' "$file"; then
-            # File contains heredocs - use expensive but accurate method
-            local temp_file=$(mktemp)
-            local in_heredoc=false
-            local heredoc_marker=""
-            
-            # Process the file line by line, marking heredoc sections
+        local file_issues=0
+
+        # Run ShellCheck and process its output without subshell counters
+        local shellcheck_output
+        shellcheck_output=$(shellcheck -f gcc "$file" 2>&1 || true)
+        if [ -n "$shellcheck_output" ]; then
+            local sc_count=0
             while IFS= read -r line; do
-                # Check for heredoc start (cat > file << MARKER)
-                if echo "$line" | grep -q '<<[[:space:]]*[A-Z_][A-Z0-9_]*$'; then
-                    in_heredoc=true
-                    heredoc_marker=$(echo "$line" | sed 's/.*<<[[:space:]]*\([A-Z_][A-Z0-9_]*\)$/\1/')
-                    echo "HEREDOC_START:${heredoc_marker}" >> "$temp_file"
-                    continue
+                [ -n "$line" ] || continue
+                if [ "$limit_per_check" -eq 0 ] || [ "$sc_count" -lt "$limit_per_check" ]; then
+                    caddie cli:yellow "  ⚠ $line"
                 fi
-                
-                # Check for heredoc end
-                if [ "$in_heredoc" = true ] && echo "$line" | grep -q "^[[:space:]]*${heredoc_marker}[[:space:]]*$"; then
-                    in_heredoc=false
-                    heredoc_marker=""
-                    echo "HEREDOC_END" >> "$temp_file"
-                    continue
-                fi
-                
-                # Mark lines inside heredoc
-                if [ "$in_heredoc" = true ]; then
-                    echo "HEREDOC_CONTENT:$line" >> "$temp_file"
-                else
-                    echo "BASH_CODE:$line" >> "$temp_file"
-                fi
-            done < "$file"
-            
-            # Now check for undeclared variables only in bash code sections
-            # Use improved logic that tracks local declarations within function scope and global variables
-            undeclared_vars=$(apply_limit "$(grep "^BASH_CODE:" "$temp_file" | sed 's/^BASH_CODE://' | awk '
-                BEGIN { in_function = 0; local_vars = ""; global_vars = "" }
-                
-                # First pass: collect global variables (declared outside functions)
-                !in_function && /^[[:space:]]*[A-Z_][A-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
-                    gsub(/^[[:space:]]*/, "")
-                    gsub(/[[:space:]]*=.*$/, "")
-                    if (global_vars == "") global_vars = $0
-                    else global_vars = global_vars " " $0
-                }
-                
-                # Track function boundaries
-                /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
-                /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
-                
-                # Track local variables within functions
-                in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
-                    gsub(/^[[:space:]]*local[[:space:]]+/, "")
-                    gsub(/[[:space:]]*=.*$/, "")
-                    gsub(/[[:space:]]+.*$/, "")
-                    if (local_vars == "") local_vars = $0
-                    else local_vars = local_vars " " $0
-                    next
-                }
-                
-                # Check function variable assignments
-                in_function && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
-                    gsub(/^[[:space:]]*/, "")
-                    gsub(/[[:space:]]*=.*$/, "")
-                    # Check if this variable was declared as local earlier in the function OR is a global variable
-                    if (local_vars !~ "(^| )" $0 "( |$)" && global_vars !~ "(^| )" $0 "( |$)") {
-                        print NR ": " $0 "="
-                    }
-                }
-            ' || true)")
-            
-            # Clean up temp file
-            rm -f "$temp_file"
-        else
-            # No heredocs - use fast method with improved local variable tracking and global variable detection
-            undeclared_vars=$(apply_limit "$(awk '
-                BEGIN { in_function = 0; local_vars = ""; global_vars = "" }
-                
-                # First pass: collect global variables (declared outside functions)
-                !in_function && /^[[:space:]]*[A-Z_][A-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
-                    gsub(/^[[:space:]]*/, "")
-                    gsub(/[[:space:]]*=.*$/, "")
-                    if (global_vars == "") global_vars = $0
-                    else global_vars = global_vars " " $0
-                }
-                
-                # Track function boundaries
-                /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
-                /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
-                
-                # Track local variables within functions
-                in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
-                    gsub(/^[[:space:]]*local[[:space:]]+/, "")
-                    gsub(/[[:space:]]*=.*$/, "")
-                    gsub(/[[:space:]]+.*$/, "")
-                    if (local_vars == "") local_vars = $0
-                    else local_vars = local_vars " " $0
-                    next
-                }
-                
-                # Check function variable assignments
-                in_function && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*=/ && !/^[[:space:]]*local / && !/^[[:space:]]*export / && !/^[[:space:]]*readonly / {
-                    gsub(/^[[:space:]]*/, "")
-                    gsub(/[[:space:]]*=.*$/, "")
-                    # Check if this variable was declared as local earlier in the function OR is a global variable
-                    if (local_vars !~ "(^| )" $0 "( |$)" && global_vars !~ "(^| )" $0 "( |$)") {
-                        print NR ": " $0 "="
-                    }
-                }
-            ' "$file" || true)")
+                sc_count=$((sc_count + 1))
+            done <<<"$shellcheck_output"
+
+            # count total lines reported by shellcheck
+            local total_shellcheck
+            total_shellcheck=$(printf '%s\n' "$shellcheck_output" | wc -l | tr -d ' ')
+            file_issues=$((file_issues + total_shellcheck))
         fi
-        
-        if [ -n "$undeclared_vars" ]; then
-            caddie cli:yellow "  ⚠ Consider using 'local' for function variables:"
-            echo "$undeclared_vars" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 10. Check for redundant variable declarations (same variable declared multiple times)
-        local redundant_vars=$(apply_limit "$(awk '
-            BEGIN { in_function = 0; declared_vars = "" }
-            /^function caddie_.*\(\)/ { in_function = 1; declared_vars = ""; next }
-            /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; declared_vars = ""; next }
-            in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
-                # Extract variable name from local declaration
-                gsub(/^[[:space:]]*local[[:space:]]+/, "")
-                gsub(/[[:space:]]*=.*$/, "")
-                gsub(/[[:space:]]+.*$/, "")
-                # Check if this variable was already declared in this function
-                if (declared_vars ~ "(^| )" $0 "( |$)") {
-                    print NR ": " $0 " (redundant declaration)"
-                } else {
-                    if (declared_vars == "") declared_vars = $0
-                    else declared_vars = declared_vars " " $0
-                }
-            }
-        ' "$file" || true)")
-        
-        if [ -n "$redundant_vars" ]; then
-            caddie cli:yellow "  ⚠ Redundant variable declarations (remove duplicate local declarations):"
-            echo "$redundant_vars" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 11. Check for variable shadowing (local variables declared inside conditional blocks)
-        local shadowed_vars=$(apply_limit "$(awk '
-            BEGIN { in_function = 0; local_vars = ""; in_if = 0 }
-            /^function caddie_.*\(\)/ { in_function = 1; local_vars = ""; next }
-            /^[[:space:]]*}[[:space:]]*$/ { in_function = 0; local_vars = ""; next }
-            in_function && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ && !in_if {
-                # Extract variable name from local declaration (only outside if blocks)
-                gsub(/^[[:space:]]*local[[:space:]]+/, "")
-                gsub(/[[:space:]]*=.*$/, "")
-                gsub(/[[:space:]]+.*$/, "")
-                if (local_vars == "") local_vars = $0
-                else local_vars = local_vars " " $0
-                next
-            }
-            in_function && /^[[:space:]]*if[[:space:]]/ {
-                # Check for local declarations inside if blocks
-                in_if = 1
-                next
-            }
-            in_function && in_if && /^[[:space:]]*local[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
-                # Extract variable name from local declaration inside if
-                gsub(/^[[:space:]]*local[[:space:]]+/, "")
-                gsub(/[[:space:]]*=.*$/, "")
-                gsub(/[[:space:]]+.*$/, "")
-                # Check if this variable was already declared as local
-                if (local_vars ~ "(^| )" $0 "( |$)") {
-                    print NR ": " $0 " (shadows outer local variable)"
-                }
-            }
-            in_function && in_if && /^[[:space:]]*fi[[:space:]]*$/ {
-                in_if = 0
-            }
-        ' "$file" || true)")
-        
-        if [ -n "$shadowed_vars" ]; then
-            caddie cli:yellow "  ⚠ Variable shadowing detected (local variables declared inside conditional blocks):"
-            echo "$shadowed_vars" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 11. Check for proper return statements (functions should have explicit returns for clarity)
-        # Note: This is a style preference for explicit returns, not a functional requirement
-        # Bash functions return the exit status of the last command by default
-        local functions_without_return=$(apply_limit "$(grep -n "^function caddie_.*()" "$file" | while read -r line; do
-            local func_line=$(echo "$line" | cut -d: -f1)
-            local func_name=$(echo "$line" | cut -d: -f2- | sed 's/^function //' | sed 's/()$//')
-            
-            # Use a simpler approach: find the function end by looking for the next function or end of file
-            local next_func_line=$(grep -n "^function caddie_.*()" "$file" | awk -F: '$1 > '"$func_line"' { print $1; exit }')
-            if [ -z "$next_func_line" ]; then
-                # No next function, check to end of file
-                local func_end_line=$(wc -l < "$file")
-            else
-                local func_end_line=$((next_func_line - 1))
-            fi
-            
-            # Check if this function has any return statement
-            if ! sed -n "${func_line},${func_end_line}p" "$file" | grep -q "return"; then
-                echo "Line $func_line: $func_name"
-            fi
-        done)")
-        if [ -n "$functions_without_return" ]; then
-            caddie cli:yellow "  ⚠ Functions should have explicit return statements (style preference for clarity)"
-            echo "$functions_without_return" | while read -r line; do
-                caddie cli:yellow "    $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 12. Check for echo "Usage..." messages (should use caddie cli:usage)
-        local usage_echoes=$(apply_limit "$(grep -n 'echo "Usage' "$file" || true)")
-        if [ -n "$usage_echoes" ]; then
-            caddie cli:yellow "  ⚠ Use 'caddie cli:usage' instead of 'echo \"Usage...\"':"
-            echo "$usage_echoes" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 13. Check for echo "✓..." messages (should use caddie cli:check)
-        local check_echoes=$(apply_limit "$(grep -n 'echo "✓' "$file" || true)")
-        if [ -n "$check_echoes" ]; then
-            caddie cli:yellow "  ⚠ Use 'caddie cli:check' instead of 'echo \"✓...\"':"
-            echo "$check_echoes" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 14. Check for echo "✗..." messages (should use caddie cli:red)
-        local fail_echoes=$(apply_limit "$(grep -n 'echo "✗' "$file" || true)")
-        if [ -n "$fail_echoes" ]; then
-            caddie cli:yellow "  ⚠ Use 'caddie cli:red' instead of 'echo \"✗...\"':"
-            echo "$fail_echoes" | while read -r line; do
-                caddie cli:yellow "    Line $line"
-            done
-            ((file_warnings++))
-        fi
-        
-        # 15. Check for general echo messages (should use caddie cli:indent for consistency)
-        local general_echoes=$(apply_limit "$(grep -n '^[[:space:]]*echo "[^"]*"' "$file" | grep -v 'echo "Error:' | grep -v 'echo "Usage' | grep -v 'echo "HEREDOC' | grep -v 'echo "BASH_CODE' | grep -v '| while' | grep -v '| head' | grep -v '| wc' || true)")
-        if [ -n "$general_echoes" ]; then
-            # Filter out lines in ignore blocks using a more reliable approach
-            local filtered_echoes=""
-            while IFS= read -r line; do
-                local line_num=$(echo "$line" | cut -d: -f1)
-                if ! is_line_ignored "$line_num" "$ignore_blocks"; then
-                    if [ -z "$filtered_echoes" ]; then
-                        filtered_echoes="$line"
-                    else
-                        filtered_echoes="$filtered_echoes"$'\n'"$line"
-                    fi
-                fi
-            done <<< "$general_echoes"
-            
-            if [ -n "$filtered_echoes" ]; then
-                caddie cli:yellow "  ⚠ Consider using 'caddie cli:indent' for consistent formatting:"
-                while IFS= read -r line; do
-                    caddie cli:yellow "    Line $line"
-                done <<< "$filtered_echoes"
-                ((file_warnings++))
-            fi
-        fi
-        
-        # Summary for this file
-        if [ $file_errors -eq 0 ] && [ $file_warnings -eq 0 ]; then
+
+        # Run custom checks and add the returned number
+        local custom_issues
+        custom_issues=$(caddie_core_lint_custom "$file" "$limit_per_check")
+        file_issues=$((file_issues + custom_issues))
+
+        if [ "$file_issues" -eq 0 ]; then
             caddie cli:check "  ✓ All checks passed"
-        elif [ $file_errors -eq 0 ]; then
-            caddie cli:yellow "  ⚠ $file_warnings warning(s)"
         else
-            caddie cli:red "  ✗ $file_errors error(s), $file_warnings warning(s)"
+            caddie cli:yellow "  ⚠ $file_issues issue(s)"
         fi
-        
-        ((errors += file_errors))
-        ((warnings += file_warnings))
-        caddie cli:blank
+
+        total_issues=$((total_issues + file_issues))
     done
-    
-    # Final summary
-    caddie cli:title "Summary"
-    if [ $errors -eq 0 ] && [ $warnings -eq 0 ]; then
-        caddie cli:check "All files passed caddie standards!"
-    elif [ $errors -eq 0 ]; then
-        caddie cli:yellow "Completed with $warnings warning(s)"
+
+    caddie cli:blank
+    if [ "$total_issues" -eq 0 ]; then
+        caddie cli:check "✓ All files passed caddie standards!"
+        return 0
     else
-        caddie cli:red "Found $errors error(s) and $warnings warning(s)"
+        caddie cli:yellow "Completed with $total_issues issue(s)"
         caddie cli:blank
-        caddie cli:thought "Caddie Standards Reference:"
-        caddie cli:indent "• Note: Shebang not required for sourced modules (loaded via bash_profile)"
-        caddie cli:indent "• Source CLI module: source ~/.caddie_modules/.caddie_cli"
-        caddie cli:indent "• Function naming: caddie_<module>_<command>"
-        caddie cli:indent "• Export all functions: export -f caddie_<module>_<command>"
-        caddie cli:indent "• Provide help and description functions"
-        caddie cli:indent "• Use caddie cli:* functions for output"
-        caddie cli:indent "• Use caddie cli:usage for usage messages"
-        caddie cli:indent "• Use caddie cli:check for success messages"
-        caddie cli:indent "• Use caddie cli:red for failure messages"
-        caddie cli:indent "• Use caddie cli:indent for general messages"
-        caddie cli:indent "• Validate input arguments"
-        caddie cli:indent "• Use braces for variables: \${var}"
-        caddie cli:indent "• Declare local variables: local var=\$1"
-        caddie cli:indent "• Avoid redundant variable declarations (declare once per function)"
-        caddie cli:indent "• Include explicit return statements (style preference for clarity)"
         return 1
     fi
+}
+
+# Custom caddie-specific linting checks
+function caddie_core_lint_custom() {
+    local file="$1"
+    local limit="$2"
+    local issues=0
+
+    limit="${limit:-3}"
+
+    # helper to apply limit on grep output
+    apply_limit() {
+        local input="$1"
+
+        if [ "${limit}" -eq 0 ]; then
+            printf '%s\n' "${input}"
+        else
+            printf '%s\n' "${input}" | head -n "${limit}"
+        fi
+    }
+
+    # 1) CLI module sourcing for dot_caddie_* files (except dot_caddie_cli)
+    if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_cli"* ]]; then
+        if ! grep -q 'source.*\.caddie_cli' "$file"; then
+            caddie cli:red "  ✗ Missing CLI module sourcing (should source ~/.caddie_modules/.caddie_cli)"
+            issues=$((issues + 1))
+        fi
+    fi
+ 
+    # 2) Function naming convention: find declared caddie_ functions
+    # We require explicit "function" keyword: "function name() {"
+
+    local func_lines
+    func_lines=$(
+        awk '/^[[:space:]]*function[[:space:]]+caddie_[a-zA-Z0-9_]+\s*\(\)\s*\{/{print FNR ":" $0}' "${file}"
+    ) || true
+
+    if [ -n "${func_lines}" ]; then
+        # Validate each function name: must be caddie_<module>_<command> (two underscores min)
+        while IFS= read -r fl; do
+            [ -n "${fl}" ] || continue
+            # extract name
+            local lineno=${fl%%:*}
+            local line=${fl#*:}
+            # extract the function name token
+            # remove leading spaces and 'function' keyword
+            local name
+            name=$(printf '%s\n' "$line" | sed -E 's/^[[:space:]]*function[[:space:]]+//; s/\s*\(\).*//; s/[[:space:]]*$//')
+
+            # check the name has exactly two underscore groups at minimum
+            if ! printf '%s' "$name" | grep -qE '^caddie_[a-z0-9]+_[a-z0-9]+'; then
+                caddie cli:red "  ✗ Invalid function naming (should be caddie_<module>_<command>):"
+                caddie cli:red "    Line ${lineno}: ${name}"
+                issues=$((issues + 1))
+            fi
+        done <<<"$func_lines"
+    fi
+
+    # 3) Function exports: ensure functions are exported if they follow naming convention
+    # collect function names using compatible approach
+    local functions_output
+    functions_output=$(
+        awk '
+            # Match either "function name() {" or "name() {", where name starts with caddie_
+            /^[[:space:]]*(function[[:space:]]+)?caddie_[a-zA-Z0-9_]+\s*\(\)\s*\{/ {
+                # Remove optional leading "function " and any leading whitespace
+                $0 = gensub(/^[[:space:]]*(function[[:space:]]+)?/, "", "g", $0)
+
+                # Remove everything from the "(" onward, leaving just the identifier
+                sub(/\s*\(\).*$/, "", $0)
+
+                # Trim leading and trailing whitespace
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", $0)
+
+                # Print the cleaned function name
+                print $0
+            }
+        ' "${file}"
+    ) || true
+
+    # collect exports using compatible approach
+    local exports_output
+    exports_output=$(
+        grep -Eo 'export[[:space:]]+-f[[:space:]]+caddie_[a-zA-Z0-9_]+' "${file}"
+    ) || true
+    
+    # normalize exports to names only
+    local normalized_exports=""
+    if [ -n "${exports_output}" ]; then
+        normalized_exports=$(printf '%s\n' "$exports_output" | awk '{print $NF}')
+    fi
+
+    # check each function against exports
+    if [ -n "${functions_output}" ]; then
+        while IFS= read -r func; do
+            [ -n "${func}" ] || continue
+            if ! printf '%s\n' "${normalized_exports}" | grep -q "^${func}$"; then
+                caddie cli:red "  ✗ Function '$func' is not exported"
+                issues=$((issues + 1))
+            fi
+        done <<<"${functions_output}"
+    fi
+
+    # 4) Help/description functions: require caddie_<module>_help / _description for dot_caddie_*
+    if [[ "${file}" == *"dot_caddie_"* ]] && [[ "${file}" != *"dot_caddie_core"* ]]; then
+        local module_name
+        module_name=$(basename "${file}" | sed 's/^dot_caddie_//; s/\.sh$//')
+
+        if ! grep -q "function caddie_${module_name}_help" "$file"; then
+            caddie cli:red "  ✗ Missing help function (caddie_${module_name}_help)"
+            issues=$((issues + 1))
+        fi
+
+        if ! grep -q "function caddie_${module_name}_description" "$file"; then
+            caddie cli:red "  ✗ Missing description function (caddie_${module_name}_description)"
+            issues=$((issues + 1))
+        fi
+    fi
+
+    # 5) Echo message standards - advise use of caddie cli:* helpers
+    local usage_echoes
+    usage_echoes=$(
+        apply_limit "$(
+            grep -n 'echo "Usage' "${file}"
+        )" || true
+    ) || true
+
+    if [ -n "${usage_echoes}" ]; then
+        caddie cli:yellow "  ⚠ Use 'caddie cli:usage' instead of 'echo \"Usage...\"':"
+
+        while IFS= read -r line; do
+            caddie cli:yellow "    Line $line"
+        done <<<"${usage_echoes}"
+
+        issues=$((issues + 1))
+    fi
+
+    local check_echoes
+    check_echoes=$(
+        apply_limit "$(
+            grep -n 'echo "✓' "${file}"
+        )" || true
+    ) || true
+
+    if [ -n "${check_echoes}" ]; then
+        caddie cli:yellow "  ⚠ Use 'caddie cli:check' instead of 'echo \"✓...\"':"
+
+        while IFS= read -r line; do
+            caddie cli:yellow "    Line $line"
+        done <<<"${check_echoes}"
+
+        issues=$((issues + 1))
+    fi
+
+    local fail_echoes
+    fail_echoes=$(
+        apply_limit "$(
+            grep -n 'echo "✗' "${file}"
+        )" || true
+    ) || true
+
+    if [ -n "${fail_echoes}" ]; then
+        caddie cli:yellow "  ⚠ Use 'caddie cli:red' instead of 'echo \"✗...\"':"
+
+        while IFS= read -r line; do
+            caddie cli:yellow "    Line $line"
+        done <<<"${fail_echoes}"
+
+        issues=$((issues + 1))
+    fi
+
+    # 6) Printf vs Echo - recommend printf for better portability
+    local echo_usage
+    echo_usage=$(
+        apply_limit "$(
+            grep -n '^[[:space:]]*echo [^"]' "${file}" | grep -v 'echo "Usage' | grep -v 'echo "✓' | grep -v 'echo "✗' | grep -v 'echo "Error' | grep -v '| while' | grep -v '| head' | grep -v '| wc'
+        )" || true
+    ) || true
+
+    if [ -n "${echo_usage}" ]; then
+        caddie cli:yellow "  ⚠ Consider using 'printf' instead of 'echo' for better portability:"
+
+        while IFS= read -r line; do
+            caddie cli:yellow "    Line ${line}"
+        done <<<"${echo_usage}"
+
+        issues=$((issues + 1))
+    fi
+
+    # 7) False positive return 0 - detect return 0 after output commands
+    local false_returns
+
+    false_returns=$(
+        apply_limit "$(
+            awk '/^[[:space:]]*(echo|printf)[[:space:]]/ { 
+                getline next_line; 
+                if (next_line ~ /^[[:space:]]*return[[:space:]]+0[[:space:]]*$/) { 
+                    print (NR-1) ":" $0; 
+                    print NR ":" next_line 
+                } 
+            }' "${file}"
+        )"
+    )
+
+    false_returns=${false_returns:-""}
+
+    if [ -n "${false_returns}" ]; then
+        while IFS= read -r curline; do
+            #caddie cli:yellow "    Line ${curline}"
+            issues=$((issues + 1))
+        done <<<"${false_returns}"
+
+        #caddie cli:yellow "  Avoid using 'return 0' after output commands (can mask failures):"
+    fi
+
+    printf '%d\n' "${issues}"
 }
 # caddie:lint:enable
 
@@ -750,91 +434,22 @@ function caddie_core_lint() {
 function caddie_core_lint_limit() {
     local limit="$1"
     local target="$2"
-    
     if [ -z "$limit" ] || [ -z "$target" ]; then
         caddie cli:red "Error: Both limit and target are required"
         caddie cli:usage "caddie core:lint:limit <limit> <target>"
-        caddie cli:indent "Example: caddie core:lint:limit 5 modules/dot_caddie_ruby"
         return 1
     fi
-    
-    # Validate limit is a number
-    if ! [[ "$limit" =~ ^[0-9]+$ ]]; then
-        caddie cli:red "Error: Limit must be a positive number"
-        return 1
-    fi
-    
     caddie_core_lint "$target" "$limit"
+    return $?
 }
 
-# Function to show core caddie help
-function caddie_core_help() {
-    caddie cli:title "Core Caddie Functions"
-    caddie cli:title "===================="
-    caddie cli:blank
-    caddie cli:usage "caddie core:<command>"
-    caddie cli:blank
-    caddie cli:folder "Home Directory Management:"
-    caddie cli:indent "set:home <path>     Set caddie home directory"
-    caddie cli:indent "get:home            Get current caddie home"
-    caddie cli:indent "reset:home          Reset caddie home directory"
-    caddie cli:blank
-    caddie cli:debug "Debug Management:"
-    caddie cli:indent "debug:on            Enable debug output"
-    caddie cli:indent "debug:off           Disable debug output"
-    caddie cli:indent "debug:status        Show debug status"
-    caddie cli:blank
-    caddie cli:magnifying_glass "Code Quality:"
-    caddie cli:indent "lint [path]         Run caddie-specific linting (shows all issues)"
-    caddie cli:indent "lint:limit <n> <path> Run linting with limit (shows max n issues per check)"
-    caddie cli:blank
-    caddie cli:magnifying_glass "Information:"
-    caddie cli:indent "aliases             Show all available aliases"
-    caddie cli:indent "alias:grep <keyword> Search aliases by keyword"
-    caddie cli:indent "alias:git            Show git-related aliases"
-    caddie cli:indent "alias:docker         Show docker-related aliases"
-    caddie cli:indent "alias:npm            Show npm-related aliases"
-    caddie cli:indent "alias:nav            Show navigation aliases"
-    caddie cli:blank
-    caddie cli:thought "Examples:"
-    caddie cli:indent "caddie core:set:home ~/projects/myproject"
-    caddie cli:indent "caddie core:get:home"
-    caddie cli:indent "caddie core:reset:home"
-    caddie cli:indent "caddie go:home"
-    caddie cli:indent "caddie core:aliases"
-    caddie cli:indent "caddie core:alias:grep git"
-    caddie cli:indent "caddie core:alias:git"
-    caddie cli:indent "caddie core:lint"
-    caddie cli:indent "caddie core:lint modules/"
-    caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
-}
-
-function caddie_core_description() {
-    # caddie:lint:disable
-    echo 'Core Caddie Functions'
-    # caddie:lint:enable
-    return 0
-}
-
-# Auto-load caddie home on shell startup
-if [ -f "$CADDIE_HOME_FILE" ]; then
-    caddie_home=$(cat "$CADDIE_HOME_FILE")
-    export CADDIE_HOME="$caddie_home"
-fi
-
-# Export core functions
-export -f caddie_core_set_home
-export -f caddie_core_get_home
-export -f caddie_core_reset_home
-export -f caddie_core_go_home
-export -f caddie_core_help
+# Export functions
 export -f caddie_core_description
+export -f caddie_core_help
 export -f caddie_core_debug
-export -f caddie_core_aliases
-export -f caddie_core_alias_grep
-export -f caddie_core_alias_git
-export -f caddie_core_alias_docker
-export -f caddie_core_alias_npm
-export -f caddie_core_alias_nav
+export -f caddie_core_version
+export -f caddie_core_reload
+export -f caddie_core_home
 export -f caddie_core_lint
+export -f caddie_core_lint_custom
 export -f caddie_core_lint_limit

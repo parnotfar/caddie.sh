@@ -1,0 +1,55 @@
+# ShellCheck configuration for caddie.sh
+# This file configures ShellCheck to work optimally with the caddie.sh codebase
+
+# Disable checks that conflict with our patterns or are not applicable
+disable=SC2034  # Unused variables (we use many for API consistency)
+disable=SC1090  # Can't follow non-constant source (our dynamic sourcing)
+disable=SC1091  # Not following sourced file (our module system)
+disable=SC2155  # Declare and assign separately (we prefer combined declarations)
+disable=SC2164  # Use 'cd ... || exit' or 'cd ... || return' (we handle this explicitly)
+
+# Enable additional checks for better code quality
+enable=all
+
+# Set shell dialect to bash
+shell=bash
+
+# Exclude certain directories from linting
+exclude-dir=target/
+exclude-dir=.git/
+exclude-dir=venv/
+exclude-dir=node_modules/
+
+# Set external sources (for better understanding of our modules)
+external-sources=true
+
+# Set the source path for better module resolution
+source-path=modules/
+
+# Enable additional warnings for better code quality
+# These are already enabled by default but making them explicit
+enable=SC2086  # Double quote to prevent globbing and word splitting
+enable=SC2046  # Quote this to prevent word splitting
+enable=SC2068  # Double quote array expansions
+enable=SC2145  # Argument mixes string and array
+enable=SC2207  # Prefer mapfile or read -a to split command output
+enable=SC2128  # Expanding an array without an index only gives the first element
+enable=SC2206  # Quote to prevent word splitting/globbing
+enable=SC2199  # Arrays implicitly concatenate in zsh
+enable=SC2124  # Assigning an array parameter without subscript
+enable=SC2120  # Arguments are not referenced
+enable=SC2119  # Use foo "$@" if function's $1 should mean script's $1
+enable=SC2115  # Use "${var:?}" to ensure this never expands to / 
+enable=SC2112  # 'function' keyword is non-standard
+enable=SC2103  # Use a ( subshell ) to avoid having to cd back
+enable=SC2094  # Make sure not to read and write the same file in the same pipeline
+enable=SC2089  # Quotes/backslashes will be treated literally
+enable=SC2088  # Tilde does not expand in quotes
+enable=SC2087  # Quote to prevent word splitting
+enable=SC2086  # Double quote to prevent globbing and word splitting
+enable=SC2085  # Double quote to prevent globbing and word splitting
+enable=SC2084  # Double quote to prevent globbing and word splitting
+enable=SC2083  # Double quote to prevent globbing and word splitting
+enable=SC2082  # Double quote to prevent globbing and word splitting
+enable=SC2081  # Double quote to prevent globbing and word splitting
+enable=SC2080  # Double quote to prevent globbing and word splitting

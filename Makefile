@@ -33,7 +33,7 @@ help: ## Show this help message
 	echo "$(YELLOW)Usage:$(NC)"
 	echo "  make install        - Full installation (recommended)"
 	echo "  make install-dot    - Install only dot files (with backup)"
-	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, GitHub CLI)"
+	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, GitHub CLI, ShellCheck)"
 	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
 	echo "  make restore-backup - Restore from backup files"
@@ -141,7 +141,7 @@ install-dot: backup-existing ## Install dot files to home directory
 	
 	echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
-setup-dev: setup-homebrew setup-python setup-rust setup-github ## Setup development environment (Homebrew, Python, Rust, GitHub CLI)
+setup-dev: setup-homebrew setup-python setup-rust setup-github setup-shellcheck ## Setup development environment (Homebrew, Python, Rust, GitHub CLI, ShellCheck)
 	echo "$(GREEN)✓$(NC) Development environment setup completed"
 
 setup-homebrew: ## Install and update Homebrew
@@ -228,6 +228,20 @@ setup-github: setup-homebrew ## Setup GitHub CLI for pull request management
 	echo "$(GREEN)✓$(NC) GitHub CLI setup completed"
 	echo "$(CYAN)  💡$(NC) To authenticate with GitHub: $(YELLOW)gh auth login$(NC)"
 	echo "$(CYAN)  💡$(NC) To create pull requests: $(YELLOW)caddie git:pr:create$(NC)"
+
+setup-shellcheck: setup-homebrew ## Setup ShellCheck for shell script linting
+	echo "$(BLUE)🔍$(NC) Setting up ShellCheck..."
+	if ! command -v shellcheck >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) ShellCheck not found, installing via Homebrew..."; \
+		brew install shellcheck; \
+		echo "$(GREEN)    ✓$(NC) ShellCheck installed successfully"; \
+	else \
+		echo "$(GREEN)  ✓$(NC) ShellCheck already installed"; \
+	fi
+	echo "$(YELLOW)  →$(NC) Checking ShellCheck version..."
+	shellcheck --version
+	echo "$(GREEN)✓$(NC) ShellCheck setup completed"
+	echo "$(CYAN)  💡$(NC) To lint shell scripts: $(YELLOW)caddie core:lint$(NC)"
 
 uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or Rust)
 	echo "$(BLUE)🗑️$(NC) Uninstalling caddie.sh dot files..."
