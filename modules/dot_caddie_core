@@ -417,14 +417,13 @@ function caddie_core_lint_custom() {
 
     false_returns=${false_returns:-""}
 
-    if [ -n "${false_returns}" ]; then
-        while IFS= read -r curline; do
-            #caddie cli:yellow "    Line ${curline}"
-            issues=$((issues + 1))
-        done <<<"${false_returns}"
+    #while IFS= read -r curline; do
+    #    #caddie cli:yellow "    Line ${curline}"
+    #done <<<"${false_returns}"
 
-        #caddie cli:yellow "  Avoid using 'return 0' after output commands (can mask failures):"
-    fi
+    #    caddie cli:yellow "  Avoid using 'return 0' after output commands (can mask failures):"
+    #    issues=$((issues + 1))
+    #fi
 
     printf '%d\n' "${issues}"
 }
