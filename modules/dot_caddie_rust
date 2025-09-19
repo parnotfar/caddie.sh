@@ -865,6 +865,7 @@ function caddie_rust_help() {
     caddie cli:indent "caddie rust:init myproject"
     caddie cli:indent "caddie rust:new myproject"
     caddie cli:indent "caddie rust:build"
+    caddie cli:indent "caddie rust:run:example simple_demo"
     caddie cli:indent "caddie rust:test:unit"
     caddie cli:indent "caddie rust:test:integration"
     caddie cli:indent "caddie rust:git:status"

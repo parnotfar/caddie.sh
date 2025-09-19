@@ -112,6 +112,43 @@ Hello, World!
 - Must be in a Rust project directory
 - Project must compile successfully
 
+#### `caddie rust:run:example <name>`
+
+Run a specific Cargo example.
+
+**Arguments:**
+- `name`: Name of the example to run
+
+**Examples:**
+```bash
+# Run a specific example
+caddie rust:run:example simple_demo
+
+# Run example with arguments
+caddie rust:run:example multi_distance_demo -- --help
+```
+
+**What it does:**
+- Runs `cargo run --example <name>` in the current directory
+- Compiles and executes the specified example
+- Passes any additional arguments to the example program
+
+**Output:**
+```
+Running Cargo example 'simple_demo'...
+   Compiling myapp v0.1.0 (/Users/username/projects/myapp)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.45s
+     Running `target/debug/examples/simple_demo`
+Monte Carlo Golf Simulation Engine Demo
+=====================================
+✓ Cargo example 'simple_demo' ran successfully
+```
+
+**Requirements:**
+- Must be in a Rust project directory
+- Example must exist in `examples/` directory
+- Example must compile successfully
+
 #### `caddie rust:test`
 
 Run tests for the current Rust project.
