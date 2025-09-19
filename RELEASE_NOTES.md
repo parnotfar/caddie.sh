@@ -1,5 +1,39 @@
 # Caddie.sh Release Notes
 
+## Version 2.1 - Rust Example Runner Enhancement
+
+**Release Date:** December 2024
+
+### 🎯 Release Highlights
+
+**Version 2.1 adds the missing `rust:run:example` command to tab completion and documentation:**
+
+- **Tab Completion Fix**: Added `rust:run:example` to tab completion for better developer experience
+- **Documentation Update**: Added comprehensive documentation for the `rust:run:example` command
+- **Help Examples**: Added `rust:run:example` to help examples section
+- **Consistency**: Ensures all rust commands are properly discoverable and documented
+
+### 🚀 New Features
+
+#### **Rust Module Enhancements**
+- **Tab Completion**: `rust:run:example` now appears in tab completion
+- **Help Documentation**: Added `rust:run:example` to help examples
+- **Module Documentation**: Comprehensive documentation for running Cargo examples
+
+### 🔧 Bug Fixes
+
+- **Tab Completion**: Fixed missing `rust:run:example` command in tab completion
+- **Documentation**: Added missing documentation for `rust:run:example` command
+- **Help Examples**: Added `rust:run:example simple_demo` to help examples
+
+### 📚 Documentation Updates
+
+- **Rust Module Docs**: Added complete documentation for `rust:run:example` command
+- **Help Examples**: Updated help examples to include `rust:run:example`
+- **Release Notes**: Added version 2.1 release notes
+
+---
+
 ## Version 2.0 - Universal Shell Linter & Git/GitHub Integration
 
 **Release Date:** December 2024
