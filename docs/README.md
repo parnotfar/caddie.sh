@@ -27,8 +27,13 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [JavaScript Module](modules/javascript.md) - Node.js tools
   - [iOS Module](modules/ios.md) - iOS development tools
   - [Cross Module](modules/cross.md) - Multi-language templates
+  - [CSV Module](modules/csv.md) - SQL analytics, plotting, and persistent defaults for CSV/TSV datasets
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
+
+### Shared Executables
+
+Reusable helper scripts now live in the repository `bin/` directory. The installer copies this folder to `~/.caddie_modules/bin`, giving every module a predictable place to locate shared tools (for example, the `csvql.py` analytics helper). When adding a new cross-cutting utility, drop the executable into `bin/`, ensure it has a shebang plus execute permissions, and invoke it from your module or dotfile.
 
 ## Quick Reference
 

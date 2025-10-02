@@ -29,6 +29,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
+- **CSV/TSV Analytics**: Query structured shot data with DuckDB SQL, persistent defaults, and matplotlib visualizations
 - **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
@@ -85,6 +86,7 @@ caddie help
 - **[JavaScript Module](docs/modules/javascript.md)** - Node.js and npm management
 - **[iOS Module](docs/modules/ios.md)** - iOS development tools and Rust integration
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
+- **[CSV Module](docs/modules/csv.md)** - SQL-powered analytics and plotting for CSV/TSV data
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
@@ -198,7 +200,8 @@ caddie.sh/
 ├── dot_caddie_version      # Version information
 ├── dot_caddie_debug        # Debug system
 ├── dot_caddie_modules      # Data structure management
-├── modules/                 # All module files
+├── bin/                    # Executables shared across modules (e.g., csvql.py)
+├── modules/                # All module files
 │   ├── dot_caddie_core     # Core functions and debug system
 │   ├── dot_caddie_python   # Python environment management
 │   ├── dot_caddie_rust     # Rust development tools
@@ -208,12 +211,14 @@ caddie.sh/
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_cursor   # IDE integration
 │   └── dot_caddie_git      # Git enhancements
-├── docs/                    # Documentation
-├── Makefile                 # Build system
-└── README.md                # Project overview
+├── docs/                   # Documentation
+├── Makefile                # Build system
+└── README.md               # Project overview
 ```
 
 > **Note**: Tab completion is currently centralized in the main `dot_caddie` file due to Bash variable scope limitations. See [Contributing Guide](docs/contributing.md#adding-tab-completion-for-new-modules) for details on adding completion for new modules.
+
+The new `bin/` directory collects standalone executables that ship with caddie. During installation these scripts are copied to `~/.caddie_modules/bin`, giving every module a predictable place to find shared helpers. When adding future language or analytics tools, drop the runnable script into `bin/`, ensure it is executable, and reference it from your module implementation.
 
 ## Configuration
 

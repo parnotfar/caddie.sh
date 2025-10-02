@@ -43,11 +43,34 @@ function set_caddie_git_prompt() {
     export GIT_PROMPT_END+=' \n\[\033[0;37m\]$(date +%H:%M)\[\033[0;0m\] $ '
 }
 
+# CSV prompt helper
+function caddie_prompt_csv_segment() {
+    local config_file="${CADDIE_CSV_CONFIG_FILE:-$HOME/.caddie_data/csv_config}"
+    local csv_file="${CADDIE_CSV_FILE:-}"
+
+    if [ -z "$csv_file" ] && [ -f "$config_file" ]; then
+        csv_file=$(source "$config_file" 2>/dev/null || true; printf '%s' "${CADDIE_CSV_FILE:-}")
+    fi
+
+    if [ -z "$csv_file" ]; then
+        return 0
+    fi
+
+    local display="$csv_file"
+    if [[ "$display" == "$HOME"* ]]; then
+        display="~${display#$HOME}"
+    fi
+
+    printf '[%scsv:%s%s]' "${CYAN}" "$display" "${RESET}"
+    return 0
+}
+
 # Main prompt setup function
 function set_caddie_prompt() {
     local version=$(get_caddie_version)
     local git_info=""
     local github_info=""
+    local csv_info=""
     
     # Add GitHub CLI authentication status
     local github_status=$(gh auth status 2>/dev/null)
@@ -78,8 +101,14 @@ function set_caddie_prompt() {
             git_info=" (${PURPLE}${branch}${RESET}|${GREEN}✓${RESET})"
         fi
     fi
+
+    local csv_segment
+    csv_segment=$(caddie_prompt_csv_segment)
+    if [ -n "$csv_segment" ]; then
+        csv_info="$csv_segment"
+    fi
     
-    export PS1="[${BLUE}Caddie-${version}${RESET}]${github_info}${git_info} ${YELLOW}\w${RESET} $ "
+    export PS1="[${BLUE}Caddie-${version}${RESET}]${github_info}${csv_info}${git_info} ${YELLOW}\w${RESET} $ "
 }
 
 # Set PROMPT_COMMAND to rebuild prompt before each display

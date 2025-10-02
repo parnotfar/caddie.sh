@@ -43,6 +43,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`rust`**: Rust development tools and project management
 - **`ruby`**: Ruby environment with RVM integration
 - **`js`**: JavaScript/Node.js tools and NVM management
+- **`csv`**: SQL analytics and plotting for CSV/TSV datasets
 - **`ios`**: iOS development tools and Xcode integration
 - **`cross`**: Multi-language project templates and tools
 - **`cursor`**: IDE integration and AI-powered development
@@ -203,6 +204,32 @@ nrl            # npm run lint
 nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
+
+### CSV Analytics
+
+Use the CSV module to analyze shot-tracking exports or any structured CSV/TSV file with SQL and plotting support.
+
+```bash
+# Bootstrap dependencies (DuckDB, pandas, matplotlib)
+caddie csv:init
+
+# Set reusable defaults once
+caddie csv:config:set file ~/work/data/approach_shots.csv
+caddie csv:config:set x aim_offset_x
+caddie csv:config:set y aim_offset_y
+caddie csv:config:list
+
+# Render a dispersion chart and save it to disk
+caddie csv:scatter data/approach_shots.csv charts/approach.png --limit 200
+
+# Run a custom query with overlays
+caddie csv:query data/approach_shots.csv "SELECT * FROM df WHERE club = '9i'" \
+  --plot scatter --rings --ring-radii "3,6" --title "9i Dispersion"
+```
+
+Tip: `caddie csv:config:set scatter-filter "miss = FALSE"` defines which shots are included by default, `caddie csv:config:set rings true` / `caddie csv:config:set ring:radii "3,6"` toggles target overlays, and `caddie csv:config:list` shows the full key list (file, x, y, sep, plot, title, limit, save, success-filter, scatter-filter, sql, hole*, rings, ring:radii). When a default file is set the prompt shows `[csv:~/path/to/file]`, mirroring the GitHub segment so you always know which dataset is active.
+
+Shared helpers such as `csvql.py` live in `~/.caddie_modules/bin`; drop new executables there when building future analytics or tooling modules so they are available across the entire caddie runtime.
 
 > 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie go:home` to quickly navigate to your caddie home directory!
 

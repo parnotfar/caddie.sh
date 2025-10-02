@@ -13,6 +13,9 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[Ruby Module](ruby.md)** - Ruby environment with RVM integration
 - **[JavaScript Module](javascript.md)** - Node.js and npm management
 
+### Analytics Modules
+- **[CSV Module](csv.md)** - SQL-powered analytics, plotting, and persistent defaults for CSV/TSV datasets
+
 ### Development Tools
 - **[iOS Module](ios.md)** - iOS development tools and Xcode integration
 - **[Cross Module](cross.md)** - Multi-language project templates and tools
@@ -20,6 +23,10 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[Git Module](git.md)** - Enhanced git workflows and GitHub integration
 - **[GitHub Module](github.md)** - GitHub account and repository management
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
+
+### Shared Executables (`bin/`)
+
+Common executables that support multiple modules live in the top-level `bin/` folder (deployed to `~/.caddie_modules/bin`). Place new helpers here when you need more than shell functions—keep them executable and reference them from your modules. See the [CSV module](csv.md) for an example using `bin/csvql.py`.
 
 ## Module Structure
 

@@ -134,6 +134,13 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_debug"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_csv.sh" "$(DEST_MODULES_DIR)/.caddie_csv"
+	chmod +x "$(DEST_MODULES_DIR)/.caddie_csv"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_csv"
+	mkdir -p "$(DEST_MODULES_DIR)/bin"
+	cp "$(CADDIE_DIR)/bin/csvql.py" "$(DEST_MODULES_DIR)/bin/csvql.py"
+	chmod +x "$(DEST_MODULES_DIR)/bin/csvql.py"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/bin/csvql.py"
 	
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"
@@ -289,6 +296,19 @@ uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or R
 	fi
 	
 	echo "$(YELLOW)  →$(NC) Removing modular caddie files..."
+	if [ -f "$(DEST_MODULES_DIR)/.caddie_csv" ]; then \
+		rm "$(DEST_MODULES_DIR)/.caddie_csv"; \
+		echo "$(GREEN)    ✓$(NC) Removed $(DEST_MODULES_DIR)/.caddie_csv"; \
+	fi
+	if [ -f "$(DEST_MODULES_DIR)/bin/csvql.py" ]; then \
+		rm "$(DEST_MODULES_DIR)/bin/csvql.py"; \
+		echo "$(GREEN)    ✓$(NC) Removed $(DEST_MODULES_DIR)/bin/csvql.py"; \
+	fi
+	if [ -d "$(DEST_MODULES_DIR)/bin" ]; then \
+		if rmdir "$(DEST_MODULES_DIR)/bin" 2>/dev/null; then \
+			echo "$(GREEN)    ✓$(NC) Removed empty $(DEST_MODULES_DIR)/bin"; \
+		fi; \
+	fi
 	if [ -d "$(DEST_MODULES_DIR)" ]; then \
 		rm -rf "$(DEST_MODULES_DIR)"; \
 		echo "$(GREEN)    ✓$(NC) Successfully removed ~/.caddie_modules directory"; \
