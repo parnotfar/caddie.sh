@@ -5,7 +5,7 @@
 
 source "$HOME/.caddie_modules/.caddie_cli"
 
-function caddie_csv__initialize_globals() {
+caddie_csv__initialize_globals() {
     if [ -z "${CADDIE_CSV_CONFIG_FILE:-}" ]; then
         CADDIE_CSV_CONFIG_FILE="$HOME/.caddie_data/csv_config"
     fi
@@ -37,12 +37,12 @@ function caddie_csv__initialize_globals() {
 
 caddie_csv__initialize_globals
 
-function caddie_csv__ensure_data_dir() {
+caddie_csv__ensure_data_dir() {
     mkdir -p "$HOME/.caddie_data"
     return 0
 }
 
-function caddie_csv__ensure_config_file() {
+caddie_csv__ensure_config_file() {
     caddie_csv__ensure_data_dir
     if [ ! -f "$CADDIE_CSV_CONFIG_FILE" ]; then
         : > "$CADDIE_CSV_CONFIG_FILE"
@@ -50,7 +50,7 @@ function caddie_csv__ensure_config_file() {
     return 0
 }
 
-function caddie_csv__resolve_env_key() {
+caddie_csv__resolve_env_key() {
     local alias="$1"
     if [ -z "$alias" ]; then
         caddie cli:red "Error: Configuration key required"
@@ -67,30 +67,7 @@ function caddie_csv__resolve_env_key() {
     return 0
 }
 
-function caddie_csv__config_lookup() {
-    local env_key="$1"
-
-    if [ -z "$env_key" ] || [ ! -f "$CADDIE_CSV_CONFIG_FILE" ]; then
-        return 0
-    fi
-
-    local line value
-    line=$(grep -E "^export[[:space:]]+$env_key=" "$CADDIE_CSV_CONFIG_FILE" | tail -n 1 || true)
-    if [ -z "$line" ]; then
-        return 0
-    fi
-
-    value=${line#*=}
-    value=${value#"}
-    value=${value%"}
-    value=${value#\'}
-    value=${value%\'}
-
-    printf '%s' "$value"
-    return 0
-}
-
-function caddie_csv__config_set_env() {
+caddie_csv__config_set_env() {
     local env_key="$1"
     shift
     local value="$*"
@@ -113,7 +90,7 @@ function caddie_csv__config_set_env() {
     return 0
 }
 
-function caddie_csv__config_unset_env() {
+caddie_csv__config_unset_env() {
     local env_key="$1"
 
     if [ -z "$env_key" ] || [ ! -f "$CADDIE_CSV_CONFIG_FILE" ]; then
@@ -122,19 +99,19 @@ function caddie_csv__config_unset_env() {
 
     local tmp_file
     tmp_file=$(mktemp) || return 1
-    grep -Ev "^export[[:space:]]+$env_key" "$CADDIE_CSV_CONFIG_FILE" > "$tmp_file"
+    grep -Ev "^export[[:space:]]+$env_key=" "$CADDIE_CSV_CONFIG_FILE" > "$tmp_file"
     mv "$tmp_file" "$CADDIE_CSV_CONFIG_FILE"
     return 0
 }
 
-function caddie_csv__load_config_into_env() {
+caddie_csv__load_config_into_env() {
     if [ -f "$CADDIE_CSV_CONFIG_FILE" ]; then
         # shellcheck disable=SC1090
         source "$CADDIE_CSV_CONFIG_FILE"
     fi
 }
 
-function caddie_csv__invoke_with_config() {
+caddie_csv__invoke_with_config() {
     local script_path="$1"
     shift
 
@@ -145,23 +122,25 @@ function caddie_csv__invoke_with_config() {
     return $?
 }
 
-function caddie_csv__get_effective_value() {
+caddie_csv__get_effective_value() {
     local alias="$1"
     local env_key
 
     env_key=$(caddie_csv__resolve_env_key "$alias") || return 1
 
     local current="${!env_key:-}"
-    if [ -n "$current" ]; then
-        printf '%s' "$current"
-        return 0
+    if [ -z "$current" ]; then
+        caddie_csv__load_config_into_env
+        current="${!env_key:-}"
     fi
 
-    caddie_csv__config_lookup "$env_key"
+    if [ -n "$current" ]; then
+        printf '%s' "$current"
+    fi
     return 0
 }
 
-function caddie_csv_config_set() {
+caddie_csv_config_set() {
     local alias="$1"
     shift || true
 
@@ -187,7 +166,7 @@ function caddie_csv_config_set() {
     return 0
 }
 
-function caddie_csv_config_get() {
+caddie_csv_config_get() {
     local alias="$1"
 
     if [ -z "$alias" ]; then
@@ -211,7 +190,7 @@ function caddie_csv_config_get() {
     return 0
 }
 
-function caddie_csv_config_unset() {
+caddie_csv_config_unset() {
     local alias="$1"
 
     if [ -z "$alias" ]; then
@@ -229,7 +208,7 @@ function caddie_csv_config_unset() {
     return 0
 }
 
-function caddie_csv_config_list() {
+caddie_csv_config_list() {
     caddie cli:title "CSV module defaults"
 
     local alias env_key value
@@ -246,7 +225,7 @@ function caddie_csv_config_list() {
     return 0
 }
 
-function caddie_csv__script_path() {
+caddie_csv__script_path() {
     local module_dir script_candidates
     module_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -278,7 +257,7 @@ function caddie_csv__script_path() {
     return 1
 }
 
-function caddie_csv__require_axes() {
+caddie_csv__require_axes() {
     local x_value y_value
 
     x_value=$(caddie_csv__get_effective_value x)
@@ -294,12 +273,12 @@ function caddie_csv__require_axes() {
     return 0
 }
 
-function caddie_csv_description() {
+caddie_csv_description() {
     echo 'CSV SQL + plotting helpers with persistent defaults'
     return 0
 }
 
-function caddie_csv_help() {
+caddie_csv_help() {
     caddie cli:title "CSV / TSV Analytics"
     caddie cli:indent "csv:init                      Bootstrap csvql virtual environment"
     caddie cli:indent "csv:query <file> [sql] [...]  Run csvql with custom SQL/flags"
@@ -321,7 +300,7 @@ function caddie_csv_help() {
     return 0
 }
 
-function caddie_csv__resolve_file_argument() {
+caddie_csv__resolve_file_argument() {
     local provided="$1"
     if [ -n "$provided" ]; then
         printf '%s' "$provided"
@@ -330,7 +309,7 @@ function caddie_csv__resolve_file_argument() {
     caddie_csv__get_effective_value file
 }
 
-function caddie_csv_init() {
+caddie_csv_init() {
     local script_path
     script_path=$(caddie_csv__script_path) || return 1
 
@@ -345,7 +324,7 @@ function caddie_csv_init() {
     return 0
 }
 
-function caddie_csv_query() {
+caddie_csv_query() {
     local script_path
     script_path=$(caddie_csv__script_path) || return 1
 
@@ -374,7 +353,7 @@ function caddie_csv_query() {
     return 0
 }
 
-function caddie_csv_scatter() {
+caddie_csv_scatter() {
     local script_path
     script_path=$(caddie_csv__script_path) || return 1
 
@@ -407,7 +386,7 @@ function caddie_csv_scatter() {
         scatter_filter=$(caddie_csv__get_effective_value success-filter)
     fi
     if [ -z "$scatter_filter" ]; then
-        scatter_filter="miss = FALSE"
+        scatter_filter="success = FALSE"
     fi
 
     local -a args

@@ -60,7 +60,7 @@ caddie csv:scatter data/aim.csv
 caddie csv:scatter data/aim.csv visuals/last-200.png --limit 200
 ```
 
-The scatter helper ensures required axes are set, applies a reusable success filter (defaults to `miss = FALSE`), and respects any additional CLI flags you supply.
+The scatter helper ensures required axes are set, applies a reusable success filter (defaults to `success = FALSE`), and respects any additional CLI flags you supply.
 
 ### `csv:config:*`
 
