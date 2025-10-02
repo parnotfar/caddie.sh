@@ -5,12 +5,8 @@
 
 source "$HOME/.caddie_modules/.caddie_cli"
 
-caddie_csv__initialize_globals() {
-    if [ -z "${CADDIE_CSV_CONFIG_FILE:-}" ]; then
-        CADDIE_CSV_CONFIG_FILE="$HOME/.caddie_data/csv_config"
-    fi
-
-    declare -gA CADDIE_CSV_CONFIG_KEYS=(
+function caddie_csv__initialize_globals() {
+    declare -gA CADDIE_CSV_ENV_MAP=(
         [file]=CADDIE_CSV_FILE
         [x]=CADDIE_CSV_X
         [y]=CADDIE_CSV_Y
@@ -19,213 +15,165 @@ caddie_csv__initialize_globals() {
         [title]=CADDIE_CSV_TITLE
         [limit]=CADDIE_CSV_LIMIT
         [save]=CADDIE_CSV_SAVE
-        [success-filter]=CADDIE_CSV_SUCCESS_FILTER
-        [scatter-filter]=CADDIE_CSV_SCATTER_FILTER
+        [success_filter]=CADDIE_CSV_SUCCESS_FILTER
+        [scatter_filter]=CADDIE_CSV_SCATTER_FILTER
         [sql]=CADDIE_CSV_SQL
         [hole]=CADDIE_CSV_HOLE
-        [hole:x]=CADDIE_CSV_HOLE_X
-        [hole:y]=CADDIE_CSV_HOLE_Y
-        [hole:r]=CADDIE_CSV_HOLE_R
         [rings]=CADDIE_CSV_RINGS
-        [ring:radii]=CADDIE_CSV_RING_RADII
+        [hole_x]=CADDIE_CSV_HOLE_X
+        [hole_y]=CADDIE_CSV_HOLE_Y
+        [hole_r]=CADDIE_CSV_HOLE_R
+        [ring_radii]=CADDIE_CSV_RING_RADII
     )
 
-    declare -ga CADDIE_CSV_CONFIG_ALIAS_ORDER=(
-        file x y sep plot title limit save success-filter scatter-filter sql hole rings hole:x hole:y hole:r ring:radii
+    declare -ga CADDIE_CSV_KEY_ORDER=(
+        file x y sep plot title limit save success_filter scatter_filter sql hole rings hole_x hole_y hole_r ring_radii
     )
 }
 
 caddie_csv__initialize_globals
 
-caddie_csv__ensure_data_dir() {
-    mkdir -p "$HOME/.caddie_data"
-    return 0
-}
-
-caddie_csv__ensure_config_file() {
-    caddie_csv__ensure_data_dir
-    if [ ! -f "$CADDIE_CSV_CONFIG_FILE" ]; then
-        : > "$CADDIE_CSV_CONFIG_FILE"
-    fi
-    return 0
-}
-
-caddie_csv__resolve_env_key() {
+function caddie_csv__env_name() {
     local alias="$1"
-    if [ -z "$alias" ]; then
-        caddie cli:red "Error: Configuration key required"
+    local env_name="${CADDIE_CSV_ENV_MAP[$alias]}"
+    if [ -z "$env_name" ]; then
+        caddie cli:red "Internal error: unknown csv key '$alias'"
         return 1
     fi
-
-    if [[ -z "${CADDIE_CSV_CONFIG_KEYS[$alias]-}" ]]; then
-        caddie cli:red "Unknown csv configuration key: $alias"
-        caddie cli:thought "Use 'caddie csv:config:list' to view available keys"
-        return 1
-    fi
-
-    printf '%s' "${CADDIE_CSV_CONFIG_KEYS[$alias]}"
+    printf '%s' "$env_name"
     return 0
 }
 
-caddie_csv__config_set_env() {
-    local env_key="$1"
-    shift
+function caddie_csv__set_alias() {
+    local alias="$1"
+    local usage="$2"
+    shift 2
     local value="$*"
-
-    if [ -z "$env_key" ]; then
-        return 1
-    fi
-
-    caddie_csv__ensure_config_file
-
-    local tmp_file
-    tmp_file=$(mktemp) || return 1
-
-    if [ -f "$CADDIE_CSV_CONFIG_FILE" ]; then
-        grep -Ev "^export[[:space:]]+$env_key=" "$CADDIE_CSV_CONFIG_FILE" > "$tmp_file"
-    fi
-
-    printf 'export %s=%q\n' "$env_key" "$value" >> "$tmp_file"
-    mv "$tmp_file" "$CADDIE_CSV_CONFIG_FILE"
-    return 0
-}
-
-caddie_csv__config_unset_env() {
-    local env_key="$1"
-
-    if [ -z "$env_key" ] || [ ! -f "$CADDIE_CSV_CONFIG_FILE" ]; then
-        return 0
-    fi
-
-    local tmp_file
-    tmp_file=$(mktemp) || return 1
-    grep -Ev "^export[[:space:]]+$env_key=" "$CADDIE_CSV_CONFIG_FILE" > "$tmp_file"
-    mv "$tmp_file" "$CADDIE_CSV_CONFIG_FILE"
-    return 0
-}
-
-caddie_csv__load_config_into_env() {
-    if [ -f "$CADDIE_CSV_CONFIG_FILE" ]; then
-        # shellcheck disable=SC1090
-        source "$CADDIE_CSV_CONFIG_FILE"
-    fi
-}
-
-caddie_csv__invoke_with_config() {
-    local script_path="$1"
-    shift
-
-    (
-        caddie_csv__load_config_into_env
-        "$script_path" "$@"
-    )
-    return $?
-}
-
-caddie_csv__get_effective_value() {
-    local alias="$1"
-    local env_key
-
-    env_key=$(caddie_csv__resolve_env_key "$alias") || return 1
-
-    local current="${!env_key:-}"
-    if [ -z "$current" ]; then
-        caddie_csv__load_config_into_env
-        current="${!env_key:-}"
-    fi
-
-    if [ -n "$current" ]; then
-        printf '%s' "$current"
-    fi
-    return 0
-}
-
-caddie_csv_config_set() {
-    local alias="$1"
-    shift || true
-
-    if [ -z "$alias" ]; then
-        caddie cli:red "Error: Configuration key required"
-        caddie cli:usage "caddie csv:config:set <key> <value>"
-        return 1
-    fi
-
-    if [ $# -lt 1 ]; then
-        caddie cli:red "Error: Value required"
-        caddie cli:usage "caddie csv:config:set <key> <value>"
-        return 1
-    fi
-
-    local env_key
-    env_key=$(caddie_csv__resolve_env_key "$alias") || return 1
-
-    local value="$*"
-    caddie_csv__config_set_env "$env_key" "$value"
-    export "$env_key=$value"
-    caddie cli:check "Set csv default '$alias' to '$value'"
-    return 0
-}
-
-caddie_csv_config_get() {
-    local alias="$1"
-
-    if [ -z "$alias" ]; then
-        caddie cli:red "Error: Configuration key required"
-        caddie cli:usage "caddie csv:config:get <key>"
-        return 1
-    fi
-
-    local env_key
-    env_key=$(caddie_csv__resolve_env_key "$alias") || return 1
-
-    local value
-    value=$(caddie_csv__get_effective_value "$alias")
 
     if [ -z "$value" ]; then
-        caddie cli:warning "No value set for '$alias'"
-        return 0
-    fi
-
-    caddie cli:package "$alias = $value"
-    return 0
-}
-
-caddie_csv_config_unset() {
-    local alias="$1"
-
-    if [ -z "$alias" ]; then
-        caddie cli:red "Error: Configuration key required"
-        caddie cli:usage "caddie csv:config:unset <key>"
+        caddie cli:red "Error: value required"
+        caddie cli:usage "$usage"
         return 1
     fi
 
-    local env_key
-    env_key=$(caddie_csv__resolve_env_key "$alias") || return 1
-
-    caddie_csv__config_unset_env "$env_key"
-    unset "$env_key"
-    caddie cli:check "Cleared csv default '$alias'"
+    local env
+    env=$(caddie_csv__env_name "$alias") || return 1
+    export "$env=$value"
+    caddie cli:check "Set ${alias//_/ } to $value"
     return 0
 }
 
-caddie_csv_config_list() {
-    caddie cli:title "CSV module defaults"
+function caddie_csv__show_alias() {
+    local alias="$1"
+    local env
+    env=$(caddie_csv__env_name "$alias") || return 1
+    local value="${!env:-}"
 
-    local alias env_key value
-    for alias in "${CADDIE_CSV_CONFIG_ALIAS_ORDER[@]}"; do
-        env_key="${CADDIE_CSV_CONFIG_KEYS[$alias]}"
-        value=$(caddie_csv__get_effective_value "$alias")
+    if [ -n "$value" ]; then
+        caddie cli:package "${alias//_/ } = $value"
+    else
+        caddie cli:warning "${alias//_/ } not set"
+    fi
+    return 0
+}
+
+function caddie_csv__unset_alias() {
+    local alias="$1"
+    local env
+    env=$(caddie_csv__env_name "$alias") || return 1
+    if [ -n "${!env-}" ]; then
+        unset "$env"
+        caddie cli:check "Cleared ${alias//_/ }"
+    else
+        caddie cli:warning "${alias//_/ } already unset"
+    fi
+    return 0
+}
+
+function caddie_csv_list() {
+    caddie cli:title "CSV session defaults"
+    local alias env value
+    for alias in "${CADDIE_CSV_KEY_ORDER[@]}"; do
+        env="${CADDIE_CSV_ENV_MAP[$alias]}"
+        value="${!env:-}"
         if [ -n "$value" ]; then
-            caddie cli:indent "$(printf '%-17s %s' "$alias" "$value")"
+            printf '  %-17s %s\n' "$alias" "$value"
         else
-            caddie cli:indent "$(printf '%-17s (unset)' "$alias")"
+            printf '  %-17s (unset)\n' "$alias"
         fi
     done
-
     return 0
 }
 
-caddie_csv__script_path() {
+function caddie_csv_set_file()          { caddie_csv__set_alias file "caddie csv:set:file <path>" "$@"; }
+function caddie_csv_get_file()          { caddie_csv__show_alias file; }
+function caddie_csv_unset_file()        { caddie_csv__unset_alias file; }
+
+function caddie_csv_set_x()             { caddie_csv__set_alias x "caddie csv:set:x <column>" "$@"; }
+function caddie_csv_get_x()             { caddie_csv__show_alias x; }
+function caddie_csv_unset_x()           { caddie_csv__unset_alias x; }
+
+function caddie_csv_set_y()             { caddie_csv__set_alias y "caddie csv:set:y <column>" "$@"; }
+function caddie_csv_get_y()             { caddie_csv__show_alias y; }
+function caddie_csv_unset_y()           { caddie_csv__unset_alias y; }
+
+function caddie_csv_set_sep()           { caddie_csv__set_alias sep "caddie csv:set:sep <separator>" "$@"; }
+function caddie_csv_get_sep()           { caddie_csv__show_alias sep; }
+function caddie_csv_unset_sep()         { caddie_csv__unset_alias sep; }
+
+function caddie_csv_set_plot()          { caddie_csv__set_alias plot "caddie csv:set:plot <scatter|line|bar>" "$@"; }
+function caddie_csv_get_plot()          { caddie_csv__show_alias plot; }
+function caddie_csv_unset_plot()        { caddie_csv__unset_alias plot; }
+
+function caddie_csv_set_title()         { caddie_csv__set_alias title "caddie csv:set:title <text>" "$@"; }
+function caddie_csv_get_title()         { caddie_csv__show_alias title; }
+function caddie_csv_unset_title()       { caddie_csv__unset_alias title; }
+
+function caddie_csv_set_limit()         { caddie_csv__set_alias limit "caddie csv:set:limit <rows>" "$@"; }
+function caddie_csv_get_limit()         { caddie_csv__show_alias limit; }
+function caddie_csv_unset_limit()       { caddie_csv__unset_alias limit; }
+
+function caddie_csv_set_save()          { caddie_csv__set_alias save "caddie csv:set:save <path>" "$@"; }
+function caddie_csv_get_save()          { caddie_csv__show_alias save; }
+function caddie_csv_unset_save()        { caddie_csv__unset_alias save; }
+
+function caddie_csv_set_success_filter(){ caddie_csv__set_alias success_filter "caddie csv:set:success_filter <predicate>" "$@"; }
+function caddie_csv_get_success_filter(){ caddie_csv__show_alias success_filter; }
+function caddie_csv_unset_success_filter(){ caddie_csv__unset_alias success_filter; }
+
+function caddie_csv_set_scatter_filter(){ caddie_csv__set_alias scatter_filter "caddie csv:set:scatter_filter <predicate>" "$@"; }
+function caddie_csv_get_scatter_filter(){ caddie_csv__show_alias scatter_filter; }
+function caddie_csv_unset_scatter_filter(){ caddie_csv__unset_alias scatter_filter; }
+
+function caddie_csv_set_sql()           { caddie_csv__set_alias sql "caddie csv:set:sql <query>" "$@"; }
+function caddie_csv_get_sql()           { caddie_csv__show_alias sql; }
+function caddie_csv_unset_sql()         { caddie_csv__unset_alias sql; }
+
+function caddie_csv_set_hole()          { caddie_csv__set_alias hole "caddie csv:set:hole <on|off>" "$@"; }
+function caddie_csv_get_hole()          { caddie_csv__show_alias hole; }
+function caddie_csv_unset_hole()        { caddie_csv__unset_alias hole; }
+
+function caddie_csv_set_rings()         { caddie_csv__set_alias rings "caddie csv:set:rings <on|off>" "$@"; }
+function caddie_csv_get_rings()         { caddie_csv__show_alias rings; }
+function caddie_csv_unset_rings()       { caddie_csv__unset_alias rings; }
+
+function caddie_csv_set_hole_x()        { caddie_csv__set_alias hole_x "caddie csv:set:hole_x <value>" "$@"; }
+function caddie_csv_get_hole_x()        { caddie_csv__show_alias hole_x; }
+function caddie_csv_unset_hole_x()      { caddie_csv__unset_alias hole_x; }
+
+function caddie_csv_set_hole_y()        { caddie_csv__set_alias hole_y "caddie csv:set:hole_y <value>" "$@"; }
+function caddie_csv_get_hole_y()        { caddie_csv__show_alias hole_y; }
+function caddie_csv_unset_hole_y()      { caddie_csv__unset_alias hole_y; }
+
+function caddie_csv_set_hole_r()        { caddie_csv__set_alias hole_r "caddie csv:set:hole_r <value>" "$@"; }
+function caddie_csv_get_hole_r()        { caddie_csv__show_alias hole_r; }
+function caddie_csv_unset_hole_r()      { caddie_csv__unset_alias hole_r; }
+
+function caddie_csv_set_ring_radii()    { caddie_csv__set_alias ring_radii "caddie csv:set:ring_radii <r1,r2,...>" "$@"; }
+function caddie_csv_get_ring_radii()    { caddie_csv__show_alias ring_radii; }
+function caddie_csv_unset_ring_radii()  { caddie_csv__unset_alias ring_radii; }
+
+function caddie_csv__script_path() {
     local module_dir script_candidates
     module_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
@@ -257,64 +205,60 @@ caddie_csv__script_path() {
     return 1
 }
 
-caddie_csv__require_axes() {
-    local x_value y_value
-
-    x_value=$(caddie_csv__get_effective_value x)
-    y_value=$(caddie_csv__get_effective_value y)
+function caddie_csv__require_axes() {
+    local x_value="${CADDIE_CSV_X:-}"
+    local y_value="${CADDIE_CSV_Y:-}"
 
     if [ -z "$x_value" ] || [ -z "$y_value" ]; then
-        caddie cli:red "Set csv defaults for 'x' and 'y' axes before plotting"
-        caddie cli:thought "Example: caddie csv:config:set x aim_offset_x"
-        caddie cli:thought "         caddie csv:config:set y aim_offset_y"
+        caddie cli:red "Set csv axes before plotting"
+        caddie cli:thought "Example: caddie csv:set:x aim_offset_x"
+        caddie cli:thought "         caddie csv:set:y aim_offset_y"
         return 1
     fi
-
     return 0
 }
 
-caddie_csv_description() {
-    echo 'CSV SQL + plotting helpers with persistent defaults'
-    return 0
-}
-
-caddie_csv_help() {
-    caddie cli:title "CSV / TSV Analytics"
-    caddie cli:indent "csv:init                      Bootstrap csvql virtual environment"
-    caddie cli:indent "csv:query <file> [sql] [...]  Run csvql with custom SQL/flags"
-    caddie cli:indent "csv:scatter <file> [out]      Plot filtered scatter chart"
-    caddie cli:blank
-    caddie cli:title "Configuration Commands"
-    caddie cli:indent "csv:config:set <key> <value>  Persist a default (e.g., file, x, y)"
-    caddie cli:indent "csv:config:get <key>          Show the current value"
-    caddie cli:indent "csv:config:unset <key>        Clear a stored value"
-    caddie cli:indent "csv:config:list               List all stored defaults"
-    caddie cli:blank
-    caddie cli:title "Config Keys"
-    caddie cli:indent "file, x, y, sep, plot, title, limit, save"
-    caddie cli:indent "success-filter, scatter-filter, sql"
-    caddie cli:indent "hole, hole:x, hole:y, hole:r"
-    caddie cli:indent "rings, ring:radii"
-    caddie cli:blank
-    caddie cli:thought "Defaults live in ~/.caddie_data/csv_config (created on first save)"
-    return 0
-}
-
-caddie_csv__resolve_file_argument() {
+function caddie_csv__resolve_file_argument() {
     local provided="$1"
     if [ -n "$provided" ]; then
         printf '%s' "$provided"
         return 0
     fi
-    caddie_csv__get_effective_value file
+    printf '%s' "${CADDIE_CSV_FILE:-}"
+    return 0
 }
 
-caddie_csv_init() {
+function caddie_csv_description() {
+    echo 'CSV SQL + plotting helpers using session defaults'
+    return 0
+}
+
+function caddie_csv_help() {
+    caddie cli:title "CSV / TSV Analytics"
+    caddie cli:indent "csv:init                 Bootstrap csvql virtual environment"
+    caddie cli:indent "csv:query [file] ...     Run csvql with optional SQL/flags"
+    caddie cli:indent "csv:scatter [file] ...   Render scatter plot using defaults"
+    caddie cli:blank
+    caddie cli:title "Session Defaults"
+    caddie cli:indent "csv:list                 Show all current defaults"
+    caddie cli:blank
+    caddie cli:title "Set Commands"
+    caddie cli:indent "csv:set:<key> <value>    Keys: file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, hole, rings, hole_x, hole_y, hole_r, ring_radii"
+    caddie cli:title "Get Commands"
+    caddie cli:indent "csv:get:<key>            Show current value"
+    caddie cli:title "Unset Commands"
+    caddie cli:indent "csv:unset:<key>          Clear value in this shell"
+    caddie cli:blank
+    caddie cli:thought "Defaults live only in the current shell session"
+    return 0
+}
+
+function caddie_csv_init() {
     local script_path
     script_path=$(caddie_csv__script_path) || return 1
 
     caddie cli:title "Setting up csvql environment"
-    caddie_csv__invoke_with_config "$script_path" --init
+    "$script_path" --init
     local status=$?
     if [ $status -ne 0 ]; then
         caddie cli:red "csvql init failed"
@@ -324,7 +268,7 @@ caddie_csv_init() {
     return 0
 }
 
-caddie_csv_query() {
+function caddie_csv_query() {
     local script_path
     script_path=$(caddie_csv__script_path) || return 1
 
@@ -338,13 +282,13 @@ caddie_csv_query() {
 
     if [ -z "$csv_file" ]; then
         caddie cli:red "Error: CSV file required"
-        caddie cli:usage "caddie csv:config:set file /path/to/data.csv"
+        caddie cli:usage "caddie csv:set:file <path>"
         caddie cli:thought "Or pass the file explicitly: caddie csv:query data.csv"
         return 1
     fi
 
     caddie cli:title "Running csvql on $csv_file"
-    caddie_csv__invoke_with_config "$script_path" "$csv_file" "$@"
+    "$script_path" "$csv_file" "$@"
     local status=$?
     if [ $status -ne 0 ]; then
         caddie cli:red "csvql execution failed"
@@ -353,7 +297,7 @@ caddie_csv_query() {
     return 0
 }
 
-caddie_csv_scatter() {
+function caddie_csv_scatter() {
     local script_path
     script_path=$(caddie_csv__script_path) || return 1
 
@@ -369,7 +313,7 @@ caddie_csv_scatter() {
 
     if [ -z "$csv_file" ]; then
         caddie cli:red "Error: CSV file required"
-        caddie cli:usage "caddie csv:config:set file /path/to/data.csv"
+        caddie cli:usage "caddie csv:set:file <path>"
         caddie cli:thought "Or pass the file explicitly: caddie csv:scatter data.csv"
         return 1
     fi
@@ -380,11 +324,7 @@ caddie_csv_scatter() {
         shift
     fi
 
-    local scatter_filter
-    scatter_filter=$(caddie_csv__get_effective_value scatter-filter)
-    if [ -z "$scatter_filter" ]; then
-        scatter_filter=$(caddie_csv__get_effective_value success-filter)
-    fi
+    local scatter_filter="${CADDIE_CSV_SCATTER_FILTER:-${CADDIE_CSV_SUCCESS_FILTER:-}}"
     if [ -z "$scatter_filter" ]; then
         scatter_filter="success = FALSE"
     fi
@@ -405,7 +345,7 @@ caddie_csv_scatter() {
     fi
 
     caddie cli:title "Rendering scatter plot for $csv_file"
-    caddie_csv__invoke_with_config "$script_path" "${args[@]}"
+    "$script_path" "${args[@]}"
     local status=$?
     if [ $status -ne 0 ]; then
         caddie cli:red "Scatter plot failed"
@@ -416,10 +356,58 @@ caddie_csv_scatter() {
 
 export -f caddie_csv_description
 export -f caddie_csv_help
+export -f caddie_csv_list
 export -f caddie_csv_init
 export -f caddie_csv_query
 export -f caddie_csv_scatter
-export -f caddie_csv_config_set
-export -f caddie_csv_config_get
-export -f caddie_csv_config_unset
-export -f caddie_csv_config_list
+export -f caddie_csv_set_file
+export -f caddie_csv_get_file
+export -f caddie_csv_unset_file
+export -f caddie_csv_set_x
+export -f caddie_csv_get_x
+export -f caddie_csv_unset_x
+export -f caddie_csv_set_y
+export -f caddie_csv_get_y
+export -f caddie_csv_unset_y
+export -f caddie_csv_set_sep
+export -f caddie_csv_get_sep
+export -f caddie_csv_unset_sep
+export -f caddie_csv_set_plot
+export -f caddie_csv_get_plot
+export -f caddie_csv_unset_plot
+export -f caddie_csv_set_title
+export -f caddie_csv_get_title
+export -f caddie_csv_unset_title
+export -f caddie_csv_set_limit
+export -f caddie_csv_get_limit
+export -f caddie_csv_unset_limit
+export -f caddie_csv_set_save
+export -f caddie_csv_get_save
+export -f caddie_csv_unset_save
+export -f caddie_csv_set_success_filter
+export -f caddie_csv_get_success_filter
+export -f caddie_csv_unset_success_filter
+export -f caddie_csv_set_scatter_filter
+export -f caddie_csv_get_scatter_filter
+export -f caddie_csv_unset_scatter_filter
+export -f caddie_csv_set_sql
+export -f caddie_csv_get_sql
+export -f caddie_csv_unset_sql
+export -f caddie_csv_set_hole
+export -f caddie_csv_get_hole
+export -f caddie_csv_unset_hole
+export -f caddie_csv_set_rings
+export -f caddie_csv_get_rings
+export -f caddie_csv_unset_rings
+export -f caddie_csv_set_hole_x
+export -f caddie_csv_get_hole_x
+export -f caddie_csv_unset_hole_x
+export -f caddie_csv_set_hole_y
+export -f caddie_csv_get_hole_y
+export -f caddie_csv_unset_hole_y
+export -f caddie_csv_set_hole_r
+export -f caddie_csv_get_hole_r
+export -f caddie_csv_unset_hole_r
+export -f caddie_csv_set_ring_radii
+export -f caddie_csv_get_ring_radii
+export -f caddie_csv_unset_ring_radii

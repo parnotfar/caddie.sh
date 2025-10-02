@@ -1,5 +1,34 @@
 # Caddie.sh Release Notes
 
+## Version 3.0 - CSV Analytics & Prompt Reliability
+
+**Release Date:** January 2025
+
+### 🎯 Release Highlights
+
+Version 3.0 modernises the CSV analytics workflow and hardens interactive prompts:
+
+- **CSV Session Defaults**: New `csv:set:*`, `csv:get:*`, and `csv:unset:*` commands manage defaults entirely through environment variables. Settings such as file, axes, filters, and plot options remain scoped to the current shell, keeping concurrent terminals independent.
+- **Self-Bootstrapping Tooling**: `csvql.py` ships from the shared `bin/` directory, bootstraps its virtualenv on demand, and records pinned dependency versions.
+- **Prompt Stability Fix**: Rebuilt prompt logic wraps colours with PS1-safe sequences, eliminating cursor jumps and showing the active CSV file as `[csv:…]` beside the GitHub account indicator.
+- **Safer Scatter Defaults**: Scatter plots fall back to `success = FALSE`, preventing DuckDB binder errors when datasets omit a `miss` column.
+
+### 🚀 New Features & Improvements
+
+#### **CSV Module**
+- Added per-command setters such as `caddie csv:set:file`, `caddie csv:set:x`, `caddie csv:set:scatter_filter`, plus complementary getters/unsetters and `caddie csv:list`.
+- `csv:scatter` and `csv:query` honour the session defaults but still accept explicit file overrides when spontaneity is needed.
+- Documentation refreshed to cover the new command surface and session-scoped behaviour.
+
+#### **Prompt System**
+- Prompt now uses PS1-safe colour helpers and exposes the active CSV file without affecting cursor positioning.
+- Added a compatibility shim so legacy modules invoking `set_caddie_prompt` continue to function.
+
+#### **Reliability Fixes**
+- Updated scatter fallback filters and query assembly to avoid leaking unset environment variables into generated SQL.
+
+---
+
 ## Version 2.1 - Rust Example Runner Enhancement
 
 **Release Date:** December 2024

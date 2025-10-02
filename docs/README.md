@@ -27,7 +27,7 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [JavaScript Module](modules/javascript.md) - Node.js tools
   - [iOS Module](modules/ios.md) - iOS development tools
   - [Cross Module](modules/cross.md) - Multi-language templates
-  - [CSV Module](modules/csv.md) - SQL analytics, plotting, and persistent defaults for CSV/TSV datasets
+  - [CSV Module](modules/csv.md) - SQL analytics, plotting, and session defaults for CSV/TSV datasets
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
 

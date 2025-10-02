@@ -14,7 +14,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[JavaScript Module](javascript.md)** - Node.js and npm management
 
 ### Analytics Modules
-- **[CSV Module](csv.md)** - SQL-powered analytics, plotting, and persistent defaults for CSV/TSV datasets
+- **[CSV Module](csv.md)** - SQL-powered analytics, plotting, and session defaults for CSV/TSV datasets
 
 ### Development Tools
 - **[iOS Module](ios.md)** - iOS development tools and Xcode integration

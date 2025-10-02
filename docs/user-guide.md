@@ -213,11 +213,11 @@ Use the CSV module to analyze shot-tracking exports or any structured CSV/TSV fi
 # Bootstrap dependencies (DuckDB, pandas, matplotlib)
 caddie csv:init
 
-# Set reusable defaults once
-caddie csv:config:set file ~/work/data/approach_shots.csv
-caddie csv:config:set x aim_offset_x
-caddie csv:config:set y aim_offset_y
-caddie csv:config:list
+# Set reusable defaults once (current shell only)
+caddie csv:set:file ~/work/data/approach_shots.csv
+caddie csv:set:x aim_offset_x
+caddie csv:set:y aim_offset_y
+caddie csv:list
 
 # Render a dispersion chart and save it to disk
 caddie csv:scatter data/approach_shots.csv charts/approach.png --limit 200
@@ -227,7 +227,7 @@ caddie csv:query data/approach_shots.csv "SELECT * FROM df WHERE club = '9i'" \
   --plot scatter --rings --ring-radii "3,6" --title "9i Dispersion"
 ```
 
-Tip: `caddie csv:config:set scatter-filter "miss = FALSE"` defines which shots are included by default, `caddie csv:config:set rings true` / `caddie csv:config:set ring:radii "3,6"` toggles target overlays, and `caddie csv:config:list` shows the full key list (file, x, y, sep, plot, title, limit, save, success-filter, scatter-filter, sql, hole*, rings, ring:radii). When a default file is set the prompt shows `[csv:~/path/to/file]`, mirroring the GitHub segment so you always know which dataset is active.
+Tip: `caddie csv:set:scatter_filter "success = FALSE"` defines which shots are included by default, `caddie csv:set:rings on` / `caddie csv:set:ring_radii "3,6"` toggles target overlays, and `caddie csv:list` shows the full key list (file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, hole*, rings, ring_radii). When a default file is set the prompt shows `[csv:~/path/to/file]`, mirroring the GitHub segment so you always know which dataset is active.
 
 Shared helpers such as `csvql.py` live in `~/.caddie_modules/bin`; drop new executables there when building future analytics or tooling modules so they are available across the entire caddie runtime.
 

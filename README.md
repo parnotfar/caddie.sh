@@ -29,7 +29,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
-- **CSV/TSV Analytics**: Query structured shot data with DuckDB SQL, persistent defaults, and matplotlib visualizations
+- **CSV/TSV Analytics**: Query structured shot data with DuckDB SQL, session defaults, and matplotlib visualizations
 - **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
