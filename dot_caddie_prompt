@@ -36,12 +36,7 @@ __caddie_version() {
 }
 
 __csv_segment() {
-  local config_file="${CADDIE_CSV_CONFIG_FILE:-$HOME/.caddie_data/csv_config}"
   local csv_file="${CADDIE_CSV_FILE:-}"
-  if [ -z "$csv_file" ] && [ -f "$config_file" ]; then
-    # shellcheck disable=SC1090
-    csv_file="$( . "$config_file" 2>/dev/null || true; printf '%s' "${CADDIE_CSV_FILE:-}" )"
-  fi
   [ -n "$csv_file" ] || return 0
   case "$csv_file" in
     "$HOME"*) csv_file="~${csv_file#$HOME}" ;;

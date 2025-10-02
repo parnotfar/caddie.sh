@@ -325,9 +325,6 @@ function caddie_csv_scatter() {
     fi
 
     local scatter_filter="${CADDIE_CSV_SCATTER_FILTER:-${CADDIE_CSV_SUCCESS_FILTER:-}}"
-    if [ -z "$scatter_filter" ]; then
-        scatter_filter="success = FALSE"
-    fi
 
     local -a args
     args=("$csv_file" "--plot" "scatter")

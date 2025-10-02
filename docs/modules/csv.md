@@ -68,7 +68,7 @@ caddie csv:scatter --limit 200 --rings --ring_radii "3,6"
 caddie csv:unset:file
 ```
 
-Large result sets are summarised automatically: when a query returns more than 20 rows, `csvql.py` prints the first 10 and last 10 rows with an ellipsis between them so terminal history stays readable.
+Large result sets are summarised automatically: when a query returns more than 20 rows, `csvql.py` prints the first 10 and last 10 rows with an ellipsis between them so terminal history stays readable. Set `scatter_filter` or `success_filter` if you want to trim rows; leaving them unset includes the full result set.
 
 ## Plot Overlays
 

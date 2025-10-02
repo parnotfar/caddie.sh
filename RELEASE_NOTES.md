@@ -11,7 +11,7 @@ Version 3.0 modernises the CSV analytics workflow and hardens interactive prompt
 - **CSV Session Defaults**: New `csv:set:*`, `csv:get:*`, and `csv:unset:*` commands manage defaults entirely through environment variables. Settings such as file, axes, filters, and plot options remain scoped to the current shell, keeping concurrent terminals independent.
 - **Self-Bootstrapping Tooling**: `csvql.py` ships from the shared `bin/` directory, bootstraps its virtualenv on demand, and records pinned dependency versions.
 - **Prompt Stability Fix**: Rebuilt prompt logic wraps colours with PS1-safe sequences, eliminating cursor jumps and showing the active CSV file as `[csv:…]` beside the GitHub account indicator.
-- **Safer Scatter Defaults**: Scatter plots fall back to `success = FALSE`, preventing DuckDB binder errors when datasets omit a `miss` column.
+- **Predictable Scatter Filters**: Plots only apply filters you explicitly configure, avoiding assumptions about column names and preventing DuckDB binder errors on lean CSV exports.
 
 ### 🚀 New Features & Improvements
 

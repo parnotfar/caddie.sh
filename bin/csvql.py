@@ -132,19 +132,19 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         description="Query CSV/TSV files with DuckDB SQL and optional plotting.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("csvfile", help="Path to the CSV/TSV file")
+    parser.add_argument("csvfile", nargs="?", help="Path to the CSV/TSV file")
     parser.add_argument(
         "sql_query",
         nargs="?",
         default=os.environ.get("CADDIE_CSV_SQL"),
-        help="Override SQL query; defaults to SELECT * FROM df",
+        help="Override SQL query; defaults to CADDIE_CSV_SQL or SELECT * FROM df",
     )
     parser.add_argument("--init", action="store_true", help="Bootstrap or update local virtualenv and dependencies")
     parser.add_argument("--plot", choices=["scatter", "line", "bar"], default=os.environ.get("CADDIE_CSV_PLOT"))
     parser.add_argument("--x", dest="x", default=os.environ.get("CADDIE_CSV_X"), help="X-axis column for plotting")
     parser.add_argument("--y", dest="y", default=os.environ.get("CADDIE_CSV_Y"), help="Y-axis column for plotting")
     parser.add_argument("--sep", default=os.environ.get("CADDIE_CSV_SEP", ","), help="Field separator for the input file")
-    parser.add_argument("--limit", type=int, default=env_int("CADDIE_CSV_LIMIT", None), help="Row limit for plotting (printing always shows full result)")
+    parser.add_argument("--limit", type=int, default=env_int("CADDIE_CSV_LIMIT", None), help="Row limit applied to plots; terminal preview shows the first and last 10 rows")
     parser.add_argument("--save", default=os.environ.get("CADDIE_CSV_SAVE"), help="Path to save plot image instead of showing it")
     parser.add_argument("--title", default=os.environ.get("CADDIE_CSV_TITLE"), help="Plot title override")
     parser.add_argument("--success-filter", default=os.environ.get("CADDIE_CSV_SUCCESS_FILTER"), help="SQL predicate to filter successful shots")
@@ -262,9 +262,16 @@ def run_query(args: argparse.Namespace) -> None:
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
-    if args.init:
+    if args.init and not args.csvfile:
         ensure_initialized(show_next_steps=True)
         return 0
+    if args.init:
+        ensure_initialized(show_next_steps=True)
+        # fall through to run the query against the provided file after init
+    if not args.csvfile:
+        print("error: CSV file required", file=sys.stderr)
+        print("Hint: run with --init to bootstrap dependencies", file=sys.stderr)
+        return 1
     if not in_project_venv():
         created = False
         if not VENV_DIR.exists():
