@@ -19,6 +19,7 @@ Version 3.0 modernises the CSV analytics workflow and hardens interactive prompt
 - Added per-command setters such as `caddie csv:set:file`, `caddie csv:set:x`, `caddie csv:set:scatter_filter`, plus complementary getters/unsetters and `caddie csv:list`.
 - `csv:scatter` and `csv:query` honour the session defaults but still accept explicit file overrides when spontaneity is needed.
 - Documentation refreshed to cover the new command surface and session-scoped behaviour.
+- Query output now previews the first and last 10 rows when result sets exceed 20 rows, preventing runaway terminal scrollback.
 
 #### **Prompt System**
 - Prompt now uses PS1-safe colour helpers and exposes the active CSV file without affecting cursor positioning.

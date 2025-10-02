@@ -68,6 +68,8 @@ caddie csv:scatter --limit 200 --rings --ring_radii "3,6"
 caddie csv:unset:file
 ```
 
+Large result sets are summarised automatically: when a query returns more than 20 rows, `csvql.py` prints the first 10 and last 10 rows with an ellipsis between them so terminal history stays readable.
+
 ## Plot Overlays
 
 Enable the hole or rings overlays with `caddie csv:set:hole on` or `caddie csv:set:rings on`. Set geometry with `hole_x`, `hole_y`, `hole_r`, and ring radii using `ring_radii` (comma-separated values). These defaults propagate to `csvql.py` via environment variables.
