@@ -97,12 +97,11 @@ def apply_success_filter(query: str, condition: str | None) -> str:
     if not condition:
         return query
     query_body = query.strip().rstrip(";")
-    lower = query_body.lower()
     split_at = len(query_body)
-    for keyword in [" order by ", " group by ", " limit ", " having ", " qualify "]:
-        idx = lower.find(keyword)
-        if idx != -1 and idx < split_at:
-            split_at = idx
+    keyword_pattern = re.compile(r"\b(order\s+by|group\s+by|limit|having|qualify)\b", re.IGNORECASE)
+    match = keyword_pattern.search(query_body)
+    if match:
+        split_at = match.start()
     head = query_body[:split_at].rstrip()
     tail = query_body[split_at:]
     if re.search(r"\bwhere\b", head, re.IGNORECASE):
