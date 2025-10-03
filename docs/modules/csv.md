@@ -9,7 +9,7 @@ The CSV module is designed to streamline data analysis workflows by providing:
 - **SQL Analytics**: Query CSV/TSV files with familiar SQL syntax using DuckDB backend
 - **Visualization**: Create scatter, line, and bar plots with matplotlib
 - **Session Management**: Manage default settings via dedicated `csv:set:*`, `csv:get:*`, and `csv:unset:*` commands
-- **Golf-Specific Features**: Optional overlays for golf hole outlines and bullseye rings
+- **Overlay Features**: Optional circle outlines and concentric rings for highlighting targets or tolerance zones
 - **Virtual Environment**: Automatically bootstrap local Python environment with dependencies
 
 ## Quick Start
@@ -27,7 +27,7 @@ caddie csv:set:y success_rate
 caddie csv:query "SELECT * FROM df WHERE distance > 20"
 
 # Create visualizations
-caddie csv:scatter --rings --ring_radii "3,6,9"
+caddie csv:scatter --rings --circle_radii "3,6,9"
 ```
 
 ## Commands
@@ -137,13 +137,13 @@ caddie csv:scatter
 caddie csv:scatter putt_data.csv output.png
 
 # Custom plot with overlays
-caddie csv:scatter --rings --ring_radii "3,6,9" --hole --title "Putting Performance"
+caddie csv:scatter --rings --circle_radii "3,6,9" --circle --title "Putting Performance"
 ```
 
 **What it does:**
 - Creates scatter plot using matplotlib
 - Applies current axis settings (x, y columns)
-- Optionally adds hole outline and bullseye rings
+- Optionally adds circle overlay and bullseye rings
 - Can save to file or display interactively
 - Uses configured plot settings from session defaults
 
@@ -195,12 +195,12 @@ CSV session defaults
   success_filter   (unset)
   scatter_filter   (unset)
   sql              (unset)
-  hole             (unset)
+  circle             (unset)
   rings            (unset)
-  hole_x           (unset)
-  hole_y           (unset)
-  hole_r           (unset)
-  ring_radii       (unset)
+  circle_x           (unset)
+  circle_y           (unset)
+  circle_r           (unset)
+  circle_radii       (unset)
 ```
 
 ### Configuration Commands
@@ -465,27 +465,27 @@ caddie csv:set:scatter_filter "distance_to_hole < 50"
 ✓ Set scatter filter to handicap BETWEEN 10 AND 20
 ```
 
-#### Golf-Specific Configuration
+#### Circle Overlay Configuration
 
-##### `caddie csv:set:hole <on|off>`
+##### `caddie csv:set:circle <on|off>`
 
-Enable or disable hole outline overlay on plots.
+Enable or disable circle overlay overlay on plots.
 
 **Arguments:**
-- `on|off`: Enable or disable hole overlay
+- `on|off`: Enable or disable circle overlay
 
 **Examples:**
 ```bash
-# Enable hole outline
-caddie csv:set:hole on
+# Enable circle overlay
+caddie csv:set:circle on
 
-# Disable hole outline
-caddie csv:set:hole off
+# Disable circle overlay
+caddie csv:set:circle off
 ```
 
 **Output:**
 ```
-✓ Set hole to on
+✓ Set circle to on
 ```
 
 ##### `caddie csv:set:rings <on|off>`
@@ -509,70 +509,70 @@ caddie csv:set:rings off
 ✓ Set rings to on
 ```
 
-##### `caddie csv:set:hole_x <value>`
+##### `caddie csv:set:circle_x <value>`
 
-Set the X position for hole center in plots.
+Set the X position for circle center in plots.
 
 **Arguments:**
-- `value`: X coordinate for hole center
+- `value`: X coordinate for circle center
 
 **Examples:**
 ```bash
-# Set hole at origin
-caddie csv:set:hole_x 0
+# Set circle at origin
+caddie csv:set:circle_x 0
 
-# Set hole offset
-caddie csv:set:hole_x 15.5
+# Set circle offset
+caddie csv:set:circle_x 15.5
 ```
 
 **Output:**
 ```
-✓ Set hole x to 0
+✓ Set circle x to 0
 ```
 
-##### `caddie csv:set:hole_y <value>`
+##### `caddie csv:set:circle_y <value>`
 
-Set the Y position for hole center in plots.
+Set the Y position for circle center in plots.
 
 **Arguments:**
-- `value`: Y coordinate for hole center
+- `value`: Y coordinate for circle center
 
 **Examples:**
 ```bash
-# Set hole at origin
-caddie csv:set:hole_y 0
+# Set circle at origin
+caddie csv:set:circle_y 0
 
-# Set hole offset
-caddie csv:set:hole_y 22.3
+# Set circle offset
+caddie csv:set:circle_y 22.3
 ```
 
 **Output:**
 ```
-✓ Set hole y to 0
+✓ Set circle y to 0
 ```
 
-##### `caddie csv:set:hole_r <radius>`
+##### `caddie csv:set:circle_r <radius>`
 
-Set the hole radius for overlay plots.
+Set the circle radius for overlay plots.
 
 **Arguments:**
-- `radius`: Hole radius in same units as data
+- `radius`: Circle radius in the same units as your dataset
 
 **Examples:**
 ```bash
-# Standard golf hole (4.25 inch diameter)
-caddie csv:set:hole_r 2.125
+# Circle with radius 2.0
+caddie csv:set:circle_r 2
 
 # Custom radius
-caddie csv:set:hole_r 1.5
+caddie csv:set:circle_r 1.5
 ```
 
 **Output:**
 ```
-✓ Set hole r to 2.125
+✓ Set circle r to 2
 ```
 
-##### `caddie csv:set:ring_radii <r1,r2,...>`
+##### `caddie csv:set:circle_radii <r1,r2,...>`
 
 Set radii for bullseye rings overlay.
 
@@ -582,13 +582,13 @@ Set radii for bullseye rings overlay.
 **Examples:**
 ```bash
 # Training targets at 3, 6, 9 feet
-caddie csv:set:ring_radii "3,6,9"
+caddie csv:set:circle_radii "3,6,9"
 
 # Precision rings at 1.5, 3 feet
-caddie csv:set:ring_radii "1.5,3"
+caddie csv:set:circle_radii "1.5,3"
 
 # Multiple targets
-caddie csv:set:ring_radii "2,4,6,8,10"
+caddie csv:set:circle_radii "2,4,6,8,10"
 ```
 
 **Output:**
@@ -613,12 +613,12 @@ All CSV module settings map to environment variables with the `CADDIE_CSV_` pref
 | `sql` | `CADDIE_CSV_SQL` | Default SQL query |
 | `success_filter` | `CADDIE_CSV_SUCCESS_FILTER` | sql predicate for success filtering |
 | `scatter_filter` | `CADDIE_CSV_SCATTER_FILTER` | SQL predicate for scatter plot filtering |
-| `hole` | `CADDIE_CSV_HOLE` | Enable hole overlay |
+| `circle` | `CADDIE_CSV_CIRCLE` | Enable circle overlay |
 | `rings` | `CADDIE_CSV_RINGS` | Enable ring overlay |
-| `hole_x` | `CADDIE_CSV_HOLE_X` | Hole center X position |
-| `hole_y` | `CADDIE_CSV_HOLE_Y` | Hole center Y position |
-| `hole_r` | `CADDIE_CSV_HOLE_R` | Hole radius |
-| `ring_radii` | `CADDIE_CSV_RING_RADII` | Ring radii (comma-separated) |
+| `circle_x` | `CADDIE_CSV_CIRCLE_X` | Circle center X position |
+| `circle_y` | `CADDIE_CSV_CIRCLE_Y` | Circle center Y position |
+| `circle_r` | `CADDIE_CSV_CIRCLE_R` | Circle radius |
+| `circle_radii` | `CADDIE_CSV_RING_RADII` | Circle radii (comma-separated) |
 
 ### Setting Environment Variables Directly
 
@@ -672,19 +672,19 @@ caddie csv:set:y avg_score
 caddie csv:scatter --title "Average Score by Handicap"
 ```
 
-## Golf-Specific Features
+## Overlay Features
 
-### Hole Outline Overlay
+### Circle Outline Overlay
 
-Add a circle representing the golf hole to your plots:
+Add a circle representing the target circle to your plots:
 
 ```bash
-# Enable hole overlay
-caddie csv:set:hole on
-caddie csv:set:hole_x 0
-caddie csv:set:hole_y 0
-caddie csv:set:hole_r 2.125  # Standard golf hole radius
-caddie csv:scatter --title "Shot Dispersion Around Hole"
+# Enable circle overlay
+caddie csv:set:circle on
+caddie csv:set:circle_x 0
+caddie csv:set:circle_y 0
+caddie csv:set:circle_r 2.125  # Standard target circle radius
+caddie csv:scatter --title "Shot Dispersion Around Circle"
 ```
 
 ### Bullseye Rings Overlay
@@ -694,20 +694,20 @@ Add concentric rings for target practice visualization:
 ```bash
 # Enable rings with training targets
 caddie csv:set:rings on
-caddie csv:set:ring_radii "3,6,9"  # 3, 6, and 9 foot rings
+caddie csv:set:circle_radii "3,6,9"  # 3, 6, and 9 foot rings
 caddie csv:scatter --title "Putting Accuracy Training"
 ```
 
 ### Combined Overlays
 
-Use both hole and ring overlays together:
+Use both circle and ring overlays together:
 
 ```bash
 # Enable both overlays
-caddie csv:set:hole on
+caddie csv:set:circle on
 caddie csv:set:rings on
-caddie csv:set:hole_r 2.125
-caddie csv:set:ring_radii "1,3,5"
+caddie csv:set:circle_r 2.125
+caddie csv:set:circle_radii "1,3,5"
 caddie csv:scatter --title "Complete Putting Analysis"
 ```
 
@@ -804,7 +804,7 @@ SELECT STDDEV(distance_to_hole), VARIANCE(success_rate) FROM df
 
 ## Data Analysis Examples
 
-### Golf Performance Analysis
+### Circle Target Analysis
 
 ```bash
 #!/bin/bash
@@ -847,9 +847,9 @@ ORDER BY handicap
 "
 
 # Create visualization
-caddie csv:set:hole on
+caddie csv:set:circle on
 caddie csv:set:rings on
-caddie csv:set:ring_radii "3,6,9"
+caddie csv:set:circle_radii "3,6,9"
 caddie csv:scatter --title "Putting Performance Analysis"
 ```
 
@@ -874,7 +874,7 @@ SELECT
 FROM df
 "
 
-# Distance from hole analysis
+# Distance from target analysis
 caddie csv:query "
 SELECT 
     CASE 
@@ -891,12 +891,12 @@ GROUP BY proximity_category
 ORDER BY avg_distance
 "
 
-# Create scatter plot with golf context
-caddie csv:set:hole on
+# Create scatter plot with target context
+caddie csv:set:circle on
 caddie csv:set:rings on
-caddie csv:set:hole_r 2.125
-caddie csv:set:ring_radii "3,6,9"
-caddie csv:scatter --title "Shot Dispersion Around Hole"
+caddie csv:set:circle_r 2.125
+caddie csv:set:circle_radii "3,6,9"
+caddie csv:scatter --title "Shot Dispersion Around Circle"
 ```
 
 ## Error Handling
@@ -953,12 +953,12 @@ caddie csv:init
 ```
 
 #### "Error: Invalid ring radius"
-**Cause**: Non-numeric value in ring_radii
+**Cause**: Non-numeric value in circle_radii
 **Solution**: Use comma-separated numeric values
 
 ```bash
-caddie csv:set:ring_radii "3,6,9"  # Correct
-# NOT (comma space): caddie csv:set:ring_radii "3, 6, 9 feet"
+caddie csv:set:circle_radii "3,6,9"  # Correct
+# NOT (comma space): caddie csv:set:circle_radii "3, 6, 9 feet"
 ```
 
 ### Error Output Format
@@ -1070,7 +1070,7 @@ caddie csv:scatter --save output.png
 
 1. **Meaningful Axes**: Choose axes that reveal insights about your data
 2. **Appropriate Scales**: Use log scales for wide-ranging data
-3. **Context Overlays**: Use hole and ring overlays for golf-specific analysis
+3. **Context Overlays**: Use circle and ring overlays for diagram-specific analysis
 4. **Clear Titles**: Always provide meaningful plot titles
 
 ### Performance Optimization
@@ -1086,15 +1086,15 @@ caddie csv:scatter --save output.png
 
 ```bash
 #!/bin/bash
-# complete-golf-analysis.sh
+# complete-circle target-analysis.sh
 
-echo "=== Golf Performance Analysis ==="
+echo "=== Circle Target Analysis ==="
 
 # Initialize environment
 caddie csv:init
 
 # Set up default configuration
-caddie csv:set:file "golf_data.csv"
+caddie csv:set:file "analysis_data.csv"
 caddie csv:set:x "distance"
 caddie csv:set:y "success_rate"
 
@@ -1147,10 +1147,10 @@ caddie csv:scatter --title "Overall Putting Performance" --save overall_performa
 # Dispersion analysis
 caddie csv:set:x x_position
 caddie csv:set:y y_position
-caddie csv:set:hole on
+caddie csv:set:circle on
 caddie csv:set:rings on
-caddie csv:set:hole_r 2.125
-caddie csv:set:ring_radii "3,6,9"
+caddie csv:set:circle_r 2.125
+caddie csv:set:circle_radii "3,6,9"
 caddie csv:scatter --title "Shot Dispersion Analysis" --save dispersion.png
 
 # Clean up configuration
@@ -1202,7 +1202,7 @@ echo "✓ CSV module test completed successfully"
 
 ```bash
 #!/bin/bash
-# golf-workflow-integration.sh
+# circle target-workflow-integration.sh
 
 # Start with Rust simulation output
 echo "Running Monte Carlo simulation..."
@@ -1214,16 +1214,16 @@ caddie csv:set:x distance
 caddie csv:set:y success_rate
 
 # Create performance dashboard
-caddie csv:set:hole on
+caddie csv:set:circle on
 caddie csv:set:rings on
-caddie csv:set:ring_radii "3,6,9"
+caddie csv:set:circle_radii "3,6,9"
 caddie csv:scatter --title "Simulation Results" --save simulation_results.png
 
 # Generate git commit with results
 caddie git:gadd target/simulation_results.png
 caddie git:gcommit "Add simulation results and analysis"
 
-echo "✓ Complete golf analysis workflow completed"
+echo "✓ Complete analysis workflow completed"
 ```
 
 ## Related Documentation
@@ -1241,4 +1241,4 @@ echo "✓ Complete golf analysis workflow completed"
 
 ---
 
-*The CSV module provides everything you need for professional golf data analysis. From simple queries to complex visualizations, it makes data-driven insights accessible and consistent.*
+*The CSV module provides everything you need for professional performance data analysis. From simple queries to complex visualizations, it makes data-driven insights accessible and consistent.*

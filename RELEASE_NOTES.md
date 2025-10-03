@@ -10,7 +10,7 @@ Version 3.0 transforms caddie.sh into a powerful data analysis platform while fi
 
 - **Advanced CSV Analytics**: Complete SQL query engine over CSV/TSV files with DuckDB backend, enabling complex data analysis without leaving the terminal
 - **Intelligent Visualization**: Convert SQL results into professional scatter plots, line charts, and bar graphs with matplotlib integration
-- **Golf-Specific Data Analysis**: Specialized overlays for golf hole outlines and bullseye rings, perfect for putting analysis and shot dispersion studies
+- **Diagram Overlays**: Optional circle and ring overlays for visual context in dispersion charts or other spatial analyses
 - **Shell-Safe Prompt**: Fixed critical cursor jumping bug caused by improper ANSI color sequences, ensuring stable terminal experience
 - **Session-Based Configuration**: Powerful session management keeps concurrent terminals independent with per-shell CSV settings
 
@@ -25,7 +25,7 @@ Version 3.0 transforms caddie.sh into a powerful data analysis platform while fi
 #### **Advanced Data Visualization**
 - **Multiple Plot Types**: Scatter plots, line charts, and bar graphs with professional matplotlib rendering
 - **Live Session Configuration**: Set file, axes, filters, and plot options once then use repeatedly across commands
-- **Golf Performance Analytics**: Specialized overlays including hole boundaries and training rings for putting analysis
+- **Diagram Enhancements**: Circle and ring overlays create flexible visuals for dispersion or proximity analysis
 - **Flexible Output**: Interactive plots or save to PNG files for presentations and reports
 - **Smart Defaults**: Session-based settings eliminate repetitive command parameters
 
@@ -40,7 +40,7 @@ caddie csv:set:y "success_rate"
 # Analyze putting performance
 caddie csv:query "SELECT distance, COUNT(*) as attempts, AVG(success*100) as rate FROM df GROUP BY distance"
 
-# Visualize with golf context
+# Visualize with spherical context
 caddie csv:set:rings on
 caddie csv:set:ring_radii "3,6,9"
 caddie csv:scatter --title "Putting Performance Analysis"
@@ -50,7 +50,7 @@ caddie csv:scatter --title "Putting Performance Analysis"
 - **17 Configuration Commands**: Complete `csv:set:<key>`, `csv:get:<key>`, `csv:unset:<key>` pairs for all settings
 - **Environment Variable Mapping**: All settings stored as `CADDIE_CSV_*` variables for shell-scoped persistence
 - **Configuration Overview**: `csv:list` shows all current defaults with clear visual organization
-- **Flexible Settings**: File paths, axis columns, SQL queries, filters, plot options, and golf overlays
+- **Flexible Settings**: File paths, axis columns, SQL queries, filters, plot options, and circle/ring overlays
 
 ### 🔧 Critical Bug Fixes
 
@@ -74,8 +74,8 @@ caddie csv:scatter --title "Putting Performance Analysis"
 
 ### 📊 Use Cases Unleashed
 
-#### **Golf Performance Analytics**
-- **Shot Dispersion Analysis**: Visualize putting scatter patterns around the hole with precise training rings
+#### **Diagram Performance Analytics**
+- **Scatter Context**: Overlay circles and rings to highlight dispersion targets or regions of interest
 - **Handicap-Based Performance**: Analyze success rates by distance and skill level across player categories
 - **Precision Training**: Create targeted practice regimens using distance-based performance visualization
 - **Competition Preparation**: Generate professional charts for coaching presentations and performance reviews

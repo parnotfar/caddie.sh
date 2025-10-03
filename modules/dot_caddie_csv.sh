@@ -18,19 +18,17 @@ function caddie_csv_init_globals() {
         [success_filter]=CADDIE_CSV_SUCCESS_FILTER
         [scatter_filter]=CADDIE_CSV_SCATTER_FILTER
         [sql]=CADDIE_CSV_SQL
-        [hole]=CADDIE_CSV_HOLE
+        [circle]=CADDIE_CSV_CIRCLE
         [rings]=CADDIE_CSV_RINGS
-        [hole_x]=CADDIE_CSV_HOLE_X
-        [hole_y]=CADDIE_CSV_HOLE_Y
-        [hole_r]=CADDIE_CSV_HOLE_R
-        [ring_radii]=CADDIE_CSV_RING_RADII
+        [circle_x]=CADDIE_CSV_CIRCLE_X
+        [circle_y]=CADDIE_CSV_CIRCLE_Y
+        [circle_r]=CADDIE_CSV_CIRCLE_R
+        [circle_radii]=CADDIE_CSV_CIRCLE_RADII
     )
 
     declare -ga CADDIE_CSV_KEY_ORDER=(
-        file x y sep plot title limit save success_filter scatter_filter sql hole rings hole_x hole_y hole_r ring_radii
+        file x y sep plot title limit save success_filter scatter_filter sql circle rings circle_x circle_y circle_r circle_radii
     )
-
-    return 0
 }
 
 caddie_csv_init_globals
@@ -94,10 +92,7 @@ function caddie_csv_unset_alias_internal() {
 
 function caddie_csv_list() {
     caddie cli:title "CSV session defaults"
-    local alias
-    local env
-    local value
-
+    local alias env value
     for alias in "${CADDIE_CSV_KEY_ORDER[@]}"; do
         env="${CADDIE_CSV_ENV_MAP[$alias]}"
         value="${!env:-}"
@@ -107,7 +102,6 @@ function caddie_csv_list() {
             printf '  %-17s (unset)\n' "$alias"
         fi
     done
-
     return 0
 }
 
@@ -155,35 +149,32 @@ function caddie_csv_set_sql()           { caddie_csv_set_alias_internal sql "cad
 function caddie_csv_get_sql()           { caddie_csv_show_alias_internal sql; return $?; }
 function caddie_csv_unset_sql()         { caddie_csv_unset_alias_internal sql; return $?; }
 
-function caddie_csv_set_hole()          { caddie_csv_set_alias_internal hole "caddie csv:set:hole <on|off>" "$@"; return $?; }
-function caddie_csv_get_hole()          { caddie_csv_show_alias_internal hole; return $?; }
-function caddie_csv_unset_hole()        { caddie_csv_unset_alias_internal hole; return $?; }
+function caddie_csv_set_circle()        { caddie_csv_set_alias_internal circle "caddie csv:set:circle <on|off>" "$@"; return $?; }
+function caddie_csv_get_circle()        { caddie_csv_show_alias_internal circle; return $?; }
+function caddie_csv_unset_circle()      { caddie_csv_unset_alias_internal circle; return $?; }
 
 function caddie_csv_set_rings()         { caddie_csv_set_alias_internal rings "caddie csv:set:rings <on|off>" "$@"; return $?; }
 function caddie_csv_get_rings()         { caddie_csv_show_alias_internal rings; return $?; }
 function caddie_csv_unset_rings()       { caddie_csv_unset_alias_internal rings; return $?; }
 
-function caddie_csv_set_hole_x()        { caddie_csv_set_alias_internal hole_x "caddie csv:set:hole_x <value>" "$@"; return $?; }
-function caddie_csv_get_hole_x()        { caddie_csv_show_alias_internal hole_x; return $?; }
-function caddie_csv_unset_hole_x()      { caddie_csv_unset_alias_internal hole_x; return $?; }
+function caddie_csv_set_circle_x()      { caddie_csv_set_alias_internal circle_x "caddie csv:set:circle_x <value>" "$@"; return $?; }
+function caddie_csv_get_circle_x()      { caddie_csv_show_alias_internal circle_x; return $?; }
+function caddie_csv_unset_circle_x()    { caddie_csv_unset_alias_internal circle_x; return $?; }
 
-function caddie_csv_set_hole_y()        { caddie_csv_set_alias_internal hole_y "caddie csv:set:hole_y <value>" "$@"; return $?; }
-function caddie_csv_get_hole_y()        { caddie_csv_show_alias_internal hole_y; return $?; }
-function caddie_csv_unset_hole_y()      { caddie_csv_unset_alias_internal hole_y; return $?; }
+function caddie_csv_set_circle_y()      { caddie_csv_set_alias_internal circle_y "caddie csv:set:circle_y <value>" "$@"; return $?; }
+function caddie_csv_get_circle_y()      { caddie_csv_show_alias_internal circle_y; return $?; }
+function caddie_csv_unset_circle_y()    { caddie_csv_unset_alias_internal circle_y; return $?; }
 
-function caddie_csv_set_hole_r()        { caddie_csv_set_alias_internal hole_r "caddie csv:set:hole_r <value>" "$@"; return $?; }
-function caddie_csv_get_hole_r()        { caddie_csv_show_alias_internal hole_r; return $?; }
-function caddie_csv_unset_hole_r()      { caddie_csv_unset_alias_internal hole_r; return $?; }
+function caddie_csv_set_circle_r()      { caddie_csv_set_alias_internal circle_r "caddie csv:set:circle_r <value>" "$@"; return $?; }
+function caddie_csv_get_circle_r()      { caddie_csv_show_alias_internal circle_r; return $?; }
+function caddie_csv_unset_circle_r()    { caddie_csv_unset_alias_internal circle_r; return $?; }
 
-function caddie_csv_set_ring_radii()    { caddie_csv_set_alias_internal ring_radii "caddie csv:set:ring_radii <r1,r2,...>" "$@"; return $?; }
-function caddie_csv_get_ring_radii()    { caddie_csv_show_alias_internal ring_radii; return $?; }
-function caddie_csv_unset_ring_radii()  { caddie_csv_unset_alias_internal ring_radii; return $?; }
+function caddie_csv_set_circle_radii()  { caddie_csv_set_alias_internal circle_radii "caddie csv:set:circle_radii <r1,r2,...>" "$@"; return $?; }
+function caddie_csv_get_circle_radii()  { caddie_csv_show_alias_internal circle_radii; return $?; }
+function caddie_csv_unset_circle_radii(){ caddie_csv_unset_alias_internal circle_radii; return $?; }
 
 function caddie_csv_script_path_internal() {
-    # Prefer the installed helper under ~/.caddie_modules/bin, fall back to repo copy.
-    local module_dir
-    local repo_candidate
-
+    local module_dir repo_candidate
     module_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
     repo_candidate="${module_dir%/modules}/bin/csvql.py"
 
@@ -241,6 +232,7 @@ function caddie_csv_description() {
     return 0
 }
 
+
 function caddie_csv_help() {
     caddie cli:title "CSV / TSV Analytics"
     caddie cli:indent "csv:init                 Bootstrap csvql virtual environment"
@@ -251,7 +243,7 @@ function caddie_csv_help() {
     caddie cli:indent "csv:list                 Show all current defaults"
     caddie cli:blank
     caddie cli:title "Set Commands"
-    caddie cli:indent "csv:set:<key> <value>    Keys: file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, hole, rings, hole_x, hole_y, hole_r, ring_radii"
+    caddie cli:indent "csv:set:<key> <value>    Keys: file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, circle, rings, circle_x, circle_y, circle_r, ring_radii"
     caddie cli:title "Get Commands"
     caddie cli:indent "csv:get:<key>            Show current value"
     caddie cli:title "Unset Commands"
@@ -415,21 +407,21 @@ export -f caddie_csv_unset_scatter_filter
 export -f caddie_csv_set_sql
 export -f caddie_csv_get_sql
 export -f caddie_csv_unset_sql
-export -f caddie_csv_set_hole
-export -f caddie_csv_get_hole
-export -f caddie_csv_unset_hole
+export -f caddie_csv_set_circle
+export -f caddie_csv_get_circle
+export -f caddie_csv_unset_circle
 export -f caddie_csv_set_rings
 export -f caddie_csv_get_rings
 export -f caddie_csv_unset_rings
-export -f caddie_csv_set_hole_x
-export -f caddie_csv_get_hole_x
-export -f caddie_csv_unset_hole_x
-export -f caddie_csv_set_hole_y
-export -f caddie_csv_get_hole_y
-export -f caddie_csv_unset_hole_y
-export -f caddie_csv_set_hole_r
-export -f caddie_csv_get_hole_r
-export -f caddie_csv_unset_hole_r
-export -f caddie_csv_set_ring_radii
-export -f caddie_csv_get_ring_radii
-export -f caddie_csv_unset_ring_radii
+export -f caddie_csv_set_circle_x
+export -f caddie_csv_get_circle_x
+export -f caddie_csv_unset_circle_x
+export -f caddie_csv_set_circle_y
+export -f caddie_csv_get_circle_y
+export -f caddie_csv_unset_circle_y
+export -f caddie_csv_set_circle_r
+export -f caddie_csv_get_circle_r
+export -f caddie_csv_unset_circle_r
+export -f caddie_csv_set_circle_radii
+export -f caddie_csv_get_circle_radii
+export -f caddie_csv_unset_circle_radii

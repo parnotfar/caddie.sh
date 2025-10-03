@@ -227,7 +227,7 @@ caddie csv:query data/approach_shots.csv "SELECT * FROM df WHERE club = '9i'" \
   --plot scatter --rings --ring-radii "3,6" --title "9i Dispersion"
 ```
 
-Tip: `caddie csv:set:scatter_filter "success = FALSE"` defines which shots are included by default, `caddie csv:set:rings on` / `caddie csv:set:ring_radii "3,6"` toggles target overlays, and `caddie csv:list` shows the full key list (file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, hole*, rings, ring_radii). When a default file is set the prompt shows `[csv:~/path/to/file]`, mirroring the GitHub segment so you always know which dataset is active.
+Tip: `caddie csv:set:scatter_filter "success = FALSE"` defines which rows are included by default, `caddie csv:set:rings on` / `caddie csv:set:circle_radii "3,6"` toggles target overlays, and `caddie csv:list` shows the full key list (file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, circle, rings, circle_x, circle_y, circle_r, circle_radii). When a default file is set the prompt shows `[csv:~/path/to/file]`, mirroring the GitHub segment so you always know which dataset is active.
 
 Shared helpers such as `csvql.py` live in `~/.caddie_modules/bin`; drop new executables there when building future analytics or tooling modules so they are available across the entire caddie runtime.
 

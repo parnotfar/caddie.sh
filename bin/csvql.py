@@ -146,17 +146,17 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=env_int("CADDIE_CSV_LIMIT", None), help="Row limit applied to plots; terminal preview shows the first and last 10 rows")
     parser.add_argument("--save", default=os.environ.get("CADDIE_CSV_SAVE"), help="Path to save plot image instead of showing it")
     parser.add_argument("--title", default=os.environ.get("CADDIE_CSV_TITLE"), help="Plot title override")
-    parser.add_argument("--success-filter", default=os.environ.get("CADDIE_CSV_SUCCESS_FILTER"), help="SQL predicate to filter successful shots")
-    hole_default = env_bool("CADDIE_CSV_HOLE", False)
-    parser.add_argument("--hole", dest="hole", action="store_true", default=hole_default, help="Overlay hole outline on plots")
-    parser.add_argument("--no-hole", dest="hole", action="store_false", help="Disable hole overlay even if enabled via environment")
+    parser.add_argument("--success-filter", default=os.environ.get("CADDIE_CSV_SUCCESS_FILTER"), help="SQL predicate to filter successful rows")
+    circle_default = env_bool("CADDIE_CSV_CIRCLE", False)
+    parser.add_argument("--circle", dest="circle", action="store_true", default=circle_default, help="Overlay a circle outline on plots")
+    parser.add_argument("--no-circle", dest="circle", action="store_false", help="Disable circle overlay even if enabled via environment")
     rings_default = env_bool("CADDIE_CSV_RINGS", False)
     parser.add_argument("--rings", dest="rings", action="store_true", default=rings_default, help="Overlay bullseye rings on plots")
     parser.add_argument("--no-rings", dest="rings", action="store_false", help="Disable ring overlay even if enabled via environment")
-    parser.add_argument("--hole-x", type=float, default=env_float("CADDIE_CSV_HOLE_X", 0.0), help="X position for hole center")
-    parser.add_argument("--hole-y", type=float, default=env_float("CADDIE_CSV_HOLE_Y", 0.0), help="Y position for hole center")
-    parser.add_argument("--hole-r", type=float, default=env_float("CADDIE_CSV_HOLE_R", 4.25 / 2.0), help="Hole radius")
-    parser.add_argument("--ring-radii", default=os.environ.get("CADDIE_CSV_RING_RADII"), help="Comma-separated ring radii")
+    parser.add_argument("--circle-x", type=float, default=env_float("CADDIE_CSV_CIRCLE_X", 0.0), help="X position for circle center")
+    parser.add_argument("--circle-y", type=float, default=env_float("CADDIE_CSV_CIRCLE_Y", 0.0), help="Y position for circle center")
+    parser.add_argument("--circle-r", type=float, default=env_float("CADDIE_CSV_CIRCLE_R", 1.0), help="Circle radius")
+    parser.add_argument("--circle-radii", dest="circle_radii", default=os.environ.get("CADDIE_CSV_CIRCLE_RADII"), help="Comma-separated radii for additional circles")
     return parser.parse_args(argv)
 
 
@@ -198,15 +198,15 @@ def maybe_plot(df, args: argparse.Namespace) -> None:
         ax.set_title(args.title)
     ax.set_xlabel(x_col if x_col else "")
     ax.set_ylabel(y_col if y_col else "")
-    if args.hole:
-        circle = plt.Circle((args.hole_x, args.hole_y), args.hole_r, fill=False, color="darkgreen", linewidth=1.5)
+    if args.circle:
+        circle = plt.Circle((args.circle_x, args.circle_y), args.circle_r, fill=False, color="darkgreen", linewidth=1.5)
         ax.add_patch(circle)
         ax.set_aspect("equal", adjustable="datalim")
     if args.rings:
-        for idx, radius in enumerate(parse_ring_radii(args.ring_radii), start=1):
-            ring = plt.Circle((args.hole_x, args.hole_y), radius, fill=False, linestyle="--", linewidth=1.0, color="orange")
+        for idx, radius in enumerate(parse_ring_radii(args.circle_radii), start=1):
+            ring = plt.Circle((args.circle_x, args.circle_y), radius, fill=False, linestyle="--", linewidth=1.0, color="orange")
             ax.add_patch(ring)
-            ax.text(args.hole_x, args.hole_y + radius, f"Ring {idx}", color="orange", fontsize=8, ha="center")
+            ax.text(args.circle_x, args.circle_y + radius, f"Ring {idx}", color="orange", fontsize=8, ha="center")
         ax.set_aspect("equal", adjustable="datalim")
     ax.grid(True, linestyle="--", alpha=0.3)
     fig.tight_layout()
