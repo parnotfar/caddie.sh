@@ -25,6 +25,34 @@ PS_BLUE="$(__wrap_nonprint "$RAW_BLUE")"
 PS_PURPLE="$(__wrap_nonprint "$RAW_PURPLE")"
 PS_CYAN="$(__wrap_nonprint "$RAW_CYAN")"
 
+CADDIE_PROMPT_SEGMENTS=()
+
+caddie_prompt_register_segment() {
+  local fn="$1"
+  if [ -z "$fn" ]; then
+    return 1
+  fi
+  if ! declare -F "$fn" >/dev/null 2>&1; then
+    return 1
+  fi
+  local existing
+  for existing in "${CADDIE_PROMPT_SEGMENTS[@]}"; do
+    if [ "$existing" = "$fn" ]; then
+      return 0
+    fi
+  done
+  CADDIE_PROMPT_SEGMENTS+=("$fn")
+  return 0
+}
+
+caddie_prompt_clear_segments() {
+  CADDIE_PROMPT_SEGMENTS=()
+  return 0
+}
+
+export -f caddie_prompt_register_segment
+export -f caddie_prompt_clear_segments
+
 __caddie_version() {
   if [ -f "$HOME/.caddie_version" ]; then
     # shellcheck disable=SC1090
@@ -35,22 +63,12 @@ __caddie_version() {
   fi
 }
 
-__csv_segment() {
-  local csv_file="${CADDIE_CSV_FILE:-}"
-  [ -n "$csv_file" ] || return 0
-  local display="$csv_file"
-  if [ -n "$HOME" ] && [[ "$display" == "$HOME"* ]]; then
-    display="~${display#$HOME}"
-  fi
-  printf '[%scsv:%s%s]' "$PS_CYAN" "$display" "$PS_RESET"
-}
-
 __ps1_branch() {
   git rev-parse --abbrev-ref HEAD 2>/dev/null || return 0
 }
 
 set_caddie_prompt_ps1() {
-  local version branch git_info github_info csv_info changes github_status=""
+  local version branch git_info github_info changes github_status=""
   version="$(__caddie_version)"
 
   if command -v gh >/dev/null 2>&1; then
@@ -81,10 +99,25 @@ set_caddie_prompt_ps1() {
     git_info=""
   fi
 
-  csv_info="$(__csv_segment)"
+  local -a prompt_segments=()
+  local segment_fn segment_output
+  for segment_fn in "${CADDIE_PROMPT_SEGMENTS[@]}"; do
+    if declare -F "$segment_fn" >/dev/null 2>&1; then
+      segment_output="$($segment_fn)"
+      if [ -n "$segment_output" ]; then
+        prompt_segments+=("$segment_output")
+      fi
+    fi
+  done
 
   PROMPT_DIRTRIM=3
-  PS1="[${PS_BLUE}Caddie-${version}${PS_RESET}]${github_info}${csv_info}${git_info}"
+  PS1="[${PS_BLUE}Caddie-${version}${PS_RESET}]${github_info}${git_info}"
+  if [ ${#prompt_segments[@]} -gt 0 ]; then
+    local segment
+    for segment in "${prompt_segments[@]}"; do
+      PS1+="$segment"
+    done
+  fi
   PS1+=$'\n'"${PS_YELLOW}\w${PS_RESET} \$ "
 }
 

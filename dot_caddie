@@ -152,26 +152,6 @@ _caddie_completion() {
       github)
         module_commands="$module_commands github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
         ;;
-      csv)
-        module_commands="$module_commands csv:init csv:query csv:scatter csv:head csv:tail csv:list \
-csv:set:file csv:get:file csv:unset:file \
-csv:set:x csv:get:x csv:unset:x \
-csv:set:y csv:get:y csv:unset:y \
-csv:set:sep csv:get:sep csv:unset:sep \
-csv:set:plot csv:get:plot csv:unset:plot \
-csv:set:title csv:get:title csv:unset:title \
-csv:set:limit csv:get:limit csv:unset:limit \
-csv:set:save csv:get:save csv:unset:save \
-csv:set:success_filter csv:get:success_filter csv:unset:success_filter \
-csv:set:scatter_filter csv:get:scatter_filter csv:unset:scatter_filter \
-csv:set:sql csv:get:sql csv:unset:sql \
-csv:set:circle csv:get:circle csv:unset:circle \
-csv:set:rings csv:get:rings csv:unset:rings \
-csv:set:circle_x csv:get:circle_x csv:unset:circle_x \
-csv:set:circle_y csv:get:circle_y csv:unset:circle_y \
-csv:set:circle_r csv:get:circle_r csv:unset:circle_r \
-csv:set:circle_radii csv:get:circle_radii csv:unset:circle_radii"
-        ;;
       cli)
         module_commands="$module_commands cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:check cli:x cli:arrow cli:folder cli:beer cli:snake cli:crab cli:trash cli:rotate cli:chart cli:magnify cli:save cli:warning cli:debug cli:wrench cli:whale cli:package cli:git cli:rocket cli:thought cli:lightbulb cli:magnifying_glass cli:blank cli:indent cli:help"
         ;;
@@ -238,9 +218,15 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
     caddie_modules_reset
 
     # Load all modules and populate modules array
+    caddie_prompt_clear_segments
     while IFS= read -r -d '' file; do
         source "$file"
-        caddie_modules_append "$(caddie_extract_module_name "$file")"
+        module_name="$(caddie_extract_module_name "$file")"
+        caddie_modules_append "$module_name"
+        prompt_fn="caddie_${module_name}_prompt_segment"
+        if declare -F "$prompt_fn" >/dev/null 2>&1; then
+            caddie_prompt_register_segment "$prompt_fn"
+        fi
     done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
 else
     caddie cli:warning "Installation Error: The modules directory for caddie is not found.  Please reinstall caddie."

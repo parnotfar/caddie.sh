@@ -43,7 +43,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`rust`**: Rust development tools and project management
 - **`ruby`**: Ruby environment with RVM integration
 - **`js`**: JavaScript/Node.js tools and NVM management
-- **`csv`**: SQL analytics and plotting for CSV/TSV datasets
+- **`csv`** *(optional via [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools))*: SQL analytics and plotting for CSV/TSV datasets
 - **`ios`**: iOS development tools and Xcode integration
 - **`cross`**: Multi-language project templates and tools
 - **`cursor`**: IDE integration and AI-powered development
@@ -205,35 +205,20 @@ nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
 
-### CSV Analytics
+### CSV Analytics (external module)
 
-Use the CSV module to analyze shot-tracking exports or any structured CSV/TSV file with SQL and plotting support.
+The CSV analytics commands (`csv:*`) now live in the standalone [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools) repository. Install the module to regain the full querying and plotting workflow:
 
 ```bash
-# Bootstrap dependencies (DuckDB, pandas, matplotlib)
-caddie csv:init
-
-# Set reusable defaults once (current shell only)
-caddie csv:set:file ~/work/data/approach_shots.csv
-caddie csv:set:x aim_offset_x
-caddie csv:set:y aim_offset_y
-caddie csv:list
-
-# Render a dispersion chart and save it to disk
-caddie csv:scatter data/approach_shots.csv charts/approach.png --limit 200
-
-# Preview the top/bottom of the dataset before deeper analysis
-caddie csv:head data/approach_shots.csv -n 5
-caddie csv:tail -n 20
-
-# Run a custom query with overlays
-caddie csv:query data/approach_shots.csv "SELECT * FROM df WHERE club = '9i'" \
-  --plot scatter --rings --ring-radii "3,6" --title "9i Dispersion"
+git clone https://github.com/parnotfar/caddie-csv-tools.git
+cd caddie-csv-tools
+make install
+caddie reload
 ```
 
-Tip: `caddie csv:set:scatter_filter "success = FALSE"` defines which rows are included by default, `caddie csv:set:rings on` / `caddie csv:set:circle_radii "3,6"` toggles target overlays, and `caddie csv:list` shows the full key list (file, x, y, sep, plot, title, limit, save, success_filter, scatter_filter, sql, circle, rings, circle_x, circle_y, circle_r, circle_radii). When a default file is set the prompt shows `[csv:~/path/to/file]`, mirroring the GitHub segment so you always know which dataset is active.
+Refer to that repository’s documentation for the latest command reference and usage examples.
 
-Shared helpers such as `csvql.py` live in `~/.caddie_modules/bin`; drop new executables there when building future analytics or tooling modules so they are available across the entire caddie runtime.
+Shared helpers live in `~/.caddie_modules/bin`; drop new executables there when building future analytics or tooling modules so they are available across the entire caddie runtime.
 
 > 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie go:home` to quickly navigate to your caddie home directory!
 

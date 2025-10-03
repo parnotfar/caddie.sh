@@ -1,98 +1,31 @@
 # Caddie.sh Release Notes
 
-## Version 3.0 - Professional CSV Analytics & Terminal Safety
+## Version 2.2 - Prompt Registry & ANSI Safety
 
-**Release Date:** October 2025
+**Release Date:** February 2025
 
-### 🎯 Major Release Highlights
+### 🎯 Release Highlights
 
-Version 3.0 transforms caddie.sh into a powerful data analysis platform while fixing critical terminal stability issues:
+- **Prompt Segment Registry**: Modules can now register prompt segments via `caddie_prompt_register_segment`, letting optional packages (like the external CSV tools) render status information without patching core files.
+- **PS1 Color Hardening**: Reworked prompt assembly to keep ANSI sequences properly wrapped and avoid cursor jumps across terminal emulators.
+- **CSV Module Extraction**: The built-in CSV analytics commands were moved to the standalone [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools) repository, simplifying the core distribution while keeping the data tooling available for those who need it.
 
-- **Advanced CSV Analytics**: Complete SQL query engine over CSV/TSV files with DuckDB backend, enabling complex data analysis without leaving the terminal
-- **Intelligent Visualization**: Convert SQL results into scatter plots, line charts, and bar graphs with matplotlib integration
-- **Diagram Overlays**: Optional circle and ring overlays for visual context in dispersion charts or other spatial analyses
-- **Shell-Safe Prompt**: Fixed critical cursor jumping bug caused by improper ANSI color sequences, ensuring stable terminal experience
-- **Session-Based Configuration**: Powerful session management keeps concurrent terminals independent with per-shell CSV settings
+### 🔧 Bug Fixes
 
-### 🚀 Practical CSV Analytics Capabilities
+- Fixed ANSI color handling that could cause prompt flicker or cursor misplacement in multi-line PS1 setups.
+- Ensured prompt segments added by modules are deduplicated and safely evaluated each render.
+- Removed lingering references to the internal CSV helper binaries from documentation and install routines.
 
-#### **Professional SQL Data Analysis**
-- **DuckDB Integration**: Industry-grade SQL engine powered by DuckDB for fast analytics over large CSV files
-- **Complete SQL Support**: Full SQL syntax including GROUP BY, ORDER BY, window functions, aggregations, and complex WHERE clauses
-- **Large Dataset Handling**: Intelligent result pagination prevents terminal overflow with smart first/last 10 row summaries
-- **Multiple File Formats**: Native support for CSV, TSV, and custom separators with automatic header detection
+### 📦 Ecosystem Update
 
-#### **Simple and Ready Data Visualization**
-- **Multiple Plot Types**: Scatter plots, line charts, and bar graphs with matplotlib rendering
-- **Live Session Configuration**: Set file, axes, filters, and plot options once then use repeatedly across commands
-- **Diagram Enhancements**: Circle and ring overlays create flexible visuals for dispersion or proximity analysis
-- **Flexible Output**: Interactive plots or save to PNG files for presentations and reports
-- **Smart Defaults**: Session-based settings eliminate repetitive command parameters
-
-#### **Streamlined Workflow Integration**
-```bash
-# Complete data analysis workflow
-caddie csv:init
-caddie csv:set:file "putting_results.csv"
-caddie csv:set:x "distance"
-caddie csv:set:y "success_rate"
-
-# Analyze data performance
-caddie csv:query "SELECT distance, COUNT(*) as attempts, AVG(success*100) as rate FROM df GROUP BY distance"
-
-# Visualize with spherical context
-caddie csv:set:rings on
-caddie csv:set:ring_radii "3,6,9"
-caddie csv:scatter --title "Data Performance Analysis"
-```
-
-#### **Comprehensive Session Management**
-- **17 Configuration Commands**: Complete `csv:set:<key>`, `csv:get:<key>`, `csv:unset:<key>` pairs for all settings
-- **Environment Variable Mapping**: All settings stored as `CADDIE_CSV_*` variables for shell-scoped persistence
-- **Configuration Overview**: `csv:list` shows all current defaults with clear visual organization
-- **Flexible Settings**: File paths, axis columns, SQL queries, filters, plot options, and circle/ring overlays
-
-### 🔧 Critical Bug Fixes
-
-#### **Terminal Stability Revolution**
-- **PS1-Safe Color System**: Complete rebuild of color handling to prevent cursor jumping and terminal corruption
-- **Non-Printable Character Elimination**: Proper ANSI color sequence wrapping ensures stable cursor positioning
-- **Cross-Terminal Compatibility**: Fixed color issues that caused problems across different terminal emulators
-- **Legacy Compatibility**: Maintained backward compatibility while fixing underlying color handling
-
-#### **Enhanced Prompt Intelligence**
-- **Active File Display**: Shows current CSV file as `[csv:filename]` in prompt without cursor disruption
-- **Safe Color Integration**: GitHub account and CSV file indicators use PS1-compatible color sequences
-- **Stable Multi-line Operations**: Complex commands and large outputs no longer cause cursor jumping
-- **Professional Appearance**: Clean, readable prompt with contextual information display
-
-#### **Data Analysis Reliability Improvements**
-- **Environment Variable Safety**: Prevent SQL injection from unset environment variables in query assembly
-- **DuckDB Error Prevention**: Eliminated binder errors from malformed SQL generated by missing filter configurations
-- **Predictable Filter Behavior**: Plots only apply explicitly configured filters, avoiding assumptions about column names
-- **Robust Error Handling**: Clear error messages with specific guidance for resolving common issues
-
-### 📊 Use Cases Unleashed
-
-#### **Diagram Performance Analytics**
-- **Scatter Context**: Overlay circles and rings to highlight dispersion targets or regions of interest
-- **Performance Based**: Analyze success rates by and other metrics across categories
-
-#### **General Data Science**
-- **Rapid Prototyping**: Explore datasets with SQL queries faster than loading into traditional analytics tools
-- **Terminal-Based Analysis**: Complete data science workflow without leaving the command line
-- **Reproducible Research**: Session configuration ensures consistent analysis across multiple investigations
-- **Script Integration**: CSV commands integrate seamlessly with bash scripts and automation pipelines
-
-#### **Cross-Module Workflows**
-```bash
-# Rust simulation → CSV analysis → Git commit workflow
-caddie rust:run:example multi_distance_demo
-caddie csv:set:file target/putt_data.csv
-caddie csv:set:rings on --ring_radii "3,6,9"
-caddie csv:scatter --title "Simulation Results" --save results.png
-caddie git:gacp "Add simulation analysis and visualizations"
-```
+- Developers who relied on `csv:*` commands can install the decoupled module:
+  ```bash
+  git clone https://github.com/parnotfar/caddie-csv-tools.git
+  cd caddie-csv-tools
+  make install
+  caddie reload
+  ```
+  The external repository ships the same analytics and plotting features, now versioned independently.
 
 ---
 

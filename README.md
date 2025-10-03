@@ -29,12 +29,12 @@ shortcuts to make your coding experience smooth and efficient.
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
-- **CSV/TSV Analytics**: Query structured shot data with DuckDB SQL, session defaults, and matplotlib visualizations
 - **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
 - **Productivity Aliases**: 50+ aliases for faster development workflows
+- **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core
 
 ## 🚀 Quick Start
 
@@ -86,10 +86,10 @@ caddie help
 - **[JavaScript Module](docs/modules/javascript.md)** - Node.js and npm management
 - **[iOS Module](docs/modules/ios.md)** - iOS development tools and Rust integration
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
-- **[CSV Module](docs/modules/csv.md)** - SQL-powered analytics and plotting for CSV/TSV data
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
+- External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately
 
 ## 🚀 Productivity Aliases
 
@@ -200,7 +200,7 @@ caddie.sh/
 ├── dot_caddie_version      # Version information
 ├── dot_caddie_debug        # Debug system
 ├── dot_caddie_modules      # Data structure management
-├── bin/                    # Executables shared across modules (e.g., csvql.py)
+├── bin/                    # Executables shared across modules
 ├── modules/                # All module files
 │   ├── dot_caddie_core     # Core functions and debug system
 │   ├── dot_caddie_python   # Python environment management
