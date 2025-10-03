@@ -222,6 +222,10 @@ caddie csv:list
 # Render a dispersion chart and save it to disk
 caddie csv:scatter data/approach_shots.csv charts/approach.png --limit 200
 
+# Preview the top/bottom of the dataset before deeper analysis
+caddie csv:head data/approach_shots.csv -n 5
+caddie csv:tail -n 20
+
 # Run a custom query with overlays
 caddie csv:query data/approach_shots.csv "SELECT * FROM df WHERE club = '9i'" \
   --plot scatter --rings --ring-radii "3,6" --title "9i Dispersion"

@@ -153,7 +153,7 @@ _caddie_completion() {
         module_commands="$module_commands github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
         ;;
       csv)
-        module_commands="$module_commands csv:init csv:query csv:scatter csv:list \
+        module_commands="$module_commands csv:init csv:query csv:scatter csv:head csv:tail csv:list \
 csv:set:file csv:get:file csv:unset:file \
 csv:set:x csv:get:x csv:unset:x \
 csv:set:y csv:get:y csv:unset:y \

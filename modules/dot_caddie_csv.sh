@@ -29,6 +29,8 @@ function caddie_csv_init_globals() {
     declare -ga CADDIE_CSV_KEY_ORDER=(
         file x y sep plot title limit save success_filter scatter_filter sql circle rings circle_x circle_y circle_r circle_radii
     )
+
+    return 0
 }
 
 caddie_csv_init_globals
@@ -92,7 +94,9 @@ function caddie_csv_unset_alias_internal() {
 
 function caddie_csv_list() {
     caddie cli:title "CSV session defaults"
-    local alias env value
+    local alias
+    local env
+    local value
     for alias in "${CADDIE_CSV_KEY_ORDER[@]}"; do
         env="${CADDIE_CSV_ENV_MAP[$alias]}"
         value="${!env:-}"
@@ -174,7 +178,8 @@ function caddie_csv_get_circle_radii()  { caddie_csv_show_alias_internal circle_
 function caddie_csv_unset_circle_radii(){ caddie_csv_unset_alias_internal circle_radii; return $?; }
 
 function caddie_csv_script_path_internal() {
-    local module_dir repo_candidate
+    local module_dir
+    local repo_candidate
     module_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
     repo_candidate="${module_dir%/modules}/bin/csvql.py"
 
@@ -227,6 +232,61 @@ function caddie_csv_resolve_file_argument_internal() {
     return 0
 }
 
+function caddie_csv_preview_internal() {
+    local preview_cmd="$1"
+    local action_label="$2"
+    local usage="$3"
+    shift 3
+
+    if [ $# -gt 0 ]; then
+        case "$1" in
+            --help|-h)
+                caddie cli:title "$action_label"
+                caddie cli:usage "$usage"
+                caddie cli:thought "Set a default file with caddie csv:set:file <path>"
+                return 0
+                ;;
+        esac
+    fi
+
+    local file_candidate=""
+    if [ $# -gt 0 ] && [[ "$1" != -* ]]; then
+        file_candidate="$1"
+        shift
+    fi
+
+    local csv_file
+    csv_file=$(caddie_csv_resolve_file_argument_internal "$file_candidate")
+
+    if [ -z "$csv_file" ]; then
+        caddie cli:red "Error: CSV file required"
+        caddie cli:usage "$usage"
+        caddie cli:thought "Provide a file or set a default with caddie csv:set:file <path>"
+        return 1
+    fi
+
+    if [ ! -f "$csv_file" ]; then
+        caddie cli:red "File not found: $csv_file"
+        return 1
+    fi
+
+    caddie cli:title "$action_label for $csv_file"
+
+    if [ $# -gt 0 ]; then
+        command "$preview_cmd" "$@" "$csv_file"
+    else
+        command "$preview_cmd" "$csv_file"
+    fi
+
+    local status=$?
+    if [ $status -ne 0 ]; then
+        caddie cli:red "$preview_cmd command failed"
+        return $status
+    fi
+
+    return 0
+}
+
 function caddie_csv_description() {
     echo 'CSV SQL + plotting helpers using session defaults'
     return 0
@@ -238,6 +298,8 @@ function caddie_csv_help() {
     caddie cli:indent "csv:init                 Bootstrap csvql virtual environment"
     caddie cli:indent "csv:query [file] ...     Run csvql with optional SQL/flags"
     caddie cli:indent "csv:scatter [file] ...   Render scatter plot using defaults"
+    caddie cli:indent "csv:head [file] ...      Preview the first rows of a CSV file"
+    caddie cli:indent "csv:tail [file] ...      Preview the last rows of a CSV file"
     caddie cli:blank
     caddie cli:title "Session Defaults"
     caddie cli:indent "csv:list                 Show all current defaults"
@@ -341,29 +403,39 @@ function caddie_csv_scatter() {
 
     local scatter_filter="${CADDIE_CSV_SCATTER_FILTER:-}"
 
-    local -a args
-    args=("$csv_file" "--plot" "scatter")
+    local scatter_args=()
+    scatter_args+=("$csv_file" "--plot" "scatter")
 
     if [ -n "$scatter_filter" ]; then
-        args+=("--success-filter" "$scatter_filter")
+        scatter_args+=("--success-filter" "$scatter_filter")
     fi
 
     if [ -n "$output_path" ]; then
-        args+=("--save" "$output_path")
+        scatter_args+=("--save" "$output_path")
     fi
 
     if [ $# -gt 0 ]; then
-        args+=("$@")
+        scatter_args+=("$@")
     fi
 
     caddie cli:title "Rendering scatter plot for $csv_file"
-    "$script_path" "${args[@]}"
+    "$script_path" "${scatter_args[@]}"
     local status=$?
     if [ $status -ne 0 ]; then
         caddie cli:red "Scatter plot failed"
         return $status
     fi
     return 0
+}
+
+function caddie_csv_head() {
+    caddie_csv_preview_internal head "Previewing first rows" "caddie csv:head [file] [head options]" "$@"
+    return $?
+}
+
+function caddie_csv_tail() {
+    caddie_csv_preview_internal tail "Previewing last rows" "caddie csv:tail [file] [tail options]" "$@"
+    return $?
 }
 
 export -f caddie_csv_description
@@ -374,6 +446,8 @@ export -f caddie_csv_list
 export -f caddie_csv_init
 export -f caddie_csv_query
 export -f caddie_csv_scatter
+export -f caddie_csv_head
+export -f caddie_csv_tail
 export -f caddie_csv_set_file
 export -f caddie_csv_get_file
 export -f caddie_csv_unset_file

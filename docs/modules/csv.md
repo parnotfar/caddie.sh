@@ -9,6 +9,7 @@ The CSV module is designed to streamline data analysis workflows by providing:
 - **SQL Analytics**: Query CSV/TSV files with familiar SQL syntax using DuckDB backend
 - **Visualization**: Create scatter, line, and bar plots with matplotlib
 - **Session Management**: Manage default settings via dedicated `csv:set:*`, `csv:get:*`, and `csv:unset:*` commands
+- **Quick Preview**: Inspect the top or bottom of datasets with `csv:head` and `csv:tail`
 - **Overlay Features**: Optional circle outlines and concentric rings for highlighting targets or tolerance zones
 - **Virtual Environment**: Automatically bootstrap local Python environment with dependencies
 
@@ -157,6 +158,53 @@ Rendering scatter plot for putt_data.csv
 - X and Y axis columns must be defined (`caddie csv:set:x` and `caddie csv:set:y`)
 - Data columns must exist in the file
 - Plotting dependencies must be installed
+
+### Data Preview
+
+#### `caddie csv:head [file] [head options]`
+
+Preview the first rows of a CSV/TSV file using the configured default file or an explicit path.
+
+**Examples:**
+```bash
+# Preview with default file
+caddie csv:set:file approach.csv
+caddie csv:head
+
+# Preview a specific file and limit output to 5 rows
+caddie csv:head data/shot_log.csv -n 5
+```
+
+**What it does:**
+- Resolves the active CSV file from the session (or accepts an explicit file path)
+- Calls the system `head` command with any additional flags you supply
+- Helps quickly inspect the top portion of large datasets before running full queries
+
+**Usage tips:**
+- Place the file path before any `head` flags when providing an explicit file (`caddie csv:head file.csv -n 20`)
+- Configure a default file with `caddie csv:set:file <path>` to avoid repeated paths
+
+#### `caddie csv:tail [file] [tail options]`
+
+Preview the last rows of a CSV/TSV file, mirroring the behavior of the Unix `tail` command.
+
+**Examples:**
+```bash
+# Show recent entries using the default file
+caddie csv:tail -n 15
+
+# Tail a specific file with follow mode
+caddie csv:tail exports/live_metrics.csv -f
+```
+
+**What it does:**
+- Resolves the CSV file from the session or command arguments
+- Invokes the system `tail` command with any additional options
+- Useful for checking streamed exports or the most recent rows in append-only data
+
+**Usage tips:**
+- Follow mode (`-f`) works the same as the standard `tail` command
+- Provide the file path before flags when overriding the default (`caddie csv:tail file.csv -n 50`)
 
 ### Session Management
 
