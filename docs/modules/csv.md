@@ -28,7 +28,7 @@ caddie csv:set:y success_rate
 caddie csv:query "SELECT * FROM df WHERE distance > 20"
 
 # Create visualizations
-caddie csv:scatter --rings --circle_radii "3,6,9"
+caddie csv:scatter --rings --circle-radii "3,6,9"
 ```
 
 ## Commands
@@ -138,7 +138,7 @@ caddie csv:scatter
 caddie csv:scatter putt_data.csv output.png
 
 # Custom plot with overlays
-caddie csv:scatter --rings --circle_radii "3,6,9" --circle --title "Putting Performance"
+caddie csv:scatter --rings --circle-radii "3,6,9" --circle --title "Putting Performance"
 ```
 
 **What it does:**
