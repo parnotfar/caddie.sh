@@ -174,26 +174,26 @@ function caddie_csv_get_ring_radii()    { caddie_csv__show_alias ring_radii; }
 function caddie_csv_unset_ring_radii()  { caddie_csv__unset_alias ring_radii; }
 
 function caddie_csv__script_path() {
-    local module_dir script_candidates
+    # Prefer the installed helper under ~/.caddie_modules/bin, fall back to repo copy.
+    local module_dir repo_candidate
     module_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+    repo_candidate="${module_dir%/modules}/bin/csvql.py"
 
-    script_candidates=(
-        "$module_dir/bin/csvql.py"
-        "$module_dir/../bin/csvql.py"
-        "$module_dir/csv/csvql.py"
-        "$module_dir/../csv/csvql.py"
+    local candidates=(
         "$HOME/.caddie_modules/bin/csvql.py"
-        "$HOME/.caddie_modules/csv/csvql.py"
+        "$repo_candidate"
     )
 
     if [ -n "$CADDIE_HOME" ]; then
-        script_candidates+=("$CADDIE_HOME/bin/csvql.py")
-        script_candidates+=("$CADDIE_HOME/csvql.py")
-        script_candidates+=("$CADDIE_HOME/scripts/csvql.py")
+        candidates+=(
+            "$CADDIE_HOME/bin/csvql.py"
+            "$CADDIE_HOME/csvql.py"
+            "$CADDIE_HOME/scripts/csvql.py"
+        )
     fi
 
     local candidate
-    for candidate in "${script_candidates[@]}"; do
+    for candidate in "${candidates[@]}"; do
         if [ -f "$candidate" ]; then
             printf '%s\n' "$candidate"
             return 0
@@ -324,7 +324,7 @@ function caddie_csv_scatter() {
         shift
     fi
 
-    local scatter_filter="${CADDIE_CSV_SCATTER_FILTER:-${CADDIE_CSV_SUCCESS_FILTER:-}}"
+    local scatter_filter="${CADDIE_CSV_SCATTER_FILTER:-}"
 
     local -a args
     args=("$csv_file" "--plot" "scatter")
