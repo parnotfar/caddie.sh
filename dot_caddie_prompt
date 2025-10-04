@@ -110,15 +110,21 @@ set_caddie_prompt_ps1() {
     fi
   done
 
-  PROMPT_DIRTRIM=3
-  PS1="[${PS_BLUE}Caddie-${version}${PS_RESET}]${github_info}${git_info}"
+  local module_line=""
   if [ ${#prompt_segments[@]} -gt 0 ]; then
-    local segment
-    for segment in "${prompt_segments[@]}"; do
-      PS1+="$segment"
-    done
+    local IFS=$' '
+    module_line="${prompt_segments[*]}"
   fi
-  PS1+=$'\n'"${PS_YELLOW}\w${PS_RESET} \$ "
+
+  local base_line="[${PS_BLUE}Caddie-${version}${PS_RESET}]${github_info}${git_info}"
+  local path_fragment="${PS_YELLOW}\w${PS_RESET} \$ "
+
+  PROMPT_DIRTRIM=3
+  PS1=""
+  if [ -n "$module_line" ]; then
+    PS1+="$module_line"$'\n'
+  fi
+  PS1+="$base_line ${path_fragment}"
 }
 
 PROMPT_COMMAND='set_caddie_prompt_ps1'

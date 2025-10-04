@@ -24,6 +24,10 @@ This directory contains detailed documentation for each Caddie.sh module.
 ### Optional Ecosystem Modules
 - External modules maintained in separate repositories—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities.
 
+#### Prompt & Completion APIs
+- Register prompt segments with `caddie_prompt_register_segment <function>` and return the text you want appended to PS1.
+- Register tab-completion entries with `caddie_completion_register <module> "cmd1 cmd2 …"` or implement `caddie_<module>_commands` to have caddie call it automatically during module discovery.
+
 ### Shared Executables (`bin/`)
 
 Common executables that support multiple modules live in the top-level `bin/` folder (deployed to `~/.caddie_modules/bin`). Place new helpers here when you need more than shell functions—keep them executable and reference them from your modules.

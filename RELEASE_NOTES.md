@@ -2,11 +2,12 @@
 
 ## Version 2.2 - Prompt Registry & ANSI Safety
 
-**Release Date:** February 2025
+**Release Date:** October 2025
 
 ### 🎯 Release Highlights
 
 - **Prompt Segment Registry**: Modules can now register prompt segments via `caddie_prompt_register_segment`, letting optional packages (like the external CSV tools) render status information without patching core files.
+- **Completion Registry**: Module authors can advertise their `module:command` strings through a new completion API so tab completion works for both bundled and external extensions.
 - **PS1 Color Hardening**: Reworked prompt assembly to keep ANSI sequences properly wrapped and avoid cursor jumps across terminal emulators.
 - **CSV Module Extraction**: The built-in CSV analytics commands were moved to the standalone [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools) repository, simplifying the core distribution while keeping the data tooling available for those who need it.
 
@@ -16,22 +17,9 @@
 - Ensured prompt segments added by modules are deduplicated and safely evaluated each render.
 - Removed lingering references to the internal CSV helper binaries from documentation and install routines.
 
-### 📦 Ecosystem Update
-
-- Developers who relied on `csv:*` commands can install the decoupled module:
-  ```bash
-  git clone https://github.com/parnotfar/caddie-csv-tools.git
-  cd caddie-csv-tools
-  make install
-  caddie reload
-  ```
-  The external repository ships the same analytics and plotting features, now versioned independently.
-
----
-
 ## Version 2.1 - Rust Example Runner Enhancement
 
-**Release Date:** December 2024
+**Release Date:** September 2025
 
 ### 🎯 Release Highlights
 
@@ -65,7 +53,7 @@
 
 ## Version 2.0 - Universal Shell Linter & Git/GitHub Integration
 
-**Release Date:** December 2024
+**Release Date:** September 2025
 
 ### 🎯 Major Release Highlights
 
