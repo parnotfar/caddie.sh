@@ -34,6 +34,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
 - **Productivity Aliases**: 50+ aliases for faster development workflows
+- **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core
 
 ## 🚀 Quick Start
 
@@ -88,6 +89,7 @@ caddie help
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
+- External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately
 
 ## 🚀 Productivity Aliases
 
@@ -198,7 +200,8 @@ caddie.sh/
 ├── dot_caddie_version      # Version information
 ├── dot_caddie_debug        # Debug system
 ├── dot_caddie_modules      # Data structure management
-├── modules/                 # All module files
+├── bin/                    # Executables shared across modules
+├── modules/                # All module files
 │   ├── dot_caddie_core     # Core functions and debug system
 │   ├── dot_caddie_python   # Python environment management
 │   ├── dot_caddie_rust     # Rust development tools
@@ -208,12 +211,14 @@ caddie.sh/
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_cursor   # IDE integration
 │   └── dot_caddie_git      # Git enhancements
-├── docs/                    # Documentation
-├── Makefile                 # Build system
-└── README.md                # Project overview
+├── docs/                   # Documentation
+├── Makefile                # Build system
+└── README.md               # Project overview
 ```
 
 > **Note**: Tab completion is currently centralized in the main `dot_caddie` file due to Bash variable scope limitations. See [Contributing Guide](docs/contributing.md#adding-tab-completion-for-new-modules) for details on adding completion for new modules.
+
+The new `bin/` directory collects standalone executables that ship with caddie. During installation these scripts are copied to `~/.caddie_modules/bin`, giving every module a predictable place to find shared helpers. When adding future language or analytics tools, drop the runnable script into `bin/`, ensure it is executable, and reference it from your module implementation.
 
 ## Configuration
 

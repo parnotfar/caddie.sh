@@ -43,6 +43,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`rust`**: Rust development tools and project management
 - **`ruby`**: Ruby environment with RVM integration
 - **`js`**: JavaScript/Node.js tools and NVM management
+- **`csv`** *(optional via [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools))*: SQL analytics and plotting for CSV/TSV datasets
 - **`ios`**: iOS development tools and Xcode integration
 - **`cross`**: Multi-language project templates and tools
 - **`cursor`**: IDE integration and AI-powered development
@@ -203,6 +204,21 @@ nrl            # npm run lint
 nrt            # npm run test
 nrtw           # npm run test -- --watch
 ```
+
+### CSV Analytics (external module)
+
+The CSV analytics commands (`csv:*`) now live in the standalone [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools) repository. Install the module to regain the full querying and plotting workflow:
+
+```bash
+git clone https://github.com/parnotfar/caddie-csv-tools.git
+cd caddie-csv-tools
+make install
+caddie reload
+```
+
+Refer to that repository’s documentation for the latest command reference and usage examples.
+
+Shared helpers live in `~/.caddie_modules/bin`; drop new executables there when building future analytics or tooling modules so they are available across the entire caddie runtime.
 
 > 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie go:home` to quickly navigate to your caddie home directory!
 

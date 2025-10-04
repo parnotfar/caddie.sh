@@ -29,6 +29,11 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
+  - Optional ecosystem modules (e.g. [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
+
+### Shared Executables
+
+Reusable helper scripts live in the repository `bin/` directory. The installer copies this folder to `~/.caddie_modules/bin`, giving every module a predictable place to locate shared tools. When adding a new cross-cutting utility, drop the executable into `bin/`, ensure it has a shebang plus execute permissions, and invoke it from your module or dotfile.
 
 ## Quick Reference
 

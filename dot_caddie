@@ -18,10 +18,44 @@ function caddie_help() {
     caddie cli:indent "go:home                  Navigate to caddie home directory"
     
     caddie cli:title "Available modules:"
-    for m in $(caddie_modules_get); do
-        description_function="caddie_${m}_description"
-        printf "  %-10s %s\n" "$m" "$(eval "$description_function")"
-    done
+
+    local -a help_modules=()
+    declare -A seen_help_modules=()
+
+    if [ ${#CADDIE_MODULES[@]} -gt 0 ] 2>/dev/null; then
+        for m in "${CADDIE_MODULES[@]}"; do
+            if [ -n "$m" ] && [ -z "${seen_help_modules[$m]}" ]; then
+                help_modules+=("$m")
+                seen_help_modules[$m]=1
+            fi
+        done
+    fi
+
+    if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
+        for m in "${CADDIE_COMPLETION_ORDER[@]}"; do
+            if [ -n "$m" ] && [ -z "${seen_help_modules[$m]}" ]; then
+                help_modules+=("$m")
+                seen_help_modules[$m]=1
+            fi
+        done
+    fi
+
+    if [ ${#help_modules[@]} -eq 0 ]; then
+        caddie cli:indent "No modules registered"
+    else
+        local module description_function module_description
+        for module in "${help_modules[@]}"; do
+            description_function="caddie_${module}_description"
+            module_description=""
+            if declare -F "$description_function" >/dev/null 2>&1; then
+                module_description="$($description_function)"
+            fi
+            if [ -z "$module_description" ]; then
+                module_description="Registered module"
+            fi
+            printf "  %-10s %s\n" "$module" "$module_description"
+        done
+    fi
     
     caddie cli:blank
     caddie cli:title "General Commands:"
@@ -95,6 +129,39 @@ function caddie() {
 # 1) make ':' not break words (so ruby:add stays one token)
 COMP_WORDBREAKS=${COMP_WORDBREAKS//:/}
 
+declare -Ag CADDIE_COMPLETION_MAP=()
+CADDIE_COMPLETION_ORDER=()
+
+caddie_completion_clear() {
+  CADDIE_COMPLETION_MAP=()
+  CADDIE_COMPLETION_ORDER=()
+  return 0
+}
+
+caddie_completion_register() {
+  local module="$1"
+  local commands="$2"
+
+  if [ -z "$module" ] || [ -z "$commands" ]; then
+    return 1
+  fi
+
+  CADDIE_COMPLETION_MAP["$module"]="$commands"
+
+  local existing_module
+  for existing_module in "${CADDIE_COMPLETION_ORDER[@]}"; do
+    if [ "$existing_module" = "$module" ]; then
+      return 0
+    fi
+  done
+
+  CADDIE_COMPLETION_ORDER+=("$module")
+  return 0
+}
+
+export -f caddie_completion_clear
+export -f caddie_completion_register
+
 _caddie_completion() {
   local cur prev words cword
   COMPREPLY=()
@@ -111,57 +178,17 @@ _caddie_completion() {
 
   # Build a flat list of all accepted commands
   local base_opts="help version go:home --help -h --version -v reload --reload -r"
-  local modules=()
-  
-  if command -v caddie_modules_get >/dev/null 2>&1; then
-    # read safely into array; suppress module function's stdout noise
-    IFS=$'\n' read -r -d '' -a modules < <(caddie_modules_get 2>/dev/null; printf '\0')
+  local all_opts="$base_opts"
+
+  if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
+    local completion_module
+    for completion_module in "${CADDIE_COMPLETION_ORDER[@]}"; do
+      local completion_cmds="${CADDIE_COMPLETION_MAP[$completion_module]}"
+      if [ -n "$completion_cmds" ]; then
+        all_opts+=" $completion_cmds"
+      fi
+    done
   fi
-  
-  # Add module-specific commands (these are the actual commands, not subcommands)
-  local module_commands=""
-  for module in "${modules[@]}"; do
-    case "$module" in
-      python)
-        module_commands="$module_commands python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
-        ;;
-      ruby)
-        module_commands="$module_commands ruby:init ruby:bundle ruby:install ruby:update ruby:exec ruby:rake ruby:rspec ruby:rubocop"
-        ;;
-      js)
-        module_commands="$module_commands js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
-        ;;
-      rust)
-        module_commands="$module_commands rust:init rust:new rust:build rust:run rust:run:example rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
-        ;;
-      ios)
-        module_commands="$module_commands ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
-        ;;
-      core)
-        module_commands="$module_commands core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
-        ;;
-      cursor)
-        module_commands="$module_commands cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
-        ;;
-      cross)
-        module_commands="$module_commands cross:template:create"
-        ;;
-      git)
-        module_commands="$module_commands git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
-        ;;
-      github)
-        module_commands="$module_commands github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
-        ;;
-      cli)
-        module_commands="$module_commands cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:check cli:x cli:arrow cli:folder cli:beer cli:snake cli:crab cli:trash cli:rotate cli:chart cli:magnify cli:save cli:warning cli:debug cli:wrench cli:whale cli:package cli:git cli:rocket cli:thought cli:lightbulb cli:magnifying_glass cli:blank cli:indent cli:help"
-        ;;
-      debug)
-        module_commands="$module_commands debug:on debug:off debug:status debug:help"
-        ;;
-    esac
-  done
-  
-  local all_opts="$base_opts $module_commands"
   
   # Complete with all available commands
   IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$all_opts" -- "$cur")
@@ -216,11 +243,74 @@ CADDIE_MODULES_DIR="$HOME/.caddie_modules"
 if [ -d "$CADDIE_MODULES_DIR" ]; then
     # Reset modules array before loading
     caddie_modules_reset
+    caddie_prompt_clear_segments
+    caddie_completion_clear
 
     # Load all modules and populate modules array
     while IFS= read -r -d '' file; do
+        module_name=""
+        prompt_fn=""
+        completion_registered=0
+        completion_fn=""
+        completion_output=""
         source "$file"
-        caddie_modules_append "$(caddie_extract_module_name "$file")"
+        module_name="$(caddie_extract_module_name "$file")"
+        caddie_modules_append "$module_name"
+        prompt_fn="caddie_${module_name}_prompt_segment"
+        if declare -F "$prompt_fn" >/dev/null 2>&1; then
+            caddie_prompt_register_segment "$prompt_fn"
+        fi
+
+        completion_registered=0
+        completion_fn="caddie_${module_name}_commands"
+        if declare -F "$completion_fn" >/dev/null 2>&1; then
+            completion_output="$($completion_fn)"
+            if [ -n "$completion_output" ]; then
+                caddie_completion_register "$module_name" "$completion_output"
+                completion_registered=1
+            fi
+        fi
+
+        if [ "$completion_registered" != "1" ]; then
+            case "$module_name" in
+              python)
+                caddie_completion_register "$module_name" "python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
+                ;;
+              ruby)
+                caddie_completion_register "$module_name" "ruby:init ruby:bundle ruby:install ruby:update ruby:exec ruby:rake ruby:rspec ruby:rubocop"
+                ;;
+              js)
+                caddie_completion_register "$module_name" "js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
+                ;;
+              rust)
+                caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
+                ;;
+              ios)
+                caddie_completion_register "$module_name" "ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
+                ;;
+              core)
+                caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
+                ;;
+              cursor)
+                caddie_completion_register "$module_name" "cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
+                ;;
+              cross)
+                caddie_completion_register "$module_name" "cross:template:create"
+                ;;
+              git)
+                caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
+                ;;
+              github)
+                caddie_completion_register "$module_name" "github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
+                ;;
+              cli)
+                caddie_completion_register "$module_name" "cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:check cli:x cli:arrow cli:folder cli:beer cli:snake cli:crab cli:trash cli:rotate cli:chart cli:magnify cli:save cli:warning cli:debug cli:wrench cli:whale cli:package cli:git cli:rocket cli:thought cli:lightbulb cli:magnifying_glass cli:blank cli:indent cli:help"
+                ;;
+              debug)
+                caddie_completion_register "$module_name" "debug:on debug:off debug:status debug:help"
+                ;;
+            esac
+        fi
     done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
 else
     caddie cli:warning "Installation Error: The modules directory for caddie is not found.  Please reinstall caddie."

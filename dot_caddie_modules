@@ -11,6 +11,12 @@ function caddie_modules_append() {
     local module_name="$1"
 
     if [ -n "$module_name" ]; then
+        local existing
+        for existing in "${CADDIE_MODULES[@]}"; do
+            if [ "$existing" = "$module_name" ]; then
+                return 0
+            fi
+        done
         CADDIE_MODULES+=("$module_name")
     fi
 }
