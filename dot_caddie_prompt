@@ -2,7 +2,7 @@
 
 # Caddie.sh prompt helpers with PS1-safe color wrapping
 
-__wrap_nonprint() {
+function __wrap_nonprint() {
   case "$1" in
     *"\["*"\]"*) printf '%s' "$1" ;;
     *)             printf '\[%s\]' "$1" ;;
@@ -27,7 +27,7 @@ PS_CYAN="$(__wrap_nonprint "$RAW_CYAN")"
 
 CADDIE_PROMPT_SEGMENTS=()
 
-caddie_prompt_register_segment() {
+function caddie_prompt_register_segment() {
   local fn="$1"
   if [ -z "$fn" ]; then
     return 1
@@ -45,7 +45,7 @@ caddie_prompt_register_segment() {
   return 0
 }
 
-caddie_prompt_clear_segments() {
+function caddie_prompt_clear_segments() {
   CADDIE_PROMPT_SEGMENTS=()
   return 0
 }
@@ -53,7 +53,7 @@ caddie_prompt_clear_segments() {
 export -f caddie_prompt_register_segment
 export -f caddie_prompt_clear_segments
 
-__caddie_version() {
+function __caddie_version() {
   if [ -f "$HOME/.caddie_version" ]; then
     # shellcheck disable=SC1090
     . "$HOME/.caddie_version"
@@ -63,11 +63,11 @@ __caddie_version() {
   fi
 }
 
-__ps1_branch() {
+function __ps1_branch() {
   git rev-parse --abbrev-ref HEAD 2>/dev/null || return 0
 }
 
-set_caddie_prompt_ps1() {
+function set_caddie_prompt_ps1() {
   local version branch git_info github_info changes github_status=""
   version="$(__caddie_version)"
 
@@ -131,6 +131,6 @@ PROMPT_COMMAND='set_caddie_prompt_ps1'
 shopt -s checkwinsize
 
 # Backward compatibility for modules still invoking set_caddie_prompt directly
-set_caddie_prompt() {
+function set_caddie_prompt() {
   set_caddie_prompt_ps1
 }

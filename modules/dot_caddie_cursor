@@ -362,7 +362,7 @@ EOF
     return 0
 }
 
-caddie_cursor_ai_refactor() {
+function caddie_cursor_ai_refactor() {
     local file="$1"
     local refactor_type="${2:-general}"
     
@@ -413,7 +413,7 @@ EOF
     return 0
 }
 
-caddie_cursor_ai_test() {
+function caddie_cursor_ai_test() {
     local file="$1"
     local test_framework="${2:-pytest}"
     
@@ -464,7 +464,7 @@ EOF
     return 0
 }
 
-caddie_cursor_ai_docs() {
+function caddie_cursor_ai_docs() {
     local file="$1"
     local doc_format="${2:-markdown}"
     
@@ -514,7 +514,7 @@ EOF
     fi
 }
 
-caddie_cursor_ai_review() {
+function caddie_cursor_ai_review() {
     local file="$1"
     local review_focus="${2:-general}"
     
@@ -567,7 +567,7 @@ EOF
 }
 
 # Extension management functions
-caddie_cursor_ext_install() {
+function caddie_cursor_ext_install() {
     local extension_id="$1"
     
     if [ -z "$extension_id" ]; then
@@ -589,7 +589,7 @@ caddie_cursor_ext_install() {
     return 0
 }
 
-caddie_cursor_ext_list() {
+function caddie_cursor_ext_list() {
     caddie cli:title "Installed Cursor Extensions"
     caddie cli:blank
     
@@ -602,7 +602,7 @@ caddie_cursor_ext_list() {
     return 0
 }
 
-caddie_cursor_ext_update() {
+function caddie_cursor_ext_update() {
     caddie cli:title "Updating all Cursor extensions..."
     
     if command -v cursor >/dev/null 2>&1; then
@@ -615,7 +615,7 @@ caddie_cursor_ext_update() {
     return 0
 }
 
-caddie_cursor_ext_sync() {
+function caddie_cursor_ext_sync() {
     caddie cli:title "Syncing Cursor extensions..."
     
     # Create extensions list
@@ -629,7 +629,7 @@ caddie_cursor_ext_sync() {
     return 0
 }
 
-caddie_cursor_ext_recommend() {
+function caddie_cursor_ext_recommend() {
     local project_type="$1"
     
     if [ -z "$project_type" ]; then
@@ -795,7 +795,7 @@ EOF
 }
 
 # Function to display Cursor module help
-caddie_cursor_help() {
+function caddie_cursor_help() {
     caddie cli:title "Cursor IDE Integration"
     caddie cli:blank
     caddie cli:usage "caddie cursor:<command>"
@@ -908,4 +908,3 @@ export -f caddie_cursor_config_sync
 export -f caddie_cursor_config_optimize
 export -f caddie_cursor_help
 export -f caddie_cursor_description
-

@@ -303,6 +303,12 @@ caddie rust:test
 # Check code without building
 caddie rust:check
 
+# Apply compiler suggestions
+caddie rust:fix
+
+# Apply fixes across all targets (libs, bins, tests, examples)
+caddie rust:fix:all
+
 # Clean build artifacts
 caddie rust:clean
 ```

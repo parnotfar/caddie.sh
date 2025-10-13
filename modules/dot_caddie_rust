@@ -16,6 +16,22 @@ function caddie_rust_load_env() {
     fi
 }
 
+# Helper function to ensure commands run inside a Rust project
+function caddie_rust_require_project() {
+    local require_env="${1:-yes}"
+
+    if [ "$require_env" != "no-env" ]; then
+        caddie_rust_load_env || return 1
+    fi
+
+    if [ ! -f "Cargo.toml" ]; then
+        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+        return 1
+    fi
+
+    return 0
+}
+
 # Source Rust environment when module is loaded
 caddie_rust_load_env
 
@@ -146,13 +162,8 @@ function caddie_rust_new() {
 
 # Function to build current Rust project
 function caddie_rust_build() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Building Rust project..."
     cargo build
     caddie cli:check "Rust project built successfully"
@@ -160,13 +171,8 @@ function caddie_rust_build() {
 
 # Function to run current Rust project
 function caddie_rust_run() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     # Forward all args to cargo run, e.g.:
     # caddie rust:run --example simple_demo
     # caddie rust:run --bin myapp -- --flag value
@@ -183,13 +189,8 @@ function caddie_rust_run() {
 
 # Function to run a specific Cargo example: caddie rust:run:example <name> [-- <args>]
 function caddie_rust_run_example() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     local example_name="$1"
     shift || true
     if [ -z "$example_name" ]; then
@@ -211,27 +212,47 @@ function caddie_rust_run_example() {
 
 # Function to check Rust project without building
 function caddie_rust_check() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Checking Rust project..."
     cargo check
     caddie cli:check "Rust project check passed"
 }
 
+# Function to apply Rust fix suggestions for the current project
+function caddie_rust_fix() {
+    caddie_rust_require_project || return 1
+
+    caddie cli:title "Applying Rust fix suggestions..."
+    cargo fix
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Rust fixes applied successfully"
+    else
+        caddie cli:red "Rust fixes failed (exit $status)"
+    fi
+    return $status
+}
+
+# Function to apply Rust fix suggestions for all targets
+function caddie_rust_fix_all() {
+    caddie_rust_require_project || return 1
+
+    caddie cli:title "Applying Rust fix suggestions for all targets..."
+    cargo fix --all-targets
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Rust fixes for all targets applied successfully"
+    else
+        caddie cli:red "Rust fixes for all targets failed (exit $status)"
+    fi
+    return $status
+}
+
 # Function to run Rust tests
 function caddie_rust_test() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     local test_type="${1:-all}"
     
     case "$test_type" in
@@ -292,13 +313,8 @@ function caddie_rust_test() {
 
 # Function to run simulation-specific tests and validation
 function caddie_rust_simulation_test() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     local test_mode="${1:-full}"
     
     case "$test_mode" in
@@ -386,11 +402,10 @@ function caddie_rust_git_status() {
 
 # Function to add proper .gitignore to existing project
 function caddie_rust_gitignore() {
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+    if ! caddie_rust_require_project; then
         return 1
     fi
-    
+
     caddie cli:title "Adding comprehensive .gitignore to Rust project..."
     
     # Check if .gitignore already exists
@@ -487,12 +502,11 @@ function caddie_rust_git_clean() {
         caddie cli:red "Error: Not in a git repository"
         return 1
     fi
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
+
+    if ! caddie_rust_require_project no-env; then
         return 1
     fi
-    
+
     caddie cli:title "Cleaning tracked build artifacts from git..."
     
     # Check for tracked build artifacts
@@ -528,13 +542,8 @@ function caddie_rust_git_clean() {
 
 # Function to clean Rust build artifacts
 function caddie_rust_clean() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Cleaning Rust build artifacts..."
     cargo clean
     caddie cli:check "Rust build artifacts cleaned"
@@ -542,13 +551,8 @@ function caddie_rust_clean() {
 
 # Function to update Rust dependencies
 function caddie_rust_update() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Updating Rust dependencies..."
     cargo update
     caddie cli:check "Rust dependencies updated"
@@ -556,8 +560,8 @@ function caddie_rust_update() {
 
 # Function to add a Rust dependency
 function caddie_rust_add() {
-    caddie_rust_load_env
-    
+    caddie_rust_require_project || return 1
+
     local crate="$1"
     
     if [ -z "$crate" ]; then
@@ -565,12 +569,7 @@ function caddie_rust_add() {
         caddie cli:usage "caddie rust:add <crate>"
         return 1
     fi
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+
     caddie cli:title "Adding dependency '$crate'..."
     cargo add "$crate"
     caddie cli:check "Dependency '$crate' added successfully"
@@ -578,8 +577,8 @@ function caddie_rust_add() {
 
 # Function to remove a Rust dependency
 function caddie_rust_remove() {
-    caddie_rust_load_env
-    
+    caddie_rust_require_project || return 1
+
     local crate="$1"
     
     if [ -z "$crate" ]; then
@@ -587,12 +586,7 @@ function caddie_rust_remove() {
         caddie cli:usage "caddie rust:remove <crate>"
         return 1
     fi
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+
     caddie cli:title "Removing dependency '$crate'..."
     cargo remove "$crate"
     caddie cli:check "Dependency '$crate' removed successfully"
@@ -601,28 +595,23 @@ function caddie_rust_remove() {
 # Function to search crates.io
 function caddie_rust_search() {
     caddie_rust_load_env
-    
+
     local query="$1"
-    
+
     if [ -z "$query" ]; then
         caddie cli:red "Error: Please provide a search query"
         caddie cli:usage "caddie rust:search <query>"
         return 1
     fi
-    
+
     caddie cli:title "Searching crates.io for '$query'..."
     cargo search "$query"
 }
 
 # Function to show outdated Rust dependencies
 function caddie_rust_outdated() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Checking for outdated Rust dependencies..."
     
     # Try cargo-outdated if available, otherwise show current versions
@@ -637,13 +626,8 @@ function caddie_rust_outdated() {
 
 # Function to run unit tests only
 function caddie_rust_test_unit() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running unit tests only..."
     cargo test --lib -- --nocapture
     caddie cli:check "Unit tests completed successfully"
@@ -651,13 +635,8 @@ function caddie_rust_test_unit() {
 
 # Function to run integration tests only
 function caddie_rust_test_integration() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running integration tests only..."
     cargo test --tests -- --nocapture
     caddie cli:check "Integration tests completed successfully"
@@ -665,13 +644,8 @@ function caddie_rust_test_integration() {
 
 # Function to run all tests
 function caddie_rust_test_all() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running all Rust tests..."
     cargo test -- --nocapture
     caddie cli:check "All Rust tests completed successfully"
@@ -679,13 +653,8 @@ function caddie_rust_test_all() {
 
 # Function to run property-based tests
 function caddie_rust_test_property() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running property-based tests..."
     cargo test --test property_tests -- --nocapture
     caddie cli:check "Property-based tests completed successfully"
@@ -693,13 +662,8 @@ function caddie_rust_test_property() {
 
 # Function to run benchmarks
 function caddie_rust_test_bench() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running benchmarks..."
     cargo bench
     caddie cli:check "Benchmarks completed successfully"
@@ -707,13 +671,8 @@ function caddie_rust_test_bench() {
 
 # Function to run tests in watch mode
 function caddie_rust_test_watch() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running tests in watch mode..."
     if command -v cargo-watch >/dev/null 2>&1; then
         cargo watch -x test
@@ -726,13 +685,8 @@ function caddie_rust_test_watch() {
 
 # Function to run tests with coverage
 function caddie_rust_test_coverage() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running tests with coverage..."
     if command -v cargo-tarpaulin >/dev/null 2>&1; then
         cargo tarpaulin --out Html
@@ -744,14 +698,10 @@ function caddie_rust_test_coverage() {
         caddie cli:check "Coverage report generated in target/tarpaulin/"
     fi
 }
+
 function caddie_rust_audit() {
-    caddie_rust_load_env
-    
-    if [ ! -f "Cargo.toml" ]; then
-        caddie cli:red "Error: Not in a Rust project directory (Cargo.toml not found)"
-        return 1
-    fi
-    
+    caddie_rust_require_project || return 1
+
     caddie cli:title "Running Rust security audit..."
     
     # Try cargo-audit if available, otherwise install it
@@ -841,6 +791,8 @@ function caddie_rust_help() {
     caddie cli:indent "test:watch         Run tests in watch mode"
     caddie cli:indent "test:coverage      Run tests with coverage"
     caddie cli:indent "check              Check without building"
+    caddie cli:indent "fix                Apply compiler suggestions (cargo fix)"
+    caddie cli:indent "fix:all            Apply fixes for all targets"
     caddie cli:indent "clean              Clean build artifacts"
     caddie cli:blank
     caddie cli:title "Git Integration:"
@@ -901,6 +853,8 @@ export -f caddie_rust_test_bench
 export -f caddie_rust_test_watch
 export -f caddie_rust_test_coverage
 export -f caddie_rust_check
+export -f caddie_rust_fix
+export -f caddie_rust_fix_all
 export -f caddie_rust_clean
 export -f caddie_rust_update
 export -f caddie_rust_add

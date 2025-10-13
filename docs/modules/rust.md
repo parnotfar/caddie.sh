@@ -215,6 +215,68 @@ Checking Rust project...
 - Must be in a Rust project directory
 - Rust toolchain available
 
+#### `caddie rust:fix`
+
+Apply compiler-driven fixes to the current Rust project.
+
+**Examples:**
+```bash
+# Apply fixes for the active project
+caddie rust:fix
+
+# Apply fixes after running clippy
+cargo clippy
+caddie rust:fix
+```
+
+**What it does:**
+- Runs `cargo fix` in the current directory
+- Applies Rust compiler suggestions to your source code
+- Surfaces success or failure with caddie CLI messaging
+
+**Output:**
+```
+Applying Rust fix suggestions...
+    Checking myapp v0.1.0 (/Users/username/projects/myapp)
+    Fixing src/lib.rs (1 fix)
+✓ Rust fixes applied successfully
+```
+
+**Requirements:**
+- Must be in a Rust project directory
+- Rust toolchain available
+
+#### `caddie rust:fix:all`
+
+Apply compiler-driven fixes across all targets in the workspace.
+
+**Examples:**
+```bash
+# Apply fixes for libraries, binaries, tests, and examples
+caddie rust:fix:all
+
+# Combine with targeted checks
+caddie rust:check && caddie rust:fix:all
+```
+
+**What it does:**
+- Runs `cargo fix --all-targets`
+- Ensures fixes cover binaries, libraries, tests, and examples
+- Provides consistent messaging for success and failure
+
+**Output:**
+```
+Applying Rust fix suggestions for all targets...
+    Checking myapp v0.1.0 (/Users/username/projects/myapp)
+    Fixing src/main.rs (2 fixes)
+    Fixing tests/integration.rs (1 fix)
+✓ Rust fixes for all targets applied successfully
+```
+
+**Requirements:**
+- Must be in a Rust project directory
+- Rust toolchain available
+
 #### `caddie rust:clean`
 
 Clean build artifacts for the current Rust project.
@@ -846,9 +908,10 @@ Usage: caddie rust:<command> <arguments>
 ### Development Workflow
 
 1. **Check before build**: Use `caddie rust:check` for quick validation
-2. **Run tests**: Always test before committing
-3. **Use clippy**: Enable clippy for code quality
-4. **Format code**: Use rustfmt for consistent style
+2. **Apply compiler fixes**: Run `caddie rust:fix` (or `rust:fix:all` for workspaces) after addressing warnings
+3. **Run tests**: Always test before committing
+4. **Use clippy**: Enable clippy for code quality
+5. **Format code**: Use rustfmt for consistent style
 
 ### Performance
 

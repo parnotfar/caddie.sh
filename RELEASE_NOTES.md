@@ -1,5 +1,25 @@
 # Caddie.sh Release Notes
 
+## Version 2.3 - Cargo Fix Automation
+
+**Release Date:** November 2025
+
+### 🎯 Release Highlights
+
+- **Rust Fix Workflows**: Added one-command flows for applying compiler-driven fixes to Rust projects.
+- **Project-Wide Coverage**: New `rust:fix:all` command ensures fixes are applied across every target in a workspace.
+- **Version Update**: Bumped core version to 2.3 to capture these enhancements.
+
+### 🚀 New Commands
+
+- `caddie rust:fix` — runs `cargo fix` with caddie-style messaging and error handling.
+- `caddie rust:fix:all` — runs `cargo fix --all-targets` so workspaces stay consistent.
+
+### 📚 Documentation Updates
+
+- Expanded Rust module docs with command guides and usage examples for the new fix tooling.
+- Updated help text and tab completion so the new commands are discoverable everywhere.
+
 ## Version 2.2 - Prompt Registry & ANSI Safety
 
 **Release Date:** October 2025

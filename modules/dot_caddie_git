@@ -6,7 +6,7 @@
 source "$HOME/.caddie_modules/.caddie_cli"
 
 # Function to source custom files
-caddie_source_custom_files() {
+function caddie_source_custom_files() {
     # Source custom bash profile additions
     if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
         source "$HOME/.bash_profile-caddie-custom"

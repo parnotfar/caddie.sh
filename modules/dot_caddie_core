@@ -266,7 +266,7 @@ function caddie_core_lint() {
     local warnings=0
     
     # Helper function to apply limit to grep results
-    apply_limit() {
+    function apply_limit() {
         local input="$1"
         if [ "$limit_per_check" -eq 0 ]; then
             echo "$input"
@@ -333,7 +333,7 @@ function caddie_core_lint() {
         fi
         
         # Helper function to check if a line is in an ignore block
-        is_line_ignored() {
+        function is_line_ignored() {
             local line_num="$1"
             local blocks="$2"
             if [ -z "$blocks" ]; then

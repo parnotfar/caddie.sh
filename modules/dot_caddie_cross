@@ -368,7 +368,7 @@ EOF
     return 0
 }
 
-caddie_cross_template_mobile() {
+function caddie_cross_template_mobile() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -413,7 +413,7 @@ EOF
     return 0
 }
 
-caddie_cross_template_ios_app() {
+function caddie_cross_template_ios_app() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -432,7 +432,7 @@ caddie_cross_template_ios_app() {
     return 0
 }
 
-caddie_cross_template_ios_framework() {
+function caddie_cross_template_ios_framework() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -450,7 +450,7 @@ caddie_cross_template_ios_framework() {
     return 0
 }
 
-caddie_cross_template_ios_extension() {
+function caddie_cross_template_ios_extension() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -468,7 +468,7 @@ caddie_cross_template_ios_extension() {
     return 0
 }
 
-caddie_cross_template_data() {
+function caddie_cross_template_data() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -497,7 +497,7 @@ EOF
     return 0
 }
 
-caddie_cross_template_ml() {
+function caddie_cross_template_ml() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -530,7 +530,7 @@ EOF
     return 0
 }
 
-caddie_cross_template_cli() {
+function caddie_cross_template_cli() {
     local name="$1"
     mkdir -p "$name"
     cd "$name" || exit
@@ -884,7 +884,7 @@ function caddie_cross_tools_format() {
 }
 
 # Function to display cross-language module help
-caddie_cross_help() {
+function caddie_cross_help() {
     caddie cli:title "Cross-Language Features & Templates"
     caddie cli:blank
     caddie cli:usage "caddie <command>"
