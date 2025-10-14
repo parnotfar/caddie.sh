@@ -82,8 +82,41 @@ function caddie_version() {
     fi
 }
 
+function _caddie_module_exists() {
+    local needle="$1"
+    local module
+
+    if [ -z "$needle" ]; then
+        return 1
+    fi
+
+    if [ "$needle" = "shell" ]; then
+        return 0
+    fi
+
+    if [ ${#CADDIE_MODULES[@]} -gt 0 ] 2>/dev/null; then
+        for module in "${CADDIE_MODULES[@]}"; do
+            if [ "$module" = "$needle" ]; then
+                return 0
+            fi
+        done
+    fi
+
+    if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
+        for module in "${CADDIE_COMPLETION_ORDER[@]}"; do
+            if [ "$module" = "$needle" ]; then
+                return 0
+            fi
+        done
+    fi
+
+    return 1
+}
+
 function _caddie_repl_normalize() {
     local line="$1"
+    local active_module="${2:-}"
+    local allow_scopes="${3:-1}"
 
     line="${line#${line%%[![:space:]]*}}"
     line="${line%${line##*[![:space:]]}}"
@@ -93,12 +126,38 @@ function _caddie_repl_normalize() {
         return 0
     fi
 
+    if [[ "$line" == \`* ]] && [[ "$line" == *\` ]] && [ "${#line}" -ge 2 ]; then
+        local shell_inline
+        shell_inline="${line#\`}"  # trim leading backtick
+        shell_inline="${shell_inline%\`}"  # trim trailing backtick
+        printf '__SHELL_EVAL__%s\n' "$shell_inline"
+        return 0
+    fi
+
     case "$line" in
         exit|quit|q)
             printf '%s\n' "__EXIT__"
             return 0
             ;;
-        help|--help|-h|version|--version|-v|reload|--reload|-r|go:home)
+        back|up|..)
+            if [ -n "$active_module" ] && [ "$allow_scopes" = "1" ]; then
+                printf '%s\n' "__MODULE_EXIT__"
+                return 0
+            fi
+            ;;
+        help|--help|-h)
+            if [ -n "$active_module" ]; then
+                if [ "$active_module" = "shell" ]; then
+                    printf '%s\n' "__SHELL_HELP__"
+                else
+                    printf '%s\n' "${active_module}:help"
+                fi
+            else
+                printf '%s\n' "$line"
+            fi
+            return 0
+            ;;
+        version|--version|-v|reload|--reload|-r|go:home)
             printf '%s\n' "$line"
             return 0
             ;;
@@ -111,6 +170,29 @@ function _caddie_repl_normalize() {
 
     local first_token
     first_token="${line%%[[:space:]]*}"
+
+    if [ "$active_module" = "shell" ]; then
+        printf '__SHELL_EVAL__%s\n' "$line"
+        return 0
+    fi
+
+    if [ -n "$active_module" ]; then
+        if [[ "$first_token" == *:* ]]; then
+            printf '%s\n' "$line"
+            return 0
+        fi
+
+        if [ "$line" = "$first_token" ] && _caddie_module_exists "$first_token" && [ "$allow_scopes" = "1" ]; then
+            printf '%s\n' "__SET_MODULE__:${first_token}"
+            return 0
+        fi
+
+        line="${active_module} ${line}"
+        line="${line#${line%%[![:space:]]*}}"
+        line="${line%${line##*[![:space:]]}}"
+        first_token="${line%%[[:space:]]*}"
+    fi
+
     if [[ "$first_token" == *:* ]]; then
         printf '%s\n' "$line"
         return 0
@@ -118,13 +200,32 @@ function _caddie_repl_normalize() {
 
     local module rest
     module="${line%%[[:space:]]*}"
-    if [ "$module" = "$line" ]; then
-        printf '%s\n' "${module}:help"
+    rest="${line#${module}}"
+    rest="${rest#${rest%%[![:space:]]*}}"
+
+    if [ "$module" = "shell" ]; then
+        if [ -z "$rest" ]; then
+            if [ "$allow_scopes" = "1" ]; then
+                printf '%s\n' "__SET_MODULE__:shell"
+                return 0
+            fi
+            printf '%s\n' "shell:help"
+            return 0
+        fi
+        printf '__SHELL_EVAL__%s\n' "$rest"
         return 0
     fi
 
-    rest="${line#${module}}"
-    rest="${rest#${rest%%[![:space:]]*}}"
+    if [ "$module" = "$line" ]; then
+        if _caddie_module_exists "$module"; then
+            if [ "$allow_scopes" = "1" ]; then
+                printf '%s\n' "__SET_MODULE__:${module}"
+                return 0
+            fi
+        fi
+        printf '%s\n' "${module}:help"
+        return 0
+    fi
 
     local command command_tail
     command="${rest%%[[:space:]]*}"
@@ -161,17 +262,45 @@ function _caddie_repl_normalize() {
 
 function _caddie_repl() {
     local line normalized status=0
+    local prompt_name="caddie"
+    local prompt_version=""
     local prompt_label="caddie"
+    local active_module=""
+    local history_file="${CADDIE_HISTORY_FILE:-$HOME/.caddie_history}"
+    local history_initial_size
+    local history_entries_added=0
+    local -a repl_new_entries=()
 
     if [ -f "$HOME/.caddie_version" ]; then
         # shellcheck disable=SC1090
         source "$HOME/.caddie_version"
         if [ -n "${CADDIE_SH_VERSION:-}" ]; then
-            prompt_label="caddie-${CADDIE_SH_VERSION}"
+            prompt_version="-${CADDIE_SH_VERSION}"
+            prompt_label="${prompt_name}${prompt_version}"
         fi
     fi
 
+    history_initial_size=$(builtin history 2>/dev/null | wc -l | tr -d '[:space:]')
+    if ! [[ "$history_initial_size" =~ ^[0-9]+$ ]]; then
+        history_initial_size=0
+    fi
+
+    if [ -f "$history_file" ]; then
+        while IFS= read -r history_line; do
+            if [ -n "$history_line" ]; then
+                builtin history -s "$history_line" 2>/dev/null || true
+                history_entries_added=$((history_entries_added + 1))
+            fi
+        done < "$history_file"
+    fi
+
     while true; do
+        if [ -n "$active_module" ]; then
+            prompt_label="${prompt_name}[${active_module}]${prompt_version}"
+        else
+            prompt_label="${prompt_name}${prompt_version}"
+        fi
+
         if ! builtin read -e -r -p "${prompt_label}> " line; then
             printf '\n'
             break
@@ -179,9 +308,11 @@ function _caddie_repl() {
 
         if [ -n "$line" ]; then
             builtin history -s "$line" 2>/dev/null || true
+            history_entries_added=$((history_entries_added + 1))
+            repl_new_entries+=("$line")
         fi
 
-        normalized="$(_caddie_repl_normalize "$line")"
+        normalized="$(_caddie_repl_normalize "$line" "$active_module")"
 
         case "$normalized" in
             "")
@@ -189,6 +320,36 @@ function _caddie_repl() {
                 ;;
             "__EXIT__")
                 break
+                ;;
+            "__MODULE_EXIT__")
+                if [ -n "$active_module" ]; then
+                    caddie cli:indent "Leaving module '${active_module}'"
+                    active_module=""
+                fi
+                continue
+                ;;
+            "__SHELL_HELP__")
+                caddie cli:title "Shell Scope"
+                caddie cli:indent "Run shell commands directly from the REPL without leaving context."
+                caddie cli:indent "Use backticks or 'shell <cmd>' for one-offs, or enter the scope with 'shell'."
+                caddie cli:indent "Leave the shell scope with 'back', 'up', or '..'."
+                continue
+                ;;
+            __SET_MODULE__*)
+                active_module="${normalized#__SET_MODULE__:}"
+                caddie cli:title "Module scope: ${active_module}"
+                continue
+                ;;
+            __SHELL_EVAL__*)
+                local shell_command
+                shell_command="${normalized#__SHELL_EVAL__}"
+                if [ -n "$shell_command" ]; then
+                    builtin eval "$shell_command"
+                    status=$?
+                else
+                    status=0
+                fi
+                continue
                 ;;
         esac
 
@@ -205,6 +366,27 @@ function _caddie_repl() {
         status=$?
     done
 
+    if [ ${#repl_new_entries[@]} -gt 0 ]; then
+        if [ -z "$history_file" ]; then
+            history_file="$HOME/.caddie_history"
+        fi
+        # Ensure directory exists when using nested path
+        local history_dir
+        history_dir="${history_file%/*}"
+        if [ -n "$history_dir" ] && [ "$history_dir" != "$history_file" ]; then
+            mkdir -p "$history_dir" 2>/dev/null || true
+        fi
+        printf '%s\n' "${repl_new_entries[@]}" >> "$history_file"
+    fi
+
+    if [ "$history_entries_added" -gt 0 ]; then
+        local delete_index=$((history_initial_size + 1))
+        local i
+        for ((i = 0; i < history_entries_added; i++)); do
+            builtin history -d "$delete_index" 2>/dev/null || true
+        done
+    fi
+
     return $status
 }
 
@@ -217,9 +399,19 @@ function caddie() {
 
     if [[ "$1" != *:* ]]; then
         local normalized
-        normalized="$(_caddie_repl_normalize "$*")"
+        normalized="$(_caddie_repl_normalize "$*" "" "0")"
 
         if [ "$normalized" = "__EXIT__" ]; then
+            return 0
+        fi
+
+        if [[ "$normalized" == __SHELL_EVAL__* ]]; then
+            local shell_cmd
+            shell_cmd="${normalized#__SHELL_EVAL__}"
+            if [ -n "$shell_cmd" ]; then
+                builtin eval "$shell_cmd"
+                return $?
+            fi
             return 0
         fi
 
@@ -251,6 +443,13 @@ function caddie() {
             ;;
         go:home)
             caddie_core_go_home "$@"
+            return 0
+            ;;
+        shell:help)
+            caddie cli:title "Shell Integration"
+            caddie cli:indent "Use backticks (\`command\`) to run ad-hoc shell commands inside the REPL."
+            caddie cli:indent "Type 'shell <command>' for one-off commands or 'shell' to enter shell scope."
+            caddie cli:indent "Exit shell scope with 'back', 'up', or '..'."
             return 0
             ;;
     esac
@@ -334,7 +533,7 @@ function _caddie_completion() {
   fi
 
   # Build a flat list of all accepted commands
-  local base_opts="help version go:home --help -h --version -v reload --reload -r"
+  local base_opts="help version go:home shell --help -h --version -v reload --reload -r"
   local all_opts="$base_opts"
 
   if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
