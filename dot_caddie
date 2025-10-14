@@ -145,8 +145,7 @@ function _caddie_repl_normalize() {
         if [ -n "$next_token" ] \
             && [[ "$command" != *:* ]] \
             && [[ "$next_token" != -* ]] \
-            && [[ "$next_token" =~ ^[[:alnum:]_-]+$ ]] \
-            && [ -n "$remaining" ]; then
+            && [[ "$next_token" =~ ^[[:alnum:]_-]+$ ]]; then
             command="${command}:${next_token}"
             command_tail="$remaining"
         fi
