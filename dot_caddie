@@ -212,6 +212,12 @@ function _caddie_repl_normalize() {
             printf '%s\n' "shell:help"
             return 0
         fi
+        case "$rest" in
+            help|--help|-h)
+                printf '%s\n' "__SHELL_HELP__"
+                return 0
+                ;;
+        esac
         printf '__SHELL_EVAL__%s\n' "$rest"
         return 0
     fi
@@ -306,13 +312,51 @@ function _caddie_repl() {
             break
         fi
 
-        if [ -n "$line" ]; then
-            builtin history -s "$line" 2>/dev/null || true
+        local trimmed_line="$line"
+        trimmed_line="${trimmed_line#${trimmed_line%%[![:space:]]*}}"
+        trimmed_line="${trimmed_line%${trimmed_line##*[![:space:]]}}"
+
+        if [ -n "$trimmed_line" ]; then
+            builtin history -s "$trimmed_line" 2>/dev/null || true
             history_entries_added=$((history_entries_added + 1))
-            repl_new_entries+=("$line")
+            repl_new_entries+=("$trimmed_line")
         fi
 
-        normalized="$(_caddie_repl_normalize "$line" "$active_module")"
+        line="$trimmed_line"
+
+        local normalized
+        local normalized_set=0
+
+        if [[ "$line" == \`* ]] && [[ "$line" == *\` ]] && [ "${#line}" -ge 2 ]; then
+            local shell_inline
+            shell_inline="${line#\`}"
+            shell_inline="${shell_inline%\`}"
+            normalized="__SHELL_EVAL__${shell_inline}"
+            normalized_set=1
+        elif [ "$active_module" = "shell" ]; then
+            case "$line" in
+                back|up|..)
+                    normalized="__MODULE_EXIT__"
+                    normalized_set=1
+                    ;;
+                help|--help|-h)
+                    normalized="__SHELL_HELP__"
+                    normalized_set=1
+                    ;;
+                "")
+                    normalized=""
+                    normalized_set=1
+                    ;;
+                *)
+                    normalized="__SHELL_EVAL__${line}"
+                    normalized_set=1
+                    ;;
+            esac
+        fi
+
+        if [ "$normalized_set" -eq 0 ]; then
+            normalized="$(_caddie_repl_normalize "$line" "$active_module")"
+        fi
 
         case "$normalized" in
             "")
@@ -402,6 +446,14 @@ function caddie() {
         normalized="$(_caddie_repl_normalize "$*" "" "0")"
 
         if [ "$normalized" = "__EXIT__" ]; then
+            return 0
+        fi
+
+        if [ "$normalized" = "__SHELL_HELP__" ]; then
+            caddie cli:title "Shell Integration"
+            caddie cli:indent "Use backticks (\`command\`) to run ad-hoc shell commands inside the REPL."
+            caddie cli:indent "Type 'shell <command>' for one-off commands or 'shell' to enter shell scope."
+            caddie cli:indent "Exit shell scope with 'back', 'up', or '..'."
             return 0
         fi
 

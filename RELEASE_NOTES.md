@@ -1,37 +1,56 @@
 # Caddie.sh Release Notes
 
-## Version 3.5 - Interactive Caddie Prompt
+## Version 3.5 - Sub-module Prompts!
 
-**Release Date:** December 2025
+**Release Date:** October 2025
 
 ### 🎯 Release Highlights
 
-- **Interactive REPL**: Running `caddie` without arguments now opens a persistent prompt optimized for module workflows.
 - **Module Scopes**: Typing a module name (for example `csv`) nests the prompt into `caddie[csv]-3.5>`, so every command that follows automatically targets that module until you `back`, `up`, or `..` out.
-- **Command Streamlining**: Typed input like `rust fix all` or `python venv create` is normalized to standard `module:command` form automatically.
-- **Built-in Shortcuts**: The prompt recognizes core actions such as `help`, `version`, `reload`, and `go:home` without extra syntax, with colon-prefixed commands (`:rust:build`) passed through untouched.
-- **Session Flow**: Exit with `exit`, `quit`, or `Ctrl+D`; scoped prompts surface the active module right in the prompt, e.g. `caddie[rust]-3.5>`.
-- **PR Approvals**: `caddie git:pr:approve <pr>` approves pull requests with GitHub CLI, and tab completion now surfaces open PR numbers and branch names.
-- **Isolated History**: The REPL records commands in `~/.caddie_history` without polluting your shell history, while still supporting arrow-key recall during a session.
+- **Isolated History**: The Caddie Prompt records commands in `~/.caddie_history` without polluting your shell history, while still supporting arrow-key recall during a session.
 - **Shell Integration**: Run raw shell commands with backticks or the new `shell` scope, keeping Caddie workflow and ad-hoc shell usage in one prompt.
 
 ### 🚀 Enhanced Usage
 
-- `caddie` (no args) — launches the interactive prompt for rapid multi-command sessions.
 - `caddie-3.5> csv` — activates the CSV scope, switching the prompt to `caddie[csv]-3.5>` for focused commands.
 - `caddie[csv]-3.5> set file data.csv` — runs the CSV module command without retyping the module name.
 - `caddie[rust]-3.5> fix all` — expands to `rust:fix:all`, keeping the familiar full-word flow inside a module scope.
-- `caddie git:pr:approve 42` — review and approve pull requests directly from Caddie, with tab completion suggesting open PR identifiers.
-- `ps aux | head` — executes shell commands inline; results stay in the REPL history without touching shell history.
+- `ps aux | head` — executes shell commands inline; results stay in the Prompt history without touching shell history.
 - `caddie-3.5> shell ls -la` — proxy a one-off shell command without switching contexts, or type `shell` to enter a dedicated shell scope.
 
 ### 📚 Documentation Updates
 
 - README “First Use” section now introduces the prompt as a first-class entry point, with module scope callouts.
 - User Guide adds an “Interactive Prompt” chapter with sample sessions and scope navigation tips.
-- Core module docs highlight the REPL, usage tips, conversion rules, and how to exit scoped prompts.
+- Core module docs highlight the Prompt, usage tips, conversion rules, and how to exit scoped prompts.
 - Git module docs document PR approval workflow and new completion behaviour.
 - New shell integration and history behaviour documented across README and User Guide for quick onboarding.
+
+## Version 3.0 - Interactive Caddie Shell
+
+**Release Date:** October 2025
+
+### 🎯 Release Highlights
+
+- **Interactive Prompt**: Running `caddie` without arguments now opens a persistent prompt optimized for module workflows.
+- **Command Streamlining**: Typed input like `rust fix all` or `python venv create` is normalized to standard `module:command` form automatically.
+- **Built-in Shortcuts**: The prompt recognizes core actions such as `help`, `version`, `reload`, and `go:home` without extra syntax, with colon-prefixed commands (`:rust:build`) passed through untouched.
+- **Session Flow**: Exit with `exit`, `quit`, or `Ctrl+D`; colon-prefixed commands (`:rust:build`) send as-is, with Readline editing (Ctrl-A, Ctrl-P, history) built in.
+- **PR Approvals**: `caddie git:pr:approve <pr>` approves pull requests with GitHub CLI, and tab completion now surfaces open PR numbers and branch names.
+
+### 🚀 Enhanced Usage
+
+- `caddie` (no args) — launches the interactive prompt for rapid multi-command sessions.
+- `caddie rust:fix` — retains scripted behaviour, now also reachable via `caddie> rust fix`.
+- `caddie rust:fix:all` — extended to Prompt alias `caddie> rust fix all` (full-word form now chains nested commands without extra arguments).
+- `caddie git:pr:approve 42` — review and approve pull requests directly from Caddie, with tab completion suggesting open PR identifiers.
+
+### 📚 Documentation Updates
+
+- README “First Use” section now introduces the prompt as a first-class entry point.
+- User Guide adds an “Interactive Prompt” chapter with sample sessions.
+- Core module docs highlight the Prompt, usage tips, and conversion rules.
+- Git module docs document PR approval workflow and new completion behaviour.
 
 ## Version 2.2 - Prompt Registry & ANSI Safety
 
