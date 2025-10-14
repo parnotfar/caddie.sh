@@ -150,14 +150,20 @@ Run `caddie` with no arguments to launch the interactive prompt. The prompt keep
 
 ```bash
 $ caddie
-caddie-3.0> rust fix:all        # Equivalent to `caddie rust:fix:all`
-caddie-3.0> git status          # Equivalent to `caddie git:status`
-caddie-3.0> core lint dot_caddie
-caddie-3.0> exit
+caddie-3.5> rust fix           # Equivalent to `caddie rust:fix`
+caddie-3.5> rust               # Switches scope to the Rust module
+caddie[rust]-3.5> fix all      # Equivalent to `caddie rust:fix:all`
+caddie[rust]-3.5> back         # Leaves the module scope
+caddie-3.5> `git status`       # Run an inline shell command without leaving the REPL
+caddie-3.5> shell ls -1        # One-off shell command via the shell bridge
+caddie-3.5> exit
 ```
 
 **Features:**
 - Converts `module subcommand` into `module:subcommand` automatically (e.g., `rust test unit` → `rust:test:unit`).
+- Typing a module name enters a scoped prompt (`caddie[module]-3.5>`), so subsequent commands assume that module until you `back`, `up`, or `..`.
+- Run raw shell commands inline with backticks or the `shell` helper, no context switching required.
+- REPL history is written to `~/.caddie_history` so shell history stays untouched while arrow keys still recall commands.
 - Honors existing `module:command` syntax and arguments (e.g., `rust:run -- --help`).
 - Supports built-ins like `help`, `version`, and `reload` directly at the prompt.
 - Exit at any time with `exit`, `quit`, or `Ctrl+D`.

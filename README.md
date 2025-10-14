@@ -67,8 +67,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-3.0>
+caddie  # prompt shows as caddie-3.5>
+
+# Narrow the prompt to a module scope
+caddie-3.5> rust  # prompt switches to caddie[rust]-3.5>
+caddie[rust]-3.5> back  # exits scope (also accepts `up` or `..`)
+
+# Run shell commands without leaving the REPL
+caddie-3.5> `ls -la`
+caddie-3.5> shell git status  # one-off shell command
 ```
+
+> Tip: Caddie keeps REPL history in `~/.caddie_history`, so arrow-key recall works without adding entries to your shell history.
 
 ## Documentation
 
