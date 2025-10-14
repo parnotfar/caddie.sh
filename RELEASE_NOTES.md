@@ -1,24 +1,27 @@
 # Caddie.sh Release Notes
 
-## Version 2.3 - Cargo Fix Automation
+## Version 3.0 - Interactive Caddie Shell
 
 **Release Date:** November 2025
 
 ### 🎯 Release Highlights
 
-- **Rust Fix Workflows**: Added one-command flows for applying compiler-driven fixes to Rust projects.
-- **Project-Wide Coverage**: New `rust:fix:all` command ensures fixes are applied across every target in a workspace.
-- **Version Update**: Bumped core version to 2.3 to capture these enhancements.
+- **Interactive REPL**: Running `caddie` without arguments now opens a persistent prompt optimized for module workflows.
+- **Command Streamlining**: Typed input like `rust fix:all` or `python venv:create` is normalized to standard `module:command` form automatically.
+- **Built-in Shortcuts**: REPL recognizes core actions such as `help`, `version`, `reload`, and `go:home` without extra syntax.
+- **Session Flow**: Exit with `exit`, `quit`, or `Ctrl+D`; colon-prefixed commands (`:rust:build`) send as-is, with Readline editing (Ctrl-A, Ctrl-P, history) built in.
 
-### 🚀 New Commands
+### 🚀 Enhanced Usage
 
-- `caddie rust:fix` — runs `cargo fix` with caddie-style messaging and error handling.
-- `caddie rust:fix:all` — runs `cargo fix --all-targets` so workspaces stay consistent.
+- `caddie` (no args) — launches the interactive prompt for rapid multi-command sessions.
+- `caddie rust:fix` — retains scripted behaviour, now also reachable via `caddie> rust fix`.
+- `caddie rust:fix:all` — extended to REPL alias `caddie> rust fix:all`.
 
 ### 📚 Documentation Updates
 
-- Expanded Rust module docs with command guides and usage examples for the new fix tooling.
-- Updated help text and tab completion so the new commands are discoverable everywhere.
+- README “First Use” section now introduces the prompt as a first-class entry point.
+- User Guide adds an “Interactive Prompt” chapter with sample sessions.
+- Core module docs highlight the REPL, usage tips, and conversion rules.
 
 ## Version 2.2 - Prompt Registry & ANSI Safety
 

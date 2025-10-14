@@ -67,6 +67,9 @@ Caddie.sh uses internal data structures to manage:
 # General help
 caddie help
 
+# Launch interactive prompt
+caddie
+
 # Module-specific help
 caddie python:help
 caddie rust:help
@@ -77,6 +80,20 @@ caddie core:help
 # Reload caddie environment
 caddie reload
 ```
+
+### Interactive Prompt
+
+Run `caddie` without arguments to enter an interactive prompt. Start with a module name and follow with subcommands, or use the traditional `module:command` form.
+
+```bash
+$ caddie
+caddie-3.0> rust fix:all        # Equivalent to `caddie rust:fix:all`
+caddie-3.0> python venv:create  # Equivalent to `caddie python:venv:create`
+caddie-3.0> help                # Show general help
+caddie-3.0> exit                # Leave the prompt
+```
+
+The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`) so you can navigate and reuse commands quickly.
 
 ### Debug System
 

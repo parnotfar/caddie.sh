@@ -124,6 +124,9 @@ Run a specific Cargo example.
 # Run a specific example
 caddie rust:run:example simple_demo
 
+# Alternate syntax (alias)
+caddie rust:example:run simple_demo
+
 # Run example with arguments
 caddie rust:run:example multi_distance_demo -- --help
 ```

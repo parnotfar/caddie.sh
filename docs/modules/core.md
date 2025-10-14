@@ -9,6 +9,7 @@ The Core module is loaded first and provides essential functionality that other 
 - **Home Directory Management**: Set and manage your project home directory
 - **Debug System**: Control debug output and logging
 - **Basic Functions**: Core utilities and helpers
+- **Interactive Prompt**: Shell-like REPL for chaining module commands quickly
 
 ## Commands
 
@@ -142,6 +143,25 @@ Debug mode is: on
 ```
 Debug mode is: off
 ```
+
+## Interactive Prompt
+
+Run `caddie` with no arguments to launch the interactive prompt. The prompt keeps you inside a caddie-focused shell where you can lead with a module name, then provide subcommands or flags.
+
+```bash
+$ caddie
+caddie-3.0> rust fix:all        # Equivalent to `caddie rust:fix:all`
+caddie-3.0> git status          # Equivalent to `caddie git:status`
+caddie-3.0> core lint dot_caddie
+caddie-3.0> exit
+```
+
+**Features:**
+- Converts `module subcommand` into `module:subcommand` automatically (e.g., `rust test unit` → `rust:test:unit`).
+- Honors existing `module:command` syntax and arguments (e.g., `rust:run -- --help`).
+- Supports built-ins like `help`, `version`, and `reload` directly at the prompt.
+- Exit at any time with `exit`, `quit`, or `Ctrl+D`.
+- Full Readline editing and history support (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P` for navigation).
 
 ### System Management
 
