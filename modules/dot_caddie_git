@@ -318,6 +318,101 @@ function caddie_git_pr_create() {
     return 0
 }
 
+function caddie_git_pr_approve() {
+    local pr_identifier="$1"
+    local pr_view pr_number pr_title pr_branch pr_url
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    if ! command -v gh > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI (gh) is not installed"
+        caddie cli:indent "Install with: brew install gh"
+        return 1
+    fi
+
+    if ! gh auth status > /dev/null 2>&1; then
+        caddie cli:red "Error: GitHub CLI authentication required"
+        caddie cli:indent "Run: caddie git:auth:login to authenticate"
+        return 1
+    fi
+
+    if [ -z "$pr_identifier" ]; then
+        caddie cli:red "Error: Please provide a pull request number or branch"
+        caddie cli:usage "caddie git:pr:approve <pr-number|branch>"
+        return 1
+    fi
+
+    caddie cli:title "Approving pull request: $pr_identifier"
+
+    pr_view=$(gh pr view "$pr_identifier" --json number,title,headRefName,url --jq '[.number, .title, .headRefName, .url] | @tsv' 2>/dev/null || true)
+    if [ -n "$pr_view" ]; then
+        IFS=$'\t' read -r pr_number pr_title pr_branch pr_url <<< "$pr_view"
+        if [ -n "$pr_number" ] && [ -n "$pr_title" ]; then
+            caddie cli:indent "PR #${pr_number}: ${pr_title}"
+        fi
+        if [ -n "$pr_branch" ]; then
+            caddie cli:indent "Branch: ${pr_branch}"
+        fi
+        if [ -n "$pr_url" ]; then
+            caddie cli:indent "URL: ${pr_url}"
+        fi
+    else
+        caddie cli:yellow "Unable to retrieve PR details; continuing with approval"
+    fi
+
+    if gh pr review "$pr_identifier" --approve; then
+        caddie cli:check "Pull request approved"
+        return 0
+    fi
+
+    caddie cli:red "Failed to approve pull request"
+    return 1
+}
+
+function caddie_git_pr_completion_candidates() {
+    local pr_lines
+    declare -A seen_candidates=()
+    local -a candidates=()
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        return 0
+    fi
+
+    if ! command -v gh > /dev/null 2>&1; then
+        return 0
+    fi
+
+    if ! gh auth status > /dev/null 2>&1; then
+        return 0
+    fi
+
+    pr_lines=$(gh pr list --state open --limit 30 --json number,headRefName --jq '.[] | "\(.number)\t\(.headRefName)"' 2>/dev/null || true)
+    if [ -z "$pr_lines" ]; then
+        return 0
+    fi
+
+    while IFS=$'\t' read -r pr_number pr_head_ref; do
+        if [ -n "$pr_number" ] && [ -z "${seen_candidates[$pr_number]}" ]; then
+            candidates+=("$pr_number")
+            seen_candidates[$pr_number]=1
+        fi
+        if [ -n "$pr_head_ref" ] && [ "$pr_head_ref" != "null" ] && [ -z "${seen_candidates[$pr_head_ref]}" ]; then
+            candidates+=("$pr_head_ref")
+            seen_candidates[$pr_head_ref]=1
+        fi
+    done <<< "$pr_lines"
+
+    if [ ${#candidates[@]} -eq 0 ]; then
+        return 0
+    fi
+
+    printf '%s\n' "${candidates[@]}"
+    return 0
+}
+
 function caddie_git_auth_login() {
     # Check if GitHub CLI is installed
     if ! command -v gh > /dev/null 2>&1; then
@@ -400,6 +495,7 @@ function caddie_git_help() {
     caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
     caddie cli:indent "auth:login          Authenticate with GitHub CLI"
     caddie cli:indent "pr:create [title] [body] [base]  Create pull request using GitHub CLI"
+    caddie cli:indent "pr:approve <pr>     Approve pull request using GitHub CLI"
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
@@ -420,6 +516,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
     caddie cli:indent "caddie git:pr:create 'Add new feature' 'Description of changes'"
+    caddie cli:indent "caddie git:pr:approve 42"
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
@@ -447,6 +544,8 @@ export -f caddie_git_commit
 export -f caddie_git_gacp
 export -f caddie_git_auth_login
 export -f caddie_git_pr_create
+export -f caddie_git_pr_approve
+export -f caddie_git_pr_completion_candidates
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull

@@ -10,18 +10,21 @@
 - **Command Streamlining**: Typed input like `rust fix:all` or `python venv:create` is normalized to standard `module:command` form automatically.
 - **Built-in Shortcuts**: REPL recognizes core actions such as `help`, `version`, `reload`, and `go:home` without extra syntax.
 - **Session Flow**: Exit with `exit`, `quit`, or `Ctrl+D`; colon-prefixed commands (`:rust:build`) send as-is, with Readline editing (Ctrl-A, Ctrl-P, history) built in.
+- **PR Approvals**: `caddie git:pr:approve <pr>` approves pull requests with GitHub CLI, and tab completion now surfaces open PR numbers and branch names.
 
 ### 🚀 Enhanced Usage
 
 - `caddie` (no args) — launches the interactive prompt for rapid multi-command sessions.
 - `caddie rust:fix` — retains scripted behaviour, now also reachable via `caddie> rust fix`.
-- `caddie rust:fix:all` — extended to REPL alias `caddie> rust fix:all`.
+- `caddie rust:fix:all` — extended to REPL alias `caddie> rust fix all` (full-word form now chains nested commands without extra arguments).
+- `caddie git:pr:approve 42` — review and approve pull requests directly from Caddie, with tab completion suggesting open PR identifiers.
 
 ### 📚 Documentation Updates
 
 - README “First Use” section now introduces the prompt as a first-class entry point.
 - User Guide adds an “Interactive Prompt” chapter with sample sessions.
 - Core module docs highlight the REPL, usage tips, and conversion rules.
+- Git module docs document PR approval workflow and new completion behaviour.
 
 ## Version 2.2 - Prompt Registry & ANSI Safety
 
