@@ -65,6 +65,9 @@ caddie reload
 
 # Get help
 caddie help
+
+# Enter interactive prompt
+caddie  # prompt shows as caddie-3.0>
 ```
 
 ## Documentation

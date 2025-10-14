@@ -62,6 +62,7 @@ function caddie_help() {
     caddie cli:indent "help                     Show this overview"
     caddie cli:indent "version                  Show caddie version"
     caddie cli:indent "reload                   Reload caddie"
+    caddie cli:indent "(no args)                Launch interactive caddie prompt"
     caddie cli:blank
     caddie cli:title "Productivity:"
     caddie cli:indent "core:aliases             Show all available aliases"
@@ -81,45 +82,185 @@ function caddie_version() {
     fi
 }
 
-# Main caddie function - directly executes commands
-function caddie() {
-    local command="$1"
+function _caddie_repl_normalize() {
+    local line="$1"
 
-    shift  # Remove first argument (the command)
+    line="${line#${line%%[![:space:]]*}}"
+    line="${line%${line##*[![:space:]]}}"
 
-    # Handle built-in commands first
-    case "$command" in
-        "help"|"--help"|"-h")
-            caddie_help
+    if [ -z "$line" ]; then
+        printf '%s\n' ""
+        return 0
+    fi
+
+    case "$line" in
+        exit|quit|q)
+            printf '%s\n' "__EXIT__"
             return 0
             ;;
-        "version"|"--version"|"-v")
-            caddie_version
-            return 0
-            ;;
-        "reload"|"--reload"|"-r")
-            source "$HOME/.bash_profile"
-            return 0
-            ;;
-        "")
-            caddie_help
+        help|--help|-h|version|--version|-v|reload|--reload|-r|go:home)
+            printf '%s\n' "$line"
             return 0
             ;;
     esac
-    
-    # Handle special case: go:home command
-    if [[ "$command" == "go:home" ]]; then
-        caddie_core_go_home "$@"
+
+    if [[ "$line" == :* ]]; then
+        printf '%s\n' "${line#:}"
         return 0
     fi
-    
-    # Use naming convention: module:command -> caddie_module_command
+
+    local first_token
+    first_token="${line%%[[:space:]]*}"
+    if [[ "$first_token" == *:* ]]; then
+        printf '%s\n' "$line"
+        return 0
+    fi
+
+    local module rest
+    module="${line%%[[:space:]]*}"
+    if [ "$module" = "$line" ]; then
+        printf '%s\n' "${module}:help"
+        return 0
+    fi
+
+    rest="${line#${module}}"
+    rest="${rest#${rest%%[![:space:]]*}}"
+
+    local command command_tail
+    command="${rest%%[[:space:]]*}"
+    if [ "$command" = "$rest" ]; then
+        printf '%s\n' "${module}:${command}"
+        return 0
+    fi
+
+    command_tail="${rest#${command}}"
+    command_tail="${command_tail#${command_tail%%[![:space:]]*}}"
+
+    if [ -n "$command_tail" ]; then
+        local next_token remaining
+        next_token="${command_tail%%[[:space:]]*}"
+        remaining="${command_tail#${next_token}}"
+        remaining="${remaining#${remaining%%[![:space:]]*}}"
+
+        if [ -n "$next_token" ] \
+            && [[ "$command" != *:* ]] \
+            && [[ "$next_token" != -* ]] \
+            && [[ "$next_token" =~ ^[[:alnum:]_-]+$ ]]; then
+            command="${command}:${next_token}"
+            command_tail="$remaining"
+        fi
+    fi
+
+    if [ -n "$command_tail" ]; then
+        printf '%s\n' "${module}:${command} ${command_tail}"
+    else
+        printf '%s\n' "${module}:${command}"
+    fi
+    return 0
+}
+
+function _caddie_repl() {
+    local line normalized status=0
+    local prompt_label="caddie"
+
+    if [ -f "$HOME/.caddie_version" ]; then
+        # shellcheck disable=SC1090
+        source "$HOME/.caddie_version"
+        if [ -n "${CADDIE_SH_VERSION:-}" ]; then
+            prompt_label="caddie-${CADDIE_SH_VERSION}"
+        fi
+    fi
+
+    while true; do
+        if ! builtin read -e -r -p "${prompt_label}> " line; then
+            printf '\n'
+            break
+        fi
+
+        if [ -n "$line" ]; then
+            builtin history -s "$line" 2>/dev/null || true
+        fi
+
+        normalized="$(_caddie_repl_normalize "$line")"
+
+        case "$normalized" in
+            "")
+                continue
+                ;;
+            "__EXIT__")
+                break
+                ;;
+        esac
+
+        if ! eval "set -- $normalized" 2>/dev/null; then
+            caddie cli:red "Error: Unable to parse input"
+            continue
+        fi
+
+        if [ $# -eq 0 ]; then
+            continue
+        fi
+
+        caddie "$@"
+        status=$?
+    done
+
+    return $status
+}
+
+# Main caddie function - directly executes commands and exposes REPL when no args
+function caddie() {
+    if [ $# -eq 0 ]; then
+        _caddie_repl
+        return $?
+    fi
+
+    if [[ "$1" != *:* ]]; then
+        local normalized
+        normalized="$(_caddie_repl_normalize "$*")"
+
+        if [ "$normalized" = "__EXIT__" ]; then
+            return 0
+        fi
+
+        if [ -n "$normalized" ]; then
+            if ! eval "set -- $normalized" 2>/dev/null; then
+                caddie cli:red "Unable to parse command"
+                return 1
+            fi
+        else
+            return 0
+        fi
+    fi
+
+    local command="$1"
+    shift || true
+
+    case "$command" in
+        help|--help|-h)
+            caddie_help
+            return 0
+            ;;
+        version|--version|-v)
+            caddie_version
+            return 0
+            ;;
+        reload|--reload|-r)
+            source "$HOME/.bash_profile"
+            return 0
+            ;;
+        go:home)
+            caddie_core_go_home "$@"
+            return 0
+            ;;
+    esac
+
     local function_name="caddie_${command//:/_}"
-    
+
     if command -v "$function_name" >/dev/null 2>&1; then
         eval "$function_name \"\$@\""
     else
-        echo "Error: Unknown command '$command'"
+        caddie cli:red "Error: Unknown command '$command'"
         caddie_help
         return 1
     fi
@@ -174,6 +315,22 @@ function _caddie_completion() {
     cword=${COMP_CWORD:-0}
     cur=${words[$cword]}
     prev=${words[$((cword-1))]}
+  fi
+
+  if [[ "$prev" == git:pr:approve ]]; then
+    local pr_candidates=""
+
+    if declare -F caddie_git_pr_completion_candidates >/dev/null 2>&1; then
+      pr_candidates=$(caddie_git_pr_completion_candidates 2>/dev/null || true)
+    fi
+
+    if [ -n "$pr_candidates" ]; then
+      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$pr_candidates" -- "$cur")
+    else
+      COMPREPLY=()
+    fi
+
+    return 0
   fi
 
   # Build a flat list of all accepted commands
@@ -283,7 +440,7 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
                 caddie_completion_register "$module_name" "js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
                 ;;
               rust)
-                caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
+                caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:example:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
                 ;;
               ios)
                 caddie_completion_register "$module_name" "ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
@@ -298,7 +455,7 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
                 caddie_completion_register "$module_name" "cross:template:create"
                 ;;
               git)
-                caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
+                caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
                 ;;
               github)
                 caddie_completion_register "$module_name" "github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"

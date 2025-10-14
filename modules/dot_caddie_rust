@@ -210,6 +210,12 @@ function caddie_rust_run_example() {
     return $status
 }
 
+# Alias to support rust example:run syntax
+function caddie_rust_example_run() {
+    caddie_rust_run_example "$@"
+    return $?
+}
+
 # Function to check Rust project without building
 function caddie_rust_check() {
     caddie_rust_require_project || return 1
@@ -781,6 +787,7 @@ function caddie_rust_help() {
     caddie cli:indent "build              Build current project"
     caddie cli:indent "run [args]         Run project (forwards args to cargo run)"
     caddie cli:indent "run:example <name> Run a Cargo example (cargo run --example <name>)"
+    caddie cli:indent "example:run <name> Alias for run:example"
     caddie cli:indent "                   Example: caddie rust:run --example simple_demo"
     caddie cli:indent "test               Run all tests"
     caddie cli:indent "test:unit          Run unit tests only"
@@ -844,6 +851,7 @@ export -f caddie_rust_new
 export -f caddie_rust_build
 export -f caddie_rust_run
 export -f caddie_rust_run_example
+export -f caddie_rust_example_run
 export -f caddie_rust_test
 export -f caddie_rust_test_unit
 export -f caddie_rust_test_integration
