@@ -220,8 +220,21 @@ function caddie_rust_run_example() {
             fi
         fi
 
-        example_name="${example_spec##*/}"
-        example_name="${example_name%.rs}"
+        local resolved_name="$example_spec"
+        if [ -n "$example_path" ]; then
+            local normalized="${example_path#./}"
+            if [[ "$normalized" == examples/*/main.rs ]]; then
+                resolved_name="${normalized%/main.rs}"
+                resolved_name="${resolved_name##*/}"
+            else
+                resolved_name="${normalized##*/}"
+                resolved_name="${resolved_name%.rs}"
+            fi
+        else
+            resolved_name="${example_spec##*/}"
+            resolved_name="${resolved_name%.rs}"
+        fi
+        example_name="$resolved_name"
 
         if [ -n "$example_path" ] && [[ "$example_path" != examples/* ]]; then
             caddie cli:thought "Using example name '$example_name' (resolved from path '$example_spec')"
