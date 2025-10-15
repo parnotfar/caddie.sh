@@ -191,14 +191,56 @@ function caddie_rust_run() {
 function caddie_rust_run_example() {
     caddie_rust_require_project || return 1
 
-    local example_name="$1"
+    local example_spec="$1"
     shift || true
-    if [ -z "$example_name" ]; then
-        caddie cli:red "Error: Please provide an example name"
-        caddie cli:usage "caddie rust:run:example <name> [-- <args>]"
+    if [ -z "$example_spec" ]; then
+        caddie cli:red "Error: Please provide an example name or path"
+        caddie cli:usage "caddie rust:run:example <name|path> [-- <args>]"
         return 1
     fi
-    
+
+    local example_name="$example_spec"
+    local example_path=""
+
+    if [[ "$example_spec" == *"/"* ]] || [[ "$example_spec" == *.rs ]]; then
+        if [ -f "$example_spec" ]; then
+            example_path="$example_spec"
+        elif [ -f "./$example_spec" ]; then
+            example_path="./$example_spec"
+        elif [ -f "examples/$example_spec" ]; then
+            example_path="examples/$example_spec"
+        fi
+
+        if [ -z "$example_path" ] && [[ "$example_spec" == *.rs ]]; then
+            local trimmed="${example_spec%.rs}"
+            if [ -f "$trimmed.rs" ]; then
+                example_path="$trimmed.rs"
+            elif [ -f "examples/${trimmed##*/}.rs" ]; then
+                example_path="examples/${trimmed##*/}.rs"
+            fi
+        fi
+
+        local resolved_name="$example_spec"
+        if [ -n "$example_path" ]; then
+            local normalized="${example_path#./}"
+            if [[ "$normalized" == examples/*/main.rs ]]; then
+                resolved_name="${normalized%/main.rs}"
+                resolved_name="${resolved_name##*/}"
+            else
+                resolved_name="${normalized##*/}"
+                resolved_name="${resolved_name%.rs}"
+            fi
+        else
+            resolved_name="${example_spec##*/}"
+            resolved_name="${resolved_name%.rs}"
+        fi
+        example_name="$resolved_name"
+
+        if [ -n "$example_path" ] && [[ "$example_path" != examples/* ]]; then
+            caddie cli:thought "Using example name '$example_name' (resolved from path '$example_spec')"
+        fi
+    fi
+
     caddie cli:title "Running Cargo example '$example_name'..."
     cargo run --example "$example_name" "$@"
     local status=$?
@@ -786,9 +828,9 @@ function caddie_rust_help() {
     caddie cli:indent "new <name>         Create new Rust project"
     caddie cli:indent "build              Build current project"
     caddie cli:indent "run [args]         Run project (forwards args to cargo run)"
-    caddie cli:indent "run:example <name> Run a Cargo example (cargo run --example <name>)"
-    caddie cli:indent "example:run <name> Alias for run:example"
-    caddie cli:indent "                   Example: caddie rust:run --example simple_demo"
+    caddie cli:indent "run:example <name|path> Run a Cargo example by name or .rs path"
+    caddie cli:indent "example:run <name|path> Alias for run:example"
+    caddie cli:indent "                   Example: caddie rust:run:example targets/demo.rs"
     caddie cli:indent "test               Run all tests"
     caddie cli:indent "test:unit          Run unit tests only"
     caddie cli:indent "test:integration   Run integration tests only"

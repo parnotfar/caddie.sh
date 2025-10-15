@@ -112,12 +112,12 @@ Hello, World!
 - Must be in a Rust project directory
 - Project must compile successfully
 
-#### `caddie rust:run:example <name>`
+#### `caddie rust:run:example <name|path>`
 
-Run a specific Cargo example.
+Run a specific Cargo example by name or by pointing at the example file.
 
 **Arguments:**
-- `name`: Name of the example to run
+- `name|path`: Either the example's Cargo name (e.g., `multi_distance_demo`) or the path to the `.rs` file (e.g., `targets/multi_distance_demo.rs`)
 
 **Examples:**
 ```bash
@@ -129,10 +129,14 @@ caddie rust:example:run simple_demo
 
 # Run example with arguments
 caddie rust:run:example multi_distance_demo -- --help
+
+# Run example by file path (same as above)
+caddie rust:run:example targets/multi_distance_demo.rs
 ```
 
 **What it does:**
-- Runs `cargo run --example <name>` in the current directory
+- Resolves the provided name or file path to an example name
+- Runs `cargo run --example <resolved-name>` in the current directory
 - Compiles and executes the specified example
 - Passes any additional arguments to the example program
 
