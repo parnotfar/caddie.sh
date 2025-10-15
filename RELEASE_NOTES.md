@@ -15,6 +15,7 @@
 - `caddie-3.5> csv` — activates the CSV scope, switching the prompt to `caddie[csv]-3.5>` for focused commands.
 - `caddie[csv]-3.5> set file data.csv` — runs the CSV module command without retyping the module name.
 - `caddie[rust]-3.5> fix all` — expands to `rust:fix:all`, keeping the familiar full-word flow inside a module scope.
+- `caddie rust:run:example targets/multi_distance_demo.rs` — point at an example file or name; Caddie resolves both forms automatically.
 - `ps aux | head` — executes shell commands inline; results stay in the Prompt history without touching shell history.
 - `caddie-3.5> shell ls -la` — proxy a one-off shell command without switching contexts, or type `shell` to enter a dedicated shell scope.
 
