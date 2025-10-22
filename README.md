@@ -67,15 +67,19 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-3.5>
+caddie  # prompt shows as caddie-3.7>
 
 # Narrow the prompt to a module scope
-caddie-3.5> rust  # prompt switches to caddie[rust]-3.5>
-caddie[rust]-3.5> back  # exits scope (also accepts `up` or `..`)
+caddie-3.7> rust  # prompt switches to caddie[rust]-3.7>
+caddie[rust]-3.7> back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-3.5> `ls -la`
-caddie-3.5> shell git status  # one-off shell command
+caddie-3.7> `ls -la`
+caddie-3.7> shell git status  # one-off shell command
+
+# Cancel a long-running command without leaving the REPL
+caddie-3.7> rust build
+# press Ctrl+C → command stops and prompt stays open
 ```
 
 > Tip: Caddie keeps REPL history in `~/.caddie_history`, so arrow-key recall works without adding entries to your shell history.

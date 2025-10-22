@@ -87,16 +87,18 @@ Run `caddie` without arguments to enter an interactive prompt. Start with a modu
 
 ```bash
 $ caddie
-caddie-3.5> python venv create   # Equivalent to `caddie python:venv:create`
-caddie-3.5> csv                  # Switch to the CSV module scope
-caddie[csv]-3.5> set file data.csv
-caddie[csv]-3.5> back            # Return to the root prompt
-caddie-3.5> `ls -1`              # Inline shell command without leaving the REPL
-caddie-3.5> shell git status     # One-off shell command through the shell scope
-caddie-3.5> exit                 # Leave the REPL entirely
+caddie-3.7> python venv create   # Equivalent to `caddie python:venv:create`
+caddie-3.7> csv                  # Switch to the CSV module scope
+caddie[csv]-3.7> set file data.csv
+caddie[csv]-3.7> back            # Return to the root prompt
+caddie-3.7> `ls -1`              # Inline shell command without leaving the REPL
+caddie-3.7> shell git status     # One-off shell command through the shell scope
+caddie-3.7> cargo test           # Long-running command
+# Press Ctrl+C to cancel without exiting the REPL
+caddie-3.7> exit                 # Leave the REPL entirely
 ```
 
-The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`). Caddie keeps the REPL history in `~/.caddie_history`, so commands stay recallable without touching your main shell history. While scoped, the prompt shows the active module (`caddie[module]-3.5>`), and `back`, `up`, or `..` return you to the root prompt.
+The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`). Caddie keeps the REPL history in `~/.caddie_history`, so commands stay recallable without touching your main shell history. `Ctrl+C` now interrupts the active command and drops you back at the same prompt instead of closing the session. While scoped, the prompt shows the active module (`caddie[module]-3.7>`), and `back`, `up`, or `..` return you to the root prompt.
 
 ### Debug System
 
