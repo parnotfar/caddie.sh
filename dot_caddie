@@ -277,6 +277,11 @@ function _caddie_repl() {
     local history_entries_added=0
     local -a repl_new_entries=()
 
+    local previous_int_trap
+    previous_int_trap="$(trap -p INT)"
+    local interrupted=0
+    trap 'interrupted=1' INT
+
     if [ -f "$HOME/.caddie_version" ]; then
         # shellcheck disable=SC1090
         source "$HOME/.caddie_version"
@@ -307,7 +312,13 @@ function _caddie_repl() {
             prompt_label="${prompt_name}${prompt_version}"
         fi
 
+        interrupted=0
         if ! builtin read -e -r -p "${prompt_label}> " line; then
+            if [ "$interrupted" = "1" ]; then
+                printf '\n'
+                interrupted=0
+                continue
+            fi
             printf '\n'
             break
         fi
@@ -388,6 +399,7 @@ function _caddie_repl() {
                 local shell_command
                 shell_command="${normalized#__SHELL_EVAL__}"
                 if [ -n "$shell_command" ]; then
+                    interrupted=0
                     builtin eval "$shell_command"
                     status=$?
                 else
@@ -406,9 +418,16 @@ function _caddie_repl() {
             continue
         fi
 
+        interrupted=0
         caddie "$@"
         status=$?
     done
+
+    if [ -n "$previous_int_trap" ]; then
+        eval "$previous_int_trap"
+    else
+        trap - INT
+    fi
 
     if [ ${#repl_new_entries[@]} -gt 0 ]; then
         if [ -z "$history_file" ]; then

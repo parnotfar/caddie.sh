@@ -1,5 +1,20 @@
 # Caddie.sh Release Notes
 
+## Version 3.7 - Interrupt-Resilient REPL
+
+**Release Date:** November 2025
+
+### 🎯 Release Highlights
+
+- **Graceful Interrupts**: Pressing `Ctrl+C` inside the interactive prompt now stops only the running command; the REPL stays active and immediately redraws the prompt.
+- **Shell Scope Safety**: Shell pass-through commands launched via backticks or the `shell` helper inherit the new interrupt behaviour, giving you a consistent escape hatch for long tasks.
+- **Prompt Preservation**: Scoped prompts (for example `caddie[rust]-3.7>`) remain intact after interrupts, so you stay in the same module context.
+
+### 📚 Documentation Updates
+
+- README “First Use” section now calls out the new interrupt-friendly workflow with fresh examples.
+- Core module reference and User Guide highlight `Ctrl+C` behaviour and updated prompt examples (`caddie-3.7>`).
+
 ## Version 3.5 - Sub-module Prompts!
 
 **Release Date:** October 2025
