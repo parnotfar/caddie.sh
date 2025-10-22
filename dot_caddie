@@ -399,11 +399,9 @@ function _caddie_repl() {
                 local shell_command
                 shell_command="${normalized#__SHELL_EVAL__}"
                 if [ -n "$shell_command" ]; then
-                    trap - INT
                     interrupted=0
                     builtin eval "$shell_command"
                     status=$?
-                    trap 'interrupted=1' INT
                 else
                     status=0
                 fi
@@ -420,11 +418,9 @@ function _caddie_repl() {
             continue
         fi
 
-        trap - INT
         interrupted=0
         caddie "$@"
         status=$?
-        trap 'interrupted=1' INT
     done
 
     if [ -n "$previous_int_trap" ]; then
