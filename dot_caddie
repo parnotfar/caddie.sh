@@ -604,6 +604,17 @@ function caddie_completion_register() {
     return 1
   fi
 
+  # Check if module already exists in indexed arrays
+  local i
+  for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++)); do
+    if [ "${CADDIE_COMPLETION_MODULES[$i]}" = "$module" ]; then
+      # Update existing entry
+      CADDIE_COMPLETION_COMMANDS[$i]="$commands"
+      return 0
+    fi
+  done
+
+  # Add new module
   CADDIE_COMPLETION_MODULES+=("$module")
   CADDIE_COMPLETION_COMMANDS+=("$commands")
 
@@ -658,7 +669,7 @@ function _caddie_completion() {
   local base_opts="help version go:home shell --help -h --version -v reload --reload -r"
   local all_opts="$base_opts"
 
-  if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
+  if [ ${#CADDIE_COMPLETION_MODULES[@]} -gt 0 ] 2>/dev/null; then
     local i
     for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++)); do
       local completion_module="${CADDIE_COMPLETION_MODULES[$i]}"

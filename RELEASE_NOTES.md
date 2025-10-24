@@ -1,5 +1,79 @@
 # Caddie.sh Release Notes
 
+## Version 3.9.3 - Completion Loop Array Mismatch Fix
+
+**Release Date:** January 2025
+
+### 🐛 Critical Bug Fix
+
+**Fixed Completion Loop Array Mismatch**: Resolved a critical bug in the completion loop where the condition checked `CADDIE_COMPLETION_ORDER` array length but the loop iterated over `CADDIE_COMPLETION_MODULES` array length, causing potential out-of-bounds access and incorrect tab completions.
+
+### 🔧 Technical Improvements
+
+#### **Loop Consistency Fix**
+- **Matching Array References**: Loop condition now uses same array as loop bounds
+- **Prevents Out-of-Bounds**: Eliminates risk of accessing non-existent array indices
+- **Consistent Completion**: Ensures tab completion works reliably
+- **Array Safety**: Prevents empty or incorrect completion suggestions
+
+#### **Before Fix (3.9.2)**
+- Condition: `if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ]`
+- Loop: `for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++))`
+- Mismatch between ORDER and MODULES array lengths
+- Potential out-of-bounds access
+
+#### **After Fix (3.9.3)**
+- Condition: `if [ ${#CADDIE_COMPLETION_MODULES[@]} -gt 0 ]`
+- Loop: `for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++))`
+- Consistent array references
+- Safe array access
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **Seamless Fix**: No breaking changes to existing functionality
+- **Better Completion**: More reliable tab completion behavior
+- **No Action Required**: Fix is automatic upon next `caddie reload`
+
+---
+
+## Version 3.9.2 - Completion Array Alignment Bug Fix
+
+**Release Date:** January 2025
+
+### 🐛 Critical Bug Fix
+
+**Fixed Completion Array Misalignment**: Resolved a critical bug in `caddie_completion_register()` where duplicate module registrations would cause array misalignment between `CADDIE_COMPLETION_MODULES`/`CADDIE_COMPLETION_COMMANDS` and `CADDIE_COMPLETION_ORDER`.
+
+### 🔧 Technical Improvements
+
+#### **Array Management Fix**
+- **Duplicate Detection**: Now checks for existing modules in indexed arrays before appending
+- **Update vs Append**: Updates existing module commands instead of creating duplicates
+- **Array Alignment**: Ensures `CADDIE_COMPLETION_MODULES` and `CADDIE_COMPLETION_COMMANDS` stay synchronized
+- **Completion Integrity**: Prevents stale or duplicate command entries in tab completion
+
+#### **Before Fix (3.9.1)**
+- `caddie_completion_register()` unconditionally appended to indexed arrays
+- Only conditionally appended to `CADDIE_COMPLETION_ORDER`
+- Duplicate registrations caused array misalignment
+- Completion loop processed stale/duplicate entries
+
+#### **After Fix (3.9.2)**
+- Checks for existing modules before appending
+- Updates existing entries instead of creating duplicates
+- Maintains proper array alignment
+- Clean completion behavior
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **Seamless Fix**: No breaking changes to existing functionality
+- **Better Completion**: More reliable tab completion behavior
+- **No Action Required**: Fix is automatic upon next `caddie reload`
+
+---
+
 ## Version 3.9.1 - Critical Error Handling Fix
 
 **Release Date:** January 2025
