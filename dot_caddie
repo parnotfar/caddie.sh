@@ -810,7 +810,11 @@ function _caddie_load_modules() {
         done
         return 0
     else
-        caddie cli:warning "Installation Error: The modules directory for caddie is not found.  Please reinstall caddie."
+        # NOTE: Using printf instead of caddie cli:warning because the CLI module
+        # hasn't been loaded yet (this function runs before module loading).
+        # The caddie cli: functions are defined in .caddie_cli module which is only
+        # available after the modules directory exists and modules are sourced.
+        printf "Warning: Installation Error: The modules directory for caddie is not found. Please reinstall caddie.\n" >&2
         return 1
     fi
 }

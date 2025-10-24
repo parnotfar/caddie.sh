@@ -1,5 +1,41 @@
 # Caddie.sh Release Notes
 
+## Version 3.9.4 - Module Load Dependency Fix
+
+**Release Date:** January 2025
+
+### 🐛 Critical Bug Fix
+
+**Fixed Module Load Dependency Issue**: Resolved a critical bug where the `_caddie_load_modules` function tried to call `caddie cli:warning` before the CLI module was loaded, causing "command not found" errors when the modules directory was missing.
+
+### 🔧 Technical Improvements
+
+#### **Dependency Resolution**
+- **Basic Shell Output**: Replaced `caddie cli:warning` with `printf` for error messages
+- **Pre-Module Error Handling**: Error messages now work before modules are loaded
+- **Clear Documentation**: Added comments explaining why basic shell functions are used
+- **Chicken-and-Egg Prevention**: Prevents dependency on unloaded modules
+
+#### **Before Fix (3.9.3)**
+- `_caddie_load_modules` called `caddie cli:warning` before CLI module was loaded
+- Missing modules directory caused "command not found" error
+- Error handling failed due to missing dependencies
+
+#### **After Fix (3.9.4)**
+- Uses `printf` for error messages before module loading
+- Clear documentation of why basic shell functions are used
+- Error handling works regardless of module loading state
+- Prevents future similar dependency issues
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **Seamless Fix**: No breaking changes to existing functionality
+- **Better Error Handling**: More robust error messages for installation issues
+- **No Action Required**: Fix is automatic upon next `caddie reload`
+
+---
+
 ## Version 3.9.3 - Completion Loop Array Mismatch Fix
 
 **Release Date:** January 2025
