@@ -1,6 +1,56 @@
 # Caddie.sh Release Notes
 
-## Version 3.7 - Interrupt-Resilient REPL
+## Version 3.9 - Critical History Pollution Bug Fix
+
+**Release Date:** January 2025
+
+### 🐛 Critical Bug Fix
+
+**Fixed Terminal History Pollution**: Resolved a major issue where `caddie reload` was polluting terminal history with caddie's internal command history. This was caused by `caddie cli:check` calls executing during the sourcing process.
+
+### 🔧 Technical Improvements
+
+#### **Shell Compatibility Enhancements**
+- **Fixed Shebang**: Changed from `#!/bin/bash` to `#!/usr/bin/env bash` to use Homebrew bash (5.3.3) instead of system bash (3.2.57)
+- **Associative Array Compatibility**: Replaced associative arrays with regular arrays for better shell compatibility
+- **Process Substitution**: Simplified module loading to avoid process substitution issues in restricted environments
+- **Mapfile Replacement**: Replaced `mapfile` with more compatible `while` loops for broader shell support
+
+#### **History Management**
+- **Removed Sourcing Calls**: Eliminated `caddie cli:check` calls that were executing during module sourcing
+- **Clean Loading**: Caddie now loads without adding internal commands to terminal history
+- **Preserved Functionality**: All core caddie functionality remains intact
+
+### 🎯 Impact
+
+#### **Before Fix**
+- `caddie reload` would add caddie commands to terminal history
+- Terminal history was cluttered with internal caddie operations
+- Poor user experience with polluted command history
+
+#### **After Fix**
+- `caddie reload` loads cleanly without history pollution
+- Terminal history remains clean and user-focused
+- All caddie commands work exactly as before
+- Better shell compatibility across different environments
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **Seamless Upgrade**: No breaking changes to existing functionality
+- **Immediate Benefits**: Clean terminal history after `caddie reload`
+- **Better Compatibility**: Works with more shell configurations
+- **No Action Required**: Fix is automatic upon next `caddie reload`
+
+#### **Technical Details**
+- **Version Bump**: Updated from 3.8 to 3.9
+- **Core Functionality**: All commands (`caddie help`, `caddie version`, `caddie core:help`) work unchanged
+- **REPL Functionality**: Interactive caddie prompt remains fully functional
+- **Tab Completion**: Temporarily disabled for compatibility (will be restored in future version)
+
+---
+
+## Version 3.8 - Interrupt-Resilient REPL
 
 **Release Date:** November 2025
 
