@@ -68,7 +68,7 @@ function __ps1_branch() {
 }
 
 function set_caddie_prompt_ps1() {
-  local version branch git_info github_info changes github_status=""
+  local version branch git_info github_info changes github_status="" module_line="" base_line="" base_label="" path_fragment=""
   version="$(__caddie_version)"
 
   if command -v gh >/dev/null 2>&1; then
@@ -76,24 +76,24 @@ function set_caddie_prompt_ps1() {
       if printf '%s' "$github_status" | grep -q "Logged in to github.com account"; then
         local account
         account="$(printf '%s' "$github_status" | sed -n 's/.*account \([^ ]*\).*/\1/p')"
-        github_info="[${PS_GREEN}gh:${account}${PS_RESET}]"
+        github_info="${PS_CYAN}[${PS_GREEN}gh:${account}${PS_CYAN}]${PS_RESET}"
       else
-        github_info="[${PS_YELLOW}gh:unknown${PS_RESET}]"
+        github_info="${PS_CYAN}[${PS_YELLOW}gh:unknown${PS_CYAN}]${PS_RESET}"
       fi
     else
-      github_info="[${PS_RED}gh:none${PS_RESET}]"
+      github_info="${PS_CYAN}[${PS_RED}gh:none${PS_CYAN}]${PS_RESET}"
     fi
   else
-    github_info="[${PS_RED}gh:missing${PS_RESET}]"
+    github_info="${PS_CYAN}[${PS_RED}gh:missing${PS_CYAN}]${PS_RESET}"
   fi
 
   branch="$(__ps1_branch)"
   if [ -n "$branch" ]; then
     changes="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
     if [ "${changes:-0}" -gt 0 ]; then
-      git_info=" (${PS_PURPLE}${branch}${PS_RESET}|${PS_CYAN}+${changes}${PS_RESET})"
+      git_info=" ${PS_CYAN}(${PS_PURPLE}${branch}${PS_CYAN}|${PS_YELLOW}+${changes}${PS_CYAN})${PS_RESET}"
     else
-      git_info=" (${PS_PURPLE}${branch}${PS_RESET}|${PS_GREEN}✓${PS_RESET})"
+      git_info=" ${PS_CYAN}(${PS_PURPLE}${branch}${PS_CYAN}|${PS_GREEN}✓${PS_CYAN})${PS_RESET}"
     fi
   else
     git_info=""
@@ -114,17 +114,19 @@ function set_caddie_prompt_ps1() {
   if [ ${#prompt_segments[@]} -gt 0 ]; then
     local IFS=$' '
     module_line="${prompt_segments[*]}"
+    module_line="${PS_CYAN}[modules]${PS_RESET} ${PS_GREEN}${module_line}${PS_RESET}"
   fi
 
-  local base_line="[${PS_BLUE}Caddie-${version}${PS_RESET}]${github_info}${git_info}"
-  local path_fragment="${PS_YELLOW}\w${PS_RESET} \$ "
+  base_label="${PS_CYAN}[${PS_BLUE}caddie${PS_CYAN}-${PS_GREEN}${version}${PS_CYAN}]${PS_RESET}"
+  base_line="${base_label} ${github_info}${git_info}"
+  path_fragment=" ${PS_CYAN}[path]${PS_RESET} ${PS_YELLOW}\w${PS_RESET} ${PS_PURPLE}\$${PS_RESET} "
 
   PROMPT_DIRTRIM=3
   PS1=""
   if [ -n "$module_line" ]; then
     PS1+="$module_line"$'\n'
   fi
-  PS1+="$base_line ${path_fragment}"
+  PS1+="${base_line}${path_fragment}"
 }
 
 PROMPT_COMMAND='set_caddie_prompt_ps1'

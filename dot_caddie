@@ -710,7 +710,7 @@ if [ -d "$CADDIE_MODULES_DIR" ]; then
                 caddie_completion_register "$module_name" "js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
                 ;;
               rust)
-                caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:example:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
+                caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:example:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:format rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
                 ;;
               ios)
                 caddie_completion_register "$module_name" "ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
