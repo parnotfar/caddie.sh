@@ -1,5 +1,40 @@
 # Caddie.sh Release Notes
 
+## Version 3.9.1 - Critical Error Handling Fix
+
+**Release Date:** January 2025
+
+### 🐛 Critical Bug Fix
+
+**Fixed Shell Termination Issue**: Resolved a critical regression where a missing `~/.caddie_modules` directory would terminate the entire shell session instead of gracefully handling the error.
+
+### 🔧 Technical Improvements
+
+#### **Error Handling Restoration**
+- **Graceful Failure**: Missing modules directory now shows warning message and continues with limited functionality
+- **Shell Preservation**: No longer terminates the interactive shell when modules directory is missing
+- **Function Wrapping**: Wrapped module loading in `_caddie_load_modules()` function to enable proper `return` behavior
+- **User Experience**: Users can now fix installation issues without losing their shell session
+
+#### **Before Fix (3.9)**
+- Missing `~/.caddie_modules` would call `exit 1` and terminate the entire shell
+- No error message shown to user
+- Shell session lost, requiring new terminal
+
+#### **After Fix (3.9.1)**
+- Missing `~/.caddie_modules` shows warning: "Installation Error: The modules directory for caddie is not found. Please reinstall caddie."
+- Shell session preserved
+- User can fix the issue and continue working
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **Immediate Fix**: Critical regression resolved
+- **No Action Required**: Fix is automatic upon next `caddie reload`
+- **Better Error Handling**: More robust error handling for installation issues
+
+---
+
 ## Version 3.9 - Critical History Pollution Bug Fix
 
 **Release Date:** January 2025
