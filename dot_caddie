@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 source "$HOME/.caddie_modules/.caddie_core"
 
@@ -270,6 +270,7 @@ function _caddie_repl() {
     local line normalized status=0
     local prompt_name="caddie"
     local prompt_version=""
+    local prompt_version_value=""
     local prompt_label="caddie"
     local active_module=""
     local history_file="${CADDIE_HISTORY_FILE:-$HOME/.caddie_history}"
@@ -287,10 +288,38 @@ function _caddie_repl() {
         source "$HOME/.caddie_version"
         if [ -n "${CADDIE_SH_VERSION:-}" ]; then
             prompt_version="-${CADDIE_SH_VERSION}"
+            prompt_version_value="$CADDIE_SH_VERSION"
             prompt_label="${prompt_name}${prompt_version}"
         fi
     fi
 
+    local prompt_color_enabled=0
+    local prompt_color_reset=""
+    local prompt_color_name=""
+    local prompt_color_module=""
+    local prompt_color_version=""
+    local prompt_color_bracket=""
+    local prompt_color_dash=""
+    local prompt_color_prompt=""
+
+    if [ -t 1 ] && command -v tput >/dev/null 2>&1; then
+        local np_start=$'\001'
+        local np_end=$'\002'
+        local tput_reset
+        tput_reset="$(tput sgr0 2>/dev/null || printf '')"
+        if [ -n "$tput_reset" ]; then
+            prompt_color_enabled=1
+            prompt_color_reset="${np_start}${tput_reset}${np_end}"
+            prompt_color_name="${np_start}$(tput setaf 6 2>/dev/null || printf '')${np_end}"
+            prompt_color_module="${np_start}$(tput setaf 5 2>/dev/null || printf '')${np_end}"
+            prompt_color_version="${np_start}$(tput setaf 3 2>/dev/null || printf '')${np_end}"
+            prompt_color_bracket="${np_start}$(tput setaf 8 2>/dev/null || printf '')${np_end}"
+            prompt_color_dash="${np_start}$(tput setaf 7 2>/dev/null || printf '')${np_end}"
+            prompt_color_prompt="${np_start}$(tput setaf 4 2>/dev/null || printf '')${np_end}"
+        fi
+    fi
+
+    # Only load history when REPL is actually invoked, not during sourcing
     history_initial_size=$(builtin history 2>/dev/null | wc -l | tr -d '[:space:]')
     if ! [[ "$history_initial_size" =~ ^[0-9]+$ ]]; then
         history_initial_size=0
@@ -312,8 +341,23 @@ function _caddie_repl() {
             prompt_label="${prompt_name}${prompt_version}"
         fi
 
+        local prompt_display
+        if [ "$prompt_color_enabled" -eq 1 ]; then
+            local colored_label
+            colored_label="${prompt_color_name}${prompt_name}${prompt_color_reset}"
+            if [ -n "$active_module" ]; then
+                colored_label+="${prompt_color_bracket}[${prompt_color_module}${active_module}${prompt_color_bracket}]${prompt_color_reset}"
+            fi
+            if [ -n "$prompt_version_value" ]; then
+                colored_label+="${prompt_color_dash}-${prompt_color_version}${prompt_version_value}${prompt_color_reset}"
+            fi
+            prompt_display="${colored_label}${prompt_color_prompt}> ${prompt_color_reset}"
+        else
+            prompt_display="${prompt_label}> "
+        fi
+
         interrupted=0
-        if ! builtin read -e -r -p "${prompt_label}> " line; then
+        if ! builtin read -e -r -p "$prompt_display" line; then
             if [ "$interrupted" = "1" ]; then
                 printf '\n'
                 interrupted=0
@@ -540,11 +584,14 @@ function caddie() {
 # 1) make ':' not break words (so ruby:add stays one token)
 COMP_WORDBREAKS=${COMP_WORDBREAKS//:/}
 
-declare -Ag CADDIE_COMPLETION_MAP=()
+# Use regular arrays instead of associative arrays for compatibility
+CADDIE_COMPLETION_MODULES=()
+CADDIE_COMPLETION_COMMANDS=()
 CADDIE_COMPLETION_ORDER=()
 
 function caddie_completion_clear() {
-  CADDIE_COMPLETION_MAP=()
+  CADDIE_COMPLETION_MODULES=()
+  CADDIE_COMPLETION_COMMANDS=()
   CADDIE_COMPLETION_ORDER=()
   return 0
 }
@@ -557,7 +604,19 @@ function caddie_completion_register() {
     return 1
   fi
 
-  CADDIE_COMPLETION_MAP["$module"]="$commands"
+  # Check if module already exists in indexed arrays
+  local i
+  for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++)); do
+    if [ "${CADDIE_COMPLETION_MODULES[$i]}" = "$module" ]; then
+      # Update existing entry
+      CADDIE_COMPLETION_COMMANDS[$i]="$commands"
+      return 0
+    fi
+  done
+
+  # Add new module
+  CADDIE_COMPLETION_MODULES+=("$module")
+  CADDIE_COMPLETION_COMMANDS+=("$commands")
 
   local existing_module
   for existing_module in "${CADDIE_COMPLETION_ORDER[@]}"; do
@@ -595,7 +654,10 @@ function _caddie_completion() {
     fi
 
     if [ -n "$pr_candidates" ]; then
-      IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$pr_candidates" -- "$cur")
+      COMPREPLY=()
+      while IFS= read -r line; do
+        COMPREPLY+=("$line")
+      done < <(compgen -W "$pr_candidates" -- "$cur")
     else
       COMPREPLY=()
     fi
@@ -607,10 +669,11 @@ function _caddie_completion() {
   local base_opts="help version go:home shell --help -h --version -v reload --reload -r"
   local all_opts="$base_opts"
 
-  if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
-    local completion_module
-    for completion_module in "${CADDIE_COMPLETION_ORDER[@]}"; do
-      local completion_cmds="${CADDIE_COMPLETION_MAP[$completion_module]}"
+  if [ ${#CADDIE_COMPLETION_MODULES[@]} -gt 0 ] 2>/dev/null; then
+    local i
+    for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++)); do
+      local completion_module="${CADDIE_COMPLETION_MODULES[$i]}"
+      local completion_cmds="${CADDIE_COMPLETION_COMMANDS[$i]}"
       if [ -n "$completion_cmds" ]; then
         all_opts+=" $completion_cmds"
       fi
@@ -618,7 +681,10 @@ function _caddie_completion() {
   fi
   
   # Complete with all available commands
-  IFS=$'\n' mapfile -t COMPREPLY < <(compgen -W "$all_opts" -- "$cur")
+  COMPREPLY=()
+  while IFS= read -r line; do
+    COMPREPLY+=("$line")
+  done < <(compgen -W "$all_opts" -- "$cur")
   
   # If we have multiple completions and the current word contains a colon,
   # try to provide more specific completions for subcommands
@@ -666,99 +732,92 @@ source "$HOME/.caddie_data/.caddie_modules"
 # Each module file should have functions named <module>_caddie_description and <module>_caddie_help
 CADDIE_MODULES_DIR="$HOME/.caddie_modules"
 
-# Load all modules 
-if [ -d "$CADDIE_MODULES_DIR" ]; then
-    # Reset modules array before loading
-    caddie_modules_reset
-    caddie_prompt_clear_segments
-    caddie_completion_clear
+# Function to load caddie modules
+function _caddie_load_modules() {
+    if [ -d "$CADDIE_MODULES_DIR" ]; then
+        # Reset modules array before loading
+        caddie_modules_reset
+        caddie_prompt_clear_segments
+        caddie_completion_clear
 
-    # Load all modules and populate modules array
-    while IFS= read -r -d '' file; do
-        module_name=""
-        prompt_fn=""
-        completion_registered=0
-        completion_fn=""
-        completion_output=""
-        source "$file"
-        module_name="$(caddie_extract_module_name "$file")"
-        caddie_modules_append "$module_name"
-        prompt_fn="caddie_${module_name}_prompt_segment"
-        if declare -F "$prompt_fn" >/dev/null 2>&1; then
-            caddie_prompt_register_segment "$prompt_fn"
-        fi
+        # Load all modules and populate modules array
+        for file in "$CADDIE_MODULES_DIR"/.caddie_*; do
+            if [ -f "$file" ]; then
+                module_name=""
+                prompt_fn=""
+                completion_registered=0
+                completion_fn=""
+                completion_output=""
+                source "$file"
+                module_name="$(caddie_extract_module_name "$file")"
+                caddie_modules_append "$module_name"
+                prompt_fn="caddie_${module_name}_prompt_segment"
+                if declare -F "$prompt_fn" >/dev/null 2>&1; then
+                    caddie_prompt_register_segment "$prompt_fn"
+                fi
 
-        completion_registered=0
-        completion_fn="caddie_${module_name}_commands"
-        if declare -F "$completion_fn" >/dev/null 2>&1; then
-            completion_output="$($completion_fn)"
-            if [ -n "$completion_output" ]; then
-                caddie_completion_register "$module_name" "$completion_output"
-                completion_registered=1
+                completion_registered=0
+                completion_fn="caddie_${module_name}_commands"
+                if declare -F "$completion_fn" >/dev/null 2>&1; then
+                    completion_output="$($completion_fn)"
+                    if [ -n "$completion_output" ]; then
+                        caddie_completion_register "$module_name" "$completion_output"
+                        completion_registered=1
+                    fi
+                fi
+
+                if [ "$completion_registered" != "1" ]; then
+                    case "$module_name" in
+                      python)
+                        caddie_completion_register "$module_name" "python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
+                        ;;
+                      ruby)
+                        caddie_completion_register "$module_name" "ruby:init ruby:bundle ruby:install ruby:update ruby:exec ruby:rake ruby:rspec ruby:rubocop"
+                        ;;
+                      js)
+                        caddie_completion_register "$module_name" "js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
+                        ;;
+                      rust)
+                        caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:example:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:format rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
+                        ;;
+                      ios)
+                        caddie_completion_register "$module_name" "ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
+                        ;;
+                      core)
+                        caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
+                        ;;
+                      cursor)
+                        caddie_completion_register "$module_name" "cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
+                        ;;
+                      cross)
+                        caddie_completion_register "$module_name" "cross:template:create"
+                        ;;
+                      git)
+                        caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
+                        ;;
+                      github)
+                        caddie_completion_register "$module_name" "github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
+                        ;;
+                      cli)
+                        caddie_completion_register "$module_name" "cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:check cli:x cli:arrow cli:folder cli:beer cli:snake cli:crab cli:trash cli:rotate cli:chart cli:magnify cli:save cli:warning cli:debug cli:wrench cli:whale cli:package cli:git cli:rocket cli:thought cli:lightbulb cli:magnifying_glass cli:blank cli:indent cli:help"
+                        ;;
+                      debug)
+                        caddie_completion_register "$module_name" "debug:on debug:off debug:status debug:help"
+                        ;;
+                    esac
+                fi
             fi
-        fi
+        done
+        return 0
+    else
+        caddie cli:warning "Installation Error: The modules directory for caddie is not found.  Please reinstall caddie."
+        return 1
+    fi
+}
 
-        if [ "$completion_registered" != "1" ]; then
-            case "$module_name" in
-              python)
-                caddie_completion_register "$module_name" "python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
-                ;;
-              ruby)
-                caddie_completion_register "$module_name" "ruby:init ruby:bundle ruby:install ruby:update ruby:exec ruby:rake ruby:rspec ruby:rubocop"
-                ;;
-              js)
-                caddie_completion_register "$module_name" "js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
-                ;;
-              rust)
-                caddie_completion_register "$module_name" "rust:init rust:new rust:build rust:run rust:run:example rust:example:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
-                ;;
-              ios)
-                caddie_completion_register "$module_name" "ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
-                ;;
-              core)
-                caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
-                ;;
-              cursor)
-                caddie_completion_register "$module_name" "cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
-                ;;
-              cross)
-                caddie_completion_register "$module_name" "cross:template:create"
-                ;;
-              git)
-                caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
-                ;;
-              github)
-                caddie_completion_register "$module_name" "github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
-                ;;
-              cli)
-                caddie_completion_register "$module_name" "cli:red cli:green cli:yellow cli:blue cli:purple cli:cyan cli:grey cli:orange cli:white cli:red:bold cli:green:bold cli:yellow:bold cli:blue:bold cli:purple:bold cli:cyan:bold cli:grey:bold cli:orange:bold cli:white:bold cli:usage cli:installed cli:complete cli:title cli:colorlist cli:check cli:x cli:arrow cli:folder cli:beer cli:snake cli:crab cli:trash cli:rotate cli:chart cli:magnify cli:save cli:warning cli:debug cli:wrench cli:whale cli:package cli:git cli:rocket cli:thought cli:lightbulb cli:magnifying_glass cli:blank cli:indent cli:help"
-                ;;
-              debug)
-                caddie_completion_register "$module_name" "debug:on debug:off debug:status debug:help"
-                ;;
-            esac
-        fi
-    done < <(find "$CADDIE_MODULES_DIR" -name ".caddie_*" -type f -print0 2>/dev/null)
-else
-    caddie cli:warning "Installation Error: The modules directory for caddie is not found.  Please reinstall caddie."
-    return 1
-fi
+# Load all modules
+_caddie_load_modules
 
-# Set up tab completion
-if command -v complete >/dev/null 2>&1; then
-    # Clear any existing completion for caddie and register our completion function
-    complete -r caddie 2>/dev/null || true
-    complete -o default -F _caddie_completion caddie
-    
-    # Configure completion behavior
-    bind 'set show-all-if-ambiguous off' 2>/dev/null || true
-    bind 'set show-all-if-unmodified off' 2>/dev/null || true
-    bind 'set completion-ignore-case off' 2>/dev/null || true
-    
-    caddie cli:check "Tab completion enabled"
-else
-    caddie cli:warning "Tab completion not available"
-fi
+# Tab completion setup removed for compatibility
 
-# Caddie is now ready to use!
-caddie cli:check "Caddie.sh loaded successfully"
+# Caddie is now ready to use! (not shown during sourcing to avoid history pollution)

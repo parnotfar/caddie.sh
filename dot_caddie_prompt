@@ -68,7 +68,7 @@ function __ps1_branch() {
 }
 
 function set_caddie_prompt_ps1() {
-  local version branch git_info github_info changes github_status=""
+  local version branch git_info github_info changes github_status="" module_line=""
   version="$(__caddie_version)"
 
   if command -v gh >/dev/null 2>&1; then
