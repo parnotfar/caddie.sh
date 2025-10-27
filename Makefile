@@ -22,6 +22,11 @@ HOME_DIR := $(HOME)
 CADDIE_DIR := $(shell pwd)
 SRC_MODULES_DIR := $(CADDIE_DIR)/modules
 DEST_MODULES_DIR := $(HOME_DIR)/.caddie_modules
+VOICE_DIR := $(CADDIE_DIR)/caddie-voice
+VOICE_PROJECT := $(VOICE_DIR)/CaddieVoice.xcodeproj
+VOICE_SCHEME := CaddieVoice
+VOICE_BUILD_DIR := $(HOME)/Library/Developer/Xcode/DerivedData/CaddieVoice-hboqksuxfrvejhemlvmneuwlbcpk/Build/Products/Release
+VOICE_BINARY := $(VOICE_BUILD_DIR)/CaddieVoice
 
 help: ## Show this help message
 	echo "$(CYAN)Caddie.sh Installation Makefile$(NC)"
@@ -441,3 +446,36 @@ status: ## Check installation status
 clean: ## Clean up any temporary files (currently none)
 	echo "$(BLUE)🧹$(NC) Cleaning up..."
 	echo "$(GREEN)✓$(NC) No temporary files to clean"
+
+# Voice daemon targets
+build-voice: ## Build the Caddie Voice daemon
+	echo "$(BLUE)🔨$(NC) Building Caddie Voice Daemon..."
+	cd $(VOICE_DIR) && xcodebuild -project $(VOICE_PROJECT) -scheme $(VOICE_SCHEME) -configuration Release build
+	echo "$(GREEN)✓$(NC) Voice daemon built successfully"
+
+install-voice: build-voice ## Install the Caddie Voice daemon
+	echo "$(BLUE)📦$(NC) Installing Caddie Voice Daemon..."
+	sudo cp $(VOICE_BINARY) /usr/local/bin/caddie-voice
+	sudo cp $(VOICE_DIR)/com.caddie.voice.plist /Library/LaunchDaemons/
+	sudo launchctl load /Library/LaunchDaemons/com.caddie.voice.plist
+	echo "$(GREEN)✓$(NC) Caddie Voice Daemon installed successfully"
+
+uninstall-voice: ## Uninstall the Caddie Voice daemon
+	echo "$(BLUE)🗑️$(NC) Uninstalling Caddie Voice Daemon..."
+	sudo launchctl unload /Library/LaunchDaemons/com.caddie.voice.plist 2>/dev/null || true
+	sudo rm -f /usr/local/bin/caddie-voice
+	sudo rm -f /Library/LaunchDaemons/com.caddie.voice.plist
+	echo "$(GREEN)✓$(NC) Caddie Voice Daemon uninstalled successfully"
+
+voice-status: ## Check voice daemon status
+	echo "$(BLUE)🔍$(NC) Checking Caddie Voice Daemon status..."
+	if launchctl list | grep -q "com.caddie.voice"; then \
+		echo "$(GREEN)✓$(NC) Voice daemon is running"; \
+	else \
+		echo "$(RED)✗$(NC) Voice daemon is not running"; \
+	fi
+	if [ -f /usr/local/bin/caddie-voice ]; then \
+		echo "$(GREEN)✓$(NC) Voice daemon binary installed"; \
+	else \
+		echo "$(RED)✗$(NC) Voice daemon binary not found"; \
+	fi
