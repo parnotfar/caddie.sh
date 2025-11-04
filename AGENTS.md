@@ -68,7 +68,7 @@ caddie cursor:help
 
 2. **Module structure template**:
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Caddie.sh - <Module Name> Environment Management
 # This file contains all <module>-related functions
@@ -78,12 +78,17 @@ source "$HOME/.caddie_modules/.caddie_cli"
 
 # Function to provide module description
 function caddie_<module>_description() {
-    echo 'Brief description of the module'
+    printf '%s\n' 'Brief description of the module'
+    return 0
 }
 
 function caddie_<module>_help() {
-    echo '<module>:command1 - Performs command1 task'
-    echo '<module>:command2 - Performs command2 task'
+    caddie cli:title "<Module Name> Commands"
+    caddie cli:usage "caddie <module>:<command>"
+    caddie cli:blank
+    caddie cli:indent "<module>:command1 - Performs command1 task"
+    caddie cli:indent "<module>:command2 - Performs command2 task"
+    return 0
 }
 
 # Main command functions
@@ -101,6 +106,7 @@ function caddie_<module>_command1() {
     caddie cli:title "Processing: $argument"
     # ... main logic ...
     caddie cli:check "Command completed successfully"
+    return 0
 }
 
 # Export functions
@@ -115,19 +121,9 @@ cp "$(SRC_MODULES_DIR)/dot_caddie_<module>" "$(DEST_MODULES_DIR)/.caddie_<module
 echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_<module>"
 ```
 
-4. **Update tab completion**: Add commands to `_caddie_completion` function in `dot_caddie`:
-```bash
-case "$module" in
-  <module>)
-    module_commands="$module_commands <module>:command1 <module>:command2"
-    ;;
-  # ... existing modules ...
-esac
-```
+4. **Expose tab completion**: Implement `caddie_<module>_commands()` to print a space-separated list of `<module>:command` entries (or call `caddie_completion_register "<module>" "<module>:command1 …"` inside the module). Caddie will invoke these during module discovery—no manual edits to `_caddie_completion` are required.
 
-5. **Register module**: Add module to `dot_caddie_modules` file in the modules array
-
-6. **Test installation**:
+5. **Test installation**:
 ```sh
 make install-dot
 caddie reload
@@ -295,8 +291,8 @@ The Makefile handles module installation automatically:
 1. **Module Location**: All modules are in `modules/` directory, NOT root directory
 2. **File Naming**: Module files must be named `dot_caddie_<module>` (e.g., `dot_caddie_golang`)
 3. **Makefile Integration**: New modules MUST be added to Makefile `install-dot` target
-4. **Tab Completion**: New commands MUST be added to `_caddie_completion` function in `dot_caddie`
-5. **Module Registration**: New modules MUST be added to `dot_caddie_modules` file
+4. **Tab Completion**: Provide completions via `caddie_<module>_commands()` or `caddie_completion_register`—do not edit `_caddie_completion` directly
+5. **Module Registration**: Modules are auto-discovered once installed; do not modify `dot_caddie_modules` manually
 6. **CLI Integration**: Always source CLI module and use `caddie cli:*` functions
 7. **Function Export**: Always export functions with `export -f`
 8. **Error Handling**: Follow established patterns with proper validation and error messages
@@ -312,10 +308,10 @@ The Makefile handles module installation automatically:
 
 1. **Create the module file** in `modules/` directory
 2. **Update Makefile** to include module installation
-3. **Update tab completion** in `dot_caddie`
-4. **Register module** in `dot_caddie_modules`
-5. **Test installation** with `make install-dot`
-6. **Verify functionality** with `caddie <module>:help`
+3. **Expose tab completion** by providing `caddie_<module>_commands()` or calling `caddie_completion_register`
+4. **Test installation** with `make install-dot`
+5. **Verify functionality** with `caddie <module>:help`
+6. **Confirm tab completion** after `caddie reload`
 
 ### When Modifying Existing Modules
 
