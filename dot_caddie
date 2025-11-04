@@ -822,6 +822,9 @@ function _caddie_load_modules() {
 # Load all modules
 _caddie_load_modules
 
-# Tab completion setup removed for compatibility
+# Restore bash completion hook now that all modules are loaded
+if [[ $- == *i* ]] && command -v complete >/dev/null 2>&1; then
+    complete -F _caddie_completion -o default -o nospace caddie
+fi
 
 # Caddie is now ready to use! (not shown during sourcing to avoid history pollution)

@@ -1,5 +1,24 @@
 # Caddie.sh Release Notes
 
+## Version 3.9.5 - Tab Completion Hook Restoration
+
+**Release Date:** February 2025
+
+### 🐛 Critical Bug Fix
+
+**Fixed Missing Completion Registration**: Reintroduced the Bash `complete -F _caddie_completion` hook so `caddie` commands regain tab completion after sourcing the main script.
+
+### 🔧 Technical Improvements
+
+- **Interactive Guard**: Hook now only registers inside interactive shells and when `complete` exists, preventing issues in non-interactive contexts.
+- **Post-Load Safety**: Completion is attached only after `_caddie_load_modules` finishes so all module-provided commands are available to the completer.
+
+### 🔄 Migration Notes
+
+- **For All Users**: Run `caddie reload` (or restart your shell) to pick up the restored completion hook. No further action required.
+
+---
+
 ## Version 3.9.4 - Module Load Dependency Fix
 
 **Release Date:** January 2025
