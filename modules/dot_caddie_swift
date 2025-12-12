@@ -42,6 +42,11 @@ function caddie_swift_init() {
     fi
     caddie cli:title "Creating Swift package '$name' (type: $type)..."
     swift package init --name "$name" --type "$type"
+    local status=$?
+    if [ $status -ne 0 ]; then
+        caddie cli:red "swift package init failed (exit $status)"
+        return $status
+    fi
     cat > "$name/.gitignore" <<'GIT'
 /.build
 /DerivedData
