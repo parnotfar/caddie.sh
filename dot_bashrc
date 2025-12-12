@@ -128,7 +128,7 @@ function git_set_branch_from_list() {
   fi
 
   if [[ ${selection} -gt ${branch_count} ]]; then
-    ch-cli red 'Enter a valid number from the list'
+    caddie cli:red 'Enter a valid number from the list'
     return 1
   fi
 
@@ -350,7 +350,7 @@ export -f take
 #       endcap="${installed_version}"
 #     fi
 # 
-#     ch-cli $color "$(ch-marker-rpad "${g}" '.' 40) ${endcap}"
+#     caddie cli:$color "$(ch-marker-rpad "${g}" '.' 40) ${endcap}"
 #   done
 # }
 
@@ -494,7 +494,7 @@ function gb() {
     fi
 
     if [[ "$branch" == "$current_branch" ]]; then
-      ch-cli green "* ${output}"
+      caddie cli:green "* ${output}"
     else
       echo -e "  $output"
     fi

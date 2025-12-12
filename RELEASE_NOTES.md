@@ -1,5 +1,23 @@
 # Caddie.sh Release Notes
 
+## Version 4.0.0 - Swift Module & Shell Cleanup
+
+**Release Date:** February 2025
+
+### ✨ New Features
+
+- **Swift Module**: Added a first-class Swift Package Manager module mirroring the Rust workflow (`swift:init`, `swift:build`, `swift:run`, `swift:test`, package management, formatting, linting, and gitignore helpers).
+
+### 🐛 Bug Fixes
+
+- **Shell Color Functions**: Replaced legacy `ch-cli` calls in `dot_bashrc` with the modern `caddie cli:*` helpers so git branch selectors and other utilities no longer reference missing commands.
+
+### 📝 Upgrade Notes
+
+- Run `make install-dot` (or reinstall) to deploy `.caddie_swift` into `~/.caddie_modules` and then `caddie reload` to pick up the new module/aliases.
+
+---
+
 ## Version 3.9.5 - Tab Completion Hook Restoration
 
 **Release Date:** February 2025

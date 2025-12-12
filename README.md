@@ -20,6 +20,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Modular Architecture**: Pick and choose the tools you need
 - **Python Management**: Virtual environments, package management, and project scaffolding
 - **Rust Development**: Cargo integration, toolchain management, project templates, and git integration
+- **Swift Development**: Swift Package Manager workflows, formatting, and linting helpers
 - **Ruby Environment**: RVM integration and gem management
 - **JavaScript/Node.js**: NVM integration and package management
 - **iOS Development**: Xcode integration and development tools

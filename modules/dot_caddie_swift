@@ -1,0 +1,242 @@
+#!/bin/bash
+
+# Caddie.sh - Swift Package Manager helpers
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_swift_require_toolchain() {
+    if ! command -v swift >/dev/null 2>&1; then
+        caddie cli:red "Error: Swift toolchain not found"
+        caddie cli:thought "Install Xcode or the command line tools via xcode-select --install"
+        return 1
+    fi
+    return 0
+}
+
+function caddie_swift_require_package() {
+    caddie_swift_require_toolchain || return 1
+    if [ ! -f "Package.swift" ]; then
+        caddie cli:red "Error: Not inside a Swift Package (Package.swift missing)"
+        return 1
+    fi
+    return 0
+}
+
+function caddie_swift_init() {
+    caddie_swift_require_toolchain || return 1
+    local name="$1"
+    shift || true
+    if [ -z "$name" ]; then
+        caddie cli:red "Error: Please provide a package name"
+        caddie cli:usage "caddie swift:init <name> [--type executable|library]"
+        return 1
+    fi
+    if [ -d "$name" ]; then
+        caddie cli:red "Error: Directory '$name' already exists"
+        return 1
+    fi
+    local type="executable"
+    if [ "$1" = "--type" ] && [ -n "$2" ]; then
+        type="$2"
+        shift 2 || true
+    fi
+    caddie cli:title "Creating Swift package '$name' (type: $type)..."
+    if ! mkdir "$name"; then
+        caddie cli:red "Failed to create directory '$name'"
+        return 1
+    fi
+    (
+        cd "$name" && swift package init --name "$name" --type "$type"
+    )
+    local status=$?
+    if [ $status -ne 0 ]; then
+        caddie cli:red "swift package init failed (exit $status)"
+        return $status
+    fi
+    cat > "$name/.gitignore" <<'GIT'
+/.build
+/DerivedData
+/.swiftpm
+Package.resolved
+GIT
+    caddie cli:check "Swift package '$name' created"
+    caddie cli:indent "Location: $(pwd)/$name"
+    caddie cli:indent "Build: cd $name && caddie swift:build"
+}
+
+function caddie_swift_build() {
+    caddie_swift_require_package || return 1
+    caddie cli:title "Building Swift package..."
+    swift build "$@"
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Swift build completed"
+    else
+        caddie cli:red "Swift build failed ($status)"
+    fi
+    return $status
+}
+
+function caddie_swift_test() {
+    caddie_swift_require_package || return 1
+    caddie cli:title "Running Swift tests..."
+    swift test "$@"
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Swift tests completed"
+    else
+        caddie cli:red "Swift tests failed ($status)"
+    fi
+    return $status
+}
+
+function caddie_swift_test_filter() {
+    caddie_swift_require_package || return 1
+    local filter="$1"
+    if [ -z "$filter" ]; then
+        caddie cli:red "Error: Provide an XCTest filter"
+        caddie cli:usage "caddie swift:test:filter <TestCase/testMethod>"
+        return 1
+    fi
+    caddie cli:title "Running tests matching '$filter'..."
+    swift test --filter "$filter"
+}
+
+function caddie_swift_run() {
+    caddie_swift_require_package || return 1
+    caddie cli:title "Running Swift target..."
+    swift run "$@"
+}
+
+function caddie_swift_run_tool() {
+    caddie_swift_require_package || return 1
+    local target="$1"
+    shift || true
+    if [ -z "$target" ]; then
+        caddie cli:red "Error: Provide an executable target"
+        caddie cli:usage "caddie swift:run:tool <target> [-- <args>]"
+        return 1
+    fi
+    caddie cli:title "Running Swift target '$target'..."
+    swift run "$target" "$@"
+}
+
+function caddie_swift_package_resolve() {
+    caddie_swift_require_package || return 1
+    caddie cli:title "Resolving Swift package dependencies..."
+    swift package resolve
+}
+
+function caddie_swift_package_update() {
+    caddie_swift_require_package || return 1
+    caddie cli:title "Updating Swift package dependencies..."
+    swift package update
+}
+
+function caddie_swift_package_clean() {
+    caddie_swift_require_package || return 1
+    caddie cli:title "Cleaning Swift package build artifacts..."
+    swift package clean
+    rm -rf .build
+    caddie cli:check "Clean complete"
+}
+
+function caddie_swift_package_describe() {
+    caddie_swift_require_package || return 1
+    swift package describe
+}
+
+function caddie_swift_format() {
+    caddie_swift_require_package || return 1
+    if ! command -v swift-format >/dev/null 2>&1; then
+        caddie cli:red "swift-format not installed"
+        caddie cli:thought "Install via Homebrew: brew install swift-format"
+        return 1
+    fi
+    local mode="format"
+    if [ "$1" = "--lint" ] || [ "$1" = "--check" ]; then
+        mode="lint"
+    fi
+    if [ "$mode" = "lint" ]; then
+        caddie cli:title "Checking Swift formatting..."
+        swift-format lint --recursive Sources Tests
+    else
+        caddie cli:title "Formatting Swift sources..."
+        swift-format format --in-place --recursive Sources Tests
+    fi
+}
+
+function caddie_swift_lint() {
+    caddie_swift_require_package || return 1
+    if ! command -v swiftlint >/dev/null 2>&1; then
+        caddie cli:red "SwiftLint not installed"
+        caddie cli:thought "Install via Homebrew: brew install swiftlint"
+        return 1
+    fi
+    caddie cli:title "Running SwiftLint..."
+    swiftlint "$@"
+}
+
+function caddie_swift_gitignore() {
+    caddie cli:title "Writing Swift .gitignore..."
+    cat > .gitignore <<'GIT'
+/.build
+/DerivedData
+/.swiftpm
+Package.resolved
+.xcodeproj
+xcuserdata/
+*.xcworkspace
+*.xcodeproj
+*.DS_Store
+GIT
+    caddie cli:check "Swift .gitignore ready"
+}
+
+function caddie_swift_help() {
+    caddie cli:title "Swift Package Manager Commands"
+    caddie cli:usage "caddie swift:<command>"
+    caddie cli:blank
+    caddie cli:title "Project"
+    caddie cli:indent "init <name> [--type ...]   Create new Swift package"
+    caddie cli:indent "build [args]              Run swift build"
+    caddie cli:indent "run [args]                Run default executable"
+    caddie cli:indent "run:tool <target> [--]    Run named executable"
+    caddie cli:indent "test [args]               Run swift test"
+    caddie cli:indent "test:filter <pattern>     swift test --filter"
+    caddie cli:blank
+    caddie cli:title "Package"
+    caddie cli:indent "package:resolve          swift package resolve"
+    caddie cli:indent "package:update           swift package update"
+    caddie cli:indent "package:clean            Remove build artifacts"
+    caddie cli:indent "package:describe         Show dependency graph"
+    caddie cli:blank
+    caddie cli:title "Quality"
+    caddie cli:indent "format [--lint]          Run swift-format"
+    caddie cli:indent "lint [args]              Run SwiftLint"
+    caddie cli:blank
+    caddie cli:title "Git"
+    caddie cli:indent "gitignore                Write Swift .gitignore"
+}
+
+function caddie_swift_description() {
+    echo 'Swift Package Manager helpers'
+}
+
+export -f caddie_swift_require_toolchain
+export -f caddie_swift_require_package
+export -f caddie_swift_init
+export -f caddie_swift_build
+export -f caddie_swift_test
+export -f caddie_swift_test_filter
+export -f caddie_swift_run
+export -f caddie_swift_run_tool
+export -f caddie_swift_package_resolve
+export -f caddie_swift_package_update
+export -f caddie_swift_package_clean
+export -f caddie_swift_package_describe
+export -f caddie_swift_format
+export -f caddie_swift_lint
+export -f caddie_swift_gitignore
+export -f caddie_swift_help
+export -f caddie_swift_description

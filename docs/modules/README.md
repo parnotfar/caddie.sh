@@ -10,6 +10,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 ### Language Modules
 - **[Python Module](python.md)** - Python environment and package management
 - **[Rust Module](rust.md)** - Rust development tools and project management
+- **[Swift Module](swift.md)** - Swift Package Manager workflows
 - **[Ruby Module](ruby.md)** - Ruby environment with RVM integration
 - **[JavaScript Module](javascript.md)** - Node.js and npm management
 
