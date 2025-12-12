@@ -41,7 +41,10 @@ function caddie_swift_init() {
         shift 2 || true
     fi
     caddie cli:title "Creating Swift package '$name' (type: $type)..."
-    mkdir "$name"
+    if ! mkdir "$name"; then
+        caddie cli:red "Failed to create directory '$name'"
+        return 1
+    fi
     (
         cd "$name" && swift package init --name "$name" --type "$type"
     )
