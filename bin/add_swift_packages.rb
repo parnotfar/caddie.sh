@@ -89,17 +89,22 @@ unless target
 end
 
 # Add each package
-success = true
+failed_count = 0
 packages.each do |package_path, product_name|
-  success = false unless add_swift_package(project, target, package_path, product_name)
+  if add_swift_package(project, target, package_path, product_name)
+    # Save after each successful addition to persist progress
+    project.save
+  else
+    failed_count += 1
+  end
 end
 
-if success
-  project.save
-  puts "\n✓ Project saved successfully!"
+if failed_count == 0
+  puts "\n✓ All packages added successfully!"
   puts "\nNext step: Run 'caddie swift:xcode:resolve' to resolve dependencies"
   exit 0
 else
-  $stderr.puts "\n✗ Some packages failed to add"
+  $stderr.puts "\n✗ #{failed_count} package(s) failed to add"
+  $stderr.puts "Successfully added packages have been saved to the project"
   exit 1
 end
