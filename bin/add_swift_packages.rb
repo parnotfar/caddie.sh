@@ -15,6 +15,9 @@ def add_swift_package(project, target, package_path, product_name)
     return false
   end
 
+  # Initialize package_references if nil (for fresh Xcode projects)
+  project.root_object.package_references ||= []
+  
   # Check if package already exists
   existing_ref = project.root_object.package_references.find do |ref|
     ref.is_a?(Xcodeproj::Project::Object::XCLocalSwiftPackageReference) &&
@@ -30,11 +33,13 @@ def add_swift_package(project, target, package_path, product_name)
     package_ref.relative_path = package_path
     
     # Add to root object's package references
-    project.root_object.package_references ||= []
     project.root_object.package_references << package_ref
     puts "Added package reference: #{package_path}"
   end
 
+  # Initialize package_product_dependencies if nil (for fresh Xcode projects)
+  target.package_product_dependencies ||= []
+  
   # Check if product dependency already exists
   existing_product = target.package_product_dependencies.find do |dep|
     dep.product_name == product_name && dep.package == package_ref
@@ -50,8 +55,7 @@ def add_swift_package(project, target, package_path, product_name)
   product_dep.package = package_ref
   product_dep.product_name = product_name
 
-  # Add to target
-  target.package_product_dependencies ||= []
+  # Add to target (already initialized above)
   target.package_product_dependencies << product_dep
   puts "Added product dependency: #{product_name}"
 
