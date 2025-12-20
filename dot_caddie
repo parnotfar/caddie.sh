@@ -772,7 +772,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "python:init python:install python:update python:venv:activate python:venv:deactivate python:build python:test python:run python:lint python:format python:pip:freeze python:pip:audit"
                         ;;
                       ruby)
-                        caddie_completion_register "$module_name" "ruby:init ruby:bundle ruby:install ruby:update ruby:exec ruby:rake ruby:rspec ruby:rubocop"
+                        caddie_completion_register "$module_name" "ruby:setup ruby:install ruby:use ruby:list ruby:current ruby:version ruby:pin:set ruby:pin:get ruby:pin:unset ruby:gemset:create ruby:gemset:use ruby:gemset:list ruby:gemset:delete ruby:gem:install ruby:gem:uninstall ruby:gem:list ruby:gem:update ruby:gem:outdated ruby:project:init ruby:project:test ruby:project:build ruby:project:serve ruby:bundler:install ruby:bundler:update ruby:bundler:exec ruby:rails:new ruby:rails:server ruby:rails:console ruby:rails:generate ruby:rails:migrate ruby:rails:routes"
                         ;;
                       js)
                         caddie_completion_register "$module_name" "js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
@@ -784,7 +784,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "ios:build ios:run ios:test ios:archive ios:pods:install ios:swift:version ios:rust:setup"
                         ;;
                       swift)
-                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:format swift:lint swift:gitignore"
+                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:test swift:xcode:clean swift:format swift:lint swift:gitignore"
                         ;;
                       core)
                         caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"

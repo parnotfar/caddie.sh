@@ -48,6 +48,68 @@ Runs `swiftlint` with any extra flags you pass.
 
 Writes a Swift/Xcode-friendly `.gitignore` containing `.build`, `DerivedData`, `.swiftpm`, and IDE metadata.
 
+## Xcode Project Integration
+
+These commands help manage Swift Package dependencies in Xcode projects and build/test them from the command line.
+
+### `caddie swift:xcode:packages:check`
+
+Checks if Swift Package dependencies are configured in the current Xcode project. Lists both local and remote package references.
+
+### `caddie swift:xcode:packages:add <target> <package_path1> <product1> [package_path2 product2 ...]`
+
+Adds local Swift Package dependencies to an Xcode project programmatically. This command:
+
+- Requires Ruby with the `xcodeproj` gem (automatically uses `caddie ruby:gem:install` if needed)
+- Uses RVM Ruby if available, otherwise falls back to system Ruby
+- Automatically finds the script in installed or development locations
+
+**Example:**
+```bash
+caddie swift:xcode:packages:add vCaddie ../physics-core-swift PhysicsCore ../golf-agent-swift GolfSimulator
+```
+
+**Requirements:**
+- Ruby must be available (run `caddie ruby:setup` if needed)
+- Must be run from a directory containing an `.xcodeproj` file
+
+### `caddie swift:xcode:resolve`
+
+Resolves Swift Package dependencies for the Xcode project. Equivalent to running "Resolve Package Versions" in Xcode.
+
+### `caddie swift:xcode:build [scheme] [simulator|device] [sim_name]`
+
+Builds an Xcode project from the command line.
+
+- `scheme` (optional): Xcode scheme name (defaults to project name)
+- `simulator|device` (optional): Build destination (defaults to `simulator`)
+- `sim_name` (optional): Simulator name for simulator builds (defaults to "iPhone 15")
+
+**Examples:**
+```bash
+caddie swift:xcode:build
+caddie swift:xcode:build vCaddie simulator "iPhone 15 Pro"
+caddie swift:xcode:build vCaddie device
+```
+
+### `caddie swift:xcode:test [scheme] [sim_name]`
+
+Runs tests for an Xcode project.
+
+- `scheme` (optional): Xcode scheme name (defaults to project name)
+- `sim_name` (optional): Simulator name (defaults to "iPhone 15")
+
+**Example:**
+```bash
+caddie swift:xcode:test vCaddie "iPhone 15 Pro"
+```
+
+### `caddie swift:xcode:clean [scheme]`
+
+Cleans the Xcode project build artifacts.
+
+- `scheme` (optional): Xcode scheme name (defaults to project name)
+
 ### `caddie swift:help`
 
 Prints a concise command reference.
@@ -56,9 +118,12 @@ Prints a concise command reference.
 
 - Xcode or the Swift command line tools (`swift` CLI must exist).
 - Optional: `swift-format` and `swiftlint` (Homebrew installs recommended).
+- For Xcode package commands: Ruby with `xcodeproj` gem (automatically installed via `caddie ruby:setup`).
 
 ## Troubleshooting
 
 - **"Swift toolchain not found"** – run `xcode-select --install` or install Xcode.
 - **`swift-format` / `swiftlint` missing** – install via `brew install swift-format swiftlint`.
 - **Not a Swift package** – ensure you run commands in a directory containing `Package.swift`.
+- **Xcode package commands fail** – ensure Ruby is set up with `caddie ruby:setup` and the `xcodeproj` gem is installed.
+- **"add_swift_packages.rb script not found"** – run `make install` from the caddie.sh directory or ensure you're in a development environment where the script can be found.

@@ -51,10 +51,11 @@ make install
 ```
 
 This will:
-- Install all required dependencies (Homebrew, Python, Rust)
+- Install all required dependencies (Homebrew, Python, Rust, Ruby build dependencies)
 - Set up your shell environment
 - Install all Caddie.sh modules
 - Configure your system for development
+- Install Ruby build dependencies (OpenSSL, readline, libyaml, etc.) for compiling Ruby
 - Enable cross-platform Rust development for iOS, WatchOS, and Android
 
 ### Method 2: Minimal Install

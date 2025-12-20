@@ -8,7 +8,7 @@ source "$HOME/.caddie_modules/.caddie_cli"
 
 function caddie_ruby_description() {
     # caddie:lint:disable
-    echo 'Ruby environment management with RVM'
+    printf '%s\n' 'Ruby environment management with RVM'
     # caddie:lint:enable
     return 0
 }
@@ -20,12 +20,18 @@ function caddie_ruby_help() {
     caddie cli:usage "caddie ruby:<command> [args]"
     caddie cli:blank
     caddie cli:title "Environment Management:"
-    caddie cli:indent "setup                    Setup Ruby development environment with RVM"
+    caddie cli:indent "setup                    Setup Ruby development environment with RVM (uses latest stable)"
     caddie cli:indent "install <version>        Install specific Ruby version"
     caddie cli:indent "use <version>            Switch to specific Ruby version"
     caddie cli:indent "list                     List installed Ruby versions"
     caddie cli:indent "current                  Show current Ruby version"
     caddie cli:indent "version                  Show Ruby and RVM version information"
+    caddie cli:blank
+    caddie cli:title "Version Pinning:"
+    caddie cli:indent "pin:set <version>        Pin Ruby version for setup"
+    caddie cli:indent "pin:get                  Get pinned Ruby version"
+    caddie cli:indent "pin:unset                Unset pinned Ruby version"
+    caddie cli:indent "By default, setup installs the latest stable version"
     caddie cli:blank
     caddie cli:title "Gemset Management:"
     caddie cli:indent "gemset:create <name>     Create new gemset"
@@ -61,6 +67,7 @@ function caddie_ruby_help() {
     caddie cli:blank
     caddie cli:title "Examples:"
     caddie cli:indent "caddie ruby:setup"
+    caddie cli:indent "caddie ruby:pin:set 3.4.8"
     caddie cli:indent "caddie ruby:install 3.2.2"
     caddie cli:indent "caddie ruby:gemset:create myproject"
     caddie cli:indent "caddie ruby:gem:install rails"
@@ -76,29 +83,177 @@ function caddie_ruby_setup() {
     # Check if RVM is installed
     if ! command -v rvm >/dev/null 2>&1; then
         caddie cli:title "Installing RVM..."
-        curl -sSL https://get.rvm.io | bash -s stable
         
-        # Source RVM
-        # shellcheck disable=SC1091
-        source "$HOME/.rvm/scripts/rvm"
+        # Try to import GPG keys first to avoid signature verification issues
+        caddie cli:indent "Importing GPG keys for RVM verification..."
+        if command -v gpg >/dev/null 2>&1; then
+            gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB 2>/dev/null || \
+            curl -sSL https://rvm.io/mpapis.asc | gpg --import - 2>/dev/null || \
+            curl -sSL https://rvm.io/pkuczynski.asc | gpg --import - 2>/dev/null || true
+        fi
         
-        if ! command -v rvm >/dev/null 2>&1; then
-            caddie cli:x "Failed to install RVM"
+        # Install RVM (with fallback to skip GPG if keys couldn't be imported)
+        if curl -sSL https://get.rvm.io | bash -s stable; then
+            # Source RVM
+            # shellcheck disable=SC1091
+            source "$HOME/.rvm/scripts/rvm" 2>/dev/null || true
+            
+            if command -v rvm >/dev/null 2>&1; then
+                caddie cli:check "RVM installed successfully"
+            else
+                caddie cli:yellow "RVM installed but not immediately available"
+                caddie cli:thought "Try: source ~/.rvm/scripts/rvm"
+                caddie cli:thought "Or restart your terminal"
+                return 1
+            fi
+        else
+            caddie cli:red "Failed to install RVM"
+            caddie cli:blank
+            caddie cli:title "Manual RVM installation:"
+            caddie cli:indent "1. Import GPG keys:"
+            caddie cli:indent "   gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB"
+            caddie cli:indent "2. Install RVM:"
+            caddie cli:indent "   curl -sSL https://get.rvm.io | bash -s stable"
+            caddie cli:indent "3. Source RVM:"
+            caddie cli:indent "   source ~/.rvm/scripts/rvm"
+            caddie cli:indent "4. Retry: caddie ruby:setup"
             return 1
         fi
     else
         caddie cli:check "RVM already installed"
     fi
     
-    # Install latest stable Ruby
-    caddie cli:title "Installing latest stable Ruby..."
+    # Ensure RVM is sourced in this shell session
+    if [ -f "$HOME/.rvm/scripts/rvm" ] && ! command -v rvm >/dev/null 2>&1; then
+        # shellcheck disable=SC1091
+        source "$HOME/.rvm/scripts/rvm" 2>/dev/null || true
+    fi
     
-    if rvm install ruby --latest; then
-        caddie cli:check "Ruby installed successfully"
-        rvm use ruby --default
-        caddie cli:check "Ruby set as default"
+    # Note: Ruby build dependencies should be installed via 'make install' or 'make setup-ruby-deps'
+    # This includes: openssl@3, readline, libyaml, gmp, autoconf, automake, libtool, pkg-config
+    
+    # Configure OpenSSL paths for Ruby compilation
+    # This is critical for macOS with Homebrew's OpenSSL
+    local openssl_prefix=""
+    if command -v brew >/dev/null 2>&1; then
+        # Try openssl@3 first (preferred), then fallback to openssl
+        if brew --prefix openssl@3 >/dev/null 2>&1; then
+            openssl_prefix=$(brew --prefix openssl@3)
+        elif brew --prefix openssl >/dev/null 2>&1; then
+            openssl_prefix=$(brew --prefix openssl)
+        fi
+        
+        if [ -n "$openssl_prefix" ]; then
+            caddie cli:indent "Configuring OpenSSL from Homebrew: $openssl_prefix"
+            export LDFLAGS="-L${openssl_prefix}/lib ${LDFLAGS:-}"
+            export CPPFLAGS="-I${openssl_prefix}/include ${CPPFLAGS:-}"
+            export PKG_CONFIG_PATH="${openssl_prefix}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+        else
+            caddie cli:yellow "OpenSSL not found via Homebrew - compilation may fail"
+            caddie cli:thought "Run: make setup-ruby-deps or: brew install openssl@3"
+        fi
+    fi
+    
+    # Determine which Ruby version to install (use getter function instead of direct env var access)
+    local ruby_version="${CADDIE_RUBY_VERSION:-}"
+    local install_target=""
+    
+    if [ -n "$ruby_version" ]; then
+        # Use pinned version if specified (RVM accepts version with or without ruby- prefix)
+        install_target="$ruby_version"
+        caddie cli:title "Installing Ruby $ruby_version (pinned via CADDIE_RUBY_VERSION)..."
     else
-        caddie cli:x "Failed to install Ruby"
+        # Detect latest stable version
+        caddie cli:title "Detecting latest stable Ruby version..."
+        
+        # Query for latest stable Ruby version
+        # RVM's list known shows patterns, not all versions, so we query the actual latest
+        local latest_version=""
+        if command -v rvm >/dev/null 2>&1; then
+            # Update RVM first to get latest version information and patches
+            caddie cli:indent "Updating RVM..."
+            rvm get stable >/dev/null 2>&1 || rvm get master >/dev/null 2>&1 || true
+            
+            # Try to get latest version from ruby-lang.org (most reliable source)
+            # The downloads page lists versions - we want the first (latest) stable release
+            caddie cli:indent "Querying latest Ruby version from ruby-lang.org..."
+            local ruby_downloads=$(curl -sSL --max-time 5 https://www.ruby-lang.org/en/downloads/ 2>/dev/null | \
+                grep -oE 'ruby-[0-9]+\.[0-9]+\.[0-9]+' | \
+                head -1 | \
+                sed 's/ruby-//' || echo "")
+            
+            if [[ "$ruby_downloads" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                latest_version="$ruby_downloads"
+            else
+                # Fallback: try common recent versions that often have binary builds
+                # Prefer versions with better binary support for faster installation
+                local recent_versions="3.3.6 3.3.5 3.2.5 3.2.4 3.4.8 3.4.7 3.1.5"
+                for version in $recent_versions; do
+                    # Check if RVM knows about this version
+                    if rvm list known 2>/dev/null | grep -qE "\[ruby-\]${version//./\\.}" || \
+                       rvm list known 2>/dev/null | grep -qE "\[ruby-\]${version%%.*}" ; then
+                        latest_version="$version"
+                        break
+                    fi
+                done
+            fi
+        fi
+        
+        if [ -n "$latest_version" ] && [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            install_target="$latest_version"
+            caddie cli:indent "Latest stable version: $latest_version"
+            caddie cli:title "Installing Ruby $latest_version..."
+        else
+            # Last resort: use RVM's default, but warn user
+            caddie cli:title "Installing Ruby (RVM default)..."
+            caddie cli:yellow "Could not determine latest version automatically"
+            caddie cli:thought "Using RVM's default. To specify a version, use:"
+            caddie cli:indent "caddie ruby:pin:set 3.4.8"
+            caddie cli:indent "caddie ruby:setup"
+            install_target="ruby"
+        fi
+    fi
+    
+    # Try to install Ruby (RVM will try binary first, then compile if needed)
+    # Build install command with OpenSSL flags if available
+    local install_cmd="rvm install \"$install_target\""
+    if [ -n "$openssl_prefix" ]; then
+        install_cmd="$install_cmd --with-openssl-dir=\"$openssl_prefix\""
+        caddie cli:indent "Using OpenSSL from: $openssl_prefix"
+    fi
+    
+    if eval "$install_cmd"; then
+        caddie cli:check "Ruby installed successfully"
+        # Use the installed version and set as default
+        if [ -n "$ruby_version" ]; then
+            rvm use "$ruby_version" --default
+        elif [[ "$install_target" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            rvm use "$install_target" --default
+        else
+            rvm use "$install_target" --default
+        fi
+        caddie cli:check "Ruby set as default"
+        caddie cli:indent "Version: $(ruby --version 2>/dev/null || echo 'unknown')"
+    else
+        caddie cli:red "Failed to install Ruby"
+        caddie cli:blank
+        caddie cli:title "Troubleshooting Ruby installation:"
+        caddie cli:indent "1. Check the build log:"
+        caddie cli:indent "   tail -50 ~/.rvm/log/*/make.log"
+        caddie cli:blank
+        caddie cli:indent "2. Install macOS requirements:"
+        caddie cli:indent "   rvm requirements"
+        caddie cli:blank
+                caddie cli:indent "3. Ensure OpenSSL is installed via Homebrew:"
+                caddie cli:indent "   brew install openssl@3"
+                caddie cli:blank
+                caddie cli:indent "4. Try a slightly older version with better binary support:"
+                caddie cli:indent "   caddie ruby:pin:set 3.3.6"
+                caddie cli:indent "   caddie ruby:setup"
+                caddie cli:blank
+                caddie cli:indent "5. Or install all Ruby build dependencies:"
+                caddie cli:indent "   make setup-ruby-deps"
+        caddie cli:thought "Ruby compilation can fail due to missing system dependencies"
         return 1
     fi
     
@@ -117,13 +272,34 @@ function caddie_ruby_install() {
     if [ -z "$version" ]; then
         caddie cli:red "Error: Please provide a Ruby version"
         caddie cli:usage "caddie ruby:install <version>"
-        caddie cli:thought "Examples: 3.2.2, 3.1.4, 3.0.6"
+        caddie cli:thought "Examples: 3.4.8, 3.3.6, 3.2.2, 3.1.4"
+        caddie cli:blank
+        caddie cli:thought "To see available versions: rvm list known | grep '^ruby-'"
         return 1
     fi
     
     caddie cli:title "Installing Ruby $version..."
     
-    if rvm install "ruby-$version"; then
+    # Configure OpenSSL if available via Homebrew
+    local openssl_prefix=""
+    if command -v brew >/dev/null 2>&1; then
+        if brew --prefix openssl@3 >/dev/null 2>&1; then
+            openssl_prefix=$(brew --prefix openssl@3)
+        elif brew --prefix openssl >/dev/null 2>&1; then
+            openssl_prefix=$(brew --prefix openssl)
+        fi
+    fi
+    
+    local install_cmd="rvm install ruby-$version"
+    if [ -n "$openssl_prefix" ]; then
+        install_cmd="$install_cmd --with-openssl-dir=\"$openssl_prefix\""
+        export LDFLAGS="-L${openssl_prefix}/lib ${LDFLAGS:-}"
+        export CPPFLAGS="-I${openssl_prefix}/include ${CPPFLAGS:-}"
+        export PKG_CONFIG_PATH="${openssl_prefix}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+        caddie cli:indent "Using OpenSSL from: $openssl_prefix"
+    fi
+    
+    if eval "$install_cmd"; then
         caddie cli:check "Ruby $version installed successfully"
         caddie cli:thought "Use 'caddie ruby:use $version' to switch to it"
     else
@@ -174,6 +350,51 @@ function caddie_ruby_current() {
     caddie cli:indent "Gemset: $(rvm gemset name 2>/dev/null || echo 'default')"
     return 0
 }
+
+# Function to set pinned Ruby version
+function caddie_ruby_pin_set() {
+    local version="$1"
+    
+    if [ -z "$version" ]; then
+        caddie cli:red "Error: Please provide a Ruby version"
+        caddie cli:usage "caddie ruby:pin:set <version>"
+        caddie cli:blank
+        caddie cli:title "Example:"
+        caddie cli:indent "caddie ruby:pin:set 3.4.8"
+        return 1
+    fi
+    
+    export CADDIE_RUBY_VERSION="$version"
+    caddie cli:check "Ruby version pin set to: $version"
+    caddie cli:thought "Run 'caddie ruby:setup' to install this version"
+    return 0
+}
+
+# Function to get pinned Ruby version
+function caddie_ruby_pin_get() {
+    local pinned_version="${CADDIE_RUBY_VERSION:-}"
+    
+    if [ -n "$pinned_version" ]; then
+        caddie cli:green "Pinned Ruby version: $pinned_version"
+    else
+        caddie cli:yellow "No Ruby version is pinned"
+        caddie cli:thought "Use 'caddie ruby:pin:set <version>' to pin a version"
+    fi
+    return 0
+}
+
+# Function to unset pinned Ruby version
+function caddie_ruby_pin_unset() {
+    if [ -n "${CADDIE_RUBY_VERSION:-}" ]; then
+        unset CADDIE_RUBY_VERSION
+        caddie cli:check "Ruby version pin unset"
+        caddie cli:thought "caddie ruby:setup will now use the latest stable version"
+    else
+        caddie cli:yellow "No Ruby version was pinned"
+    fi
+    return 0
+}
+
 
 # Function to create new gemset
 function caddie_ruby_gemset_create() {
@@ -686,3 +907,6 @@ export -f caddie_ruby_rails_generate
 export -f caddie_ruby_rails_migrate
 export -f caddie_ruby_rails_routes
 export -f caddie_ruby_version
+export -f caddie_ruby_pin_set
+export -f caddie_ruby_pin_get
+export -f caddie_ruby_pin_unset

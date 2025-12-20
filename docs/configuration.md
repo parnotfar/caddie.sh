@@ -176,12 +176,14 @@ echo 'export GEM_PATH="$HOME/.gems:$GEM_HOME"' >> ~/.bash_profile
 
 #### Ruby Version
 ```bash
-# Set default Ruby version
-export RUBY_VERSION="3.2.0"
+# Pin a specific Ruby version for caddie ruby:setup
+export CADDIE_RUBY_VERSION="3.2.2"
 
 # Add to your ~/.bash_profile
-echo 'export RUBY_VERSION="3.2.0"' >> ~/.bash_profile
+echo 'export CADDIE_RUBY_VERSION="3.2.2"' >> ~/.bash_profile
 ```
+
+**Note**: If `CADDIE_RUBY_VERSION` is not set, `caddie ruby:setup` will automatically detect and install the latest stable Ruby version available via RVM.
 
 ### JavaScript/Node.js Configuration
 
