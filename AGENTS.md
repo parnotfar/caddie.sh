@@ -265,13 +265,73 @@ The Makefile handles module installation automatically:
 * **Input validation**: Validate all arguments with clear error messages
 * **Explicit return statements**: Always include explicit `return 0` or `return 1` statements instead of relying on the exit status of the last command
 * **CLI integration**: Use `caddie cli:*` functions for consistent output formatting
-* **Echo message standards**: Use appropriate caddie CLI functions instead of raw echo
-  * `echo "Error:` → `caddie cli:red`
-  * `echo "Usage` → `caddie cli:usage`
-  * `echo "✓` → `caddie cli:check`
-  * `echo "✗` → `caddie cli:red`
-  * `echo "..."` → `caddie cli:indent`
+* **Output formatting**: **ALWAYS** use `caddie cli:*` functions instead of raw `echo` or `printf`
+  * **Error messages**: `caddie cli:red "Error message"` (never `echo "Error..."`)
+  * **Success messages**: `caddie cli:check "Success message"` or `caddie cli:green "..."` (never `echo "✓..."`)
+  * **Usage messages**: `caddie cli:usage "command [args]"` (never `echo "Usage..."`)
+  * **Titles/Headers**: `caddie cli:title "Section Title"` (never `echo "== Title =="`)
+  * **Indented text**: `caddie cli:indent "text"` (never `echo "  text"`)
+  * **Warnings**: `caddie cli:yellow "warning"` or `caddie cli:thought "tip"`
+  * **Raw output for pipes/processing**: Only use `echo`/`printf` when output is being piped to another command or processed programmatically
+  * **Function return values**: Use `printf '%s\n'` for description functions that return text (e.g., `caddie_<module>_description`)
+* **Version detection**: For tools that support it, automatically detect and use the latest stable version unless explicitly pinned via environment variable (e.g., `CADDIE_<TOOL>_VERSION`)
+* **Environment variable access**: **ALWAYS** create get/set/unset commands for environment variables instead of accessing them directly. This provides a consistent API, enables validation, and improves maintainability. See "Environment Variable Management Pattern" below.
 * **Function structure**: Follow the established pattern with proper documentation
+
+### Environment Variable Management Pattern
+
+**CRITICAL**: When modules use environment variables for configuration, **ALWAYS** provide getter/setter/unsetter commands instead of documenting direct environment variable access.
+
+**Pattern:**
+```bash
+# ✅ CORRECT: Provide get/set/unset commands
+function caddie_<module>_<config>_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a value"
+        caddie cli:usage "caddie <module>:<config>:set <value>"
+        return 1
+    fi
+    export CADDIE_<MODULE>_<CONFIG>="$value"
+    caddie cli:check "<Config> set to: $value"
+    return 0
+}
+
+function caddie_<module>_<config>_get() {
+    local value="${CADDIE_<MODULE>_<CONFIG>:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "<Config>: $value"
+    else
+        caddie cli:yellow "No <config> is set"
+        caddie cli:thought "Use 'caddie <module>:<config>:set <value>' to set it"
+    fi
+    return 0
+}
+
+function caddie_<module>_<config>_unset() {
+    if [ -n "${CADDIE_<MODULE>_<CONFIG>:-}" ]; then
+        unset CADDIE_<MODULE>_<CONFIG>
+        caddie cli:check "<Config> unset"
+    else
+        caddie cli:yellow "No <config> was set"
+    fi
+    return 0
+}
+```
+
+**Examples:**
+- `caddie github:account:set <account>` / `caddie github:account:get` / `caddie github:account:unset`
+- `caddie ruby:pin:set <version>` / `caddie ruby:pin:get` / `caddie ruby:pin:unset`
+- `caddie core:set:home <path>` / `caddie core:get:home` / `caddie core:reset:home`
+
+**Internal access:** Within module functions, you may still access the environment variable directly (e.g., `local value="${CADDIE_<MODULE>_<CONFIG>:-}"`), but **documentation and help text should only reference the get/set/unset commands**, not direct environment variable access.
+
+**Benefits:**
+- Consistent API across all modules
+- Built-in validation and error handling
+- Better user experience with helpful error messages
+- Easier to maintain and extend functionality
+- Enables future features (persistence, validation, etc.)
 
 ### Module Development Standards
 

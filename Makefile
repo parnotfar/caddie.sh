@@ -1,6 +1,6 @@
 # Caddie.sh Installation Makefile
 # This Makefile handles the installation of the caddie application
-# including dot file setup, Homebrew, Python venv, and Rust installation
+# including dot file setup, Homebrew, Python venv, Rust, and Ruby build dependencies installation
 
 # Colors for output
 RED := \033[0;31m
@@ -33,7 +33,7 @@ help: ## Show this help message
 	echo "$(YELLOW)Usage:$(NC)"
 	echo "  make install        - Full installation (recommended)"
 	echo "  make install-dot    - Install only dot files (with backup)"
-	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, GitHub CLI)"
+	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, Ruby deps, GitHub CLI)"
 	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
 	echo "  make restore-backup - Restore from backup files"
@@ -136,13 +136,19 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_debug"
+	echo "$(YELLOW)  →$(NC) Installing caddie binary scripts..."
+	mkdir -p "$(DEST_MODULES_DIR)/bin"
+	if [ -d "$(CADDIE_DIR)/bin" ]; then \
+		cp "$(CADDIE_DIR)/bin"/* "$(DEST_MODULES_DIR)/bin/" 2>/dev/null || true; \
+		echo "$(GREEN)    ✓$(NC) Successfully installed scripts to $(DEST_MODULES_DIR)/bin"; \
+	fi
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie.sh"
 	
 	echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
-setup-dev: setup-homebrew setup-python setup-rust setup-github ## Setup development environment (Homebrew, Python, Rust, GitHub CLI)
+setup-dev: setup-homebrew setup-python setup-rust setup-ruby-deps setup-github ## Setup development environment (Homebrew, Python, Rust, Ruby build deps, GitHub CLI)
 	echo "$(GREEN)✓$(NC) Development environment setup completed"
 
 setup-homebrew: ## Install and update Homebrew
@@ -214,6 +220,36 @@ setup-rust: setup-homebrew ## Setup Rust development environment
 	echo "$(GREEN)✓$(NC) Rust development environment setup completed"
 	echo "$(CYAN)  💡$(NC) Rust will be available after restarting your terminal"
 	echo "$(CYAN)  💡$(NC) To create a new Rust project: $(YELLOW)cargo new myproject$(NC)"
+
+setup-ruby-deps: setup-homebrew ## Install Ruby build dependencies (OpenSSL, readline, libyaml, etc.)
+	echo "$(BLUE)💎$(NC) Installing Ruby build dependencies..."
+	echo "$(YELLOW)  →$(NC) Installing OpenSSL (required for Ruby compilation)..."
+	brew install openssl@3 || brew install openssl || true
+	echo "$(GREEN)    ✓$(NC) OpenSSL installed"
+	echo "$(YELLOW)  →$(NC) Installing readline (required for Ruby)..."
+	brew install readline || true
+	echo "$(GREEN)    ✓$(NC) readline installed"
+	echo "$(YELLOW)  →$(NC) Installing libyaml (required for Ruby YAML support)..."
+	brew install libyaml || true
+	echo "$(GREEN)    ✓$(NC) libyaml installed"
+	echo "$(YELLOW)  →$(NC) Installing gmp (required for Ruby)..."
+	brew install gmp || true
+	echo "$(GREEN)    ✓$(NC) gmp installed"
+	echo "$(YELLOW)  →$(NC) Installing autoconf (required for Ruby compilation)..."
+	brew install autoconf || true
+	echo "$(GREEN)    ✓$(NC) autoconf installed"
+	echo "$(YELLOW)  →$(NC) Installing automake (required for Ruby compilation)..."
+	brew install automake || true
+	echo "$(GREEN)    ✓$(NC) automake installed"
+	echo "$(YELLOW)  →$(NC) Installing libtool (required for Ruby compilation)..."
+	brew install libtool || true
+	echo "$(GREEN)    ✓$(NC) libtool installed"
+	echo "$(YELLOW)  →$(NC) Installing pkg-config (required for Ruby compilation)..."
+	brew install pkg-config || true
+	echo "$(GREEN)    ✓$(NC) pkg-config installed"
+	echo "$(GREEN)✓$(NC) Ruby build dependencies installed"
+	echo "$(CYAN)  💡$(NC) These packages are required for compiling Ruby from source"
+	echo "$(CYAN)  💡$(NC) To setup Ruby: $(YELLOW)caddie ruby:setup$(NC)"
 
 setup-github: setup-homebrew ## Setup GitHub CLI for pull request management
 	echo "$(BLUE)🐙$(NC) Setting up GitHub CLI..."

@@ -193,11 +193,402 @@ GIT
     caddie cli:check "Swift .gitignore ready"
 }
 
+# MARK: - Xcode Project Commands (for projects using Swift Packages)
+
+function caddie_swift_require_xcode_project() {
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    if [ -z "$project_file" ]; then
+        caddie cli:red "Error: Not in an Xcode project directory (no .xcodeproj found)"
+        return 1
+    fi
+    return 0
+}
+
+function caddie_swift_xcode_project() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    printf '%s\n' "$(basename "$project_file")"
+}
+
+function caddie_swift_xcode_scheme() {
+    local scheme="$1"
+    if [ -z "$scheme" ]; then
+        # Try to find default scheme from project
+        local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+        if [ -n "$project_file" ]; then
+            # List schemes and take first one
+            scheme=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | head -1 | xargs)
+        fi
+    fi
+    printf '%s\n' "${scheme:-vCaddie}"
+}
+
+function caddie_swift_xcode_resolve() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=$(caddie_swift_xcode_project)
+    caddie cli:title "Resolving Swift Package dependencies for Xcode project..."
+    xcodebuild -resolvePackageDependencies -project "$project_file"
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Package dependencies resolved"
+    else
+        caddie cli:red "Package resolution failed ($status)"
+        caddie cli:thought "If packages aren't added yet, add them in Xcode: Project Settings → Package Dependencies"
+    fi
+    return $status
+}
+
+function caddie_swift_xcode_build() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    local destination="${2:-simulator}"
+    local sim_name="${3:-iPhone 15}"
+    # Shift consumed arguments
+    [ -n "$1" ] && shift || true
+    [ -n "$1" ] && shift || true
+    [ -n "$1" ] && shift || true
+    
+    scheme=$(caddie_swift_xcode_scheme "$scheme")
+    local project_file=$(caddie_swift_xcode_project)
+    
+    caddie cli:title "Building Xcode project '$project_file' (scheme: $scheme)..."
+    
+    # Check if packages are resolved
+    if ! grep -q "XCLocalSwiftPackageReference\|XCRemoteSwiftPackageReference" "$project_file/project.pbxproj" 2>/dev/null; then
+        caddie cli:yellow "Warning: No Swift Package dependencies found in project"
+        caddie cli:thought "Add packages in Xcode: Project Settings → Package Dependencies → Add Package"
+        caddie cli:thought "Or use: caddie swift:xcode:packages:check"
+    fi
+    
+    # Resolve packages first
+    caddie_swift_xcode_resolve || caddie cli:yellow "Continuing build despite package resolution warning..."
+    
+    if [ "$destination" = "simulator" ]; then
+        caddie cli:indent "Building for iOS Simulator ($sim_name)..."
+        xcodebuild \
+            -project "$project_file" \
+            -scheme "$scheme" \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=$sim_name" \
+            -configuration Debug \
+            clean build "$@"
+    elif [ "$destination" = "device" ]; then
+        caddie cli:indent "Building for iOS Device..."
+        xcodebuild \
+            -project "$project_file" \
+            -scheme "$scheme" \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            clean build "$@"
+    else
+        caddie cli:red "Error: Invalid destination '$destination' (use 'simulator' or 'device')"
+        return 1
+    fi
+    
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Build completed successfully"
+    else
+        caddie cli:red "Build failed ($status)"
+    fi
+    return $status
+}
+
+function caddie_swift_xcode_test() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    # Shift consumed arguments
+    [ -n "$1" ] && shift || true
+    
+    scheme=$(caddie_swift_xcode_scheme "$scheme")
+    local project_file=$(caddie_swift_xcode_project)
+    local sim_name="${1:-iPhone 15}"
+    # Shift simulator name argument so it doesn't get passed to xcodebuild
+    [ -n "$1" ] && shift || true
+    
+    caddie cli:title "Running tests for '$project_file' (scheme: $scheme)..."
+    
+    xcodebuild test \
+        -project "$project_file" \
+        -scheme "$scheme" \
+        -sdk iphonesimulator \
+        -destination "platform=iOS Simulator,name=$sim_name" \
+        "$@"
+    
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Tests completed successfully"
+    else
+        caddie cli:red "Tests failed ($status)"
+    fi
+    return $status
+}
+
+function caddie_swift_xcode_clean() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    shift || true
+    
+    scheme=$(caddie_swift_xcode_scheme "$scheme")
+    local project_file=$(caddie_swift_xcode_project)
+    
+    caddie cli:title "Cleaning Xcode project '$project_file'..."
+    xcodebuild clean -project "$project_file" -scheme "$scheme" "$@"
+    caddie cli:check "Clean complete"
+}
+
+function caddie_swift_xcode_packages_check() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=$(caddie_swift_xcode_project)
+    
+    caddie cli:title "Checking Swift Package dependencies..."
+    
+    if grep -q "XCLocalSwiftPackageReference\|XCRemoteSwiftPackageReference" "$project_file/project.pbxproj" 2>/dev/null; then
+        caddie cli:check "Package dependencies found in project"
+        
+        # List packages
+        local packages=$(grep -o 'relativePath = "[^"]*"' "$project_file/project.pbxproj" 2>/dev/null | sed 's/relativePath = "\(.*\)"/\1/')
+        local remote_packages=$(grep -o 'repositoryURL = "[^"]*"' "$project_file/project.pbxproj" 2>/dev/null | sed 's/repositoryURL = "\(.*\)"/\1/')
+        
+        if [ -n "$packages" ]; then
+            caddie cli:blank
+            caddie cli:title "Local Packages:"
+            echo "$packages" | while read -r pkg; do
+                caddie cli:indent "  • $pkg"
+            done
+        fi
+        
+        if [ -n "$remote_packages" ]; then
+            caddie cli:blank
+            caddie cli:title "Remote Packages:"
+            echo "$remote_packages" | while read -r pkg; do
+                caddie cli:indent "  • $pkg"
+            done
+        fi
+    else
+        caddie cli:yellow "No Swift Package dependencies found"
+        caddie cli:blank
+        caddie cli:title "To add packages:"
+        caddie cli:indent "Option 1: Use command line (uses caddie Ruby infrastructure)"
+        caddie cli:indent "  caddie swift:xcode:packages:add <target> <package_path1> <product1> [package_path2 product2 ...]"
+        caddie cli:thought "  Uses caddie ruby:gem:install if available, otherwise system Ruby"
+        caddie cli:blank
+        caddie cli:indent "Option 2: Use Xcode UI"
+        caddie cli:indent "  1. Open project in Xcode"
+        caddie cli:indent "  2. Select project in navigator"
+        caddie cli:indent "  3. Select target → Package Dependencies tab"
+        caddie cli:indent "  4. Click '+' to add package"
+        caddie cli:indent "  5. Choose 'Add Local...' for local packages"
+        caddie cli:blank
+        caddie cli:thought "For vCaddie, add:"
+        caddie cli:indent "  • ../physics-core-swift (PhysicsCore)"
+        caddie cli:indent "  • ../golf-agent-swift (GolfSimulator)"
+    fi
+}
+
+function caddie_swift_xcode_packages_add() {
+    caddie_swift_require_xcode_project || return 1
+    
+    # Validate argument count: must be >= 3 and odd (target + pairs of package_path/product)
+    # Valid counts: 3, 5, 7, 9... (target + 1 pair, 2 pairs, 3 pairs, etc.)
+    # Invalid counts: 4, 6, 8... (target + incomplete pairs)
+    if [ $# -lt 3 ] || [ $(( $# % 2 )) -eq 0 ]; then
+        caddie cli:red "Error: Invalid number of arguments"
+        caddie cli:usage "caddie swift:xcode:packages:add <target> <package_path1> <product1> [package_path2 product2 ...]"
+        caddie cli:blank
+        caddie cli:title "Expected format:"
+        caddie cli:indent "target + pairs of (package_path, product)"
+        caddie cli:indent "Valid argument counts: 3, 5, 7, 9... (target + 1+ pairs)"
+        caddie cli:blank
+        caddie cli:title "Example:"
+        caddie cli:indent "caddie swift:xcode:packages:add vCaddie ../physics-core-swift PhysicsCore ../golf-agent-swift GolfSimulator"
+        if [ $# -gt 0 ]; then
+            caddie cli:blank
+            caddie cli:yellow "Received $# arguments (expected odd number >= 3): $*"
+            caddie cli:thought "You may be missing a product name for one of your packages"
+        fi
+        return 1
+    fi
+    
+    # Check for Ruby and ensure we're using RVM if available
+    local ruby_available=false
+    local using_rvm=false
+    local ruby_executable=""
+    
+    # First, try to source and use RVM (caddie's preferred Ruby management)
+    if [ -f "$HOME/.rvm/scripts/rvm" ]; then
+        # shellcheck disable=SC1091
+        source "$HOME/.rvm/scripts/rvm" 2>/dev/null || true
+        
+        # Check if RVM is working and has a default Ruby
+        if command -v rvm >/dev/null 2>&1; then
+            # Try to use default Ruby or latest installed
+            if rvm use default >/dev/null 2>&1 || rvm use ruby >/dev/null 2>&1; then
+                # Verify we're actually using RVM Ruby by checking gem path
+                local gem_path=$(which gem 2>/dev/null || echo "")
+                if [[ "$gem_path" == *".rvm"* ]] && command -v ruby >/dev/null 2>&1; then
+                    using_rvm=true
+                    ruby_available=true
+                    ruby_executable=$(which ruby)
+                    caddie cli:check "Using RVM Ruby: $ruby_executable"
+                fi
+            fi
+        fi
+    fi
+    
+    # If RVM didn't work, check for system Ruby
+    if [ "$ruby_available" = false ] && command -v ruby >/dev/null 2>&1; then
+        ruby_available=true
+        ruby_executable=$(which ruby)
+        caddie cli:yellow "Using system Ruby: $ruby_executable"
+        caddie cli:thought "Consider setting up caddie Ruby: caddie ruby:setup"
+    fi
+    
+    if [ "$ruby_available" = false ] || [ -z "$ruby_executable" ]; then
+        caddie cli:red "Error: Ruby not found"
+        caddie cli:blank
+        caddie cli:title "Setup Ruby with caddie:"
+        caddie cli:indent "caddie ruby:setup"
+        caddie cli:blank
+        caddie cli:thought "Or install Ruby manually, then use Xcode UI to add packages"
+        return 1
+    fi
+    
+    # Check for xcodeproj gem using the detected Ruby executable
+    if ! "$ruby_executable" -r xcodeproj -e "" 2>/dev/null; then
+        caddie cli:yellow "xcodeproj gem not found. Installing..."
+        
+        # Install gem using the detected Ruby's gem command
+        # This ensures we use the correct gem for the Ruby environment
+        local gem_executable=$(dirname "$ruby_executable")/gem
+        if [ -x "$gem_executable" ]; then
+            if "$gem_executable" install xcodeproj; then
+                caddie cli:check "xcodeproj gem installed"
+            else
+                gem_install_failed=true
+            fi
+        else
+            gem_install_failed=true
+        fi
+        
+        if [ "${gem_install_failed:-false}" = true ]; then
+            caddie cli:red "Failed to install xcodeproj gem"
+            
+            if [ "$using_rvm" = false ]; then
+                caddie cli:blank
+                caddie cli:title "System Ruby requires sudo or user install:"
+                caddie cli:indent "Option 1: Use caddie Ruby (recommended)"
+                caddie cli:indent "  caddie ruby:setup"
+                caddie cli:indent "  Then retry: caddie swift:xcode:packages:add ..."
+                caddie cli:blank
+                caddie cli:indent "Option 2: User install (system Ruby)"
+                caddie cli:indent "  gem install --user-install xcodeproj"
+                caddie cli:indent "  Then retry: caddie swift:xcode:packages:add ..."
+                caddie cli:blank
+                caddie cli:indent "Option 3: Use Xcode UI to add packages manually"
+            else
+                caddie cli:yellow "RVM Ruby detected but gem install failed"
+                caddie cli:thought "Try manually: caddie ruby:gem:install xcodeproj"
+                caddie cli:thought "Or use Xcode UI to add packages manually"
+            fi
+            return 1
+        fi
+    else
+        if [ "$using_rvm" = true ]; then
+            caddie cli:check "xcodeproj gem found (RVM Ruby)"
+        else
+            caddie cli:check "xcodeproj gem found (system Ruby)"
+        fi
+    fi
+    
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    
+    # Try to find script in multiple locations
+    local script_path=""
+    local module_dir="$(dirname "${BASH_SOURCE[0]}")"
+    local current_dir="$(pwd)"
+    
+    # 1. Check installed location (highest priority)
+    if [ -f "$HOME/.caddie_modules/bin/add_swift_packages.rb" ]; then
+        script_path="$HOME/.caddie_modules/bin/add_swift_packages.rb"
+        caddie_debug "Found script in installed location: $script_path"
+    # 2. Check relative to module directory (development)
+    elif [ -f "$(dirname "$module_dir")/bin/add_swift_packages.rb" ]; then
+        script_path="$(cd "$(dirname "$module_dir")/bin" && pwd)/add_swift_packages.rb"
+    # 3. Try to find caddie.sh by searching parent directories
+    else
+        local search_dir="$current_dir"
+        local found_caddie=""
+        # Search up to 6 levels up (should be enough for most directory structures)
+        for i in {1..6}; do
+            # Check if caddie.sh directory exists in current search location
+            if [ -d "$search_dir/caddie.sh" ] && [ -f "$search_dir/caddie.sh/bin/add_swift_packages.rb" ]; then
+                found_caddie="$(cd "$search_dir/caddie.sh" && pwd)"
+                break
+            fi
+            # Also check one level up from current search location
+            local parent_of_search="$(dirname "$search_dir")"
+            if [ -d "$parent_of_search/caddie.sh" ] && [ -f "$parent_of_search/caddie.sh/bin/add_swift_packages.rb" ]; then
+                found_caddie="$(cd "$parent_of_search/caddie.sh" && pwd)"
+                break
+            fi
+            # Move up one level for next iteration
+            # Stop if we've reached home, root, or can't go higher
+            if [ "$parent_of_search" = "$search_dir" ] || [ "$parent_of_search" = "/" ]; then
+                break
+            fi
+            search_dir="$parent_of_search"
+        done
+        
+        if [ -n "$found_caddie" ] && [ -f "$found_caddie/bin/add_swift_packages.rb" ]; then
+            script_path="$found_caddie/bin/add_swift_packages.rb"
+        fi
+    fi
+    
+    if [ -z "$script_path" ] || [ ! -f "$script_path" ]; then
+        caddie cli:red "Error: add_swift_packages.rb script not found"
+        caddie cli:blank
+        caddie cli:title "Searched locations:"
+        caddie cli:indent "  • $HOME/.caddie_modules/bin/add_swift_packages.rb"
+        if [ -n "$module_dir" ]; then
+            caddie cli:indent "  • $(dirname "$module_dir")/bin/add_swift_packages.rb"
+        fi
+        caddie cli:indent "  • Parent directories from: $(pwd)"
+        caddie cli:blank
+        caddie cli:title "Solutions:"
+        caddie cli:indent "1. Install caddie.sh to get script in standard location:"
+        caddie cli:indent "   cd /path/to/caddie.sh && make install"
+        caddie cli:blank
+        caddie cli:indent "2. Or manually copy script to:"
+        caddie cli:indent "   $HOME/.caddie_modules/bin/add_swift_packages.rb"
+        caddie cli:blank
+        caddie cli:indent "3. Or use Xcode UI to add packages manually"
+        return 1
+    fi
+    
+    caddie cli:title "Adding Swift Package dependencies..."
+    caddie cli:blank
+    
+    # Use the detected Ruby executable to ensure we use the correct environment
+    if "$ruby_executable" "$script_path" "$project_file" "$@"; then
+        caddie cli:blank
+        caddie cli:check "Packages added successfully!"
+        caddie cli:thought "Next: Run 'caddie swift:xcode:resolve' to resolve dependencies"
+        return 0
+    else
+        caddie cli:red "Failed to add packages"
+        return 1
+    fi
+}
+
 function caddie_swift_help() {
     caddie cli:title "Swift Package Manager Commands"
     caddie cli:usage "caddie swift:<command>"
     caddie cli:blank
-    caddie cli:title "Project"
+    caddie cli:title "Swift Package Manager (Package.swift)"
     caddie cli:indent "init <name> [--type ...]   Create new Swift package"
     caddie cli:indent "build [args]              Run swift build"
     caddie cli:indent "run [args]                Run default executable"
@@ -205,11 +596,19 @@ function caddie_swift_help() {
     caddie cli:indent "test [args]               Run swift test"
     caddie cli:indent "test:filter <pattern>     swift test --filter"
     caddie cli:blank
-    caddie cli:title "Package"
+    caddie cli:title "Package Dependencies"
     caddie cli:indent "package:resolve          swift package resolve"
     caddie cli:indent "package:update           swift package update"
     caddie cli:indent "package:clean            Remove build artifacts"
     caddie cli:indent "package:describe         Show dependency graph"
+    caddie cli:blank
+    caddie cli:title "Xcode Projects (with Swift Packages)"
+    caddie cli:indent "xcode:packages:check     Check if packages are added"
+    caddie cli:indent "xcode:packages:add <target> <pkg1> <prod1> [...]  Add packages (requires Ruby)"
+    caddie cli:indent "xcode:resolve            Resolve package dependencies"
+    caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project"
+    caddie cli:indent "xcode:test [scheme] [sim_name]  Run Xcode tests"
+    caddie cli:indent "xcode:clean [scheme]     Clean Xcode build"
     caddie cli:blank
     caddie cli:title "Quality"
     caddie cli:indent "format [--lint]          Run swift-format"
@@ -220,7 +619,7 @@ function caddie_swift_help() {
 }
 
 function caddie_swift_description() {
-    echo 'Swift Package Manager helpers'
+    printf '%s\n' 'Swift Package Manager helpers'
 }
 
 export -f caddie_swift_require_toolchain
@@ -238,5 +637,14 @@ export -f caddie_swift_package_describe
 export -f caddie_swift_format
 export -f caddie_swift_lint
 export -f caddie_swift_gitignore
+export -f caddie_swift_require_xcode_project
+export -f caddie_swift_xcode_project
+export -f caddie_swift_xcode_scheme
+export -f caddie_swift_xcode_resolve
+export -f caddie_swift_xcode_build
+export -f caddie_swift_xcode_test
+export -f caddie_swift_xcode_clean
+export -f caddie_swift_xcode_packages_check
+export -f caddie_swift_xcode_packages_add
 export -f caddie_swift_help
 export -f caddie_swift_description

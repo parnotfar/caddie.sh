@@ -1,5 +1,118 @@
 # Caddie.sh Release Notes
 
+## Version 4.1.0 - Ruby Environment & Xcode Package Integration
+
+**Release Date:** December 2025
+
+### ✨ New Features
+
+#### **Ruby Module - Complete RVM Integration**
+- **Automatic Ruby Setup**: New `caddie ruby:setup` command that:
+  - Installs RVM if not present (with GPG key verification)
+  - Automatically detects and installs latest stable Ruby version from ruby-lang.org
+  - Configures OpenSSL paths for macOS compilation (uses Homebrew's OpenSSL@3)
+  - Sets installed Ruby as default and installs essential gems
+- **Version Pinning**: Support for pinning specific Ruby versions via `caddie ruby:pin:set/get/unset` commands (uses `CADDIE_RUBY_VERSION` internally)
+- **OpenSSL Integration**: Automatic configuration of compiler flags (`LDFLAGS`, `CPPFLAGS`, `PKG_CONFIG_PATH`) for seamless Ruby compilation on macOS
+- **Comprehensive Ruby Management**: Full RVM workflow support including:
+  - `caddie ruby:install <version>` - Install specific Ruby versions
+  - `caddie ruby:use <version>` - Switch Ruby versions
+  - `caddie ruby:list` - List installed versions
+  - `caddie ruby:current` - Show current environment details
+  - `caddie ruby:version` - Show version information
+- **Gemset Management**: Complete gemset isolation support (create, use, list, delete)
+- **Gem Management**: Install, update, list, and manage Ruby gems
+- **Rails Integration**: Full Rails workflow helpers (new, server, console, generate, migrate, routes)
+- **Bundler Integration**: Dependency management commands
+- **Project Management**: Project initialization, testing, building, and serving
+
+#### **Swift Module - Xcode Package Integration**
+- **Xcode Package Management**: New commands for managing Swift Package dependencies in Xcode projects:
+  - `caddie swift:xcode:packages:check` - Check for configured package dependencies
+  - `caddie swift:xcode:packages:add <target> <package_path> <product> [...]` - Programmatically add local Swift packages (requires Ruby/xcodeproj gem)
+  - `caddie swift:xcode:resolve` - Resolve package dependencies
+- **Xcode Build System**: Command-line Xcode project building:
+  - `caddie swift:xcode:build [scheme] [simulator|device] [sim_name]` - Build Xcode projects
+  - `caddie swift:xcode:test [scheme] [sim_name]` - Run Xcode tests
+  - `caddie swift:xcode:clean [scheme]` - Clean build artifacts
+- **Ruby Integration**: Swift module automatically uses caddie's Ruby environment for package management (requires `xcodeproj` gem)
+
+#### **Makefile Enhancements**
+- **Ruby Build Dependencies**: New `make setup-ruby-deps` target that installs:
+  - OpenSSL@3 (required for Ruby compilation)
+  - readline, libyaml, gmp
+  - autoconf, automake, libtool, pkg-config
+- **Binary Script Installation**: Makefile now installs `bin/` directory files to `~/.caddie_modules/bin/` for shared executables
+- **Automatic Dependency Setup**: `make install` now includes Ruby build dependencies via `setup-ruby-deps`
+
+### 🔧 Improvements
+
+#### **Ruby Environment Management**
+- **Latest Version Detection**: Queries ruby-lang.org directly for latest stable Ruby version
+- **OpenSSL Compilation**: Automatically configures Homebrew's OpenSSL with proper compiler flags
+- **GPG Key Verification**: Proactively imports GPG keys before RVM installation for signature verification
+- **RVM Integration**: Seamless integration with RVM for Ruby version and gemset management
+- **Error Handling**: Comprehensive error messages with troubleshooting guidance
+
+#### **Swift/Xcode Integration**
+- **Path Detection**: Improved script path detection for both installed and development environments
+- **Ruby Environment Detection**: Automatically detects and uses RVM Ruby when available
+- **Gem Management**: Automatically installs `xcodeproj` gem if missing
+- **Multi-location Search**: Searches multiple locations for binary scripts (installed, development, parent directories)
+
+#### **Documentation**
+- **Ruby Module Documentation**: New comprehensive `docs/modules/ruby.md` with:
+  - Complete command reference
+  - Version pinning instructions
+  - OpenSSL configuration details
+  - Troubleshooting guide
+  - Integration examples
+- **Swift Module Updates**: Enhanced `docs/modules/swift.md` with Xcode integration section
+- **Module README**: Updated to reflect new capabilities
+
+### 🐛 Bug Fixes
+
+- **Makefile Syntax**: Fixed multi-line conditional syntax in Makefile for binary script installation
+- **CLI Output**: Removed escape sequences (`\[`, `\]`) from color definitions in `dot_caddie_cli` (these are only needed for PS1 prompts)
+- **Output Formatting**: Updated Ruby module to use `printf '%s\n'` instead of `echo` for description functions (following AGENTS.md guidelines)
+
+### 📝 Upgrade Notes
+
+- **Ruby Setup**: Run `caddie ruby:setup` to initialize Ruby environment with RVM
+- **Ruby Build Dependencies**: Run `make install` (or `make setup-ruby-deps`) to install required build tools
+- **Xcode Package Management**: Ensure Ruby is set up before using `caddie swift:xcode:packages:add`
+- **Reinstall**: Run `make install` to get the latest binary scripts and updated modules
+
+### 🎯 Use Cases
+
+#### **Ruby Environment Setup**
+```bash
+# Complete Ruby setup with latest stable version
+caddie ruby:setup
+
+# Pin specific version
+export CADDIE_RUBY_VERSION=3.4.8
+caddie ruby:setup
+
+# Install gem
+caddie ruby:gem:install xcodeproj
+```
+
+#### **Xcode Package Management**
+```bash
+# Add Swift packages to Xcode project
+caddie swift:xcode:packages:add vCaddie ../physics-core-swift PhysicsCore ../golf-agent-swift GolfSimulator
+
+# Resolve dependencies
+caddie swift:xcode:resolve
+
+# Build and test
+caddie swift:xcode:build vCaddie simulator "iPhone 15 Pro"
+caddie swift:xcode:test vCaddie
+```
+
+---
+
 ## Version 4.0.0 - Swift Module & Shell Cleanup
 
 **Release Date:** February 2025
