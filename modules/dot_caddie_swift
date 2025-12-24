@@ -216,8 +216,18 @@ function caddie_swift_xcode_scheme() {
         # Try to find default scheme from project
         local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
         if [ -n "$project_file" ]; then
-            # List schemes and take first one
-            scheme=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | head -1 | xargs)
+            # List schemes and prefer app scheme (vCaddie) over package schemes
+            local schemes=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$")
+            # Prefer scheme matching project name (without .xcodeproj) or common app scheme names
+            local project_name=$(basename "$project_file" .xcodeproj)
+            if echo "$schemes" | grep -q "^${project_name}$"; then
+                scheme="$project_name"
+            elif echo "$schemes" | grep -q "^vCaddie$"; then
+                scheme="vCaddie"
+            else
+                # Fall back to first scheme
+                scheme=$(echo "$schemes" | head -1 | xargs)
+            fi
         fi
     fi
     printf '%s\n' "${scheme:-vCaddie}"
@@ -242,7 +252,7 @@ function caddie_swift_xcode_build() {
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
     local destination="${2:-simulator}"
-    local sim_name="${3:-iPhone 15}"
+    local sim_name="${3:-iPhone 16}"
     # Shift consumed arguments
     [ -n "$1" ] && shift || true
     [ -n "$1" ] && shift || true
@@ -305,7 +315,7 @@ function caddie_swift_xcode_test() {
     
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
-    local sim_name="${1:-iPhone 15}"
+    local sim_name="${1:-iPhone 16}"
     # Shift simulator name argument so it doesn't get passed to xcodebuild
     [ -n "$1" ] && shift || true
     
