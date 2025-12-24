@@ -1,5 +1,61 @@
 # Caddie.sh Release Notes
 
+## Version 4.2.1 - Swift Xcode Build Fixes
+
+**Release Date:** December 2025
+
+### 🐛 Bug Fixes
+
+#### **Swift Module - Xcode Build Improvements**
+- **Scheme Auto-Detection Fix**: Fixed `caddie swift:xcode:build` and `caddie swift:xcode:test` to prefer app schemes (e.g., `vCaddie`) over package schemes (e.g., `GolfSimulator`, `PhysicsCore`) when auto-detecting the scheme
+  - Previously, the first scheme in the list (often a package scheme) was selected by default
+  - Now intelligently prefers schemes matching the project name or common app scheme names like `vCaddie`
+  - Falls back to first available scheme if no app scheme is found
+- **Default Simulator Update**: Changed default simulator from "iPhone 15" to "iPhone 16" for `swift:xcode:build` and `swift:xcode:test` commands
+  - "iPhone 15" simulator is not available in current Xcode versions
+  - "iPhone 16" is available and provides a better default experience
+  - Users can still override with explicit simulator name: `caddie swift:xcode:build vCaddie simulator "iPhone 16 Pro"`
+
+### 🔧 Technical Improvements
+
+#### **Scheme Detection Logic**
+- **Smart Scheme Selection**: `caddie_swift_xcode_scheme()` now:
+  1. First checks for scheme matching project name (without `.xcodeproj` extension)
+  2. Then checks for common app scheme names like `vCaddie`
+  3. Falls back to first available scheme if no match found
+- **Better Defaults**: More intuitive behavior when building Xcode projects with multiple schemes
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **Seamless Fix**: No breaking changes to existing functionality
+- **Better Defaults**: Commands now work correctly without requiring explicit scheme specification
+- **No Action Required**: Fix is automatic upon next `caddie reload`
+- **Explicit Override**: Can still specify scheme explicitly: `caddie swift:xcode:build vCaddie`
+
+### 📝 Usage Examples
+
+#### **Before Fix (4.2.0)**
+```bash
+# Would incorrectly select GolfSimulator scheme
+caddie swift:xcode:build
+# Error: Unable to find a device matching "iPhone 15"
+```
+
+#### **After Fix (4.2.1)**
+```bash
+# Correctly selects vCaddie scheme
+caddie swift:xcode:build
+
+# Uses iPhone 16 simulator by default
+caddie swift:xcode:test
+
+# Still works with explicit overrides
+caddie swift:xcode:build vCaddie simulator "iPhone 16 Pro"
+```
+
+---
+
 ## Version 4.1.0 - Ruby Environment & Xcode Package Integration
 
 **Release Date:** December 2025
@@ -107,7 +163,7 @@ caddie swift:xcode:packages:add vCaddie ../physics-core-swift PhysicsCore ../gol
 caddie swift:xcode:resolve
 
 # Build and test
-caddie swift:xcode:build vCaddie simulator "iPhone 15 Pro"
+caddie swift:xcode:build vCaddie simulator "iPhone 16 Pro"
 caddie swift:xcode:test vCaddie
 ```
 

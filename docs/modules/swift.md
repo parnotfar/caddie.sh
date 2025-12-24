@@ -81,14 +81,14 @@ Resolves Swift Package dependencies for the Xcode project. Equivalent to running
 
 Builds an Xcode project from the command line.
 
-- `scheme` (optional): Xcode scheme name (defaults to project name)
+- `scheme` (optional): Xcode scheme name (defaults to app scheme like `vCaddie`, or project name)
 - `simulator|device` (optional): Build destination (defaults to `simulator`)
-- `sim_name` (optional): Simulator name for simulator builds (defaults to "iPhone 15")
+- `sim_name` (optional): Simulator name for simulator builds (defaults to "iPhone 16")
 
 **Examples:**
 ```bash
 caddie swift:xcode:build
-caddie swift:xcode:build vCaddie simulator "iPhone 15 Pro"
+caddie swift:xcode:build vCaddie simulator "iPhone 16 Pro"
 caddie swift:xcode:build vCaddie device
 ```
 
@@ -96,12 +96,12 @@ caddie swift:xcode:build vCaddie device
 
 Runs tests for an Xcode project.
 
-- `scheme` (optional): Xcode scheme name (defaults to project name)
-- `sim_name` (optional): Simulator name (defaults to "iPhone 15")
+- `scheme` (optional): Xcode scheme name (defaults to app scheme like `vCaddie`, or project name)
+- `sim_name` (optional): Simulator name (defaults to "iPhone 16")
 
 **Example:**
 ```bash
-caddie swift:xcode:test vCaddie "iPhone 15 Pro"
+caddie swift:xcode:test vCaddie "iPhone 16 Pro"
 ```
 
 ### `caddie swift:xcode:clean [scheme]`
