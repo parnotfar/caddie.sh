@@ -248,7 +248,9 @@ function caddie_swift_xcode_resolve() {
     return $status
 }
 
-function caddie_swift_xcode_build() {
+function caddie_swift_xcode_build_run() {
+    local output_mode="$1"
+    shift || true
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
     local destination="${2:-simulator}"
@@ -257,54 +259,117 @@ function caddie_swift_xcode_build() {
     [ -n "$1" ] && shift || true
     [ -n "$1" ] && shift || true
     [ -n "$1" ] && shift || true
-    
+
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
-    
-    caddie cli:title "Building Xcode project '$project_file' (scheme: $scheme)..."
-    
+    local log_label="Building Xcode project '$project_file' (scheme: $scheme)..."
+    if [ "$output_mode" != "log" ]; then
+        log_label="$log_label (errors only)"
+    fi
+    caddie cli:title "$log_label"
+
     # Check if packages are resolved
     if ! grep -q "XCLocalSwiftPackageReference\|XCRemoteSwiftPackageReference" "$project_file/project.pbxproj" 2>/dev/null; then
         caddie cli:yellow "Warning: No Swift Package dependencies found in project"
         caddie cli:thought "Add packages in Xcode: Project Settings → Package Dependencies → Add Package"
         caddie cli:thought "Or use: caddie swift:xcode:packages:check"
     fi
-    
+
     # Resolve packages first
     caddie_swift_xcode_resolve || caddie cli:yellow "Continuing build despite package resolution warning..."
-    
+
+    local build_status=0
+    local log_file=""
+    local error_pattern="error:|fatal error:|xcodebuild: error:|clang: error:|ld: error:"
+
     if [ "$destination" = "simulator" ]; then
         caddie cli:indent "Building for iOS Simulator ($sim_name)..."
-        xcodebuild \
-            -project "$project_file" \
-            -scheme "$scheme" \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=$sim_name" \
-            -configuration Debug \
-            clean build "$@"
+        if [ "$output_mode" = "log" ]; then
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphonesimulator \
+                -destination "platform=iOS Simulator,name=$sim_name" \
+                -configuration Debug \
+                clean build "$@"
+        else
+            log_file=$(mktemp -t caddie_xcode_build.XXXXXX)
+            if [ -z "$log_file" ]; then
+                caddie cli:red "Error: Unable to create build log file"
+                return 1
+            fi
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphonesimulator \
+                -destination "platform=iOS Simulator,name=$sim_name" \
+                -configuration Debug \
+                clean build "$@" >"$log_file" 2>&1
+        fi
     elif [ "$destination" = "device" ]; then
         caddie cli:indent "Building for iOS Device..."
-        xcodebuild \
-            -project "$project_file" \
-            -scheme "$scheme" \
-            -sdk iphoneos \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build "$@"
+        if [ "$output_mode" = "log" ]; then
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphoneos \
+                -configuration Release \
+                CODE_SIGN_IDENTITY="" \
+                CODE_SIGNING_REQUIRED=NO \
+                CODE_SIGNING_ALLOWED=NO \
+                clean build "$@"
+        else
+            log_file=$(mktemp -t caddie_xcode_build.XXXXXX)
+            if [ -z "$log_file" ]; then
+                caddie cli:red "Error: Unable to create build log file"
+                return 1
+            fi
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphoneos \
+                -configuration Release \
+                CODE_SIGN_IDENTITY="" \
+                CODE_SIGNING_REQUIRED=NO \
+                CODE_SIGNING_ALLOWED=NO \
+                clean build "$@" >"$log_file" 2>&1
+        fi
     else
         caddie cli:red "Error: Invalid destination '$destination' (use 'simulator' or 'device')"
         return 1
     fi
-    
-    local status=$?
-    if [ $status -eq 0 ]; then
+
+    build_status=$?
+    if [ $build_status -eq 0 ]; then
         caddie cli:check "Build completed successfully"
     else
-        caddie cli:red "Build failed ($status)"
+        caddie cli:red "Build failed ($build_status)"
+        if [ "$output_mode" != "log" ] && [ -n "$log_file" ]; then
+            caddie cli:title "Errors"
+            if grep -E "$error_pattern" "$log_file" >/dev/null 2>&1; then
+                while IFS= read -r line; do
+                    caddie cli:indent "$line"
+                done < <(grep -E "$error_pattern" "$log_file")
+            else
+                caddie cli:yellow "No error lines matched the filter"
+                caddie cli:thought "Use 'caddie swift:xcode:build:log' for full output"
+            fi
+        fi
     fi
-    return $status
+
+    if [ -n "$log_file" ]; then
+        rm -f "$log_file"
+    fi
+
+    return $build_status
+}
+
+function caddie_swift_xcode_build() {
+    caddie_swift_xcode_build_run "errors" "$@"
+}
+
+function caddie_swift_xcode_build_log() {
+    caddie_swift_xcode_build_run "log" "$@"
 }
 
 function caddie_swift_xcode_test() {
@@ -616,7 +681,8 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:packages:check     Check if packages are added"
     caddie cli:indent "xcode:packages:add <target> <pkg1> <prod1> [...]  Add packages (requires Ruby)"
     caddie cli:indent "xcode:resolve            Resolve package dependencies"
-    caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project"
+    caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project (errors only)"
+    caddie cli:indent "xcode:build:log [scheme] [simulator|device] [sim_name]  Build with full logs"
     caddie cli:indent "xcode:test [scheme] [sim_name]  Run Xcode tests"
     caddie cli:indent "xcode:clean [scheme]     Clean Xcode build"
     caddie cli:blank
@@ -651,7 +717,9 @@ export -f caddie_swift_require_xcode_project
 export -f caddie_swift_xcode_project
 export -f caddie_swift_xcode_scheme
 export -f caddie_swift_xcode_resolve
+export -f caddie_swift_xcode_build_run
 export -f caddie_swift_xcode_build
+export -f caddie_swift_xcode_build_log
 export -f caddie_swift_xcode_test
 export -f caddie_swift_xcode_clean
 export -f caddie_swift_xcode_packages_check

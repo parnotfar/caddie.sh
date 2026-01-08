@@ -79,7 +79,7 @@ Resolves Swift Package dependencies for the Xcode project. Equivalent to running
 
 ### `caddie swift:xcode:build [scheme] [simulator|device] [sim_name]`
 
-Builds an Xcode project from the command line.
+Builds an Xcode project from the command line with error-only output for concise logs.
 
 - `scheme` (optional): Xcode scheme name (defaults to app scheme like `vCaddie`, or project name)
 - `simulator|device` (optional): Build destination (defaults to `simulator`)
@@ -90,6 +90,15 @@ Builds an Xcode project from the command line.
 caddie swift:xcode:build
 caddie swift:xcode:build vCaddie simulator "iPhone 16 Pro"
 caddie swift:xcode:build vCaddie device
+```
+
+### `caddie swift:xcode:build:log [scheme] [simulator|device] [sim_name]`
+
+Builds an Xcode project with full `xcodebuild` output (useful for verbose logs).
+
+**Example:**
+```bash
+caddie swift:xcode:build:log vCaddie simulator "iPhone 16 Pro"
 ```
 
 ### `caddie swift:xcode:test [scheme] [sim_name]`

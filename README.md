@@ -23,7 +23,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Swift Development**: Swift Package Manager workflows, formatting, and linting helpers
 - **Ruby Environment**: RVM integration and gem management
 - **JavaScript/Node.js**: NVM integration and package management
-- **iOS Development**: Xcode integration and development tools
+- **iOS Development**: Xcode integration, TestFlight distribution, and development tools
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
