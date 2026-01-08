@@ -1,5 +1,169 @@
 # Caddie.sh Release Notes
 
+## Version 5.0.0 - iOS TestFlight Distribution & Configuration Management
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **iOS Module - Complete TestFlight Distribution Workflow**
+- **Command-Line TestFlight Uploads**: Full support for uploading iOS builds to TestFlight via command line using `xcrun altool`
+  - `caddie ios:archive:testflight [scheme] [archive_path]` - Create archive for TestFlight distribution
+  - `caddie ios:export:ipa [archive_path] [export_path] [export_options_plist]` - Export IPA from archive
+  - `caddie ios:upload:testflight [ipa_path] [apple_id] [password]` - Upload IPA to App Store Connect
+  - `caddie ios:testflight [scheme] [increment] [upload]` - Complete end-to-end workflow
+- **Project Information Extraction**: Automatically extract bundle ID, version, build number, and team ID from Xcode projects
+  - `caddie ios:project:info [scheme]` - Display all project information
+  - `caddie ios:increment:build [scheme]` - Automatically increment build numbers
+- **Intelligent Scheme Detection**: Auto-detects Xcode schemes when not specified, preferring app schemes over package schemes
+- **Automatic Export Options**: Generates App Store export options plist automatically with proper signing configuration
+
+#### **iOS Configuration Management System**
+- **Persistent Configuration Storage**: New configuration management system that stores settings in `~/.caddie_ios_config`
+  - `caddie ios:config:get [key]` - Get configuration value(s)
+  - `caddie ios:config:set <key> <value>` - Set configuration value
+  - `caddie ios:config:unset <key>` - Remove configuration value
+  - `caddie ios:config:list` - List all configuration
+  - `caddie ios:config:load:project [scheme]` - Load project info into configuration
+- **Supported Configuration Keys**:
+  - `apple-id` - Your Apple ID email
+  - `password` - App-specific password (recommended for security)
+  - `bundle-id` - Bundle identifier
+  - `version` - App version
+  - `build` - Build number
+  - `team-id` - Development team ID
+  - `scheme` - Default Xcode scheme
+- **Auto-Loading**: Configuration automatically loads when module is sourced and when functions need it
+- **Password Security**: Passwords are stored securely and displayed as `<set>` when retrieved
+
+### 🔧 Technical Improvements
+
+#### **TestFlight Workflow Integration**
+- **Seamless Integration**: All TestFlight functions automatically use saved configuration
+- **Flexible Overrides**: Can still override any value via command arguments
+- **Error Handling**: Comprehensive error messages with troubleshooting guidance
+- **Progress Feedback**: Clear status messages throughout the upload process
+
+#### **Project Information Management**
+- **Build Settings Extraction**: Uses `xcodebuild -showBuildSettings` to extract project information
+- **Workspace Support**: Works with both `.xcodeproj` and `.xcworkspace` files
+- **Version Management**: Automatic build number incrementing with support for `agvtool` or direct project file editing
+
+#### **Configuration System**
+- **File-Based Storage**: Configuration stored in `~/.caddie_ios_config` as shell-sourced file
+- **Session Persistence**: Configuration persists across shell sessions
+- **Flexible Key Formats**: Accepts various key name formats (e.g., `apple-id`, `apple_id`, `APPLE_ID`)
+- **Auto-Export**: Configuration values automatically exported as environment variables
+
+### 📝 Usage Examples
+
+#### **Complete TestFlight Workflow**
+```bash
+# 1. Set credentials (one-time setup)
+caddie ios:config:set apple-id 'your@apple.id'
+caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'
+
+# 2. Load project information
+caddie ios:config:load:project vCaddie
+
+# 3. Run complete workflow (increment build, archive, export, upload)
+caddie ios:testflight
+```
+
+#### **Step-by-Step Workflow**
+```bash
+# Check project information
+caddie ios:project:info vCaddie
+
+# Increment build number
+caddie ios:increment:build vCaddie
+
+# Create archive
+caddie ios:archive:testflight vCaddie
+
+# Export IPA
+caddie ios:export:ipa ./build/archive/vCaddie.xcarchive
+
+# Upload to TestFlight
+caddie ios:upload:testflight ./build/export/vCaddie.ipa
+```
+
+#### **Configuration Management**
+```bash
+# View all configuration
+caddie ios:config:get
+
+# Set individual values
+caddie ios:config:set apple-id 'your@apple.id'
+caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'
+caddie ios:config:set scheme 'vCaddie'
+
+# Get specific value
+caddie ios:config:get apple-id
+
+# Remove configuration
+caddie ios:config:unset password
+```
+
+### 🔄 Migration Notes
+
+#### **For All Users**
+- **No Breaking Changes**: All existing iOS commands continue to work as before
+- **Optional Configuration**: Configuration system is optional - can still use environment variables
+- **Backward Compatible**: Functions still accept command-line arguments to override configuration
+
+#### **For TestFlight Users**
+- **First-Time Setup**: Run `caddie ios:config:set apple-id` and `caddie ios:config:set password` to store credentials
+- **Project Setup**: Run `caddie ios:config:load:project` to extract and save project information
+- **Simplified Workflow**: Can now run `caddie ios:testflight` without specifying scheme or credentials
+
+### 🎯 Use Cases
+
+#### **Automated CI/CD Integration**
+```bash
+# In CI/CD pipeline
+caddie ios:config:set apple-id "$APPLE_ID"
+caddie ios:config:set password "$APP_SPECIFIC_PASSWORD"
+caddie ios:testflight vCaddie yes yes
+```
+
+#### **Development Workflow**
+```bash
+# Quick build and upload
+caddie ios:testflight vCaddie
+
+# Archive only (skip upload)
+caddie ios:testflight vCaddie yes no
+
+# Upload existing IPA
+caddie ios:upload:testflight ./build/export/vCaddie.ipa
+```
+
+### 📚 Documentation Updates
+
+- **iOS Module Documentation**: Completely updated `docs/modules/ios.md` with:
+  - TestFlight distribution workflow
+  - Configuration management commands
+  - Project information extraction
+  - Complete usage examples
+- **Release Notes**: Comprehensive documentation of all new features
+
+### 🔐 Security Notes
+
+- **App-Specific Passwords**: Strongly recommended to use app-specific passwords instead of regular Apple ID passwords
+- **Password Storage**: Passwords stored in `~/.caddie_ios_config` (user-readable, consider file permissions)
+- **No Network Storage**: All configuration stored locally, never transmitted
+
+### 🎉 What's Next
+
+After uploading to TestFlight:
+1. Wait 5-30 minutes for processing in App Store Connect
+2. Navigate to My Apps → Your App → TestFlight
+3. Add build to testing groups when processing completes
+4. Testers receive automatic notifications
+
+---
+
 ## Version 4.2.1 - Swift Xcode Build Fixes
 
 **Release Date:** December 2025
