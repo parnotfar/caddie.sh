@@ -9,7 +9,6 @@ The iOS module is designed to streamline iOS development workflows by providing:
 - **Environment Setup**: Set up iOS development environment with Xcode and Swift
 - **Project Management**: Build, run, and test iOS projects
 - **Dependency Management**: Manage CocoaPods dependencies
-- **Rust Integration**: Set up Rust development environment for iOS
 - **Device Management**: List simulators and connected devices
 - **TestFlight Distribution**: Complete command-line workflow for uploading to TestFlight
 - **Configuration Management**: Persistent storage for Apple ID, credentials, and project settings
@@ -50,51 +49,6 @@ Installing CocoaPods...
 **Requirements:**
 - macOS with Xcode installed
 - Xcode command line tools
-
-#### `caddie ios:rust:setup`
-
-Set up Rust development environment specifically for iOS development.
-
-**Examples:**
-```bash
-# Setup Rust for iOS development
-caddie ios:rust:setup
-```
-
-**What it does:**
-- Installs Rust if not already present
-- Adds iOS-specific targets (aarch64-apple-ios, x86_64-apple-ios)
-- Installs essential Cargo tools (cargo-edit, cargo-watch, cargo-tarpaulin)
-- Validates iOS development environment (Xcode, Swift)
-- Provides next steps for iOS-Rust integration
-
-**Output:**
-```
-Setting up Rust development environment for iOS...
-✓ Rust already installed: rustc 1.75.0 (8ea583342 2023-12-18)
-Adding iOS Rust targets...
-✓ iOS Rust targets added successfully
-Installing essential Cargo tools...
-✓ Cargo tools installed successfully
-Validating iOS development environment...
-✓ iOS development environment validated
-  Xcode: Xcode 15.2 Build version 15C500b
-  Swift: swift-driver version: 1.75.2
-  Rust: rustc 1.75.0 (8ea583342 2023-12-18)
-✓ Rust development environment for iOS setup complete
-
-Next steps:
-1. Build Rust library: cargo build --target aarch64-apple-ios --release --lib
-2. Create iOS framework structure for Swift integration
-3. Use the generated .a static libraries in your iOS project
-```
-
-**Requirements:**
-- macOS with Xcode installed
-- Xcode command line tools
-- Internet connection for Rust installation
-
-**Idempotent:** Yes - can be run multiple times safely
 
 ### Device Management
 
@@ -696,23 +650,6 @@ caddie ios:run
 caddie ios:test
 ```
 
-### iOS with Rust Integration
-
-```bash
-# Setup iOS and Rust environment
-caddie ios:setup
-caddie ios:rust:setup
-
-# Build Rust library for iOS
-cargo build --target aarch64-apple-ios --release --lib
-
-# Create iOS framework structure
-# ... integrate with iOS project ...
-
-# Build iOS project with Rust library
-caddie ios:build
-```
-
 ### CocoaPods Workflow
 
 ```bash
@@ -839,11 +776,6 @@ caddie ios:config:unset password
    rustup target list --installed
    ```
 
-3. **Build Rust library**:
-   ```bash
-   cargo build --target aarch64-apple-ios --release --lib
-   ```
-
 #### TestFlight Upload Issues
 
 1. **Upload fails with authentication error**:
@@ -905,7 +837,6 @@ caddie ios:config:unset password
 
 ## Related Documentation
 
-- **[Rust Module](rust.md)** - Rust development tools and iOS integration
 - **[Core Module](core.md)** - Basic Caddie.sh functions
 - **[Installation Guide](../installation.md)** - How to install Caddie.sh
 - **[User Guide](../user-guide.md)** - General usage instructions
@@ -920,4 +851,4 @@ caddie ios:config:unset password
 
 ---
 
-*The iOS module provides everything you need for professional iOS development. From environment setup to Rust integration, it makes iOS development effortless and consistent.*
+*The iOS module provides everything you need for professional iOS development. From environment setup to TestFlight distribution, it makes iOS development effortless and consistent.*

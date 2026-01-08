@@ -54,7 +54,9 @@ function caddie_ios_device() {
 
 # Function to build iOS project
 function caddie_ios_build() {
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
@@ -62,12 +64,12 @@ function caddie_ios_build() {
     caddie cli:title "Building iOS project..."
     
     # Determine project type
-    if [ -f ./*.xcworkspace ]; then
+    if [ -n "$workspace_file" ]; then
         caddie cli:indent "Building workspace..."
-        xcodebuild -workspace ./*.xcworkspace -scheme * -configuration Debug build
+        xcodebuild -workspace "$workspace_file" -scheme * -configuration Debug build
     else
         caddie cli:indent "Building project..."
-        xcodebuild -project ./*.xcodeproj -scheme * -configuration Debug build
+        xcodebuild -project "$project_file" -scheme * -configuration Debug build
     fi
     
     caddie cli:check "iOS project built successfully"
@@ -76,7 +78,9 @@ function caddie_ios_build() {
 
 # Function to run iOS project
 function caddie_ios_run() {
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
@@ -94,10 +98,10 @@ function caddie_ios_run() {
     caddie cli:indent "Using simulator: $simulator"
     
     # Determine project type and run
-    if [ -f ./*.xcworkspace ]; then
-        xcodebuild -workspace ./*.xcworkspace -scheme * -destination "platform=iOS Simulator,name=$simulator" build
+    if [ -n "$workspace_file" ]; then
+        xcodebuild -workspace "$workspace_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" build
     else
-        xcodebuild -project ./*.xcodeproj -scheme * -destination "platform=iOS Simulator,name=$simulator" build
+        xcodebuild -project "$project_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" build
     fi
     
     caddie cli:check "iOS project ran successfully on simulator"
@@ -106,7 +110,9 @@ function caddie_ios_run() {
 
 # Function to run iOS tests
 function caddie_ios_test() {
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
@@ -124,10 +130,10 @@ function caddie_ios_test() {
     caddie cli:indent "Using simulator: $simulator"
     
     # Determine project type and test
-    if [ -f ./*.xcworkspace ]; then
-        xcodebuild -workspace ./*.xcworkspace -scheme * -destination "platform=iOS Simulator,name=$simulator" test
+    if [ -n "$workspace_file" ]; then
+        xcodebuild -workspace "$workspace_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" test
     else
-        xcodebuild -project ./*.xcodeproj -scheme * -destination "platform=iOS Simulator,name=$simulator" test
+        xcodebuild -project "$project_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" test
     fi
     
     if xcodebuild -workspace ./*.xcworkspace -scheme * -destination "platform=iOS Simulator,name=$simulator" test; then
@@ -141,7 +147,9 @@ function caddie_ios_test() {
 
 # Function to create iOS archive
 function caddie_ios_archive() {
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
@@ -152,10 +160,10 @@ function caddie_ios_archive() {
     mkdir -p build/archive
     
     # Determine project type and archive
-    if [ -f ./*.xcworkspace ]; then
-        xcodebuild -workspace ./*.xcworkspace -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
+    if [ -n "$workspace_file" ]; then
+        xcodebuild -workspace "$workspace_file" -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
     else
-        xcodebuild -project ./*.xcodeproj -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
+        xcodebuild -project "$project_file" -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
     fi
     
     caddie cli:check "iOS archive created successfully"
@@ -165,7 +173,9 @@ function caddie_ios_archive() {
 
 # Function to clean iOS build artifacts
 function caddie_ios_clean() {
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
@@ -173,10 +183,10 @@ function caddie_ios_clean() {
     caddie cli:title "Cleaning iOS build artifacts..."
     
     # Determine project type and clean
-    if [ -f ./*.xcworkspace ]; then
-        xcodebuild -workspace ./*.xcworkspace -scheme * clean
+    if [ -n "$workspace_file" ]; then
+        xcodebuild -workspace "$workspace_file" -scheme * clean
     else
-        xcodebuild -project ./*.xcodeproj -scheme * clean
+        xcodebuild -project "$project_file" -scheme * clean
     fi
     
     # Remove build directory
@@ -280,7 +290,12 @@ function caddie_ios_config_get() {
         caddie cli:title "iOS Configuration"
         caddie cli:blank
         caddie cli:indent "apple-id:        ${CADDIE_IOS_APPLE_ID:-<not set>}"
-        caddie cli:indent "password:        ${CADDIE_IOS_APP_SPECIFIC_PASSWORD:+<set>}${CADDIE_IOS_APP_SPECIFIC_PASSWORD:-<not set>}"
+        # Security: Never display password value, only show if set
+        if [ -n "${CADDIE_IOS_APP_SPECIFIC_PASSWORD:-}" ]; then
+            caddie cli:indent "password:        <set>"
+        else
+            caddie cli:indent "password:        <not set>"
+        fi
         caddie cli:indent "bundle-id:       ${CADDIE_IOS_BUNDLE_ID:-<not set>}"
         caddie cli:indent "version:         ${CADDIE_IOS_VERSION:-<not set>}"
         caddie cli:indent "build:           ${CADDIE_IOS_BUILD:-<not set>}"
@@ -509,7 +524,9 @@ function caddie_ios_config_load_project() {
 function caddie_ios_project_info() {
     _caddie_ios_load_config
     
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
@@ -587,21 +604,15 @@ function caddie_ios_project_info() {
 function caddie_ios_increment_build() {
     _caddie_ios_load_config
     
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
     local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
-    local project_file=""
     
-    # Find project file
-    project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    
-    if [ -z "$project_file" ]; then
-        caddie cli:red "Error: Could not find .xcodeproj file"
-        return 1
-    fi
     
     # Auto-detect scheme if not provided
     if [ -z "$scheme" ]; then
@@ -635,15 +646,28 @@ function caddie_ios_increment_build() {
     caddie cli:indent "Current build: $current_build"
     caddie cli:indent "New build: $new_build"
     
-    # Update build number using agvtool if available, otherwise use PlistBuddy
+    local update_success=false
+    
+    # Update build number using agvtool if available, otherwise use direct file editing
     if command -v agvtool >/dev/null 2>&1; then
         caddie cli:indent "Using agvtool to update build number..."
-        agvtool new-version -all "$new_build" >/dev/null 2>&1
-    else
-        # Try to update in project.pbxproj directly
+        if agvtool new-version -all "$new_build" >/dev/null 2>&1; then
+            update_success=true
+        else
+            caddie cli:yellow "agvtool failed, trying fallback method..."
+        fi
+    fi
+    
+    # Fallback: Update in project.pbxproj directly
+    if [ "$update_success" = false ]; then
         caddie cli:indent "Updating build number in project file..."
         # Use sed to update CURRENT_PROJECT_VERSION in project.pbxproj
-        sed -i '' "s/CURRENT_PROJECT_VERSION = ${current_build};/CURRENT_PROJECT_VERSION = ${new_build};/g" "$project_file/project.pbxproj" 2>/dev/null || true
+        if sed -i '' "s/CURRENT_PROJECT_VERSION = ${current_build};/CURRENT_PROJECT_VERSION = ${new_build};/g" "$project_file/project.pbxproj" 2>/dev/null; then
+            # Check if the update actually occurred
+            if grep -q "CURRENT_PROJECT_VERSION = ${new_build};" "$project_file/project.pbxproj" 2>/dev/null; then
+                update_success=true
+            fi
+        fi
         
         # Also update in Info.plist if it exists
         local info_plist=$(find . -name "Info.plist" -type f | head -1)
@@ -654,27 +678,41 @@ function caddie_ios_increment_build() {
         fi
     fi
     
-    caddie cli:check "Build number incremented to $new_build"
-    return 0
+    # Verify the update succeeded by reading back the build number
+    if [ "$update_success" = true ]; then
+        # Re-read build settings to verify
+        local verify_build_settings=$(xcodebuild -project "$project_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+        local verify_build=$(echo "$verify_build_settings" | grep "CURRENT_PROJECT_VERSION" | head -1 | sed 's/.*= *//' | xargs)
+        
+        if [ "$verify_build" = "$new_build" ]; then
+            caddie cli:check "Build number incremented to $new_build (verified)"
+            return 0
+        else
+            caddie cli:red "Error: Build number update failed verification (expected $new_build, got ${verify_build:-<empty>})"
+            caddie cli:thought "The build number may not have been updated correctly. Please check your project settings."
+            return 1
+        fi
+    else
+        caddie cli:red "Error: Failed to update build number"
+        caddie cli:thought "Please check that your project is properly configured for versioning."
+        caddie cli:thought "You may need to set CURRENT_PROJECT_VERSION in your project settings."
+        return 1
+    fi
 }
 
 # Function to create archive for TestFlight
 function caddie_ios_archive_testflight() {
     _caddie_ios_load_config
     
-    if [ ! -f ./*.xcodeproj ] && [ ! -f ./*.xcworkspace ]; then
+    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
+    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
     
     local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
-    local project_file=""
-    local workspace_file=""
     local archive_path="${2:-./build/archive}"
-    
-    # Find project files
-    project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
     
     # Auto-detect scheme if not provided
     if [ -z "$scheme" ]; then
@@ -892,7 +930,15 @@ function caddie_ios_testflight() {
     if [ "$auto_increment" = "yes" ]; then
         caddie cli:blank
         if ! caddie_ios_increment_build "$scheme"; then
-            caddie cli:yellow "Warning: Failed to increment build number, continuing..."
+            caddie cli:red "Error: Failed to increment build number"
+            caddie cli:blank
+            caddie cli:title "Options:"
+            caddie cli:indent "1. Fix the build number issue and try again"
+            caddie cli:indent "2. Manually increment build number in Xcode"
+            caddie cli:indent "3. Continue without incrementing (may cause TestFlight rejection if duplicate)"
+            caddie cli:blank
+            caddie cli:thought "To continue anyway, run: caddie ios:testflight $scheme no"
+            return 1
         fi
         # Refresh project info
         caddie_ios_project_info "$scheme" >/dev/null 2>&1
