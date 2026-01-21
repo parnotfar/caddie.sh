@@ -55,6 +55,11 @@
 - **Flexible Key Formats**: Accepts various key name formats (e.g., `apple-id`, `apple_id`, `APPLE_ID`)
 - **Auto-Export**: Configuration values automatically exported as environment variables
 
+### 🐛 Bug Fixes
+
+#### **Shell Integration Reliability**
+- **Cursor Terminal Compatibility**: Updated `dot_bashrc` menu prompts to avoid syntax errors during shell state snapshots, preventing `dump_bash_state` failures in Cursor terminal operations
+
 ### 📝 Usage Examples
 
 #### **Complete TestFlight Workflow**

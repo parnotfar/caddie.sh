@@ -113,7 +113,7 @@ function git_set_branch_from_list() {
       ;;
     *)
       git_branch_list
-      echo 'q) Quit'
+      echo "q) Quit"
 
       echo
       echo -n 'Enter selection: '
@@ -427,7 +427,7 @@ function gbd() {
       ;;
     *)
       git_branch_list
-      echo 'q) Quit'
+      echo "q) Quit"
 
       echo
       echo 'Separate selections by space when choosing to delete multiple branches'
