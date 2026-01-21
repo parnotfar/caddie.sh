@@ -23,7 +23,7 @@ shortcuts to make your coding experience smooth and efficient.
 - **Swift Development**: Swift Package Manager workflows, formatting, and linting helpers
 - **Ruby Environment**: RVM integration and gem management
 - **JavaScript/Node.js**: NVM integration and package management
-- **iOS Development**: Xcode integration, TestFlight distribution, and development tools
+- **iOS Distribution**: App Store and TestFlight workflows
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
@@ -102,7 +102,7 @@ caddie-3.7> rust build
 - **[Rust Module](docs/modules/rust.md)** - Rust development tools and cross-platform integration
 - **[Ruby Module](docs/modules/ruby.md)** - Ruby environment with RVM
 - **[JavaScript Module](docs/modules/javascript.md)** - Node.js and npm management
-- **[iOS Module](docs/modules/ios.md)** - iOS development tools and Rust integration
+- **[iOS Module](docs/modules/ios.md)** - App Store and TestFlight distribution tools
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
@@ -225,7 +225,7 @@ caddie.sh/
 │   ├── dot_caddie_rust     # Rust development tools
 │   ├── dot_caddie_ruby     # Ruby environment management
 │   ├── dot_caddie_js       # JavaScript/Node.js tools
-│   ├── dot_caddie_ios      # iOS development tools
+│   ├── dot_caddie_ios      # App Store and TestFlight tools
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_cursor   # IDE integration
 │   └── dot_caddie_git      # Git enhancements

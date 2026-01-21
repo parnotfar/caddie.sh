@@ -15,7 +15,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[JavaScript Module](javascript.md)** - Node.js and npm management
 
 ### Development Tools
-- **[iOS Module](ios.md)** - iOS development tools and Xcode integration
+- **[iOS Module](ios.md)** - App Store and TestFlight distribution tools
 - **[Cross Module](cross.md)** - Multi-language project templates and tools
 - **[Cursor Module](cursor.md)** - IDE integration and AI-powered development
 - **[Git Module](git.md)** - Enhanced git workflows and GitHub integration

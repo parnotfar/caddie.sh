@@ -1,254 +1,83 @@
 #!/bin/bash
 
-# Caddie.sh - iOS Development
-# This file contains all iOS-related functions
+# Caddie.sh - iOS Distribution
+# This file contains App Store and TestFlight helpers
 
 source "$HOME/.caddie_modules/.caddie_cli"
 
-# Function to setup iOS development environment
-function caddie_ios_setup() {
-    caddie cli:title "Setting up iOS development environment..."
-    
-    # Check for Xcode
-    if ! command -v xcodebuild >/dev/null 2>&1; then
-        caddie cli:x "Xcode not found. Please install Xcode from the App Store"
-        return 1
-    fi
-    
-    # Check for Swift
-    if ! command -v swift >/dev/null 2>&1; then
-        caddie cli:x "Swift not found. Please install Xcode command line tools"
-        caddie cli:thought "Run: xcode-select --install"
-        return 1
-    fi
-    
-    # Check for CocoaPods
-    if ! command -v pod >/dev/null 2>&1; then
-        caddie cli:title "Installing CocoaPods..."
-        sudo gem install cocoapods
-        caddie cli:check "CocoaPods installed successfully"
-    fi
-    
-    caddie cli:check "iOS development environment setup complete"
-    caddie cli:indent "Xcode: $(xcodebuild -version | head -n1)"
-    caddie cli:indent "Swift: $(swift --version | head -n1)"
-    caddie cli:indent "CocoaPods: $(pod --version)"
-    return 0
-}
+# Internal helpers for distribution workflows
+function _caddie_ios_find_project_files() {
+    local project_file
+    local workspace_file
 
-# Function to list available simulators
-function caddie_ios_simulator() {
-    caddie cli:title "Available iOS Simulators"
-    caddie cli:blank
-    xcrun simctl list devices
-    return 0
-}
+    project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
+    workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
 
-# Function to list connected devices
-function caddie_ios_device() {
-    caddie cli:title "Connected iOS Devices"
-    caddie cli:blank
-    xcrun devicectl list devices
-    return 0
-}
-
-# Function to build iOS project
-function caddie_ios_build() {
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
     if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
         caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
         return 1
     fi
-    
-    caddie cli:title "Building iOS project..."
-    
-    # Determine project type
+
+    printf '%s\t%s\n' "$project_file" "$workspace_file"
+    return 0
+}
+
+function _caddie_ios_xcodebuild() {
+    local project_file="$1"
+    local workspace_file="$2"
+    shift 2 || true
+
     if [ -n "$workspace_file" ]; then
-        caddie cli:indent "Building workspace..."
-        xcodebuild -workspace "$workspace_file" -scheme * -configuration Debug build
+        xcodebuild -workspace "$workspace_file" "$@"
     else
-        caddie cli:indent "Building project..."
-        xcodebuild -project "$project_file" -scheme * -configuration Debug build
+        xcodebuild -project "$project_file" "$@"
     fi
-    
-    caddie cli:check "iOS project built successfully"
-    return 0
+    return $?
 }
 
-# Function to run iOS project
-function caddie_ios_run() {
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
-        return 1
-    fi
-    
-    caddie cli:title "Running iOS project..."
-    
-    # Get the first available simulator
-    local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
-    
-    if [ -z "$simulator" ]; then
-        caddie cli:red "Error: No iOS simulator found"
-        return 1
-    fi
-    
-    caddie cli:indent "Using simulator: $simulator"
-    
-    # Determine project type and run
-    if [ -n "$workspace_file" ]; then
-        xcodebuild -workspace "$workspace_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" build
-    else
-        xcodebuild -project "$project_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" build
-    fi
-    
-    caddie cli:check "iOS project ran successfully on simulator"
-    return 0
-}
+function _caddie_ios_resolve_scheme() {
+    local scheme="$1"
+    local project_file="$2"
+    local workspace_file="$3"
+    local usage="$4"
 
-# Function to run iOS tests
-function caddie_ios_test() {
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
-        return 1
+    if [ -z "$scheme" ]; then
+        scheme="${CADDIE_IOS_SCHEME:-}"
     fi
-    
-    caddie cli:title "Running iOS tests..."
-    
-    # Get the first available simulator
-    local simulator=$(xcrun simctl list devices | grep "iPhone" | head -n1 | sed 's/.*(\([^)]*\)).*/\1/')
-    
-    if [ -z "$simulator" ]; then
-        caddie cli:red "Error: No iOS simulator found"
-        return 1
-    fi
-    
-    caddie cli:indent "Using simulator: $simulator"
-    
-    # Determine project type and test
-    if [ -n "$workspace_file" ]; then
-        xcodebuild -workspace "$workspace_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" test
-    else
-        xcodebuild -project "$project_file" -scheme * -destination "platform=iOS Simulator,name=$simulator" test
-    fi
-    
-    if xcodebuild -workspace ./*.xcworkspace -scheme * -destination "platform=iOS Simulator,name=$simulator" test; then
-        caddie cli:check "iOS tests completed successfully"
-    else
-        caddie cli:x "Some iOS tests failed"
-        return 1
-    fi
-    return 0
-}
 
-# Function to create iOS archive
-function caddie_ios_archive() {
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
-        return 1
-    fi
-    
-    caddie cli:title "Creating iOS archive..."
-    
-    # Create archive directory
-    mkdir -p build/archive
-    
-    # Determine project type and archive
-    if [ -n "$workspace_file" ]; then
-        xcodebuild -workspace "$workspace_file" -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
-    else
-        xcodebuild -project "$project_file" -scheme * -configuration Release -archivePath build/archive/App.xcarchive archive
-    fi
-    
-    caddie cli:check "iOS archive created successfully"
-    caddie cli:indent "Location: build/archive/App.xcarchive"
-    return 0
-}
+    if [ -z "$scheme" ]; then
+        local schemes=""
+        if [ -n "$workspace_file" ]; then
+            schemes=$(xcodebuild -list -workspace "$workspace_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$")
+        else
+            schemes=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | sed 's/^[[:space:]]*//' | grep -v "^$")
+        fi
 
-# Function to clean iOS build artifacts
-function caddie_ios_clean() {
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
-        return 1
-    fi
-    
-    caddie cli:title "Cleaning iOS build artifacts..."
-    
-    # Determine project type and clean
-    if [ -n "$workspace_file" ]; then
-        xcodebuild -workspace "$workspace_file" -scheme * clean
-    else
-        xcodebuild -project "$project_file" -scheme * clean
-    fi
-    
-    # Remove build directory
-    rm -rf build/
-    
-    caddie cli:check "iOS build artifacts cleaned"
-    return 0
-}
+        local base_name=""
+        if [ -n "$workspace_file" ]; then
+            base_name=$(basename "$workspace_file" .xcworkspace)
+        else
+            base_name=$(basename "$project_file" .xcodeproj)
+        fi
 
-# Function to install CocoaPods dependencies
-function caddie_ios_pod_install() {
-    if [ ! -f "Podfile" ]; then
-        caddie cli:red "Error: Podfile not found in current directory"
-        return 1
+        if echo "$schemes" | grep -q "^${base_name}$"; then
+            scheme="$base_name"
+        elif echo "$schemes" | grep -q "^vCaddie$"; then
+            scheme="vCaddie"
+        else
+            scheme=$(echo "$schemes" | head -1 | xargs)
+        fi
     fi
-    
-    caddie cli:title "Installing CocoaPods dependencies..."
-    pod install
-    
-    caddie cli:check "CocoaPods dependencies installed successfully"
-    caddie cli:thought "Use the .xcworkspace file to open the project"
-    return 0
-}
 
-# Function to update CocoaPods dependencies
-function caddie_ios_pod_update() {
-    if [ ! -f "Podfile" ]; then
-        caddie cli:red "Error: Podfile not found in current directory"
+    if [ -z "$scheme" ]; then
+        caddie cli:red "Error: Could not determine scheme. Please specify it as an argument."
+        if [ -n "$usage" ]; then
+            caddie cli:usage "$usage"
+        fi
         return 1
     fi
-    
-    caddie cli:title "Updating CocoaPods dependencies..."
-    pod update
-    
-    caddie cli:check "CocoaPods dependencies updated successfully"
-    return 0
-}
 
-# Function to show Swift version
-function caddie_ios_swift_version() {
-    if command -v swift >/dev/null 2>&1; then
-        caddie cli:title "Swift Version"
-        caddie cli:blank
-        swift --version
-    else
-        caddie cli:x "Swift not found. Please install Xcode command line tools"
-        caddie cli:thought "Run: xcode-select --install"
-        return 1
-    fi
-    return 0
-}
-
-# Function to show Xcode version
-function caddie_ios_xcode_version() {
-    if command -v xcodebuild >/dev/null 2>&1; then
-        caddie cli:title "Xcode Version"
-        caddie cli:blank
-        xcodebuild -version
-    else
-        caddie cli:x "Xcode not found. Please install Xcode from the App Store"
-        return 1
-    fi
+    printf '%s\n' "$scheme"
     return 0
 }
 
@@ -523,37 +352,14 @@ function caddie_ios_config_load_project() {
 # Function to get project information (bundle ID, version, build number)
 function caddie_ios_project_info() {
     _caddie_ios_load_config
-    
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
-        return 1
-    fi
-    
-    local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
     local project_file=""
     local workspace_file=""
-    
-    # Find project files
-    project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    
-    # Auto-detect scheme if not provided
-    if [ -z "$scheme" ]; then
-        if [ -n "$project_file" ]; then
-            scheme=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | head -1 | sed 's/^[[:space:]]*//' | grep -v "^$")
-            # Prefer scheme matching project name
-            local project_name=$(basename "$project_file" .xcodeproj)
-            if xcodebuild -list -project "$project_file" 2>/dev/null | grep -q "^[[:space:]]*${project_name}[[:space:]]*$"; then
-                scheme="$project_name"
-            fi
-        fi
+    if ! IFS=$'\t' read -r project_file workspace_file < <(_caddie_ios_find_project_files); then
+        return 1
     fi
-    
-    if [ -z "$scheme" ]; then
-        caddie cli:red "Error: Could not determine scheme. Please specify it as an argument."
-        caddie cli:usage "caddie ios:project:info [scheme]"
+
+    local scheme="$1"
+    if ! scheme=$(_caddie_ios_resolve_scheme "$scheme" "$project_file" "$workspace_file" "caddie ios:project:info [scheme]"); then
         return 1
     fi
     
@@ -562,11 +368,7 @@ function caddie_ios_project_info() {
     
     # Use xcodebuild -showBuildSettings to get project info
     local build_settings=""
-    if [ -n "$workspace_file" ]; then
-        build_settings=$(xcodebuild -workspace "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
-    else
-        build_settings=$(xcodebuild -project "$project_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
-    fi
+    build_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
     
     if [ -z "$build_settings" ]; then
         caddie cli:red "Error: Failed to read build settings"
@@ -574,7 +376,9 @@ function caddie_ios_project_info() {
     fi
     
     # Extract values
-    local bundle_id=$(echo "$build_settings" | grep "PRODUCT_BUNDLE_IDENTIFIER" | head -1 | sed 's/.*= *//' | xargs)
+    # Match only PRODUCT_BUNDLE_IDENTIFIER (not DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER)
+    # Use \b word boundary or explicit pattern to avoid false matches
+    local bundle_id=$(echo "$build_settings" | grep -E "^[[:space:]]+PRODUCT_BUNDLE_IDENTIFIER[[:space:]]*=" | head -1 | sed 's/.*=[[:space:]]*//' | xargs)
     local version=$(echo "$build_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
     local build=$(echo "$build_settings" | grep "CURRENT_PROJECT_VERSION" | head -1 | sed 's/.*= *//' | xargs)
     local team_id=$(echo "$build_settings" | grep "DEVELOPMENT_TEAM" | head -1 | sed 's/.*= *//' | xargs)
@@ -603,37 +407,25 @@ function caddie_ios_project_info() {
 # Function to increment build number
 function caddie_ios_increment_build() {
     _caddie_ios_load_config
-    
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+    local project_file=""
+    local workspace_file=""
+    if ! IFS=$'\t' read -r project_file workspace_file < <(_caddie_ios_find_project_files); then
         return 1
     fi
-    
-    local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
-    
-    
-    # Auto-detect scheme if not provided
-    if [ -z "$scheme" ]; then
-        local project_name=$(basename "$project_file" .xcodeproj)
-        if xcodebuild -list -project "$project_file" 2>/dev/null | grep -q "^[[:space:]]*${project_name}[[:space:]]*$"; then
-            scheme="$project_name"
-        else
-            scheme=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | head -1 | sed 's/^[[:space:]]*//' | grep -v "^$")
-        fi
+    if [ -z "$project_file" ]; then
+        caddie cli:red "Error: .xcodeproj is required to update build number"
+        return 1
     fi
-    
-    if [ -z "$scheme" ]; then
-        caddie cli:red "Error: Could not determine scheme. Please specify it as an argument."
-        caddie cli:usage "caddie ios:increment:build [scheme]"
+
+    local scheme="$1"
+    if ! scheme=$(_caddie_ios_resolve_scheme "$scheme" "$project_file" "$workspace_file" "caddie ios:increment:build [scheme]"); then
         return 1
     fi
     
     caddie cli:title "Incrementing Build Number (Scheme: $scheme)"
     
     # Get current build number
-    local build_settings=$(xcodebuild -project "$project_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+    local build_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
     local current_build=$(echo "$build_settings" | grep "CURRENT_PROJECT_VERSION" | head -1 | sed 's/.*= *//' | xargs)
     
     if [ -z "$current_build" ]; then
@@ -703,32 +495,17 @@ function caddie_ios_increment_build() {
 # Function to create archive for TestFlight
 function caddie_ios_archive_testflight() {
     _caddie_ios_load_config
-    
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    local workspace_file=$(find . -maxdepth 1 -name "*.xcworkspace" -type d | head -1)
-    if [ -z "$project_file" ] && [ -z "$workspace_file" ]; then
-        caddie cli:red "Error: Not in an iOS project directory (no .xcodeproj or .xcworkspace found)"
+
+    local project_file=""
+    local workspace_file=""
+    if ! IFS=$'\t' read -r project_file workspace_file < <(_caddie_ios_find_project_files); then
         return 1
     fi
-    
-    local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
+
+    local scheme="$1"
     local archive_path="${2:-./build/archive}"
-    
-    # Auto-detect scheme if not provided
-    if [ -z "$scheme" ]; then
-        if [ -n "$project_file" ]; then
-            local project_name=$(basename "$project_file" .xcodeproj)
-            if xcodebuild -list -project "$project_file" 2>/dev/null | grep -q "^[[:space:]]*${project_name}[[:space:]]*$"; then
-                scheme="$project_name"
-            else
-                scheme=$(xcodebuild -list -project "$project_file" 2>/dev/null | grep -A 100 "Schemes:" | grep -v "Schemes:" | head -1 | sed 's/^[[:space:]]*//' | grep -v "^$")
-            fi
-        fi
-    fi
-    
-    if [ -z "$scheme" ]; then
-        caddie cli:red "Error: Could not determine scheme. Please specify it as an argument."
-        caddie cli:usage "caddie ios:archive:testflight [scheme] [archive_path]"
+
+    if ! scheme=$(_caddie_ios_resolve_scheme "$scheme" "$project_file" "$workspace_file" "caddie ios:archive:testflight [scheme] [archive_path]"); then
         return 1
     fi
     
@@ -748,16 +525,8 @@ function caddie_ios_archive_testflight() {
     
     caddie cli:indent "Archive path: $full_archive_path"
     
-    # Build archive
-    local build_cmd=""
-    if [ -n "$workspace_file" ]; then
-        build_cmd="xcodebuild archive -workspace \"$workspace_file\" -scheme \"$scheme\" -configuration Release -archivePath \"$full_archive_path\" -destination generic/platform=iOS"
-    else
-        build_cmd="xcodebuild archive -project \"$project_file\" -scheme \"$scheme\" -configuration Release -archivePath \"$full_archive_path\" -destination generic/platform=iOS"
-    fi
-    
     caddie cli:indent "Building archive..."
-    if eval "$build_cmd"; then
+    if _caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -archivePath "$full_archive_path" -destination "generic/platform=iOS" archive; then
         caddie cli:check "Archive created successfully"
         caddie cli:indent "Location: $full_archive_path"
         export CADDIE_IOS_ARCHIVE_PATH="$full_archive_path"
@@ -766,6 +535,11 @@ function caddie_ios_archive_testflight() {
         caddie cli:red "Failed to create archive"
         return 1
     fi
+}
+
+function caddie_ios_archive() {
+    caddie_ios_archive_testflight "$@"
+    return $?
 }
 
 # Function to export IPA from archive
@@ -863,8 +637,8 @@ function caddie_ios_upload_testflight() {
     # Check for credentials
     if [ -z "$apple_id" ]; then
         caddie cli:red "Error: Apple ID not provided"
-        caddie cli:thought "Set CADDIE_IOS_APPLE_ID environment variable or pass as argument"
-        caddie cli:thought "Example: export CADDIE_IOS_APPLE_ID='your@apple.id'"
+        caddie cli:thought "Set it with: caddie ios:config:set apple-id <email>"
+        caddie cli:thought "Example: caddie ios:config:set apple-id 'your@apple.id'"
         return 1
     fi
     
@@ -878,7 +652,7 @@ function caddie_ios_upload_testflight() {
         caddie cli:indent "Using password (consider using app-specific password)"
     else
         caddie cli:red "Error: Password or app-specific password not provided"
-        caddie cli:thought "Set CADDIE_IOS_APP_SPECIFIC_PASSWORD environment variable"
+        caddie cli:thought "Set it with: caddie ios:config:set password <app-specific-password>"
         caddie cli:thought "Get app-specific password from: https://appleid.apple.com/account/manage"
         return 1
     fi
@@ -978,75 +752,11 @@ function caddie_ios_testflight() {
 }
 
 # Function to setup Rust development environment for iOS
-function caddie_ios_rust_setup() {
-    caddie cli:title "Setting up Rust development environment for iOS..."
-    
-    # Check if Rust is installed
-    if ! command -v rustc &> /dev/null; then
-        caddie cli:title "Installing Rust..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-        source "$HOME/.cargo/env"
-        caddie cli:check "Rust installed successfully"
-    else
-        caddie cli:check "Rust already installed: $(rustc --version)"
-    fi
-    
-    # Add iOS-specific Rust targets
-    caddie cli:title "Adding iOS Rust targets..."
-    rustup target add aarch64-apple-ios x86_64-apple-ios 2>/dev/null || true
-    caddie cli:check "iOS Rust targets added successfully"
-    
-    # Install essential Cargo tools
-    caddie cli:title "Installing essential Cargo tools..."
-    cargo install cargo-edit cargo-watch cargo-tarpaulin 2>/dev/null || true
-    caddie cli:check "Cargo tools installed successfully"
-    
-    # Validate iOS development environment
-    caddie cli:title "Validating iOS development environment..."
-    
-    if ! command -v xcodebuild >/dev/null 2>&1; then
-        caddie cli:x "Xcode not found. Please install Xcode from the App Store"
-        return 1
-    fi
-    
-    if ! command -v swift >/dev/null 2>&1; then
-        caddie cli:x "Swift not found. Please install Xcode command line tools"
-        caddie cli:thought "Run: xcode-select --install"
-        return 1
-    fi
-    
-    caddie cli:check "iOS development environment validated"
-    caddie cli:indent "Xcode: $(xcodebuild -version | head -n1)"
-    caddie cli:indent "Swift: $(swift --version | head -n1)"
-    caddie cli:indent "Rust: $(rustc --version)"
-    
-    caddie cli:check "Rust development environment for iOS setup complete"
-    caddie cli:blank
-    caddie cli:title "Next steps:"
-    caddie cli:indent "1. Build Rust library: cargo build --target aarch64-apple-ios --release --lib"
-    caddie cli:indent "2. Create iOS framework structure for Swift integration"
-    caddie cli:indent "3. Use the generated .a static libraries in your iOS project"
-    return 0
-}
-
 # Function to display iOS module help
 function caddie_ios_help() {
-    caddie cli:title "iOS Development Tools"
+    caddie cli:title "iOS Distribution Tools"
     caddie cli:blank
     caddie cli:usage "caddie ios:<command>"
-    caddie cli:blank
-    caddie cli:title "Environment Setup:"
-    caddie cli:indent "setup              Setup iOS development environment"
-    caddie cli:indent "rust:setup         Setup Rust development environment for iOS"
-    caddie cli:indent "simulator          List available simulators"
-    caddie cli:indent "device             List connected devices"
-    caddie cli:blank
-    caddie cli:title "Project Management:"
-    caddie cli:indent "build              Build iOS project"
-    caddie cli:indent "run                Run on simulator/device"
-    caddie cli:indent "test               Run iOS tests"
-    caddie cli:indent "archive            Create archive for distribution"
-    caddie cli:indent "clean              Clean build artifacts"
     caddie cli:blank
     caddie cli:title "Project Information:"
     caddie cli:indent "project:info [scheme]          Show bundle ID, version, build number"
@@ -1056,56 +766,32 @@ function caddie_ios_help() {
     caddie cli:indent "config:get [key]               Get configuration value(s)"
     caddie cli:indent "config:set <key> <value>       Set configuration value"
     caddie cli:indent "config:unset <key>             Remove configuration value"
-    caddie cli:indent "config:list                     List all configuration"
+    caddie cli:indent "config:list                    List all configuration"
     caddie cli:indent "config:load:project [scheme]   Load project info into config"
     caddie cli:blank
-    caddie cli:title "TestFlight Distribution:"
+    caddie cli:title "App Store / TestFlight:"
+    caddie cli:indent "archive [scheme] [path]        Create archive for distribution"
     caddie cli:indent "archive:testflight [scheme] [path]    Create archive for TestFlight"
     caddie cli:indent "export:ipa [archive] [path] [plist]   Export IPA from archive"
     caddie cli:indent "upload:testflight [ipa] [id] [pwd]    Upload IPA to TestFlight"
     caddie cli:indent "testflight [scheme] [increment] [upload]  Complete workflow"
     caddie cli:blank
-    caddie cli:title "Dependency Management:"
-    caddie cli:indent "pod:install        Install CocoaPods dependencies"
-    caddie cli:indent "pod:update         Update CocoaPods dependencies"
-    caddie cli:blank
-    caddie cli:title "Version Information:"
-    caddie cli:indent "swift:version      Show Swift version"
-    caddie cli:indent "xcode:version      Show Xcode version"
-    caddie cli:blank
-    caddie cli:title "Examples:"
-    caddie cli:indent "caddie ios:setup"
-    caddie cli:indent "caddie ios:project:info"
-    caddie cli:indent "caddie ios:config:set apple-id 'your@apple.id'"
-    caddie cli:indent "caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'"
-    caddie cli:indent "caddie ios:config:load:project vCaddie"
-    caddie cli:indent "caddie ios:testflight"
+    caddie cli:title "Notes:"
+    caddie cli:indent "Build/run/test commands live in the Swift module (caddie swift:xcode:...)"
     caddie cli:blank
     return 0
 }
 
 function caddie_ios_description() {
     # caddie:lint:disable
-    echo 'iOS Development'
+    echo 'iOS App Store and TestFlight helpers'
     # caddie:lint:enable
     return 0
 }
 
 # Export iOS functions
 export -f caddie_ios_description
-export -f caddie_ios_setup
-export -f caddie_ios_rust_setup
-export -f caddie_ios_simulator
-export -f caddie_ios_device
-export -f caddie_ios_build
-export -f caddie_ios_run
-export -f caddie_ios_test
 export -f caddie_ios_archive
-export -f caddie_ios_clean
-export -f caddie_ios_pod_install
-export -f caddie_ios_pod_update
-export -f caddie_ios_swift_version
-export -f caddie_ios_xcode_version
 export -f caddie_ios_project_info
 export -f caddie_ios_increment_build
 export -f caddie_ios_archive_testflight

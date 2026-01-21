@@ -25,7 +25,7 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [Rust Module](modules/rust.md) - Rust development tools
   - [Ruby Module](modules/ruby.md) - Ruby environment management
   - [JavaScript Module](modules/javascript.md) - Node.js tools
-  - [iOS Module](modules/ios.md) - iOS development tools
+  - [iOS Module](modules/ios.md) - App Store and TestFlight distribution tools
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
