@@ -784,7 +784,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "ios:archive ios:archive:testflight ios:export:ipa ios:upload:testflight ios:testflight ios:project:info ios:increment:build ios:config:get ios:config:set ios:config:unset ios:config:list ios:config:load:project"
                         ;;
                       swift)
-                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:test swift:xcode:clean swift:format swift:lint swift:gitignore"
+                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:test swift:xcode:test:unit swift:xcode:clean swift:format swift:lint swift:gitignore"
                         ;;
                       core)
                         caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
