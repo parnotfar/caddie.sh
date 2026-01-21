@@ -113,6 +113,15 @@ Runs tests for an Xcode project.
 caddie swift:xcode:test vCaddie "iPhone 16 Pro"
 ```
 
+### `caddie swift:xcode:test:unit [scheme] [sim_name]`
+
+Runs Xcode tests while skipping UI test bundle targets detected in the project.
+
+**Example:**
+```bash
+caddie swift:xcode:test:unit vCaddie "iPhone 16 Pro"
+```
+
 ### `caddie swift:xcode:clean [scheme]`
 
 Cleans the Xcode project build artifacts.

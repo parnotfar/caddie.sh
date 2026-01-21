@@ -210,6 +210,41 @@ function caddie_swift_xcode_project() {
     printf '%s\n' "$(basename "$project_file")"
 }
 
+function caddie_swift_xcode_ui_test_targets() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=$(caddie_swift_xcode_project)
+    local pbxproj="$project_file/project.pbxproj"
+    if [ ! -f "$pbxproj" ]; then
+        caddie cli:red "Error: project.pbxproj not found in $project_file"
+        return 1
+    fi
+    awk '
+        $0 ~ /isa = PBXNativeTarget;/ {
+            in_target=1;
+            name="";
+            is_ui=0;
+        }
+        in_target && $0 ~ /name = / {
+            name=$0;
+            sub(/^[[:space:]]*name = /, "", name);
+            sub(/;[[:space:]]*$/, "", name);
+            gsub(/"/, "", name);
+        }
+        in_target && $0 ~ /productType = "com.apple.product-type.bundle.ui-testing"/ {
+            is_ui=1;
+        }
+        in_target && $0 ~ /^[[:space:]]*};/ {
+            if (is_ui && name != "") {
+                print name;
+            }
+            in_target=0;
+            name="";
+            is_ui=0;
+        }
+    ' "$pbxproj"
+    return 0
+}
+
 function caddie_swift_xcode_scheme() {
     local scheme="$1"
     if [ -z "$scheme" ]; then
@@ -398,6 +433,56 @@ function caddie_swift_xcode_test() {
         caddie cli:check "Tests completed successfully"
     else
         caddie cli:red "Tests failed ($status)"
+    fi
+    return $status
+}
+
+function caddie_swift_xcode_test_unit() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    # Shift consumed arguments
+    [ -n "$1" ] && shift || true
+
+    scheme=$(caddie_swift_xcode_scheme "$scheme")
+    local project_file=$(caddie_swift_xcode_project)
+    local sim_name="${1:-iPhone 16}"
+    # Shift simulator name argument so it doesn't get passed to xcodebuild
+    [ -n "$1" ] && shift || true
+
+    caddie cli:title "Running unit tests for '$project_file' (scheme: $scheme)..."
+
+    local ui_targets=""
+    ui_targets=$(caddie_swift_xcode_ui_test_targets)
+    local ui_status=$?
+    local -a skip_args=()
+
+    if [ $ui_status -ne 0 ]; then
+        caddie cli:red "Unable to detect UI test targets; aborting unit test run"
+        return 1
+    elif [ -n "$ui_targets" ]; then
+        caddie cli:indent "Skipping UI test targets:"
+        while IFS= read -r target; do
+            [ -n "$target" ] || continue
+            caddie cli:indent "  • $target"
+            skip_args+=("-skip-testing:$target")
+        done <<< "$ui_targets"
+    else
+        caddie cli:indent "No UI test targets detected"
+    fi
+
+    xcodebuild test \
+        -project "$project_file" \
+        -scheme "$scheme" \
+        -sdk iphonesimulator \
+        -destination "platform=iOS Simulator,name=$sim_name" \
+        "${skip_args[@]}" \
+        "$@"
+
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Unit tests completed successfully"
+    else
+        caddie cli:red "Unit tests failed ($status)"
     fi
     return $status
 }
@@ -684,6 +769,7 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project (errors only)"
     caddie cli:indent "xcode:build:log [scheme] [simulator|device] [sim_name]  Build with full logs"
     caddie cli:indent "xcode:test [scheme] [sim_name]  Run Xcode tests"
+    caddie cli:indent "xcode:test:unit [scheme] [sim_name]  Run Xcode unit tests (skip UI)"
     caddie cli:indent "xcode:clean [scheme]     Clean Xcode build"
     caddie cli:blank
     caddie cli:title "Quality"
@@ -715,12 +801,14 @@ export -f caddie_swift_lint
 export -f caddie_swift_gitignore
 export -f caddie_swift_require_xcode_project
 export -f caddie_swift_xcode_project
+export -f caddie_swift_xcode_ui_test_targets
 export -f caddie_swift_xcode_scheme
 export -f caddie_swift_xcode_resolve
 export -f caddie_swift_xcode_build_run
 export -f caddie_swift_xcode_build
 export -f caddie_swift_xcode_build_log
 export -f caddie_swift_xcode_test
+export -f caddie_swift_xcode_test_unit
 export -f caddie_swift_xcode_clean
 export -f caddie_swift_xcode_packages_check
 export -f caddie_swift_xcode_packages_add
