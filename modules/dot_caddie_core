@@ -312,7 +312,16 @@ function caddie_core_lint() {
     files=$(printf '%s' "$files" | sort -u)
     
     if [ -z "$files" ]; then
-        caddie cli:warning "No shell files found in '$target'"
+        local target_list=""
+        if [ ${#targets[@]} -gt 0 ]; then
+            local IFS=', '
+            target_list="${targets[*]}"
+        fi
+        if [ -n "$target_list" ]; then
+            caddie cli:warning "No shell files found in targets: $target_list"
+        else
+            caddie cli:warning "No shell files found in specified targets"
+        fi
         return 0
     fi
     
