@@ -43,7 +43,9 @@ function caddie_help() {
     if [ ${#help_modules[@]} -eq 0 ]; then
         caddie cli:indent "No modules registered"
     else
-        local module description_function module_description
+        local module=""
+        local description_function=""
+        local module_description=""
         for module in "${help_modules[@]}"; do
             description_function="caddie_${module}_description"
             module_description=""
@@ -70,6 +72,7 @@ function caddie_help() {
     caddie cli:title "Detailed Help:"
     caddie cli:indent "Use 'caddie <module>:help' for detailed information on any module"
     caddie cli:blank
+    return 0
 }
 
 # Function to show caddie version
@@ -80,6 +83,7 @@ function caddie_version() {
     else
         caddie cli:warning "Caddie.sh version: unknown"
     fi
+    return 0
 }
 
 function _caddie_module_exists() {
@@ -784,7 +788,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "ios:archive ios:archive:testflight ios:export:ipa ios:upload:testflight ios:testflight ios:project:info ios:increment:build ios:config:get ios:config:set ios:config:unset ios:config:list ios:config:load:project"
                         ;;
                       swift)
-                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:test swift:xcode:test:unit swift:xcode:clean swift:format swift:lint swift:gitignore"
+                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:play swift:xcode:target:get swift:xcode:target:set swift:xcode:target:unset swift:xcode:test swift:xcode:test:unit swift:xcode:test:unit:failed swift:xcode:test:unit:log:get swift:xcode:test:unit:log:set swift:xcode:test:unit:log:unset swift:xcode:clean swift:format swift:lint swift:gitignore"
                         ;;
                       core)
                         caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"

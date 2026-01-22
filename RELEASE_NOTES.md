@@ -55,6 +55,13 @@
 - **Flexible Key Formats**: Accepts various key name formats (e.g., `apple-id`, `apple_id`, `APPLE_ID`)
 - **Auto-Export**: Configuration values automatically exported as environment variables
 
+#### **Swift Xcode Workflow**
+- **Play Command**: Added `caddie swift:xcode:play [scheme] [target]` to build and launch apps on a simulator or device from the terminal
+- **Target Management**: New `swift:xcode:target:get|set|unset` commands to persist a preferred run target and render it in the prompt
+- **Test Logs by Default**: `swift:xcode:test` and `swift:xcode:test:unit` now log to a file by default and capture the exact `xcodebuild` invocation
+- **Unit Test Reruns**: `swift:xcode:test:unit:failed` parses the last log and reruns failed tests individually
+- **Preflight Builds**: Xcode tests now run `build-for-testing` first and skip tests if the build fails, reporting filtered errors
+
 ### 🐛 Bug Fixes
 
 #### **Shell Integration Reliability**

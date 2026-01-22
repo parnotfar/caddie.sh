@@ -101,9 +101,42 @@ Builds an Xcode project with full `xcodebuild` output (useful for verbose logs).
 caddie swift:xcode:build:log vCaddie simulator "iPhone 16 Pro"
 ```
 
+### `caddie swift:xcode:target:get|set|unset`
+
+Manage the preferred Xcode run target used by `swift:xcode:play`.
+
+- `get` shows the current target.
+- `set` stores a target name (simulator or device).
+- `unset` clears the stored target.
+
+**Examples:**
+```bash
+caddie swift:xcode:target:get
+caddie swift:xcode:target:set Icaruus
+caddie swift:xcode:target:unset
+```
+
+When a target is set, the prompt shows `[xcode:target <name>]`. Target matching is case-insensitive and allows partial matches (for example, `Icaruus` can match `Icaruus’s iPhone`).
+
+### `caddie swift:xcode:play [scheme] [target]`
+
+Builds the Xcode project and launches the app on the specified target.
+
+- `scheme` (optional): Xcode scheme name (defaults to app scheme like `vCaddie`, or project name)
+- `target` (optional): Simulator or device name (defaults to the stored target, or "iPhone 16")
+
+The command installs and launches the app on the simulator via `simctl`. For devices, it uses `xcrun devicectl` to install and launch the app.
+
+**Examples:**
+```bash
+caddie swift:xcode:play
+caddie swift:xcode:play vCaddie "iPhone 16 Pro"
+caddie swift:xcode:play vCaddie Icaruus
+```
+
 ### `caddie swift:xcode:test [scheme] [sim_name]`
 
-Runs tests for an Xcode project.
+Runs tests for an Xcode project and writes full output to a log file. A preflight build-for-testing runs first; tests are skipped if the build fails.
 
 - `scheme` (optional): Xcode scheme name (defaults to app scheme like `vCaddie`, or project name)
 - `sim_name` (optional): Simulator name (defaults to "iPhone 16")
@@ -115,11 +148,37 @@ caddie swift:xcode:test vCaddie "iPhone 16 Pro"
 
 ### `caddie swift:xcode:test:unit [scheme] [sim_name]`
 
-Runs Xcode tests while skipping UI test bundle targets detected in the project.
+Runs Xcode unit tests (skipping UI targets) and writes the full output to a log file. A preflight build-for-testing runs first; tests are skipped if the build fails.
 
 **Example:**
 ```bash
 caddie swift:xcode:test:unit vCaddie "iPhone 16 Pro"
+```
+
+The most recent unit test log path is stored for reuse:
+
+```bash
+caddie swift:xcode:test:unit:log:get
+```
+
+### `caddie swift:xcode:test:unit:failed [scheme] [sim_name]`
+
+Re-runs failed unit tests from the most recent unit test log, running each test individually and reporting pass/fail results.
+
+**Example:**
+```bash
+caddie swift:xcode:test:unit:failed vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:test:unit:log:get|set|unset`
+
+Manage the stored unit test log path used by `swift:xcode:test:unit:failed`.
+
+**Examples:**
+```bash
+caddie swift:xcode:test:unit:log:get
+caddie swift:xcode:test:unit:log:set /path/to/test.log
+caddie swift:xcode:test:unit:log:unset
 ```
 
 ### `caddie swift:xcode:clean [scheme]`
