@@ -355,6 +355,8 @@ function caddie_swift_xcode_simulator_udid() {
     if [ -z "$name" ]; then
         return 1
     fi
+    # caddie:lint:disable
+    # Awk variables (line, device, device_l) are awk script variables, not shell variables
     xcrun simctl list devices 2>/dev/null | awk -v name="$name" '
         BEGIN { target=tolower(name); best="" }
         {
@@ -377,6 +379,7 @@ function caddie_swift_xcode_simulator_udid() {
         }
         END { if (best != "") print best }
     '
+    # caddie:lint:enable
 }
 
 function caddie_swift_xcode_device_udid() {
@@ -384,6 +387,8 @@ function caddie_swift_xcode_device_udid() {
     if [ -z "$name" ]; then
         return 1
     fi
+    # caddie:lint:disable
+    # Awk variables (line, device, device_l) are awk script variables, not shell variables
     xcrun xctrace list devices 2>/dev/null | awk -v name="$name" '
         BEGIN { target=tolower(name); best="" }
         {
@@ -406,6 +411,7 @@ function caddie_swift_xcode_device_udid() {
         }
         END { if (best != "") print best }
     '
+    # caddie:lint:enable
 }
 
 function caddie_swift_xcode_app_info() {
