@@ -112,7 +112,7 @@ function set_caddie_prompt_ps1() {
 
   local module_line=""
   if [ ${#prompt_segments[@]} -gt 0 ]; then
-    local IFS=''
+    local IFS=$' '
     module_line="${prompt_segments[*]}"
   fi
 

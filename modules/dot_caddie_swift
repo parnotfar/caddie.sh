@@ -1075,6 +1075,7 @@ function caddie_swift_xcode_test_unit_failed() {
     local log_file=""
     local xcode_cmd=()
     local arg=""
+    local -a temp_log_files=()
 
     caddie cli:title "Re-running failed unit tests..."
     while IFS= read -r test_id; do
@@ -1098,6 +1099,7 @@ function caddie_swift_xcode_test_unit_failed() {
             failed=$((failed + 1))
             continue
         fi
+        temp_log_files+=("$log_file")
 
         xcode_cmd=(xcodebuild test \
             -project "$project_file" \
@@ -1138,6 +1140,11 @@ function caddie_swift_xcode_test_unit_failed() {
     caddie cli:indent "Total: $total"
     caddie cli:indent "Passed: $passed"
     caddie cli:indent "Failed: $failed"
+
+    # Clean up temporary log files
+    for log_file in "${temp_log_files[@]}"; do
+        [ -n "$log_file" ] && rm -f "$log_file"
+    done
 
     if [ $failed -ne 0 ]; then
         return 1

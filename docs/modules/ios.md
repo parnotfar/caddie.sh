@@ -119,6 +119,26 @@ caddie ios:testflight
 caddie ios:testflight vCaddie yes no
 ```
 
+#### `caddie ios:testflight:publish [scheme] [archive_path] [export_path] [export_options_plist]`
+
+Create a TestFlight archive, export the IPA, and upload it in one command. This command auto-increments the build number before archiving.
+
+**Examples:**
+```bash
+caddie ios:testflight:publish
+caddie ios:testflight:publish vCaddie ./build/archive ./build/export
+```
+
+#### `caddie ios:testflight:publish:increment:false [scheme] [archive_path] [export_path] [export_options_plist]`
+
+Create a TestFlight archive, export the IPA, and upload it without incrementing the build number. App Store Connect requires unique build numbers, so use this only when you have already incremented.
+
+**Examples:**
+```bash
+caddie ios:testflight:publish:increment:false
+caddie ios:testflight:publish:increment:false vCaddie ./build/archive ./build/export
+```
+
 ## Workflow Example
 
 ```bash
@@ -137,6 +157,7 @@ caddie ios:testflight
 
 - Build/run/test commands live in the Swift module (use `caddie swift:xcode:*`).
 - Prefer app-specific passwords for uploads.
+- TestFlight uploads go to the App Store Connect account for the Apple ID you configure and the app bundle ID in the archive. Ensure the scheme builds the correct target and that the Apple ID has access to that app in App Store Connect.
 
 ## Troubleshooting
 

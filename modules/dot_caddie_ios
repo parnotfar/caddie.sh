@@ -790,6 +790,86 @@ function caddie_ios_testflight() {
     return 0
 }
 
+function caddie_ios_testflight_publish() {
+    _caddie_ios_load_config
+
+    local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
+    local archive_path="${2:-./build/archive}"
+    local export_path="${3:-./build/export}"
+    local export_options_plist="${4:-}"
+
+    caddie cli:title "TestFlight Publish"
+    caddie cli:blank
+
+    if ! caddie_ios_project_info "$scheme"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    if ! caddie_ios_increment_build "$scheme"; then
+        caddie cli:red "Error: Failed to increment build number"
+        return 1
+    fi
+
+    # Refresh project info after increment
+    caddie_ios_project_info "$scheme" >/dev/null 2>&1
+
+    caddie cli:blank
+    if ! caddie_ios_archive_testflight "$scheme" "$archive_path"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    if ! caddie_ios_export_ipa "$CADDIE_IOS_ARCHIVE_PATH" "$export_path" "$export_options_plist"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    if ! caddie_ios_upload_testflight "$CADDIE_IOS_IPA_PATH"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    caddie cli:check "TestFlight publish completed"
+    return 0
+}
+
+function caddie_ios_testflight_publish_increment_false() {
+    _caddie_ios_load_config
+
+    local scheme="${1:-${CADDIE_IOS_SCHEME:-}}"
+    local archive_path="${2:-./build/archive}"
+    local export_path="${3:-./build/export}"
+    local export_options_plist="${4:-}"
+
+    caddie cli:title "TestFlight Publish (No Increment)"
+    caddie cli:blank
+    caddie cli:thought "Build numbers must be unique in App Store Connect"
+
+    if ! caddie_ios_project_info "$scheme"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    if ! caddie_ios_archive_testflight "$scheme" "$archive_path"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    if ! caddie_ios_export_ipa "$CADDIE_IOS_ARCHIVE_PATH" "$export_path" "$export_options_plist"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    if ! caddie_ios_upload_testflight "$CADDIE_IOS_IPA_PATH"; then
+        return 1
+    fi
+
+    caddie cli:blank
+    caddie cli:check "TestFlight publish completed"
+    return 0
+}
+
 # Function to setup Rust development environment for iOS
 # Function to display iOS module help
 function caddie_ios_help() {
@@ -814,6 +894,8 @@ function caddie_ios_help() {
     caddie cli:indent "export:ipa [archive] [path] [plist]   Export IPA from archive"
     caddie cli:indent "upload:testflight [ipa] [id] [pwd]    Upload IPA to TestFlight"
     caddie cli:indent "testflight [scheme] [increment] [upload]  Complete workflow"
+    caddie cli:indent "testflight:publish [scheme] [archive] [export] [plist]  Increment + archive + export + upload"
+    caddie cli:indent "testflight:publish:increment:false [scheme] [archive] [export] [plist]  Archive + export + upload"
     caddie cli:blank
     caddie cli:title "Notes:"
     caddie cli:indent "Build/run/test commands live in the Swift module (caddie swift:xcode:...)"
@@ -837,6 +919,8 @@ export -f caddie_ios_archive_testflight
 export -f caddie_ios_export_ipa
 export -f caddie_ios_upload_testflight
 export -f caddie_ios_testflight
+export -f caddie_ios_testflight_publish
+export -f caddie_ios_testflight_publish_increment_false
 export -f caddie_ios_config_get
 export -f caddie_ios_config_set
 export -f caddie_ios_config_unset
