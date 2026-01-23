@@ -99,6 +99,50 @@ function _caddie_ios_resolve_scheme() {
 # iOS Configuration Management
 CADDIE_IOS_CONFIG_FILE="$HOME/.caddie_ios_config"
 
+function _caddie_ios_keychain_service() {
+    local bundle_id="${CADDIE_IOS_BUNDLE_ID:-}"
+    if [ -n "$bundle_id" ]; then
+        printf '%s\n' "caddie-ios-testflight:${bundle_id}"
+    else
+        printf '%s\n' "caddie-ios-testflight"
+    fi
+    return 0
+}
+
+function _caddie_ios_keychain_password_read() {
+    local apple_id="$1"
+    if [ -z "$apple_id" ]; then
+        return 1
+    fi
+    if ! command -v security >/dev/null 2>&1; then
+        return 1
+    fi
+    local service=""
+    local password=""
+    service=$(_caddie_ios_keychain_service)
+    password=$(security find-generic-password -a "$apple_id" -s "$service" -w 2>/dev/null)
+    if [ -n "$password" ]; then
+        printf '%s' "$password"
+        return 0
+    fi
+    return 1
+}
+
+function _caddie_ios_api_key_path() {
+    local api_key="$1"
+    if [ -z "$api_key" ]; then
+        return 1
+    fi
+    local candidate=""
+    for candidate in "$HOME/.private_keys/AuthKey_${api_key}.p8" "$HOME/private_keys/AuthKey_${api_key}.p8"; do
+        if [ -f "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Function to load iOS configuration
 function _caddie_ios_load_config() {
     if [ -f "$CADDIE_IOS_CONFIG_FILE" ]; then
@@ -136,6 +180,8 @@ function _caddie_ios_save_config() {
         [ -n "${CADDIE_IOS_APPLE_ID:-}" ] && printf "CADDIE_IOS_APPLE_ID='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_APPLE_ID}")"
         [ -n "${CADDIE_IOS_APP_SPECIFIC_PASSWORD:-}" ] && printf "CADDIE_IOS_APP_SPECIFIC_PASSWORD='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_APP_SPECIFIC_PASSWORD}")"
         [ -n "${CADDIE_IOS_APPLE_PASSWORD:-}" ] && printf "CADDIE_IOS_APPLE_PASSWORD='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_APPLE_PASSWORD}")"
+        [ -n "${CADDIE_IOS_API_KEY:-}" ] && printf "CADDIE_IOS_API_KEY='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_API_KEY}")"
+        [ -n "${CADDIE_IOS_API_ISSUER:-}" ] && printf "CADDIE_IOS_API_ISSUER='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_API_ISSUER}")"
         [ -n "${CADDIE_IOS_BUNDLE_ID:-}" ] && printf "CADDIE_IOS_BUNDLE_ID='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_BUNDLE_ID}")"
         [ -n "${CADDIE_IOS_VERSION:-}" ] && printf "CADDIE_IOS_VERSION='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_VERSION}")"
         [ -n "${CADDIE_IOS_BUILD:-}" ] && printf "CADDIE_IOS_BUILD='%s'\n" "$(_caddie_ios_escape_value "${CADDIE_IOS_BUILD}")"
@@ -160,6 +206,13 @@ function caddie_ios_config_get() {
         else
             caddie cli:indent "password:        <not set>"
         fi
+        if [ -n "${CADDIE_IOS_APPLE_ID:-}" ] && _caddie_ios_keychain_password_read "${CADDIE_IOS_APPLE_ID}" >/dev/null 2>&1; then
+            caddie cli:indent "keychain-password: <set>"
+        else
+            caddie cli:indent "keychain-password: <not set>"
+        fi
+        caddie cli:indent "api-key:         ${CADDIE_IOS_API_KEY:-<not set>}"
+        caddie cli:indent "api-issuer:      ${CADDIE_IOS_API_ISSUER:-<not set>}"
         caddie cli:indent "bundle-id:       ${CADDIE_IOS_BUNDLE_ID:-<not set>}"
         caddie cli:indent "version:         ${CADDIE_IOS_VERSION:-<not set>}"
         caddie cli:indent "build:           ${CADDIE_IOS_BUILD:-<not set>}"
@@ -181,6 +234,14 @@ function caddie_ios_config_get() {
         password|app-specific-password|app_specific_password|APP_SPECIFIC_PASSWORD)
             key="password"
             value="${CADDIE_IOS_APP_SPECIFIC_PASSWORD:-}"
+            ;;
+        api-key|api_key|API_KEY)
+            key="api-key"
+            value="${CADDIE_IOS_API_KEY:-}"
+            ;;
+        api-issuer|api_issuer|API_ISSUER)
+            key="api-issuer"
+            value="${CADDIE_IOS_API_ISSUER:-}"
             ;;
         bundle-id|bundle_id|BUNDLE_ID)
             key="bundle-id"
@@ -206,7 +267,7 @@ function caddie_ios_config_get() {
             caddie cli:red "Error: Unknown configuration key '$key'"
             caddie cli:blank
             caddie cli:title "Available keys:"
-            caddie cli:indent "apple-id, password, bundle-id, version, build, team-id, scheme"
+            caddie cli:indent "apple-id, password, api-key, api-issuer, bundle-id, version, build, team-id, scheme"
             return 1
             ;;
     esac
@@ -238,6 +299,8 @@ function caddie_ios_config_set() {
         caddie cli:title "Available keys:"
         caddie cli:indent "apple-id          Your Apple ID email"
         caddie cli:indent "password          App-specific password (recommended)"
+        caddie cli:indent "api-key           App Store Connect API key ID"
+        caddie cli:indent "api-issuer        App Store Connect API issuer ID"
         caddie cli:indent "bundle-id         Bundle identifier (e.g., com.example.app)"
         caddie cli:indent "version           App version (e.g., 1.0)"
         caddie cli:indent "build             Build number (e.g., 1)"
@@ -260,6 +323,14 @@ function caddie_ios_config_set() {
         password|app-specific-password|app_specific_password|APP_SPECIFIC_PASSWORD)
             export CADDIE_IOS_APP_SPECIFIC_PASSWORD="$value"
             caddie cli:check "Set password (hidden)"
+            ;;
+        api-key|api_key|API_KEY)
+            export CADDIE_IOS_API_KEY="$value"
+            caddie cli:check "Set api-key to: $value"
+            ;;
+        api-issuer|api_issuer|API_ISSUER)
+            export CADDIE_IOS_API_ISSUER="$value"
+            caddie cli:check "Set api-issuer to: $value"
             ;;
         bundle-id|bundle_id|BUNDLE_ID)
             export CADDIE_IOS_BUNDLE_ID="$value"
@@ -285,7 +356,7 @@ function caddie_ios_config_set() {
             caddie cli:red "Error: Unknown configuration key '$key'"
             caddie cli:blank
             caddie cli:title "Available keys:"
-            caddie cli:indent "apple-id, password, bundle-id, version, build, team-id, scheme"
+            caddie cli:indent "apple-id, password, api-key, api-issuer, bundle-id, version, build, team-id, scheme"
             return 1
             ;;
     esac
@@ -316,6 +387,14 @@ function caddie_ios_config_unset() {
             unset CADDIE_IOS_APP_SPECIFIC_PASSWORD
             caddie cli:check "Unset password"
             ;;
+        api-key|api_key|API_KEY)
+            unset CADDIE_IOS_API_KEY
+            caddie cli:check "Unset api-key"
+            ;;
+        api-issuer|api_issuer|API_ISSUER)
+            unset CADDIE_IOS_API_ISSUER
+            caddie cli:check "Unset api-issuer"
+            ;;
         bundle-id|bundle_id|BUNDLE_ID)
             unset CADDIE_IOS_BUNDLE_ID
             caddie cli:check "Unset bundle-id"
@@ -340,7 +419,7 @@ function caddie_ios_config_unset() {
             caddie cli:red "Error: Unknown configuration key '$key'"
             caddie cli:blank
             caddie cli:title "Available keys:"
-            caddie cli:indent "apple-id, password, bundle-id, version, build, team-id, scheme"
+            caddie cli:indent "apple-id, password, api-key, api-issuer, bundle-id, version, build, team-id, scheme"
             return 1
             ;;
     esac
@@ -353,6 +432,85 @@ function caddie_ios_config_unset() {
 function caddie_ios_config_list() {
     caddie_ios_config_get
     return 0
+}
+
+function caddie_ios_keychain_password_set() {
+    _caddie_ios_load_config
+
+    local apple_id="${1:-${CADDIE_IOS_APPLE_ID:-}}"
+    local password="$2"
+    if [ -z "$apple_id" ] || [ -z "$password" ]; then
+        caddie cli:red "Error: Apple ID and password are required"
+        caddie cli:usage "caddie ios:keychain:password:set <apple_id> <app-specific-password>"
+        return 1
+    fi
+    if ! command -v security >/dev/null 2>&1; then
+        caddie cli:red "Error: security command not available"
+        return 1
+    fi
+
+    local service=""
+    service=$(_caddie_ios_keychain_service)
+    if security add-generic-password -a "$apple_id" -s "$service" -w "$password" -U >/dev/null 2>&1; then
+        caddie cli:check "Keychain password stored"
+        caddie cli:indent "Service: $service"
+        caddie cli:indent "Apple ID: $apple_id"
+        return 0
+    fi
+
+    caddie cli:red "Error: Failed to store keychain password"
+    return 1
+}
+
+function caddie_ios_keychain_password_get() {
+    _caddie_ios_load_config
+
+    local apple_id="${1:-${CADDIE_IOS_APPLE_ID:-}}"
+    if [ -z "$apple_id" ]; then
+        caddie cli:red "Error: Apple ID is required"
+        caddie cli:usage "caddie ios:keychain:password:get <apple_id>"
+        return 1
+    fi
+
+    local service=""
+    service=$(_caddie_ios_keychain_service)
+    if _caddie_ios_keychain_password_read "$apple_id" >/dev/null 2>&1; then
+        caddie cli:green "Keychain password: <set>"
+        caddie cli:indent "Service: $service"
+        caddie cli:indent "Apple ID: $apple_id"
+        return 0
+    fi
+
+    caddie cli:yellow "Keychain password not set"
+    caddie cli:thought "Use 'caddie ios:keychain:password:set <apple_id> <app-specific-password>'"
+    return 1
+}
+
+function caddie_ios_keychain_password_unset() {
+    _caddie_ios_load_config
+
+    local apple_id="${1:-${CADDIE_IOS_APPLE_ID:-}}"
+    if [ -z "$apple_id" ]; then
+        caddie cli:red "Error: Apple ID is required"
+        caddie cli:usage "caddie ios:keychain:password:unset <apple_id>"
+        return 1
+    fi
+    if ! command -v security >/dev/null 2>&1; then
+        caddie cli:red "Error: security command not available"
+        return 1
+    fi
+
+    local service=""
+    service=$(_caddie_ios_keychain_service)
+    if security delete-generic-password -a "$apple_id" -s "$service" >/dev/null 2>&1; then
+        caddie cli:check "Keychain password removed"
+        caddie cli:indent "Service: $service"
+        caddie cli:indent "Apple ID: $apple_id"
+        return 0
+    fi
+
+    caddie cli:yellow "Keychain password not found"
+    return 1
 }
 
 # Function to load project info into config
@@ -664,6 +822,8 @@ function caddie_ios_upload_testflight() {
     local apple_id="${2:-${CADDIE_IOS_APPLE_ID:-}}"
     local password="${3:-${CADDIE_IOS_APPLE_PASSWORD:-}}"
     local app_specific_password="${4:-${CADDIE_IOS_APP_SPECIFIC_PASSWORD:-}}"
+    local api_key="${5:-${CADDIE_IOS_API_KEY:-}}"
+    local api_issuer="${6:-${CADDIE_IOS_API_ISSUER:-}}"
     
     if [ -z "$ipa_path" ] || [ ! -f "$ipa_path" ]; then
         caddie cli:red "Error: IPA path not provided or file does not exist"
@@ -672,6 +832,43 @@ function caddie_ios_upload_testflight() {
     fi
     
     caddie cli:title "Uploading to TestFlight"
+
+    # Prefer App Store Connect API key if configured
+    if [ -n "$api_key" ] || [ -n "$api_issuer" ]; then
+        if [ -z "$api_key" ] || [ -z "$api_issuer" ]; then
+            caddie cli:red "Error: API key and issuer are both required for API auth"
+            caddie cli:thought "Set them with: caddie ios:config:set api-key <key>"
+            caddie cli:thought "Set them with: caddie ios:config:set api-issuer <issuer>"
+            return 1
+        fi
+        if ! _caddie_ios_api_key_path "$api_key" >/dev/null 2>&1; then
+            caddie cli:red "Error: API key file not found for key $api_key"
+            caddie cli:thought "Place AuthKey_${api_key}.p8 in ~/.private_keys or ~/private_keys"
+            return 1
+        fi
+        if ! command -v xcrun >/dev/null 2>&1 || ! xcrun altool --help >/dev/null 2>&1; then
+            caddie cli:red "Error: xcrun altool not available"
+            caddie cli:thought "Please ensure Xcode command line tools are installed"
+            return 1
+        fi
+        caddie cli:indent "Using App Store Connect API key"
+        caddie cli:indent "API Key: $api_key"
+        caddie cli:indent "Issuer: $api_issuer"
+        caddie cli:indent "IPA: $ipa_path"
+        if xcrun altool --upload-app --type ios --file "$ipa_path" --apiKey "$api_key" --apiIssuer "$api_issuer"; then
+            caddie cli:check "Upload completed successfully"
+            caddie cli:blank
+            caddie cli:title "Next Steps:"
+            caddie cli:indent "1. Wait for processing in App Store Connect (5-30 minutes)"
+            caddie cli:indent "2. Go to: https://appstoreconnect.apple.com"
+            caddie cli:indent "3. Navigate to: My Apps → Your App → TestFlight"
+            caddie cli:indent "4. Add build to testing groups when processing completes"
+            return 0
+        else
+            caddie cli:red "Upload failed"
+            return 1
+        fi
+    fi
     
     # Check for credentials
     if [ -z "$apple_id" ]; then
@@ -683,6 +880,12 @@ function caddie_ios_upload_testflight() {
     
     # Prefer app-specific password if provided (altool uses --password for both)
     local auth_password=""
+    if [ -z "$app_specific_password" ] && [ -z "$password" ]; then
+        app_specific_password=$(_caddie_ios_keychain_password_read "$apple_id")
+        if [ -n "$app_specific_password" ]; then
+            caddie cli:indent "Using app-specific password from keychain"
+        fi
+    fi
     if [ -n "$app_specific_password" ]; then
         auth_password="$app_specific_password"
         caddie cli:indent "Using app-specific password"
@@ -692,6 +895,7 @@ function caddie_ios_upload_testflight() {
     else
         caddie cli:red "Error: Password or app-specific password not provided"
         caddie cli:thought "Set it with: caddie ios:config:set password <app-specific-password>"
+        caddie cli:thought "Or store in keychain: caddie ios:keychain:password:set <apple_id> <app-specific-password>"
         caddie cli:thought "Get app-specific password from: https://appleid.apple.com/account/manage"
         return 1
     fi
@@ -888,6 +1092,11 @@ function caddie_ios_help() {
     caddie cli:indent "config:list                    List all configuration"
     caddie cli:indent "config:load:project [scheme]   Load project info into config"
     caddie cli:blank
+    caddie cli:title "Keychain Auth:"
+    caddie cli:indent "keychain:password:set <apple_id> <app-specific-password>  Store password in keychain"
+    caddie cli:indent "keychain:password:get <apple_id>        Check if keychain password is set"
+    caddie cli:indent "keychain:password:unset <apple_id>      Remove keychain password"
+    caddie cli:blank
     caddie cli:title "App Store / TestFlight:"
     caddie cli:indent "archive [scheme] [path]        Create archive for distribution"
     caddie cli:indent "archive:testflight [scheme] [path]    Create archive for TestFlight"
@@ -926,6 +1135,9 @@ export -f caddie_ios_config_set
 export -f caddie_ios_config_unset
 export -f caddie_ios_config_list
 export -f caddie_ios_config_load_project
+export -f caddie_ios_keychain_password_set
+export -f caddie_ios_keychain_password_get
+export -f caddie_ios_keychain_password_unset
 export -f caddie_ios_help
 
 # Auto-load configuration when module is sourced

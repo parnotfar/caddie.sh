@@ -62,6 +62,8 @@ Set configuration values used by TestFlight uploads.
 ```bash
 caddie ios:config:set apple-id 'your@apple.id'
 caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'
+caddie ios:config:set api-key 'ABC123DEFG'
+caddie ios:config:set api-issuer '01234567-89ab-cdef-0123-456789abcdef'
 caddie ios:config:set scheme 'vCaddie'
 ```
 
@@ -72,6 +74,16 @@ Remove a configuration value.
 #### `caddie ios:config:list`
 
 List all configuration values.
+
+#### Keychain password storage
+
+Use the macOS Keychain to avoid storing the app-specific password in `~/.caddie_ios_config`.
+
+```bash
+caddie ios:keychain:password:set 'your@apple.id' 'xxxx-xxxx-xxxx-xxxx'
+caddie ios:keychain:password:get 'your@apple.id'
+caddie ios:keychain:password:unset 'your@apple.id'
+```
 
 ### App Store / TestFlight
 
@@ -156,7 +168,9 @@ caddie ios:testflight
 ## Notes
 
 - Build/run/test commands live in the Swift module (use `caddie swift:xcode:*`).
-- Prefer app-specific passwords for uploads.
+- Configuration is stored in `~/.caddie_ios_config` and loaded into the shell when the module loads.
+- Prefer keychain storage for app-specific passwords (`ios:keychain:password:*`).
+- API key uploads require `AuthKey_<API_KEY>.p8` in `~/.private_keys` or `~/private_keys`.
 - TestFlight uploads go to the App Store Connect account for the Apple ID you configure and the app bundle ID in the archive. Ensure the scheme builds the correct target and that the Apple ID has access to that app in App Store Connect.
 
 ## Troubleshooting
@@ -174,7 +188,11 @@ Verify configuration values:
 ```bash
 caddie ios:config:get apple-id
 caddie ios:config:get password
+caddie ios:config:get api-key
+caddie ios:config:get api-issuer
 ```
+
+If using API key auth, ensure `AuthKey_<API_KEY>.p8` is in `~/.private_keys` or `~/private_keys`.
 
 ### Archive failures
 

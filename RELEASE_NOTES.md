@@ -1,6 +1,6 @@
 # Caddie.sh Release Notes
 
-## Version 5.0.0 - iOS TestFlight Distribution & Configuration Management
+## Version 5.1.0 - iOS TestFlight Distribution & Configuration Management
 
 **Release Date:** January 2026
 
@@ -14,6 +14,7 @@
   - `caddie ios:testflight [scheme] [increment] [upload]` - Complete end-to-end workflow
   - `caddie ios:testflight:publish [scheme] [archive_path] [export_path] [export_options_plist]` - Increment build + archive + export + upload
   - `caddie ios:testflight:publish:increment:false [scheme] [archive_path] [export_path] [export_options_plist]` - Archive + export + upload (no increment)
+- **Credential Improvements**: Added Keychain password storage and App Store Connect API key support for uploads
 - **Project Information Extraction**: Automatically extract bundle ID, version, build number, and team ID from Xcode projects
   - `caddie ios:project:info [scheme]` - Display all project information
   - `caddie ios:increment:build [scheme]` - Automatically increment build numbers
@@ -62,6 +63,7 @@
 - **Target Management**: New `swift:xcode:target:get|set|unset` commands to persist a preferred run target and render it in the prompt
 - **Test Logs by Default**: `swift:xcode:test` and `swift:xcode:test:unit` now log to a file by default and capture the exact `xcodebuild` invocation
 - **Unit Test Reruns**: `swift:xcode:test:unit:failed` parses the last log and reruns failed tests individually
+- **Unit Test Log Management**: Added `swift:xcode:test:unit:log:get|set|unset` to manage the last unit test log path
 - **Preflight Builds**: Xcode tests now run `build-for-testing` first and skip tests if the build fails, reporting filtered errors
 
 ### 🐛 Bug Fixes
@@ -91,6 +93,26 @@ caddie ios:testflight:publish vCaddie
 
 # Archive + export + upload (no increment)
 caddie ios:testflight:publish:increment:false vCaddie
+```
+
+#### **Swift Xcode Commands**
+```bash
+# Build and launch on a target
+caddie swift:xcode:play vCaddie "iPhone 16"
+
+# Set a default target for play
+caddie swift:xcode:target:set Icaruus
+
+# Run unit tests (logs to file, skips UI tests)
+caddie swift:xcode:test:unit vCaddie "iPhone 16"
+
+# Re-run only failed unit tests
+caddie swift:xcode:test:unit:failed vCaddie "iPhone 16"
+
+# Inspect or override the last unit test log path
+caddie swift:xcode:test:unit:log:get
+caddie swift:xcode:test:unit:log:set /path/to/test.log
+caddie swift:xcode:test:unit:log:unset
 ```
 
 #### **Step-by-Step Workflow**
