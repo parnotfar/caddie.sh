@@ -669,6 +669,62 @@ function _caddie_completion() {
     return 0
   fi
 
+  if [[ "$prev" == git:worktree:remove ]]; then
+    local wt_candidates=""
+    if declare -F caddie_git_worktree_completion_candidates >/dev/null 2>&1; then
+      wt_candidates=$(caddie_git_worktree_completion_candidates "removable" 2>/dev/null || true)
+    fi
+    COMPREPLY=()
+    if [ -n "$wt_candidates" ]; then
+      while IFS= read -r line; do
+        COMPREPLY+=("$line")
+      done < <(compgen -W "$wt_candidates" -- "$cur")
+    fi
+    return 0
+  fi
+
+  if [[ "$prev" == git:worktree:lock ]]; then
+    local wt_candidates=""
+    if declare -F caddie_git_worktree_completion_candidates >/dev/null 2>&1; then
+      wt_candidates=$(caddie_git_worktree_completion_candidates "lock" 2>/dev/null || true)
+    fi
+    COMPREPLY=()
+    if [ -n "$wt_candidates" ]; then
+      while IFS= read -r line; do
+        COMPREPLY+=("$line")
+      done < <(compgen -W "$wt_candidates" -- "$cur")
+    fi
+    return 0
+  fi
+
+  if [[ "$prev" == git:worktree:unlock ]]; then
+    local wt_candidates=""
+    if declare -F caddie_git_worktree_completion_candidates >/dev/null 2>&1; then
+      wt_candidates=$(caddie_git_worktree_completion_candidates "unlock" 2>/dev/null || true)
+    fi
+    COMPREPLY=()
+    if [ -n "$wt_candidates" ]; then
+      while IFS= read -r line; do
+        COMPREPLY+=("$line")
+      done < <(compgen -W "$wt_candidates" -- "$cur")
+    fi
+    return 0
+  fi
+
+  if [[ "$prev" == git:worktree:cd ]]; then
+    local wt_candidates=""
+    if declare -F caddie_git_worktree_completion_candidates >/dev/null 2>&1; then
+      wt_candidates=$(caddie_git_worktree_completion_candidates "all" 2>/dev/null || true)
+    fi
+    COMPREPLY=()
+    if [ -n "$wt_candidates" ]; then
+      while IFS= read -r line; do
+        COMPREPLY+=("$line")
+      done < <(compgen -W "$wt_candidates" -- "$cur")
+    fi
+    return 0
+  fi
+
   # Build a flat list of all accepted commands
   local base_opts="help version go:home shell --help -h --version -v reload --reload -r"
   local all_opts="$base_opts"
@@ -800,7 +856,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "cross:template:create"
                         ;;
                       git)
-                        caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove"
+                        caddie_completion_register "$module_name" "git:status git:branch git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
                         ;;
                       github)
                         caddie_completion_register "$module_name" "github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"

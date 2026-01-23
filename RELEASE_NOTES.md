@@ -1,6 +1,6 @@
 # Caddie.sh Release Notes
 
-## Version 5.1.0 - iOS TestFlight Distribution & Configuration Management
+## Version 6.0.0 - iOS TestFlight Distribution & Configuration Management
 
 **Release Date:** January 2026
 
@@ -15,6 +15,15 @@
   - `caddie ios:testflight:publish [scheme] [archive_path] [export_path] [export_options_plist]` - Increment build + archive + export + upload
   - `caddie ios:testflight:publish:increment:false [scheme] [archive_path] [export_path] [export_options_plist]` - Archive + export + upload (no increment)
 - **Credential Improvements**: Added Keychain password storage and App Store Connect API key support for uploads
+
+#### **Git Worktree Workflow (Multi-Agent)**
+- **Worktree Commands**: Added `git:worktree:*` commands to create isolated worktrees for parallel agents
+  - `caddie git:worktree:add <path> <branch> [--new]`
+  - `caddie git:worktree:list`
+  - `caddie git:worktree:remove <path>`
+  - `caddie git:worktree:lock <path>` / `caddie git:worktree:unlock <path>`
+  - `caddie git:worktree:cd <path>`
+  - `caddie git:worktree:prune`
 - **Project Information Extraction**: Automatically extract bundle ID, version, build number, and team ID from Xcode projects
   - `caddie ios:project:info [scheme]` - Display all project information
   - `caddie ios:increment:build [scheme]` - Automatically increment build numbers
@@ -113,6 +122,21 @@ caddie swift:xcode:test:unit:failed vCaddie "iPhone 16"
 caddie swift:xcode:test:unit:log:get
 caddie swift:xcode:test:unit:log:set /path/to/test.log
 caddie swift:xcode:test:unit:log:unset
+```
+
+#### **Worktree Commands**
+```bash
+# Create worktree for a branch
+caddie git:worktree:add ../vcaddie-swift-analytics feature/analytics
+
+# List and jump between worktrees
+caddie git:worktree:list
+caddie git:worktree:cd ../vcaddie-swift-analytics
+
+# Lock or remove worktrees
+caddie git:worktree:lock ../vcaddie-swift-analytics
+caddie git:worktree:unlock ../vcaddie-swift-analytics
+caddie git:worktree:remove ../vcaddie-swift-analytics
 ```
 
 #### **Step-by-Step Workflow**

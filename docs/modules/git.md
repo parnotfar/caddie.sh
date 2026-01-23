@@ -95,6 +95,54 @@ caddie git:pr:create "Fix bug" "Resolves login timeout issue" develop
 **Prerequisites:**
 - GitHub account must be set: `caddie github:account:set <account>`
 
+### Worktrees (Multi-Agent Workflow)
+
+Use git worktrees to isolate parallel work across agents or branches.
+
+#### `caddie git:worktree:list`
+List all worktrees.
+
+```bash
+caddie git:worktree:list
+```
+
+#### `caddie git:worktree:add <path> <branch> [--new]`
+Add a worktree at the given path for an existing branch. Use `--new` to create a new branch.
+
+```bash
+caddie git:worktree:add ../vcaddie-swift-analytics feature/analytics
+caddie git:worktree:add ../vcaddie-swift-analytics feature/analytics --new
+```
+
+#### `caddie git:worktree:remove <path>`
+Remove a worktree by path. When no path is provided, caddie lists removable worktrees.
+
+```bash
+caddie git:worktree:remove ../vcaddie-swift-analytics
+```
+
+#### `caddie git:worktree:lock <path>` / `caddie git:worktree:unlock <path>`
+Lock or unlock a worktree to prevent accidental removal.
+
+```bash
+caddie git:worktree:lock ../vcaddie-swift-analytics
+caddie git:worktree:unlock ../vcaddie-swift-analytics
+```
+
+#### `caddie git:worktree:cd <path>`
+Change directory into a worktree path (works because `caddie` runs in the current shell).
+
+```bash
+caddie git:worktree:cd ../vcaddie-swift-analytics
+```
+
+#### `caddie git:worktree:prune`
+Remove stale worktree metadata.
+
+```bash
+caddie git:worktree:prune
+```
+
 ### Remote Management
 
 #### `caddie git:remote:add [<name> <url>]`
@@ -239,4 +287,3 @@ caddie help
 # Show GitHub module help
 caddie github:help
 ```
-

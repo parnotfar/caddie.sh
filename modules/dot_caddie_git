@@ -234,6 +234,213 @@ function caddie_git_new_branch() {
     return 0
 }
 
+function caddie_git_worktree_completion_candidates() {
+    local mode="${1:-all}"
+    local current=""
+    current=$(git rev-parse --show-toplevel 2>/dev/null || true)
+
+    local path=""
+    local locked="false"
+
+    while IFS= read -r line; do
+        case "$line" in
+            worktree\ *)
+                if [ -n "$path" ]; then
+                    case "$mode" in
+                        removable)
+                            if [ "$path" != "$current" ] && [ "$locked" != "true" ]; then
+                                printf '%s\n' "$path"
+                            fi
+                            ;;
+                        lock)
+                            if [ "$locked" != "true" ]; then
+                                printf '%s\n' "$path"
+                            fi
+                            ;;
+                        unlock)
+                            if [ "$locked" = "true" ]; then
+                                printf '%s\n' "$path"
+                            fi
+                            ;;
+                        *)
+                            printf '%s\n' "$path"
+                            ;;
+                    esac
+                fi
+                path="${line#worktree }"
+                locked="false"
+                ;;
+            locked*)
+                locked="true"
+                ;;
+        esac
+    done < <(git worktree list --porcelain 2>/dev/null)
+
+    if [ -n "$path" ]; then
+        case "$mode" in
+            removable)
+                if [ "$path" != "$current" ] && [ "$locked" != "true" ]; then
+                    printf '%s\n' "$path"
+                fi
+                ;;
+            lock)
+                if [ "$locked" != "true" ]; then
+                    printf '%s\n' "$path"
+                fi
+                ;;
+            unlock)
+                if [ "$locked" = "true" ]; then
+                    printf '%s\n' "$path"
+                fi
+                ;;
+            *)
+                printf '%s\n' "$path"
+                ;;
+        esac
+    fi
+
+    return 0
+}
+
+function caddie_git_worktree_list() {
+    caddie cli:title "Git Worktrees"
+    git worktree list
+    return 0
+}
+
+function caddie_git_worktree_add() {
+    local path="$1"
+    local branch="$2"
+    local create_flag="${3:-}"
+
+    if [ -z "$path" ] || [ -z "$branch" ]; then
+        caddie cli:red "Error: Worktree path and branch are required"
+        caddie cli:usage "caddie git:worktree:add <path> <branch> [--new]"
+        return 1
+    fi
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    if [ "$create_flag" = "--new" ] || [ "$create_flag" = "--create" ]; then
+        caddie cli:title "Creating worktree (new branch: $branch)"
+        if git worktree add -b "$branch" "$path"; then
+            caddie cli:check "Worktree created at $path"
+            return 0
+        fi
+        caddie cli:red "Failed to create worktree"
+        return 1
+    fi
+
+    if ! git show-ref --verify --quiet "refs/heads/$branch" && ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        caddie cli:red "Error: Branch '$branch' does not exist"
+        caddie cli:thought "Create it first: caddie git:new:branch $branch"
+        caddie cli:thought "Or create it with: caddie git:worktree:add $path $branch --new"
+        return 1
+    fi
+
+    caddie cli:title "Creating worktree at $path (branch: $branch)"
+    if git worktree add "$path" "$branch"; then
+        caddie cli:check "Worktree created at $path"
+        return 0
+    fi
+
+    caddie cli:red "Failed to create worktree"
+    return 1
+}
+
+function caddie_git_worktree_remove() {
+    local path="$1"
+    if [ -z "$path" ]; then
+        caddie cli:red "Error: Worktree path is required"
+        caddie cli:usage "caddie git:worktree:remove <path>"
+        caddie cli:blank
+        caddie cli:title "Removable worktrees:"
+        caddie_git_worktree_completion_candidates "removable" | while IFS= read -r line; do
+            [ -n "$line" ] && caddie cli:indent "$line"
+        done
+        return 1
+    fi
+    caddie cli:title "Removing worktree: $path"
+    if git worktree remove "$path"; then
+        caddie cli:check "Worktree removed"
+        return 0
+    fi
+    caddie cli:red "Failed to remove worktree"
+    return 1
+}
+
+function caddie_git_worktree_prune() {
+    caddie cli:title "Pruning worktrees"
+    git worktree prune
+    return $?
+}
+
+function caddie_git_worktree_lock() {
+    local path="$1"
+    if [ -z "$path" ]; then
+        caddie cli:red "Error: Worktree path is required"
+        caddie cli:usage "caddie git:worktree:lock <path>"
+        caddie cli:blank
+        caddie cli:title "Unlocked worktrees:"
+        caddie_git_worktree_completion_candidates "lock" | while IFS= read -r line; do
+            [ -n "$line" ] && caddie cli:indent "$line"
+        done
+        return 1
+    fi
+    caddie cli:title "Locking worktree: $path"
+    if git worktree lock "$path"; then
+        caddie cli:check "Worktree locked"
+        return 0
+    fi
+    caddie cli:red "Failed to lock worktree"
+    return 1
+}
+
+function caddie_git_worktree_unlock() {
+    local path="$1"
+    if [ -z "$path" ]; then
+        caddie cli:red "Error: Worktree path is required"
+        caddie cli:usage "caddie git:worktree:unlock <path>"
+        caddie cli:blank
+        caddie cli:title "Locked worktrees:"
+        caddie_git_worktree_completion_candidates "unlock" | while IFS= read -r line; do
+            [ -n "$line" ] && caddie cli:indent "$line"
+        done
+        return 1
+    fi
+    caddie cli:title "Unlocking worktree: $path"
+    if git worktree unlock "$path"; then
+        caddie cli:check "Worktree unlocked"
+        return 0
+    fi
+    caddie cli:red "Failed to unlock worktree"
+    return 1
+}
+
+function caddie_git_worktree_cd() {
+    local path="$1"
+    if [ -z "$path" ]; then
+        caddie cli:red "Error: Worktree path is required"
+        caddie cli:usage "caddie git:worktree:cd <path>"
+        caddie cli:blank
+        caddie cli:title "Available worktrees:"
+        caddie_git_worktree_completion_candidates "all" | while IFS= read -r line; do
+            [ -n "$line" ] && caddie cli:indent "$line"
+        done
+        return 1
+    fi
+    if [ ! -d "$path" ]; then
+        caddie cli:red "Error: Worktree path not found: $path"
+        return 1
+    fi
+    cd "$path" || return 1
+    caddie cli:check "Now in: $(pwd)"
+    return 0
+}
+
 function caddie_git_pr_create() {
     local title="$1"
     local body="$2"
@@ -503,6 +710,16 @@ function caddie_git_help() {
     caddie cli:indent "clone <repo-name>  Clone repository using stored GitHub account"
     caddie cli:blank
     
+    caddie cli:title "Worktrees:"
+    caddie cli:indent "worktree:list                  List worktrees"
+    caddie cli:indent "worktree:add <path> <branch> [--new]  Add worktree"
+    caddie cli:indent "worktree:remove <path>         Remove worktree"
+    caddie cli:indent "worktree:prune                 Prune stale worktrees"
+    caddie cli:indent "worktree:lock <path>           Lock worktree"
+    caddie cli:indent "worktree:unlock <path>         Unlock worktree"
+    caddie cli:indent "worktree:cd <path>             Change to worktree directory"
+    caddie cli:blank
+    
     caddie cli:title "Remote Management:"
     caddie cli:indent "remote:add [<name> <url>]  Add remote (auto-detects if no args)"
     caddie cli:indent "remote:set-url <name> <url> Set remote URL"
@@ -521,6 +738,8 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
+    caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
+    caddie cli:indent "caddie git:worktree:list"
     caddie cli:blank
     caddie cli:title "Setup GitHub Integration:"
     caddie cli:indent "caddie github:account:set <account>  Set GitHub account"
@@ -547,6 +766,7 @@ export -f caddie_git_auth_login
 export -f caddie_git_pr_create
 export -f caddie_git_pr_approve
 export -f caddie_git_pr_completion_candidates
+export -f caddie_git_worktree_completion_candidates
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull
@@ -555,5 +775,12 @@ export -f caddie_git_remote_set_url
 export -f caddie_git_remote_list
 export -f caddie_git_remote_remove
 export -f caddie_git_clone
+export -f caddie_git_worktree_list
+export -f caddie_git_worktree_add
+export -f caddie_git_worktree_remove
+export -f caddie_git_worktree_prune
+export -f caddie_git_worktree_lock
+export -f caddie_git_worktree_unlock
+export -f caddie_git_worktree_cd
 export -f caddie_git_help
 export -f caddie_git_description
