@@ -44,7 +44,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`ruby`**: Ruby environment with RVM integration
 - **`js`**: JavaScript/Node.js tools and NVM management
 - **`csv`** *(optional via [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools))*: SQL analytics and plotting for CSV/TSV datasets
-- **`ios`**: iOS development tools and Xcode integration
+- **`ios`**: App Store and TestFlight distribution tools
 - **`cross`**: Multi-language project templates and tools
 - **`cursor`**: IDE integration and AI-powered development
 - **`git`**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
@@ -192,11 +192,10 @@ shitory        # search history
 externalip     # curl whatismyip.org
 ```
 
-**Cross-Platform Development:**
+**iOS Distribution:**
 ```bash
-ios:rust:setup # Setup Rust for iOS development
-# watchos:rust:setup  # Setup Rust for WatchOS (future)
-# android:rust:setup   # Setup Rust for Android (future)
+ios:testflight # Run TestFlight workflow
+ios:archive:testflight # Create archive for TestFlight
 ```
 
 **Docker Commands:**
@@ -378,17 +377,17 @@ caddie git:new:branch feature/new-feature
 caddie git:pr:create "Add new feature" "Description of changes"
 ```
 
-#### Cross-Platform Development
+#### iOS Distribution
 
 ```bash
-# Setup Rust for iOS
-caddie ios:rust:setup
+# Show project info
+caddie ios:project:info
 
-# Setup Rust for WatchOS (future)
-# caddie watchos:rust:setup
+# Increment build number
+caddie ios:increment:build
 
-# Setup Rust for Android (future)
-# caddie android:rust:setup
+# Create TestFlight archive
+caddie ios:archive:testflight
 ```
 
 #### Dependency Management
@@ -519,49 +518,38 @@ caddie js:update
 caddie js:run dev
 ```
 
-### iOS Development
+### iOS Distribution
 
-#### Xcode Integration
-
-```bash
-# Check Xcode installation
-caddie ios:check
-
-# Install Xcode command line tools
-caddie ios:install-cli
-
-# Open project in Xcode
-caddie ios:open MyApp.xcodeproj
-
-# Build project
-caddie ios:build MyApp
-```
-
-#### Rust Integration
+#### Project Info and Versioning
 
 ```bash
-# Setup Rust for iOS development
-caddie ios:rust:setup
+# Show project settings
+caddie ios:project:info
 
-# Build Rust library for iOS
-cargo build --target aarch64-apple-ios --release --lib
+# Increment build number
+caddie ios:increment:build
 
-# Create iOS framework with Rust library
-# ... integrate with iOS project ...
+# Save project settings to config
+caddie ios:config:load:project
 ```
 
-#### Development Tools
+#### TestFlight Workflow
 
 ```bash
-# Install iOS Simulator
-caddie ios:simulator
+# Create archive for TestFlight
+caddie ios:archive:testflight
 
-# List available simulators
-caddie ios:simulators
+# Export IPA
+caddie ios:export:ipa
 
-# Run on simulator
-caddie ios:run-simulator MyApp
+# Upload to TestFlight
+caddie ios:upload:testflight ./build/export/MyApp.ipa
+
+# Full workflow (increment, archive, export, upload)
+caddie ios:testflight
 ```
+
+**Note:** Build/run/test commands live in the Swift module (`caddie swift:xcode:*`).
 
 ### Cross-Language Development
 

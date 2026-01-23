@@ -148,14 +148,11 @@ caddie python:create test-env
    nano ~/.caddie_prompt.sh
    ```
 
-4. **Setup Cross-Platform Rust Development** (Optional):
+4. **Setup iOS Distribution Config** (Optional):
    ```bash
-   # Setup Rust for iOS development
-   caddie ios:rust:setup
-   
-   # Future: Setup for WatchOS and Android
-   # caddie watchos:rust:setup
-   # caddie android:rust:setup
+   # Store App Store Connect credentials
+   caddie ios:config:set apple-id 'your@apple.id'
+   caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'
    ```
 
 5. **Setup Rust Git Integration** (Recommended):

@@ -1008,56 +1008,7 @@ cargo build --release
 cargo audit --deny warnings
 ```
 
-### Cross-Platform Development
-
-#### iOS Integration
-
-##### `caddie ios:rust:setup`
-
-Set up Rust development environment specifically for iOS development.
-
-**Examples:**
-```bash
-# Setup Rust for iOS development
-caddie ios:rust:setup
-```
-
-**What it does:**
-- Installs Rust if not already present
-- Adds iOS-specific targets (aarch64-apple-ios, x86_64-apple-ios)
-- Installs essential Cargo tools (cargo-edit, cargo-watch, cargo-tarpaulin)
-- Validates iOS development environment (Xcode, Swift)
-- Provides next steps for iOS-Rust integration
-
-**Output:**
-```
-Setting up Rust development environment for iOS...
-✓ Rust already installed: rustc 1.75.0 (8ea583342 2023-12-18)
-Adding iOS Rust targets...
-✓ iOS Rust targets added successfully
-Installing essential Cargo tools...
-✓ Cargo tools installed successfully
-Validating iOS development environment...
-✓ iOS development environment validated
-  Xcode: Xcode 15.2 Build version 15C500b
-  Swift: swift-driver version: 1.75.2
-  Rust: rustc 1.75.0 (8ea583342 2023-12-18)
-✓ Rust development environment for iOS setup complete
-
-Next steps:
-1. Build Rust library: cargo build --target aarch64-apple-ios --release --lib
-2. Create iOS framework structure for Swift integration
-3. Use the generated .a static libraries in your iOS project
-```
-
-**Requirements:**
-- macOS with Xcode installed
-- Xcode command line tools
-- Internet connection for Rust installation
-
-**Idempotent:** Yes - can be run multiple times safely
-
-#### Cross-Platform Targets
+### Cross-Platform Targets
 
 For general cross-platform development, use the target management commands:
 

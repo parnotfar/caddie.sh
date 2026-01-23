@@ -191,6 +191,7 @@ xcuserdata/
 *.DS_Store
 GIT
     caddie cli:check "Swift .gitignore ready"
+    return 0
 }
 
 # MARK: - Xcode Project Commands (for projects using Swift Packages)
@@ -208,6 +209,95 @@ function caddie_swift_xcode_project() {
     caddie_swift_require_xcode_project || return 1
     local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
     printf '%s\n' "$(basename "$project_file")"
+}
+
+function caddie_swift_xcode_ui_test_targets() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=$(caddie_swift_xcode_project)
+    local pbxproj="$project_file/project.pbxproj"
+    local in_target=""
+    local name=""
+    local is_ui=""
+    if [ ! -f "$pbxproj" ]; then
+        caddie cli:red "Error: project.pbxproj not found in $project_file"
+        return 1
+    fi
+    awk '
+        $0 ~ /isa = PBXNativeTarget;/ {
+            in_target=1;
+            name="";
+            is_ui=0;
+        }
+        in_target && $0 ~ /name = / {
+            name=$0;
+            sub(/^[[:space:]]*name = /, "", name);
+            sub(/;[[:space:]]*$/, "", name);
+            gsub(/"/, "", name);
+        }
+        in_target && $0 ~ /productType = "com.apple.product-type.bundle.ui-testing"/ {
+            is_ui=1;
+        }
+        in_target && $0 ~ /^[[:space:]]*};/ {
+            if (is_ui && name != "") {
+                print name;
+            }
+            in_target=0;
+            name="";
+            is_ui=0;
+        }
+    ' "$pbxproj"
+    return 0
+}
+
+
+function caddie_swift_xcode_test_bundle() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    if [ -z "$scheme" ]; then
+        scheme=$(caddie_swift_xcode_scheme)
+    fi
+    local project_file=$(caddie_swift_xcode_project)
+    local scheme_file="$project_file/xcshareddata/xcschemes/$scheme.xcscheme"
+    local in_target=""
+    local name=""
+    local is_unit=""
+    if [ ! -f "$scheme_file" ]; then
+        scheme_file=$(find "$project_file/xcuserdata" -path "*/xcschemes/$scheme.xcscheme" -type f 2>/dev/null | head -1)
+    fi
+
+    local bundle=""
+    if [ -f "$scheme_file" ]; then
+        bundle=$(sed -n '/<TestAction/,/<\/TestAction>/p' "$scheme_file" | sed -n 's/.*BlueprintName="\([^"]\+\)".*/\1/p' | head -1)
+        if [ -z "$bundle" ]; then
+            bundle=$(sed -n '/<TestAction/,/<\/TestAction>/p' "$scheme_file" | sed -n 's/.*BuildableName="\([^"]\+\)".*/\1/p' | grep -E '\.xctest$' | sed 's/\.xctest$//' | head -1)
+        fi
+    fi
+
+    if [ -z "$bundle" ]; then
+        local pbxproj="$project_file/project.pbxproj"
+        if [ -f "$pbxproj" ]; then
+            bundle=$(awk '
+                $0 ~ /isa = PBXNativeTarget;/ {in_target=1; name=""; is_unit=0;}
+                in_target && $0 ~ /name = / {
+                    name=$0;
+                    sub(/^[[:space:]]*name = /, "", name);
+                    sub(/;[[:space:]]*$/, "", name);
+                    gsub(/"/, "", name);
+                }
+                in_target && $0 ~ /productType = "com.apple.product-type.bundle.unit-test"/ {is_unit=1;}
+                in_target && $0 ~ /^[[:space:]]*};/ {
+                    if (is_unit && name != "") print name;
+                    in_target=0; name=""; is_unit=0;
+                }
+            ' "$pbxproj" | head -1)
+        fi
+    fi
+
+    if [ -n "$bundle" ]; then
+        printf '%s\n' "$bundle"
+        return 0
+    fi
+    return 1
 }
 
 function caddie_swift_xcode_scheme() {
@@ -231,6 +321,182 @@ function caddie_swift_xcode_scheme() {
         fi
     fi
     printf '%s\n' "${scheme:-vCaddie}"
+    return 0
+}
+
+
+function caddie_swift_xcode_schemes() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=$(caddie_swift_xcode_project)
+    xcodebuild -list -project "$project_file" 2>/dev/null | awk '
+        /Schemes:/ {in_schemes=1; next}
+        in_schemes {
+            if ($0 ~ /^[[:space:]]*$/) { exit }
+            gsub(/^[[:space:]]+/, "")
+            print
+        }
+    '
+    return 0
+}
+
+function caddie_swift_xcode_scheme_exists() {
+    local scheme="$1"
+    if [ -z "$scheme" ]; then
+        return 1
+    fi
+    if caddie_swift_xcode_schemes | grep -Fxq "$scheme"; then
+        return 0
+    fi
+    return 1
+}
+
+function caddie_swift_xcode_simulator_udid() {
+    local name="$1"
+    if [ -z "$name" ]; then
+        return 1
+    fi
+    # caddie:lint:disable
+    # Awk variables (line, device, device_l) are awk script variables, not shell variables
+    xcrun simctl list devices 2>/dev/null | awk -v name="$name" '
+        BEGIN { target=tolower(name); best="" }
+        {
+            line=$0
+            device=line
+            sub(/[[:space:]]*\(.*/, "", device)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", device)
+            device_l=tolower(device)
+            if (device_l == target) {
+                if (match(line, /[0-9A-Fa-f-]{8,}/)) {
+                    print substr(line, RSTART, RLENGTH)
+                    exit
+                }
+            }
+            if (best == "" && index(device_l, target) > 0) {
+                if (match(line, /[0-9A-Fa-f-]{8,}/)) {
+                    best=substr(line, RSTART, RLENGTH)
+                }
+            }
+        }
+        END { if (best != "") print best }
+    '
+    # caddie:lint:enable
+}
+
+function caddie_swift_xcode_device_udid() {
+    local name="$1"
+    if [ -z "$name" ]; then
+        return 1
+    fi
+    # caddie:lint:disable
+    # Awk variables (line, device, device_l) are awk script variables, not shell variables
+    xcrun xctrace list devices 2>/dev/null | awk -v name="$name" '
+        BEGIN { target=tolower(name); best="" }
+        {
+            line=$0
+            device=line
+            sub(/[[:space:]]*\(.*/, "", device)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", device)
+            device_l=tolower(device)
+            if (device_l == target) {
+                if (match(line, /[0-9A-Fa-f-]{8,}/)) {
+                    print substr(line, RSTART, RLENGTH)
+                    exit
+                }
+            }
+            if (best == "" && index(device_l, target) > 0) {
+                if (match(line, /[0-9A-Fa-f-]{8,}/)) {
+                    best=substr(line, RSTART, RLENGTH)
+                }
+            }
+        }
+        END { if (best != "") print best }
+    '
+    # caddie:lint:enable
+}
+
+function caddie_swift_xcode_app_info() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    local sdk="$2"
+    local configuration="${3:-Debug}"
+    if [ -z "$scheme" ]; then
+        scheme=$(caddie_swift_xcode_scheme)
+    fi
+    if [ -z "$sdk" ]; then
+        sdk="iphonesimulator"
+    fi
+    local project_file=$(caddie_swift_xcode_project)
+    local settings
+    settings=$(xcodebuild -project "$project_file" -scheme "$scheme" -configuration "$configuration" -sdk "$sdk" -showBuildSettings 2>/dev/null)
+    if [ -z "$settings" ]; then
+        caddie cli:red "Error: Unable to read build settings"
+        return 1
+    fi
+    local candidate=""
+    local app_info
+    app_info=$(printf '%s\n' "$settings" | awk -F ' = ' '
+        /^Build settings for action/ {dir=""; name=""; bundle=""; wrapper=""; next}
+        $1 ~ /^[[:space:]]*TARGET_BUILD_DIR$/ {dir=$2; gsub(/^[[:space:]]+/, "", dir)}
+        $1 ~ /^[[:space:]]*FULL_PRODUCT_NAME$/ {name=$2; gsub(/^[[:space:]]+/, "", name)}
+        $1 ~ /^[[:space:]]*WRAPPER_NAME$/ {wrapper=$2; gsub(/^[[:space:]]+/, "", wrapper)}
+        $1 ~ /^[[:space:]]*PRODUCT_BUNDLE_IDENTIFIER$/ {bundle=$2; gsub(/^[[:space:]]+/, "", bundle)}
+        {
+            candidate=name
+            if (candidate == "") candidate=wrapper
+            if (candidate ~ /\.app$/ && dir != "" && bundle != "") {
+                print dir "/" candidate "|" bundle
+                exit
+            }
+        }
+    ')
+    if [ -z "$app_info" ]; then
+        caddie cli:red "Error: Unable to locate built app in build settings"
+        return 1
+    fi
+    printf '%s\n' "$app_info"
+    return 0
+}
+
+function caddie_swift_xcode_target_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a target name"
+        caddie cli:usage "caddie swift:xcode:target:set <name>"
+        return 1
+    fi
+    export CADDIE_SWIFT_XCODE_TARGET="$value"
+    caddie cli:check "Xcode target set to: $value"
+    return 0
+}
+
+function caddie_swift_xcode_target_get() {
+    local value="${CADDIE_SWIFT_XCODE_TARGET:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Xcode target: $value"
+    else
+        caddie cli:yellow "No Xcode target is set"
+        caddie cli:thought "Use 'caddie swift:xcode:target:set <name>' to set it"
+    fi
+    return 0
+}
+
+function caddie_swift_xcode_target_unset() {
+    if [ -n "${CADDIE_SWIFT_XCODE_TARGET:-}" ]; then
+        unset CADDIE_SWIFT_XCODE_TARGET
+        caddie cli:check "Xcode target unset"
+    else
+        caddie cli:yellow "No Xcode target was set"
+    fi
+    return 0
+}
+
+function caddie_swift_prompt_segment() {
+    local target="${CADDIE_SWIFT_XCODE_TARGET:-}"
+    if [ -z "$target" ]; then
+        return 0
+    fi
+    printf '%s' "[xcode:target $target]"
+    return 0
 }
 
 function caddie_swift_xcode_resolve() {
@@ -248,7 +514,9 @@ function caddie_swift_xcode_resolve() {
     return $status
 }
 
-function caddie_swift_xcode_build() {
+function caddie_swift_xcode_build_run() {
+    local output_mode="$1"
+    shift || true
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
     local destination="${2:-simulator}"
@@ -257,341 +525,631 @@ function caddie_swift_xcode_build() {
     [ -n "$1" ] && shift || true
     [ -n "$1" ] && shift || true
     [ -n "$1" ] && shift || true
-    
+
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
-    
-    caddie cli:title "Building Xcode project '$project_file' (scheme: $scheme)..."
-    
+    local log_label="Building Xcode project '$project_file' (scheme: $scheme)..."
+    if [ "$output_mode" != "log" ]; then
+        log_label="$log_label (errors only)"
+    fi
+    caddie cli:title "$log_label"
+
     # Check if packages are resolved
     if ! grep -q "XCLocalSwiftPackageReference\|XCRemoteSwiftPackageReference" "$project_file/project.pbxproj" 2>/dev/null; then
         caddie cli:yellow "Warning: No Swift Package dependencies found in project"
         caddie cli:thought "Add packages in Xcode: Project Settings → Package Dependencies → Add Package"
         caddie cli:thought "Or use: caddie swift:xcode:packages:check"
     fi
-    
+
     # Resolve packages first
     caddie_swift_xcode_resolve || caddie cli:yellow "Continuing build despite package resolution warning..."
-    
+
+    local build_status=0
+    local log_file=""
+    local error_pattern="error:|fatal error:|xcodebuild: error:|clang: error:|ld: error:"
+
     if [ "$destination" = "simulator" ]; then
         caddie cli:indent "Building for iOS Simulator ($sim_name)..."
-        xcodebuild \
-            -project "$project_file" \
-            -scheme "$scheme" \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,name=$sim_name" \
-            -configuration Debug \
-            clean build "$@"
+        if [ "$output_mode" = "log" ]; then
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphonesimulator \
+                -destination "platform=iOS Simulator,name=$sim_name" \
+                -configuration Debug \
+                clean build "$@"
+        else
+            log_file=$(mktemp -t caddie_xcode_build.XXXXXX)
+            if [ -z "$log_file" ]; then
+                caddie cli:red "Error: Unable to create build log file"
+                return 1
+            fi
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphonesimulator \
+                -destination "platform=iOS Simulator,name=$sim_name" \
+                -configuration Debug \
+                clean build "$@" >"$log_file" 2>&1
+        fi
     elif [ "$destination" = "device" ]; then
         caddie cli:indent "Building for iOS Device..."
-        xcodebuild \
-            -project "$project_file" \
-            -scheme "$scheme" \
-            -sdk iphoneos \
-            -configuration Release \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            clean build "$@"
+        if [ "$output_mode" = "log" ]; then
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphoneos \
+                -configuration Release \
+                clean build "$@"
+        else
+            log_file=$(mktemp -t caddie_xcode_build.XXXXXX)
+            if [ -z "$log_file" ]; then
+                caddie cli:red "Error: Unable to create build log file"
+                return 1
+            fi
+            xcodebuild \
+                -project "$project_file" \
+                -scheme "$scheme" \
+                -sdk iphoneos \
+                -configuration Release \
+                clean build "$@" >"$log_file" 2>&1
+        fi
     else
         caddie cli:red "Error: Invalid destination '$destination' (use 'simulator' or 'device')"
         return 1
     fi
-    
-    local status=$?
-    if [ $status -eq 0 ]; then
+
+    build_status=$?
+    if [ $build_status -eq 0 ]; then
         caddie cli:check "Build completed successfully"
     else
-        caddie cli:red "Build failed ($status)"
+        caddie cli:red "Build failed ($build_status)"
+        if [ "$output_mode" != "log" ] && [ -n "$log_file" ]; then
+            caddie cli:title "Errors"
+            if grep -E "$error_pattern" "$log_file" >/dev/null 2>&1; then
+                while IFS= read -r line; do
+                    caddie cli:indent "$line"
+                done < <(grep -E "$error_pattern" "$log_file")
+            else
+                caddie cli:yellow "No error lines matched the filter"
+                caddie cli:thought "Use 'caddie swift:xcode:build:log' for full output"
+            fi
+        fi
     fi
-    return $status
+
+    if [ -n "$log_file" ]; then
+        rm -f "$log_file"
+    fi
+
+    return $build_status
 }
 
-function caddie_swift_xcode_test() {
+function caddie_swift_xcode_build() {
+    caddie_swift_xcode_build_run "errors" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_build_log() {
+    caddie_swift_xcode_build_run "log" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_play() {
+    caddie_swift_require_xcode_project || return 1
+    local first_arg="$1"
+    local scheme=""
+    local target=""
+
+    if [ -n "$first_arg" ]; then
+        if caddie_swift_xcode_scheme_exists "$first_arg"; then
+            scheme="$first_arg"
+            shift || true
+            target="$1"
+            [ -n "$1" ] && shift || true
+        else
+            target="$first_arg"
+            shift || true
+        fi
+    fi
+
+    scheme=$(caddie_swift_xcode_scheme "$scheme")
+    if [ -z "$target" ]; then
+        target="${CADDIE_SWIFT_XCODE_TARGET:-}"
+    fi
+    if [ -z "$target" ]; then
+        target="iPhone 16"
+    fi
+
+    local sim_udid=""
+    local device_udid=""
+    local destination=""
+    local sdk=""
+    local configuration="Debug"
+
+    sim_udid=$(caddie_swift_xcode_simulator_udid "$target")
+    if [ -n "$sim_udid" ]; then
+        destination="simulator"
+        sdk="iphonesimulator"
+        configuration="Debug"
+    else
+        device_udid=$(caddie_swift_xcode_device_udid "$target")
+        if [ -z "$device_udid" ]; then
+            caddie cli:red "Error: Target '$target' not found as simulator or device"
+            caddie cli:thought "Set with: caddie swift:xcode:target:set <name>"
+            return 1
+        fi
+        destination="device"
+        sdk="iphoneos"
+        configuration="Release"
+    fi
+
+    local project_file=$(caddie_swift_xcode_project)
+    caddie cli:title "Build and run '$project_file' (scheme: $scheme)"
+    caddie cli:indent "Target: $target"
+
+    caddie_swift_xcode_build_run "errors" "$scheme" "$destination" "$target"
+    local build_status=$?
+    if [ $build_status -ne 0 ]; then
+        caddie cli:red "Build failed; skipping run"
+        return $build_status
+    fi
+
+    local app_info
+    app_info=$(caddie_swift_xcode_app_info "$scheme" "$sdk" "$configuration")
+    if [ -z "$app_info" ]; then
+        caddie cli:red "Error: Unable to resolve app bundle"
+        return 1
+    fi
+    local app_path="${app_info%%|*}"
+    local bundle_id="${app_info##*|}"
+    if [ -z "$app_path" ] || [ -z "$bundle_id" ]; then
+        caddie cli:red "Error: App path or bundle ID missing"
+        return 1
+    fi
+
+    if [ "$destination" = "simulator" ]; then
+        caddie cli:indent "Launching in simulator..."
+        xcrun simctl boot "$sim_udid" >/dev/null 2>&1 || true
+        xcrun simctl bootstatus "$sim_udid" -b >/dev/null 2>&1 || true
+        if ! xcrun simctl install "$sim_udid" "$app_path"; then
+            caddie cli:red "Failed to install app on simulator"
+            return 1
+        fi
+        if xcrun simctl launch "$sim_udid" "$bundle_id"; then
+            caddie cli:check "App launched on simulator"
+        else
+            caddie cli:red "Failed to launch app on simulator"
+            return 1
+        fi
+    else
+        if ! command -v xcrun >/dev/null 2>&1; then
+            caddie cli:red "Error: xcrun not available"
+            return 1
+        fi
+        if ! xcrun devicectl >/dev/null 2>&1; then
+            caddie cli:red "devicectl not available; unable to install/launch on device"
+            caddie cli:thought "Open Xcode or install a newer Xcode with devicectl support"
+            return 1
+        fi
+        local device_log=""
+        device_log=$(mktemp -t caddie_xcode_play.XXXXXX)
+        if [ -z "$device_log" ]; then
+            caddie cli:red "Error: Unable to create device log file"
+            return 1
+        fi
+        caddie cli:indent "Installing on device..."
+        if ! xcrun devicectl device install app --device "$device_udid" "$app_path" >"$device_log" 2>&1; then
+            caddie cli:red "Failed to install app on device"
+            caddie cli:indent "Log: $device_log"
+            return 1
+        fi
+        caddie cli:indent "Launching on device..."
+        if xcrun devicectl device process launch --device "$device_udid" "$bundle_id" >>"$device_log" 2>&1; then
+            caddie cli:check "App launched on device"
+            rm -f "$device_log"
+        else
+            caddie cli:red "Failed to launch app on device"
+            caddie cli:indent "Log: $device_log"
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
+function caddie_swift_xcode_test_run() {
+    local test_scope="$1"
+    shift || true
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
     # Shift consumed arguments
     [ -n "$1" ] && shift || true
-    
+
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
     local sim_name="${1:-iPhone 16}"
     # Shift simulator name argument so it doesn't get passed to xcodebuild
     [ -n "$1" ] && shift || true
-    
-    caddie cli:title "Running tests for '$project_file' (scheme: $scheme)..."
-    
-    xcodebuild test \
+
+    local -a skip_args=()
+    local ui_targets=""
+    local ui_status=0
+    local log_file=""
+    local copy_choice=""
+    local error_pattern="error:|fatal error:|xcodebuild: error:|clang: error:|ld: error:"
+
+    if [ "$test_scope" = "unit" ]; then
+        caddie cli:title "Running unit tests for '$project_file' (scheme: $scheme)..."
+        ui_targets=$(caddie_swift_xcode_ui_test_targets)
+        ui_status=$?
+        if [ $ui_status -ne 0 ]; then
+            caddie cli:red "Unable to detect UI test targets; aborting unit test run"
+            return 1
+        elif [ -n "$ui_targets" ]; then
+            caddie cli:indent "Skipping UI test targets:"
+            while IFS= read -r target; do
+                [ -n "$target" ] || continue
+                caddie cli:indent "  • $target"
+                skip_args+=("-skip-testing:$target")
+            done <<< "$ui_targets"
+        else
+            caddie cli:indent "No UI test targets detected"
+        fi
+    else
+        caddie cli:title "Running tests for '$project_file' (scheme: $scheme)..."
+    fi
+
+    log_file=$(mktemp -t caddie_xcode_test.XXXXXX)
+    if [ -z "$log_file" ]; then
+        caddie cli:red "Error: Unable to create test log file"
+        return 1
+    fi
+    if [ "$test_scope" = "unit" ]; then
+        export CADDIE_SWIFT_XCODE_TEST_UNIT_LOG="$log_file"
+    fi
+
+    local preflight_cmd=()
+    local arg
+    preflight_cmd=(xcodebuild build-for-testing \
         -project "$project_file" \
         -scheme "$scheme" \
         -sdk iphonesimulator \
-        -destination "platform=iOS Simulator,name=$sim_name" \
-        "$@"
-    
+        -destination "platform=iOS Simulator,name=$sim_name")
+    if [ ${#skip_args[@]} -gt 0 ]; then
+        preflight_cmd+=("${skip_args[@]}")
+    fi
+    if [ $# -gt 0 ]; then
+        preflight_cmd+=("$@")
+    fi
+
+    {
+        printf "%s\n" "Caddie xcodebuild preflight invocation:"
+        printf "    "
+        for arg in "${preflight_cmd[@]}"; do
+            printf "%q " "$arg"
+        done
+        printf "\n\n"
+    } >"$log_file"
+
+    "${preflight_cmd[@]}" >>"$log_file" 2>&1
+    local build_status=$?
+    if [ $build_status -ne 0 ]; then
+        caddie cli:red "Build failed; skipping tests"
+        caddie cli:title "Build Errors"
+        if grep -E "$error_pattern" "$log_file" >/dev/null 2>&1; then
+            while IFS= read -r line; do
+                caddie cli:indent "$line"
+            done < <(grep -E "$error_pattern" "$log_file")
+        else
+            caddie cli:yellow "No error lines matched the filter"
+            caddie cli:thought "Open the log for full output"
+        fi
+        caddie cli:indent "Log: $log_file"
+        if [ -t 0 ]; then
+            caddie cli:indent "Copy log path to clipboard? [Y/n]"
+            copy_choice=""
+            read -r copy_choice
+            if [ -z "$copy_choice" ]; then
+                copy_choice="y"
+            fi
+            case "$copy_choice" in
+                y|Y|yes|YES)
+                    if command -v pbcopy >/dev/null 2>&1; then
+                        printf '%s' "$log_file" | pbcopy
+                        caddie cli:check "Log path copied to clipboard"
+                    else
+                        caddie cli:yellow "Clipboard command not found (pbcopy)"
+                    fi
+                    ;;
+            esac
+        fi
+        return $build_status
+    fi
+
+    local xcode_cmd=()
+    xcode_cmd=(xcodebuild test \
+        -project "$project_file" \
+        -scheme "$scheme" \
+        -sdk iphonesimulator \
+        -destination "platform=iOS Simulator,name=$sim_name")
+    if [ ${#skip_args[@]} -gt 0 ]; then
+        xcode_cmd+=("${skip_args[@]}")
+    fi
+    if [ $# -gt 0 ]; then
+        xcode_cmd+=("$@")
+    fi
+
+    {
+        printf "%s\n" "Caddie xcodebuild invocation:"
+        printf "    "
+        for arg in "${xcode_cmd[@]}"; do
+            printf "%q " "$arg"
+        done
+        printf "\n\n"
+    } >>"$log_file"
+
+    "${xcode_cmd[@]}" >>"$log_file" 2>&1
+
     local status=$?
     if [ $status -eq 0 ]; then
-        caddie cli:check "Tests completed successfully"
+        if [ "$test_scope" = "unit" ]; then
+            caddie cli:check "Unit tests completed successfully"
+        else
+            caddie cli:check "Tests completed successfully"
+        fi
     else
-        caddie cli:red "Tests failed ($status)"
+        if [ "$test_scope" = "unit" ]; then
+            caddie cli:red "Unit tests failed ($status)"
+        else
+            caddie cli:red "Tests failed ($status)"
+        fi
     fi
+
+    if [ -n "$log_file" ]; then
+        caddie cli:indent "Log: $log_file"
+        if [ -t 0 ]; then
+            caddie cli:indent "Copy log path to clipboard? [Y/n]"
+            copy_choice=""
+            read -r copy_choice
+            if [ -z "$copy_choice" ]; then
+                copy_choice="y"
+            fi
+            case "$copy_choice" in
+                y|Y|yes|YES)
+                    if command -v pbcopy >/dev/null 2>&1; then
+                        printf '%s' "$log_file" | pbcopy
+                        caddie cli:check "Log path copied to clipboard"
+                    else
+                        caddie cli:yellow "Clipboard command not found (pbcopy)"
+                    fi
+                    ;;
+            esac
+        fi
+        if [ $status -ne 0 ]; then
+            caddie cli:thought "Open the log to inspect failures or filter with grep."
+        fi
+    fi
+
     return $status
 }
 
-function caddie_swift_xcode_clean() {
+function caddie_swift_xcode_test() {
+    caddie_swift_xcode_test_run "all" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_test_unit() {
+    caddie_swift_xcode_test_run "unit" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_test_unit_log_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a log path"
+        caddie cli:usage "caddie swift:xcode:test:unit:log:set <path>"
+        return 1
+    fi
+    export CADDIE_SWIFT_XCODE_TEST_UNIT_LOG="$value"
+    caddie cli:check "Unit test log set to: $value"
+    return 0
+}
+
+function caddie_swift_xcode_test_unit_log_get() {
+    local value="${CADDIE_SWIFT_XCODE_TEST_UNIT_LOG:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Unit test log: $value"
+    else
+        caddie cli:yellow "No unit test log is set"
+        caddie cli:thought "Use 'caddie swift:xcode:test:unit:log:set <path>' to set it"
+    fi
+    return 0
+}
+
+function caddie_swift_xcode_test_unit_log_unset() {
+    if [ -n "${CADDIE_SWIFT_XCODE_TEST_UNIT_LOG:-}" ]; then
+        unset CADDIE_SWIFT_XCODE_TEST_UNIT_LOG
+        caddie cli:check "Unit test log unset"
+    else
+        caddie cli:yellow "No unit test log was set"
+    fi
+    return 0
+}
+
+function caddie_swift_xcode_test_unit_failed() {
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
-    shift || true
-    
+    [ -n "$1" ] && shift || true
+
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
-    
-    caddie cli:title "Cleaning Xcode project '$project_file'..."
-    xcodebuild clean -project "$project_file" -scheme "$scheme" "$@"
-    caddie cli:check "Clean complete"
-}
+    local sim_name="${1:-iPhone 16}"
+    [ -n "$1" ] && shift || true
 
-function caddie_swift_xcode_packages_check() {
-    caddie_swift_require_xcode_project || return 1
-    local project_file=$(caddie_swift_xcode_project)
-    
-    caddie cli:title "Checking Swift Package dependencies..."
-    
-    if grep -q "XCLocalSwiftPackageReference\|XCRemoteSwiftPackageReference" "$project_file/project.pbxproj" 2>/dev/null; then
-        caddie cli:check "Package dependencies found in project"
-        
-        # List packages
-        local packages=$(grep -o 'relativePath = "[^"]*"' "$project_file/project.pbxproj" 2>/dev/null | sed 's/relativePath = "\(.*\)"/\1/')
-        local remote_packages=$(grep -o 'repositoryURL = "[^"]*"' "$project_file/project.pbxproj" 2>/dev/null | sed 's/repositoryURL = "\(.*\)"/\1/')
-        
-        if [ -n "$packages" ]; then
-            caddie cli:blank
-            caddie cli:title "Local Packages:"
-            echo "$packages" | while read -r pkg; do
-                caddie cli:indent "  • $pkg"
-            done
-        fi
-        
-        if [ -n "$remote_packages" ]; then
-            caddie cli:blank
-            caddie cli:title "Remote Packages:"
-            echo "$remote_packages" | while read -r pkg; do
-                caddie cli:indent "  • $pkg"
-            done
-        fi
-    else
-        caddie cli:yellow "No Swift Package dependencies found"
-        caddie cli:blank
-        caddie cli:title "To add packages:"
-        caddie cli:indent "Option 1: Use command line (uses caddie Ruby infrastructure)"
-        caddie cli:indent "  caddie swift:xcode:packages:add <target> <package_path1> <product1> [package_path2 product2 ...]"
-        caddie cli:thought "  Uses caddie ruby:gem:install if available, otherwise system Ruby"
-        caddie cli:blank
-        caddie cli:indent "Option 2: Use Xcode UI"
-        caddie cli:indent "  1. Open project in Xcode"
-        caddie cli:indent "  2. Select project in navigator"
-        caddie cli:indent "  3. Select target → Package Dependencies tab"
-        caddie cli:indent "  4. Click '+' to add package"
-        caddie cli:indent "  5. Choose 'Add Local...' for local packages"
-        caddie cli:blank
-        caddie cli:thought "For vCaddie, add:"
-        caddie cli:indent "  • ../physics-core-swift (PhysicsCore)"
-        caddie cli:indent "  • ../golf-agent-swift (GolfSimulator)"
+    local log_path="${CADDIE_SWIFT_XCODE_TEST_UNIT_LOG:-}"
+    if [ -z "$log_path" ]; then
+        caddie cli:red "Error: No unit test log is set"
+        caddie cli:usage "caddie swift:xcode:test:unit"
+        caddie cli:thought "Or set one: caddie swift:xcode:test:unit:log:set <path>"
+        return 1
     fi
-}
+    if [ ! -f "$log_path" ]; then
+        caddie cli:red "Error: Unit test log not found: $log_path"
+        caddie cli:thought "Set a valid path: caddie swift:xcode:test:unit:log:set <path>"
+        return 1
+    fi
 
-function caddie_swift_xcode_packages_add() {
-    caddie_swift_require_xcode_project || return 1
-    
-    # Validate argument count: must be >= 3 and odd (target + pairs of package_path/product)
-    # Valid counts: 3, 5, 7, 9... (target + 1 pair, 2 pairs, 3 pairs, etc.)
-    # Invalid counts: 4, 6, 8... (target + incomplete pairs)
-    if [ $# -lt 3 ] || [ $(( $# % 2 )) -eq 0 ]; then
-        caddie cli:red "Error: Invalid number of arguments"
-        caddie cli:usage "caddie swift:xcode:packages:add <target> <package_path1> <product1> [package_path2 product2 ...]"
-        caddie cli:blank
-        caddie cli:title "Expected format:"
-        caddie cli:indent "target + pairs of (package_path, product)"
-        caddie cli:indent "Valid argument counts: 3, 5, 7, 9... (target + 1+ pairs)"
-        caddie cli:blank
-        caddie cli:title "Example:"
-        caddie cli:indent "caddie swift:xcode:packages:add vCaddie ../physics-core-swift PhysicsCore ../golf-agent-swift GolfSimulator"
-        if [ $# -gt 0 ]; then
-            caddie cli:blank
-            caddie cli:yellow "Received $# arguments (expected odd number >= 3): $*"
-            caddie cli:thought "You may be missing a product name for one of your packages"
+    local failed_tests_raw=""
+    local failed_tests=""
+    while IFS= read -r line; do
+        local raw=""
+        raw=$(printf '%s\n' "$line" | sed -E "s/.*Test [Cc]ase '([^']+)' failed.*/\1/")
+        if [ -z "$raw" ]; then
+            continue
         fi
-        return 1
-    fi
-    
-    # Check for Ruby and ensure we're using RVM if available
-    local ruby_available=false
-    local using_rvm=false
-    local ruby_executable=""
-    
-    # First, try to source and use RVM (caddie's preferred Ruby management)
-    if [ -f "$HOME/.rvm/scripts/rvm" ]; then
-        # shellcheck disable=SC1091
-        source "$HOME/.rvm/scripts/rvm" 2>/dev/null || true
-        
-        # Check if RVM is working and has a default Ruby
-        if command -v rvm >/dev/null 2>&1; then
-            # Try to use default Ruby or latest installed
-            if rvm use default >/dev/null 2>&1 || rvm use ruby >/dev/null 2>&1; then
-                # Verify we're actually using RVM Ruby by checking gem path
-                local gem_path=$(which gem 2>/dev/null || echo "")
-                if [[ "$gem_path" == *".rvm"* ]] && command -v ruby >/dev/null 2>&1; then
-                    using_rvm=true
-                    ruby_available=true
-                    ruby_executable=$(which ruby)
-                    caddie cli:check "Using RVM Ruby: $ruby_executable"
-                fi
-            fi
+        if [[ "$raw" == "-["* ]]; then
+            raw=${raw#-\[}
+            raw=${raw%\]}
+            local class_part="${raw% *}"
+            local method="${raw#* }"
+            raw="${class_part}/${method}"
         fi
-    fi
-    
-    # If RVM didn't work, check for system Ruby
-    if [ "$ruby_available" = false ] && command -v ruby >/dev/null 2>&1; then
-        ruby_available=true
-        ruby_executable=$(which ruby)
-        caddie cli:yellow "Using system Ruby: $ruby_executable"
-        caddie cli:thought "Consider setting up caddie Ruby: caddie ruby:setup"
-    fi
-    
-    if [ "$ruby_available" = false ] || [ -z "$ruby_executable" ]; then
-        caddie cli:red "Error: Ruby not found"
-        caddie cli:blank
-        caddie cli:title "Setup Ruby with caddie:"
-        caddie cli:indent "caddie ruby:setup"
-        caddie cli:blank
-        caddie cli:thought "Or install Ruby manually, then use Xcode UI to add packages"
-        return 1
-    fi
-    
-    # Check for xcodeproj gem using the detected Ruby executable
-    if ! "$ruby_executable" -r xcodeproj -e "" 2>/dev/null; then
-        caddie cli:yellow "xcodeproj gem not found. Installing..."
-        
-        # Install gem using the detected Ruby's gem command
-        # This ensures we use the correct gem for the Ruby environment
-        local gem_executable=$(dirname "$ruby_executable")/gem
-        if [ -x "$gem_executable" ]; then
-            if "$gem_executable" install xcodeproj; then
-                caddie cli:check "xcodeproj gem installed"
-            else
-                gem_install_failed=true
-            fi
-        else
-            gem_install_failed=true
+        raw=$(printf '%s\n' "$raw" | sed -E 's/\(\)$//')
+        if [ -n "$raw" ]; then
+            failed_tests_raw+="${raw}"$'\n'
         fi
-        
-        if [ "${gem_install_failed:-false}" = true ]; then
-            caddie cli:red "Failed to install xcodeproj gem"
-            
-            if [ "$using_rvm" = false ]; then
-                caddie cli:blank
-                caddie cli:title "System Ruby requires sudo or user install:"
-                caddie cli:indent "Option 1: Use caddie Ruby (recommended)"
-                caddie cli:indent "  caddie ruby:setup"
-                caddie cli:indent "  Then retry: caddie swift:xcode:packages:add ..."
-                caddie cli:blank
-                caddie cli:indent "Option 2: User install (system Ruby)"
-                caddie cli:indent "  gem install --user-install xcodeproj"
-                caddie cli:indent "  Then retry: caddie swift:xcode:packages:add ..."
-                caddie cli:blank
-                caddie cli:indent "Option 3: Use Xcode UI to add packages manually"
-            else
-                caddie cli:yellow "RVM Ruby detected but gem install failed"
-                caddie cli:thought "Try manually: caddie ruby:gem:install xcodeproj"
-                caddie cli:thought "Or use Xcode UI to add packages manually"
-            fi
-            return 1
-        fi
-    else
-        if [ "$using_rvm" = true ]; then
-            caddie cli:check "xcodeproj gem found (RVM Ruby)"
-        else
-            caddie cli:check "xcodeproj gem found (system Ruby)"
-        fi
-    fi
-    
-    local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
-    
-    # Try to find script in multiple locations
-    local script_path=""
-    local module_dir="$(dirname "${BASH_SOURCE[0]}")"
-    local current_dir="$(pwd)"
-    
-    # 1. Check installed location (highest priority)
-    if [ -f "$HOME/.caddie_modules/bin/add_swift_packages.rb" ]; then
-        script_path="$HOME/.caddie_modules/bin/add_swift_packages.rb"
-        caddie_debug "Found script in installed location: $script_path"
-    # 2. Check relative to module directory (development)
-    elif [ -f "$(dirname "$module_dir")/bin/add_swift_packages.rb" ]; then
-        script_path="$(cd "$(dirname "$module_dir")/bin" && pwd)/add_swift_packages.rb"
-    # 3. Try to find caddie.sh by searching parent directories
-    else
-        local search_dir="$current_dir"
-        local found_caddie=""
-        # Search up to 6 levels up (should be enough for most directory structures)
-        for i in {1..6}; do
-            # Check if caddie.sh directory exists in current search location
-            if [ -d "$search_dir/caddie.sh" ] && [ -f "$search_dir/caddie.sh/bin/add_swift_packages.rb" ]; then
-                found_caddie="$(cd "$search_dir/caddie.sh" && pwd)"
-                break
-            fi
-            # Also check one level up from current search location
-            local parent_of_search="$(dirname "$search_dir")"
-            if [ -d "$parent_of_search/caddie.sh" ] && [ -f "$parent_of_search/caddie.sh/bin/add_swift_packages.rb" ]; then
-                found_caddie="$(cd "$parent_of_search/caddie.sh" && pwd)"
-                break
-            fi
-            # Move up one level for next iteration
-            # Stop if we've reached home, root, or can't go higher
-            if [ "$parent_of_search" = "$search_dir" ] || [ "$parent_of_search" = "/" ]; then
-                break
-            fi
-            search_dir="$parent_of_search"
-        done
-        
-        if [ -n "$found_caddie" ] && [ -f "$found_caddie/bin/add_swift_packages.rb" ]; then
-            script_path="$found_caddie/bin/add_swift_packages.rb"
-        fi
-    fi
-    
-    if [ -z "$script_path" ] || [ ! -f "$script_path" ]; then
-        caddie cli:red "Error: add_swift_packages.rb script not found"
-        caddie cli:blank
-        caddie cli:title "Searched locations:"
-        caddie cli:indent "  • $HOME/.caddie_modules/bin/add_swift_packages.rb"
-        if [ -n "$module_dir" ]; then
-            caddie cli:indent "  • $(dirname "$module_dir")/bin/add_swift_packages.rb"
-        fi
-        caddie cli:indent "  • Parent directories from: $(pwd)"
-        caddie cli:blank
-        caddie cli:title "Solutions:"
-        caddie cli:indent "1. Install caddie.sh to get script in standard location:"
-        caddie cli:indent "   cd /path/to/caddie.sh && make install"
-        caddie cli:blank
-        caddie cli:indent "2. Or manually copy script to:"
-        caddie cli:indent "   $HOME/.caddie_modules/bin/add_swift_packages.rb"
-        caddie cli:blank
-        caddie cli:indent "3. Or use Xcode UI to add packages manually"
-        return 1
-    fi
-    
-    caddie cli:title "Adding Swift Package dependencies..."
-    caddie cli:blank
-    
-    # Use the detected Ruby executable to ensure we use the correct environment
-    if "$ruby_executable" "$script_path" "$project_file" "$@"; then
-        caddie cli:blank
-        caddie cli:check "Packages added successfully!"
-        caddie cli:thought "Next: Run 'caddie swift:xcode:resolve' to resolve dependencies"
+    done < <(grep -Ei "Test [Cc]ase '.*' failed" "$log_path")
+
+    failed_tests=$(printf '%s' "$failed_tests_raw" | sort -u)
+    if [ -z "$failed_tests" ]; then
+        caddie cli:check "No failed unit tests found in log"
         return 0
+    fi
+
+    local failed_classes=""
+    failed_classes=$(printf '%s' "$failed_tests" | awk -F/ '{print $1}' | sort -u)
+
+    local test_target=""
+    test_target=$(caddie_swift_xcode_test_bundle "$scheme" 2>/dev/null || true)
+    if [ -z "$test_target" ]; then
+        test_target=$(grep -E "Test Suite '.*\.xctest'" "$log_path" | head -1 | sed -E "s/.*Test Suite '([^']+)\.xctest'.*/\1/")
+    fi
+    if [ -z "$test_target" ]; then
+        test_target=$(grep -E "Testing target" "$log_path" | head -1 | sed -E "s/.*Testing target ([^ ]+).*/\1/")
+    fi
+    if [ -z "$test_target" ]; then
+        test_target=$(grep -E "Test Suite '[^']+' (started|passed|failed)" "$log_path" | sed -E "s/.*Test Suite '([^']+)'.*/\1/" | grep -v -E "^All tests$" | while IFS= read -r candidate; do
+            if ! printf '%s\n' "$failed_classes" | grep -qx "$candidate"; then
+                printf '%s\n' "$candidate"
+                break
+            fi
+        done | head -1)
+    fi
+    if [ -n "$test_target" ]; then
+        caddie cli:indent "Using test bundle: $test_target"
     else
-        caddie cli:red "Failed to add packages"
+        caddie cli:yellow "Test bundle not detected; re-run may fail for test plans"
+    fi
+
+    local -a skip_args=()
+    local ui_targets=""
+    local ui_status=0
+    ui_targets=$(caddie_swift_xcode_ui_test_targets)
+    ui_status=$?
+    if [ $ui_status -ne 0 ]; then
+        caddie cli:yellow "Unable to detect UI test targets; continuing without skip list"
+    elif [ -n "$ui_targets" ]; then
+        while IFS= read -r target; do
+            [ -n "$target" ] || continue
+            skip_args+=("-skip-testing:$target")
+        done <<< "$ui_targets"
+    fi
+    if [ ${#skip_args[@]} -gt 1 ]; then
+        mapfile -t skip_args < <(printf '%s\n' "${skip_args[@]}" | sort -u)
+    fi
+
+    local passed=0
+    local failed=0
+    local total=0
+    local test_id=""
+    local log_file=""
+    local xcode_cmd=()
+    local arg=""
+    local -a temp_log_files=()
+
+    caddie cli:title "Re-running failed unit tests..."
+    while IFS= read -r test_id; do
+        [ -n "$test_id" ] || continue
+        total=$((total + 1))
+
+        local full_test_id=""
+        if [[ "$test_id" == */*/* ]]; then
+            full_test_id="$test_id"
+        elif [ -n "$test_target" ]; then
+            full_test_id="${test_target}/${test_id}"
+        else
+            full_test_id="$test_id"
+        fi
+
+        caddie cli:indent "Running: $full_test_id"
+
+        log_file=$(mktemp -t caddie_xcode_test.XXXXXX)
+        if [ -z "$log_file" ]; then
+            caddie cli:red "Error: Unable to create test log file"
+            failed=$((failed + 1))
+            continue
+        fi
+        temp_log_files+=("$log_file")
+
+        xcode_cmd=(xcodebuild test \
+            -project "$project_file" \
+            -scheme "$scheme" \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=$sim_name" \
+            "-only-testing:$full_test_id")
+        if [ ${#skip_args[@]} -gt 0 ]; then
+            xcode_cmd+=("${skip_args[@]}")
+        fi
+        if [ $# -gt 0 ]; then
+            xcode_cmd+=("$@")
+        fi
+
+        {
+            printf "%s\n" "Caddie xcodebuild invocation:"
+            printf "    "
+            for arg in "${xcode_cmd[@]}"; do
+                printf "%q " "$arg"
+            done
+            printf "\n\n"
+        } >"$log_file"
+
+        "${xcode_cmd[@]}" >>"$log_file" 2>&1
+        local status=$?
+        if [ $status -eq 0 ]; then
+            caddie cli:check "Passed: $full_test_id"
+            passed=$((passed + 1))
+        else
+            caddie cli:red "Failed: $full_test_id"
+            failed=$((failed + 1))
+        fi
+        caddie cli:indent "Log: $log_file"
+    done <<< "$failed_tests"
+
+    caddie cli:blank
+    caddie cli:title "Failed test rerun summary"
+    caddie cli:indent "Total: $total"
+    caddie cli:indent "Passed: $passed"
+    caddie cli:indent "Failed: $failed"
+
+    # Clean up temporary log files
+    for log_file in "${temp_log_files[@]}"; do
+        [ -n "$log_file" ] && rm -f "$log_file"
+    done
+
+    if [ $failed -ne 0 ]; then
         return 1
     fi
+    return 0
 }
 
 function caddie_swift_help() {
@@ -616,8 +1174,18 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:packages:check     Check if packages are added"
     caddie cli:indent "xcode:packages:add <target> <pkg1> <prod1> [...]  Add packages (requires Ruby)"
     caddie cli:indent "xcode:resolve            Resolve package dependencies"
-    caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project"
-    caddie cli:indent "xcode:test [scheme] [sim_name]  Run Xcode tests"
+    caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project (errors only)"
+    caddie cli:indent "xcode:build:log [scheme] [simulator|device] [sim_name]  Build with full logs"
+    caddie cli:indent "xcode:play [scheme] [target]  Build and run app on target"
+    caddie cli:indent "xcode:target:get          Show current Xcode target"
+    caddie cli:indent "xcode:target:set <name>   Set Xcode target"
+    caddie cli:indent "xcode:target:unset        Clear Xcode target"
+    caddie cli:indent "xcode:test [scheme] [sim_name]  Run Xcode tests (log to file)"
+    caddie cli:indent "xcode:test:unit [scheme] [sim_name]  Run Xcode unit tests (skip UI, log to file)"
+    caddie cli:indent "xcode:test:unit:failed [scheme] [sim_name]  Re-run failed unit tests from log"
+    caddie cli:indent "xcode:test:unit:log:get       Show last unit test log path"
+    caddie cli:indent "xcode:test:unit:log:set <path>  Set last unit test log path"
+    caddie cli:indent "xcode:test:unit:log:unset     Clear last unit test log path"
     caddie cli:indent "xcode:clean [scheme]     Clean Xcode build"
     caddie cli:blank
     caddie cli:title "Quality"
@@ -626,10 +1194,12 @@ function caddie_swift_help() {
     caddie cli:blank
     caddie cli:title "Git"
     caddie cli:indent "gitignore                Write Swift .gitignore"
+    return 0
 }
 
 function caddie_swift_description() {
     printf '%s\n' 'Swift Package Manager helpers'
+    return 0
 }
 
 export -f caddie_swift_require_toolchain
@@ -649,10 +1219,30 @@ export -f caddie_swift_lint
 export -f caddie_swift_gitignore
 export -f caddie_swift_require_xcode_project
 export -f caddie_swift_xcode_project
+export -f caddie_swift_xcode_ui_test_targets
 export -f caddie_swift_xcode_scheme
+export -f caddie_swift_xcode_test_bundle
+export -f caddie_swift_xcode_schemes
+export -f caddie_swift_xcode_scheme_exists
+export -f caddie_swift_xcode_simulator_udid
+export -f caddie_swift_xcode_device_udid
+export -f caddie_swift_xcode_app_info
+export -f caddie_swift_xcode_target_set
+export -f caddie_swift_xcode_target_get
+export -f caddie_swift_xcode_target_unset
+export -f caddie_swift_prompt_segment
 export -f caddie_swift_xcode_resolve
+export -f caddie_swift_xcode_build_run
 export -f caddie_swift_xcode_build
+export -f caddie_swift_xcode_build_log
+export -f caddie_swift_xcode_play
+export -f caddie_swift_xcode_test_run
 export -f caddie_swift_xcode_test
+export -f caddie_swift_xcode_test_unit
+export -f caddie_swift_xcode_test_unit_log_set
+export -f caddie_swift_xcode_test_unit_log_get
+export -f caddie_swift_xcode_test_unit_log_unset
+export -f caddie_swift_xcode_test_unit_failed
 export -f caddie_swift_xcode_clean
 export -f caddie_swift_xcode_packages_check
 export -f caddie_swift_xcode_packages_add

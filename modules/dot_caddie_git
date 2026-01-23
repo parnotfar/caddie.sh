@@ -349,7 +349,8 @@ function caddie_git_pr_approve() {
 
     pr_view=$(gh pr view "$pr_identifier" --json number,title,headRefName,url --jq '[.number, .title, .headRefName, .url] | @tsv' 2>/dev/null || true)
     if [ -n "$pr_view" ]; then
-        IFS=$'\t' read -r pr_number pr_title pr_branch pr_url <<< "$pr_view"
+        local IFS=$'\t'
+        read -r pr_number pr_title pr_branch pr_url <<< "$pr_view"
         if [ -n "$pr_number" ] && [ -n "$pr_title" ]; then
             caddie cli:indent "PR #${pr_number}: ${pr_title}"
         fi

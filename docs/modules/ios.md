@@ -1,429 +1,185 @@
 # iOS Module
 
-The iOS module provides comprehensive iOS development tools and project management capabilities, making iOS development effortless and consistent.
+The iOS module focuses on App Store and TestFlight distribution workflows.
 
 ## Overview
 
-The iOS module is designed to streamline iOS development workflows by providing:
-
-- **Environment Setup**: Set up iOS development environment with Xcode and Swift
-- **Project Management**: Build, run, and test iOS projects
-- **Dependency Management**: Manage CocoaPods dependencies
-- **Rust Integration**: Set up Rust development environment for iOS
-- **Device Management**: List simulators and connected devices
+- Project info and build number management
+- Archive/export/upload for TestFlight
+- Stored configuration for credentials and defaults
 
 ## Commands
 
-### Environment Setup
+### Project Information
 
-#### `caddie ios:setup`
+#### `caddie ios:project:info [scheme]`
 
-Set up the basic iOS development environment.
-
-**Examples:**
-```bash
-# Setup iOS development environment
-caddie ios:setup
-```
-
-**What it does:**
-- Checks for Xcode installation
-- Validates Swift availability
-- Installs CocoaPods if needed
-- Provides environment information
-
-**Output:**
-```
-Setting up iOS development environment...
-✓ Xcode found: Xcode 15.2 Build version 15C500b
-✓ Swift found: swift-driver version: 1.75.2
-Installing CocoaPods...
-✓ CocoaPods installed successfully
-✓ iOS development environment setup complete
-  Xcode: Xcode 15.2 Build version 15C500b
-  Swift: swift-driver version: 1.75.2
-  CocoaPods: 1.14.3
-```
-
-**Requirements:**
-- macOS with Xcode installed
-- Xcode command line tools
-
-#### `caddie ios:rust:setup`
-
-Set up Rust development environment specifically for iOS development.
+Display bundle ID, version, build number, and team ID.
 
 **Examples:**
 ```bash
-# Setup Rust for iOS development
-caddie ios:rust:setup
+caddie ios:project:info
+caddie ios:project:info vCaddie
 ```
 
-**What it does:**
-- Installs Rust if not already present
-- Adds iOS-specific targets (aarch64-apple-ios, x86_64-apple-ios)
-- Installs essential Cargo tools (cargo-edit, cargo-watch, cargo-tarpaulin)
-- Validates iOS development environment (Xcode, Swift)
-- Provides next steps for iOS-Rust integration
+#### `caddie ios:increment:build [scheme]`
 
-**Output:**
-```
-Setting up Rust development environment for iOS...
-✓ Rust already installed: rustc 1.75.0 (8ea583342 2023-12-18)
-Adding iOS Rust targets...
-✓ iOS Rust targets added successfully
-Installing essential Cargo tools...
-✓ Cargo tools installed successfully
-Validating iOS development environment...
-✓ iOS development environment validated
-  Xcode: Xcode 15.2 Build version 15C500b
-  Swift: swift-driver version: 1.75.2
-  Rust: rustc 1.75.0 (8ea583342 2023-12-18)
-✓ Rust development environment for iOS setup complete
-
-Next steps:
-1. Build Rust library: cargo build --target aarch64-apple-ios --release --lib
-2. Create iOS framework structure for Swift integration
-3. Use the generated .a static libraries in your iOS project
-```
-
-**Requirements:**
-- macOS with Xcode installed
-- Xcode command line tools
-- Internet connection for Rust installation
-
-**Idempotent:** Yes - can be run multiple times safely
-
-### Device Management
-
-#### `caddie ios:simulator`
-
-List available iOS simulators.
+Increment the build number for the project.
 
 **Examples:**
 ```bash
-# List available simulators
-caddie ios:simulator
+caddie ios:increment:build
+caddie ios:increment:build vCaddie
 ```
 
-**What it does:**
-- Lists all available iOS simulators
-- Shows device types and iOS versions
-- Displays simulator identifiers
+#### `caddie ios:config:load:project [scheme]`
 
-**Output:**
-```
-Available iOS Simulators
-== Device Types ==
-iPhone 15 (19.2) (00008120-000D0C0A0E00001E)
-iPhone 15 Pro (19.2) (00008120-000D0C0A0E00001F)
-iPad Pro (12.9-inch) (6th generation) (19.2) (00008120-000D0C0A0E000020)
-```
-
-#### `caddie ios:device`
-
-List connected iOS devices.
+Load project info into the iOS config store.
 
 **Examples:**
 ```bash
-# List connected devices
-caddie ios:device
+caddie ios:config:load:project
+caddie ios:config:load:project vCaddie
 ```
 
-**What it does:**
-- Lists all connected iOS devices
-- Shows device information and status
-- Displays device identifiers
+### Configuration Management
 
-### Project Management
+#### `caddie ios:config:get [key]`
 
-#### `caddie ios:build`
-
-Build the current iOS project.
+Show stored configuration values.
 
 **Examples:**
 ```bash
-# Build iOS project
-caddie ios:build
+caddie ios:config:get
+caddie ios:config:get apple-id
 ```
 
-**What it does:**
-- Builds the iOS project in the current directory
-- Supports both .xcodeproj and .xcworkspace files
-- Shows build output and results
+#### `caddie ios:config:set <key> <value>`
 
-**Requirements:**
-- Must be in an iOS project directory (contains .xcodeproj or .xcworkspace)
-
-#### `caddie ios:run`
-
-Run the current iOS project on simulator.
+Set configuration values used by TestFlight uploads.
 
 **Examples:**
 ```bash
-# Run on simulator
-caddie ios:run
+caddie ios:config:set apple-id 'your@apple.id'
+caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'
+caddie ios:config:set scheme 'vCaddie'
 ```
 
-**What it does:**
-- Builds and runs the iOS project on simulator
-- Automatically selects available simulator
-- Shows run output and results
+#### `caddie ios:config:unset <key>`
 
-**Requirements:**
-- Must be in an iOS project directory
-- iOS simulator must be available
+Remove a configuration value.
 
-#### `caddie ios:test`
+#### `caddie ios:config:list`
 
-Run tests for the current iOS project.
+List all configuration values.
+
+### App Store / TestFlight
+
+#### `caddie ios:archive [scheme] [archive_path]`
+
+Create a distribution archive (alias for `ios:archive:testflight`).
+
+#### `caddie ios:archive:testflight [scheme] [archive_path]`
+
+Create a distribution archive for TestFlight.
 
 **Examples:**
 ```bash
-# Run iOS tests
-caddie ios:test
+caddie ios:archive:testflight
+caddie ios:archive:testflight vCaddie ./archives
 ```
 
-**What it does:**
-- Runs unit tests for the iOS project
-- Shows test results and coverage
-- Reports test failures
+#### `caddie ios:export:ipa [archive_path] [export_path] [export_options_plist]`
 
-#### `caddie ios:archive`
-
-Create an archive for distribution.
+Export an IPA from the archive for App Store Connect.
 
 **Examples:**
 ```bash
-# Create archive
-caddie ios:archive
+caddie ios:export:ipa
+caddie ios:export:ipa ./build/archive/vCaddie.xcarchive ./build/export
 ```
 
-**What it does:**
-- Creates a release archive
-- Stores archive in build/archive directory
-- Prepares for App Store distribution
+#### `caddie ios:upload:testflight [ipa_path] [apple_id] [password]`
 
-#### `caddie ios:clean`
-
-Clean build artifacts.
+Upload an IPA to TestFlight.
 
 **Examples:**
 ```bash
-# Clean build artifacts
-caddie ios:clean
+caddie ios:upload:testflight ./build/export/vCaddie.ipa
+caddie ios:upload:testflight ./build/export/vCaddie.ipa 'your@apple.id' 'xxxx-xxxx-xxxx-xxxx'
 ```
 
-**What it does:**
-- Removes build artifacts
-- Cleans derived data
-- Frees up disk space
+#### `caddie ios:testflight [scheme] [increment] [upload]`
 
-### Dependency Management
-
-#### `caddie ios:pod:install`
-
-Install CocoaPods dependencies.
+Run the complete TestFlight workflow.
 
 **Examples:**
 ```bash
-# Install dependencies
-caddie ios:pod:install
+caddie ios:testflight
+caddie ios:testflight vCaddie yes no
 ```
 
-**What it does:**
-- Installs CocoaPods dependencies
-- Updates Podfile.lock
-- Creates .xcworkspace if needed
+#### `caddie ios:testflight:publish [scheme] [archive_path] [export_path] [export_options_plist]`
 
-**Requirements:**
-- Podfile must exist in current directory
-
-#### `caddie ios:pod:update`
-
-Update CocoaPods dependencies.
+Create a TestFlight archive, export the IPA, and upload it in one command. This command auto-increments the build number before archiving.
 
 **Examples:**
 ```bash
-# Update dependencies
-caddie ios:pod:update
+caddie ios:testflight:publish
+caddie ios:testflight:publish vCaddie ./build/archive ./build/export
 ```
 
-**What it does:**
-- Updates CocoaPods dependencies to latest versions
-- Updates Podfile.lock
-- Shows update results
+#### `caddie ios:testflight:publish:increment:false [scheme] [archive_path] [export_path] [export_options_plist]`
 
-### Version Information
-
-#### `caddie ios:swift:version`
-
-Show Swift version.
+Create a TestFlight archive, export the IPA, and upload it without incrementing the build number. App Store Connect requires unique build numbers, so use this only when you have already incremented.
 
 **Examples:**
 ```bash
-# Show Swift version
-caddie ios:swift:version
+caddie ios:testflight:publish:increment:false
+caddie ios:testflight:publish:increment:false vCaddie ./build/archive ./build/export
 ```
 
-**What it does:**
-- Displays Swift version information
-- Shows Swift driver details
-
-#### `caddie ios:xcode:version`
-
-Show Xcode version.
-
-**Examples:**
-```bash
-# Show Xcode version
-caddie ios:xcode:version
-```
-
-**What it does:**
-- Displays Xcode version information
-- Shows build version and details
-
-## Workflow Examples
-
-### Basic iOS Development
+## Workflow Example
 
 ```bash
-# Setup environment
-caddie ios:setup
+# 1) One-time config
+caddie ios:config:set apple-id 'your@apple.id'
+caddie ios:config:set password 'xxxx-xxxx-xxxx-xxxx'
 
-# Create new project (using Xcode)
-# ... create project in Xcode ...
+# 2) Load project defaults
+caddie ios:config:load:project vCaddie
 
-# Build and run
-caddie ios:build
-caddie ios:run
-
-# Run tests
-caddie ios:test
+# 3) Full workflow
+caddie ios:testflight
 ```
 
-### iOS with Rust Integration
+## Notes
 
-```bash
-# Setup iOS and Rust environment
-caddie ios:setup
-caddie ios:rust:setup
-
-# Build Rust library for iOS
-cargo build --target aarch64-apple-ios --release --lib
-
-# Create iOS framework structure
-# ... integrate with iOS project ...
-
-# Build iOS project with Rust library
-caddie ios:build
-```
-
-### CocoaPods Workflow
-
-```bash
-# Setup environment
-caddie ios:setup
-
-# Install dependencies
-caddie ios:pod:install
-
-# Build project (use .xcworkspace)
-caddie ios:build
-
-# Update dependencies
-caddie ios:pod:update
-```
+- Build/run/test commands live in the Swift module (use `caddie swift:xcode:*`).
+- Prefer app-specific passwords for uploads.
+- TestFlight uploads go to the App Store Connect account for the Apple ID you configure and the app bundle ID in the archive. Ensure the scheme builds the correct target and that the Apple ID has access to that app in App Store Connect.
 
 ## Troubleshooting
 
-### Common Issues
+### Scheme not found
 
-#### Build Failures
+Pass a scheme explicitly or set a default:
+```bash
+caddie ios:config:set scheme vCaddie
+```
 
-1. **Check Xcode installation**:
-   ```bash
-   caddie ios:xcode:version
-   ```
+### Upload authentication errors
 
-2. **Check Swift availability**:
-   ```bash
-   caddie ios:swift:version
-   ```
+Verify configuration values:
+```bash
+caddie ios:config:get apple-id
+caddie ios:config:get password
+```
 
-3. **Clean and rebuild**:
-   ```bash
-   caddie ios:clean
-   caddie ios:build
-   ```
+### Archive failures
 
-#### Simulator Issues
-
-1. **List available simulators**:
-   ```bash
-   caddie ios:simulator
-   ```
-
-2. **Check device availability**:
-   ```bash
-   caddie ios:device
-   ```
-
-3. **Reset simulator**:
-   ```bash
-   xcrun simctl erase all
-   ```
-
-#### CocoaPods Issues
-
-1. **Reinstall dependencies**:
-   ```bash
-   caddie ios:pod:install
-   ```
-
-2. **Update dependencies**:
-   ```bash
-   caddie ios:pod:update
-   ```
-
-3. **Clean CocoaPods cache**:
-   ```bash
-   pod cache clean --all
-   ```
-
-#### Rust Integration Issues
-
-1. **Verify Rust setup**:
-   ```bash
-   caddie ios:rust:setup
-   ```
-
-2. **Check Rust targets**:
-   ```bash
-   rustup target list --installed
-   ```
-
-3. **Build Rust library**:
-   ```bash
-   cargo build --target aarch64-apple-ios --release --lib
-   ```
-
-## Related Documentation
-
-- **[Rust Module](rust.md)** - Rust development tools and iOS integration
-- **[Core Module](core.md)** - Basic Caddie.sh functions
-- **[Installation Guide](../installation.md)** - How to install Caddie.sh
-- **[User Guide](../user-guide.md)** - General usage instructions
-- **[Configuration Guide](../configuration.md)** - Customization options
-
-## External Resources
-
-- **[Apple Developer Documentation](https://developer.apple.com/documentation/)** - Official iOS development docs
-- **[Swift Documentation](https://swift.org/documentation/)** - Swift programming language guide
-- **[CocoaPods Documentation](https://guides.cocoapods.org/)** - CocoaPods dependency management
-- **[Xcode Documentation](https://developer.apple.com/xcode/)** - Xcode IDE guide
-
----
-
-*The iOS module provides everything you need for professional iOS development. From environment setup to Rust integration, it makes iOS development effortless and consistent.*
+Confirm code signing and team ID:
+```bash
+caddie ios:project:info
+caddie ios:config:get team-id
+```

@@ -260,15 +260,27 @@ function caddie_core_aliases() {
 # Function to run caddie-specific linting
 # caddie:lint:disable
 function caddie_core_lint() {
-    local target="${1:-modules/}"
-    local limit_per_check="${2:-0}"  # 0 means no limit (show all)
+    local limit_per_check=0  # 0 means no limit (show all)
+    local -a targets=()
+    local -a args=("$@")
+    if [ ${#args[@]} -eq 0 ]; then
+        targets=("modules/")
+    else
+        local last_index=$((${#args[@]} - 1))
+        local last_arg="${args[$last_index]}"
+        if [[ "$last_arg" =~ ^[0-9]+$ ]] && [ ${#args[@]} -gt 1 ]; then
+            limit_per_check="$last_arg"
+            unset 'args[$last_index]'
+        fi
+        targets=("${args[@]}")
+    fi
     local errors=0
     local warnings=0
     
     # Helper function to apply limit to grep results
     function apply_limit() {
         local input="$1"
-        if [ "$limit_per_check" -eq 0 ]; then
+        if ! [[ "$limit_per_check" =~ ^[0-9]+$ ]] || [ "$limit_per_check" -eq 0 ]; then
             echo "$input"
         else
             echo "$input" | head -"$limit_per_check"
@@ -278,22 +290,38 @@ function caddie_core_lint() {
     caddie cli:title "Caddie Lint - Enforcing Caddie Standards"
     caddie cli:blank
     
-    # Check if target exists
-    if [ ! -e "$target" ]; then
-        caddie cli:red "Error: Target '$target' does not exist"
-        return 1
-    fi
+    # Check if targets exist
+    local target=""
+    for target in "${targets[@]}"; do
+        if [ ! -e "$target" ]; then
+            caddie cli:red "Error: Target '$target' does not exist"
+            return 1
+        fi
+    done
     
     # Find all shell files
-    local files
-    if [ -d "$target" ]; then
-        files=$(find "$target" -name "*.sh" -o -name "dot_caddie*" | grep -v "/\.git/" | sort)
-    else
-        files="$target"
-    fi
+    local files=""
+    for target in "${targets[@]}"; do
+        if [ -d "$target" ]; then
+            files+=$(find "$target" -name "*.sh" -o -name "dot_caddie*" | grep -v "/\.git/" | sort)
+            files+=$'\n'
+        else
+            files+="$target"$'\n'
+        fi
+    done
+    files=$(printf '%s' "$files" | sort -u)
     
     if [ -z "$files" ]; then
-        caddie cli:warning "No shell files found in '$target'"
+        local target_list=""
+        if [ ${#targets[@]} -gt 0 ]; then
+            local IFS=', '
+            target_list="${targets[*]}"
+        fi
+        if [ -n "$target_list" ]; then
+            caddie cli:warning "No shell files found in targets: $target_list"
+        else
+            caddie cli:warning "No shell files found in specified targets"
+        fi
         return 0
     fi
     
@@ -305,15 +333,34 @@ function caddie_core_lint() {
         if [ ! -f "$file" ]; then
             continue
         fi
-        
-        # Skip linting the linter itself if it has ignore blocks
-        if [[ "$file" == *"dot_caddie_core"* ]] && grep -q "caddie:lint:disable" "$file"; then
-            caddie cli:indent "Checking: $file"
-            caddie cli:yellow "  ⚠ Skipping linter self-check (has ignore blocks)"
+
+        local basename=""
+        basename="$(basename "$file")"
+        local is_shell_file=false
+        if [[ "$file" == *.sh ]] || [[ "$basename" == dot_caddie* ]] || [[ "$basename" == .caddie_* ]]; then
+            is_shell_file=true
+        fi
+
+        caddie cli:indent "Checking: $file"
+        if [ "$is_shell_file" = false ]; then
+            caddie cli:check "  ✓ Skipped non-shell file"
+            caddie cli:blank
             continue
         fi
-        
-        caddie cli:indent "Checking: $file"
+
+        local is_module_file=false
+        if [[ "$file" == */modules/* ]] || [[ "$file" == */.caddie_modules/* ]]; then
+            if [[ "$basename" == dot_caddie_* ]] || [[ "$basename" == .caddie_* ]]; then
+                is_module_file=true
+            fi
+        fi
+
+        # Skip linting the linter itself if it has ignore blocks
+        if [[ "$file" == *"dot_caddie_core"* ]] && grep -q "caddie:lint:disable" "$file"; then
+            caddie cli:yellow "  ⚠ Skipping linter self-check (has ignore blocks)"
+            caddie cli:blank
+            continue
+        fi
         local file_errors=0
         local file_warnings=0
         
@@ -346,16 +393,39 @@ function caddie_core_lint() {
             done <<< "$blocks"
             return 1
         }
+
+        function filter_ignored_lines() {
+            local input="$1"
+            local blocks="$2"
+            if [ -z "$input" ] || [ -z "$blocks" ]; then
+                printf '%s' "$input"
+                return 0
+            fi
+            local output=""
+            while IFS= read -r line; do
+                [ -n "$line" ] || continue
+                local line_num="${line%%:*}"
+                if ! is_line_ignored "$line_num" "$blocks"; then
+                    if [ -z "$output" ]; then
+                        output="$line"
+                    else
+                        output="$output"$'\n'"$line"
+                    fi
+                fi
+            done <<< "$input"
+            printf '%s' "$output"
+            return 0
+        }
         
         # 2. Check for linter exemptions (skip certain checks for specific modules)
         local exempt_from_shebang=false
         local exempt_from_naming=false
-        if [[ "$file" == *"dot_caddie_debug"* ]]; then
+        if [ "$is_module_file" = true ] && [[ "$file" == *"dot_caddie_debug"* ]]; then
             exempt_from_naming=true
         fi
         
         # 2. Check for CLI module sourcing (for modules)
-        if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_cli"* ]]; then
+        if [ "$is_module_file" = true ] && [[ "$file" != *"dot_caddie_cli"* ]]; then
             if ! grep -q 'source.*\.caddie_cli' "$file"; then
                 caddie cli:red "  ✗ Missing CLI module sourcing (should source ~/.caddie_modules/.caddie_cli)"
                 ((file_errors++))
@@ -363,7 +433,7 @@ function caddie_core_lint() {
         fi
         
         # 3. Check function naming convention (unless exempt)
-        if [ "$exempt_from_naming" = false ]; then
+        if [ "$is_module_file" = true ] && [ "$exempt_from_naming" = false ]; then
             local bad_functions=$(grep -n "^function caddie_[^_]*[^_].*()" "$file" | grep -v "caddie_[a-z]*_[a-z]" | grep -v "^function caddie_[a-z]*_[a-z]" || true)
             if [ -n "$bad_functions" ]; then
                 caddie cli:red "  ✗ Invalid function naming (should be caddie_<module>_<command>):"
@@ -392,26 +462,30 @@ function caddie_core_lint() {
         fi
         
         # 6. Check for function exports
-        local functions=$(grep "^function caddie_.*()" "$file" | sed 's/function //' | sed 's/()//' | grep -v '{' || true)
-        local exports=$(grep "^export -f caddie_" "$file" || true)
-        
-        for func in $functions; do
-            if ! echo "$exports" | grep -q "export -f $func"; then
-                caddie cli:red "  ✗ Function '$func' is not exported"
-                ((file_errors++))
-            fi
-        done
+        if [ "$is_module_file" = true ]; then
+            local functions=$(grep "^function caddie_.*()" "$file" | sed 's/function //' | sed 's/()//' | grep -v '{' || true)
+            local exports=$(grep "^export -f caddie_" "$file" || true)
+
+            for func in $functions; do
+                if ! echo "$exports" | grep -q "export -f $func"; then
+                    caddie cli:red "  ✗ Function '$func' is not exported"
+                    ((file_errors++))
+                fi
+            done
+        fi
         
         # 7. Check for help and description functions
-        local module_name=$(basename "$file" | sed 's/dot_caddie_//')
-        if [[ "$file" == *"dot_caddie_"* ]] && [[ "$file" != *"dot_caddie_core"* ]]; then
-            if ! grep -q "function caddie_${module_name}_help()" "$file"; then
-                caddie cli:red "  ✗ Missing help function (caddie_${module_name}_help)"
-                ((file_errors++))
-            fi
-            if ! grep -q "function caddie_${module_name}_description()" "$file"; then
-                caddie cli:red "  ✗ Missing description function (caddie_${module_name}_description)"
-                ((file_errors++))
+        if [ "$is_module_file" = true ]; then
+            local module_name=$(basename "$file" | sed 's/dot_caddie_//')
+            if [[ "$file" != *"dot_caddie_core"* ]]; then
+                if ! grep -q "function caddie_${module_name}_help()" "$file"; then
+                    caddie cli:red "  ✗ Missing help function (caddie_${module_name}_help)"
+                    ((file_errors++))
+                fi
+                if ! grep -q "function caddie_${module_name}_description()" "$file"; then
+                    caddie cli:red "  ✗ Missing description function (caddie_${module_name}_description)"
+                    ((file_errors++))
+                fi
             fi
         fi
         
@@ -540,6 +614,7 @@ function caddie_core_lint() {
             ' "$file" || true)")
         fi
         
+        undeclared_vars="$(filter_ignored_lines "$undeclared_vars" "$ignore_blocks")"
         if [ -n "$undeclared_vars" ]; then
             caddie cli:yellow "  ⚠ Consider using 'local' for function variables:"
             echo "$undeclared_vars" | while read -r line; do
@@ -568,6 +643,7 @@ function caddie_core_lint() {
             }
         ' "$file" || true)")
         
+        redundant_vars="$(filter_ignored_lines "$redundant_vars" "$ignore_blocks")"
         if [ -n "$redundant_vars" ]; then
             caddie cli:yellow "  ⚠ Redundant variable declarations (remove duplicate local declarations):"
             echo "$redundant_vars" | while read -r line; do
@@ -610,6 +686,7 @@ function caddie_core_lint() {
             }
         ' "$file" || true)")
         
+        shadowed_vars="$(filter_ignored_lines "$shadowed_vars" "$ignore_blocks")"
         if [ -n "$shadowed_vars" ]; then
             caddie cli:yellow "  ⚠ Variable shadowing detected (local variables declared inside conditional blocks):"
             echo "$shadowed_vars" | while read -r line; do
