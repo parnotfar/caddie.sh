@@ -143,6 +143,8 @@ Remove stale worktree metadata.
 caddie git:worktree:prune
 ```
 
+**Tab completion:** Worktree commands support tab completion for paths. For example, `git:worktree:remove`, `git:worktree:lock`, `git:worktree:unlock`, and `git:worktree:cd` will suggest valid worktree paths.
+
 ### Remote Management
 
 #### `caddie git:remote:add [<name> <url>]`

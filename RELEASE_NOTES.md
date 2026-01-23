@@ -14,6 +14,7 @@
   - `caddie git:worktree:lock <path>` / `caddie git:worktree:unlock <path>`
   - `caddie git:worktree:cd <path>`
   - `caddie git:worktree:prune`
+- **Tab Completion**: Worktree path completion is available for `git:worktree:remove`, `git:worktree:lock`, `git:worktree:unlock`, and `git:worktree:cd`
 
 
 ### 📝 Usage Examples
@@ -21,16 +22,16 @@
 #### **Worktree Commands**
 ```bash
 # Create worktree for a branch
-caddie git:worktree:add ../vcaddie-swift-analytics feature/analytics
+caddie git:worktree:add ../swift-analytics feature/analytics
 
 # List and jump between worktrees
 caddie git:worktree:list
-caddie git:worktree:cd ../vcaddie-swift-analytics
+caddie git:worktree:cd ../swift-analytics
 
 # Lock or remove worktrees
-caddie git:worktree:lock ../vcaddie-swift-analytics
-caddie git:worktree:unlock ../vcaddie-swift-analytics
-caddie git:worktree:remove ../vcaddie-swift-analytics
+caddie git:worktree:lock ../swift-analytics
+caddie git:worktree:unlock ../swift-analytics
+caddie git:worktree:remove ../swift-analytics
 ```
 
 ## Version 5.1.0 - iOS TestFlight Distribution & Configuration Management
