@@ -12,6 +12,8 @@
   - `caddie ios:export:ipa [archive_path] [export_path] [export_options_plist]` - Export IPA from archive
   - `caddie ios:upload:testflight [ipa_path] [apple_id] [password]` - Upload IPA to App Store Connect
   - `caddie ios:testflight [scheme] [increment] [upload]` - Complete end-to-end workflow
+  - `caddie ios:testflight:publish [scheme] [archive_path] [export_path] [export_options_plist]` - Increment build + archive + export + upload
+  - `caddie ios:testflight:publish:increment:false [scheme] [archive_path] [export_path] [export_options_plist]` - Archive + export + upload (no increment)
 - **Project Information Extraction**: Automatically extract bundle ID, version, build number, and team ID from Xcode projects
   - `caddie ios:project:info [scheme]` - Display all project information
   - `caddie ios:increment:build [scheme]` - Automatically increment build numbers
@@ -80,6 +82,15 @@ caddie ios:config:load:project vCaddie
 
 # 3. Run complete workflow (increment build, archive, export, upload)
 caddie ios:testflight
+```
+
+#### **Publish Shortcut**
+```bash
+# Increment build + archive + export + upload
+caddie ios:testflight:publish vCaddie
+
+# Archive + export + upload (no increment)
+caddie ios:testflight:publish:increment:false vCaddie
 ```
 
 #### **Step-by-Step Workflow**
