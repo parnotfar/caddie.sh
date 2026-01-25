@@ -54,6 +54,16 @@ Pull changes from the remote repository.
 caddie git:pull
 ```
 
+#### `caddie git:merge:main [remote]`
+Merge the mainline branch from the remote into the current branch without checking it out (worktree-friendly).
+
+```bash
+caddie git:merge:main
+caddie git:merge:main upstream
+```
+
+Tip: If you previously used the `gmm` alias, use `caddie git:merge:main` instead.
+
 ### Advanced Git Operations
 
 #### `caddie git:push:set:upstream [<remote>] [<branch>]`

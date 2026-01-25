@@ -598,6 +598,113 @@ function caddie_ios_project_info() {
     return 0
 }
 
+function caddie_ios_version_get() {
+    _caddie_ios_load_config
+    local project_file=""
+    local workspace_file=""
+    if ! IFS=$'\t' read -r project_file workspace_file < <(_caddie_ios_find_project_files); then
+        return 1
+    fi
+
+    local scheme="$1"
+    if ! scheme=$(_caddie_ios_resolve_scheme "$scheme" "$project_file" "$workspace_file" "caddie ios:version:get [scheme]"); then
+        return 1
+    fi
+
+    local build_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+    local version=$(echo "$build_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
+
+    if [ -n "$version" ]; then
+        caddie cli:green "Version: $version"
+        return 0
+    fi
+
+    caddie cli:yellow "Version: <not set>"
+    return 1
+}
+
+function caddie_ios_version_set() {
+    _caddie_ios_load_config
+    local new_version="$1"
+    local scheme="$2"
+
+    if [ -z "$new_version" ]; then
+        caddie cli:red "Error: Please provide a version number"
+        caddie cli:usage "caddie ios:version:set <version> [scheme]"
+        return 1
+    fi
+
+    local project_file=""
+    local workspace_file=""
+    if ! IFS=$'\t' read -r project_file workspace_file < <(_caddie_ios_find_project_files); then
+        return 1
+    fi
+    if [ -z "$project_file" ]; then
+        caddie cli:red "Error: .xcodeproj is required to update marketing version"
+        return 1
+    fi
+
+    if ! scheme=$(_caddie_ios_resolve_scheme "$scheme" "$project_file" "$workspace_file" "caddie ios:version:set <version> [scheme]"); then
+        return 1
+    fi
+
+    caddie cli:title "Setting Marketing Version (Scheme: $scheme)"
+
+    local build_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+    local current_version=$(echo "$build_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
+
+    caddie cli:indent "Current version: ${current_version:-<not set>}"
+    caddie cli:indent "New version: $new_version"
+
+    local update_success=false
+    if command -v agvtool >/dev/null 2>&1; then
+        caddie cli:indent "Using agvtool to update marketing version..."
+        if agvtool new-marketing-version "$new_version" >/dev/null 2>&1; then
+            update_success=true
+        else
+            caddie cli:yellow "agvtool failed, trying fallback method..."
+        fi
+    fi
+
+    if [ "$update_success" = false ]; then
+        caddie cli:indent "Updating marketing version in project file..."
+        local escaped_new_version=$(_caddie_ios_escape_sed_replacement "$new_version")
+        if [ -n "$current_version" ]; then
+            local escaped_current_version=$(_caddie_ios_escape_sed_pattern "$current_version")
+            sed -i '' "s/MARKETING_VERSION = ${escaped_current_version};/MARKETING_VERSION = ${escaped_new_version};/g" "$project_file/project.pbxproj" 2>/dev/null || true
+        else
+            sed -i '' "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${escaped_new_version};/g" "$project_file/project.pbxproj" 2>/dev/null || true
+        fi
+        if grep -Fq "MARKETING_VERSION = ${new_version};" "$project_file/project.pbxproj" 2>/dev/null; then
+            update_success=true
+        fi
+
+        local info_plist=$(find . -name "Info.plist" -type f | head -1)
+        if [ -n "$info_plist" ] && [ -f "$info_plist" ]; then
+            if command -v /usr/libexec/PlistBuddy >/dev/null 2>&1; then
+                /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $new_version" "$info_plist" 2>/dev/null \
+                    || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $new_version" "$info_plist" 2>/dev/null \
+                    || true
+            fi
+        fi
+    fi
+
+    if [ "$update_success" = true ]; then
+        local verify_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+        local verify_version=$(echo "$verify_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
+        if [ "$verify_version" = "$new_version" ]; then
+            caddie cli:check "Marketing version set to $new_version (verified)"
+            export CADDIE_IOS_VERSION="$new_version"
+            return 0
+        fi
+        caddie cli:red "Error: Version update failed verification (expected $new_version, got ${verify_version:-<empty>})"
+        return 1
+    fi
+
+    caddie cli:red "Error: Failed to update marketing version"
+    return 1
+}
+
 # Function to increment build number
 function caddie_ios_increment_build() {
     _caddie_ios_load_config
@@ -1083,6 +1190,8 @@ function caddie_ios_help() {
     caddie cli:blank
     caddie cli:title "Project Information:"
     caddie cli:indent "project:info [scheme]          Show bundle ID, version, build number"
+    caddie cli:indent "version:get [scheme]           Show marketing version"
+    caddie cli:indent "version:set <version> [scheme] Set marketing version"
     caddie cli:indent "increment:build [scheme]       Increment build number"
     caddie cli:blank
     caddie cli:title "Configuration Management:"
@@ -1123,6 +1232,8 @@ function caddie_ios_description() {
 export -f caddie_ios_description
 export -f caddie_ios_archive
 export -f caddie_ios_project_info
+export -f caddie_ios_version_get
+export -f caddie_ios_version_set
 export -f caddie_ios_increment_build
 export -f caddie_ios_archive_testflight
 export -f caddie_ios_export_ipa

@@ -75,6 +75,46 @@ function caddie_git_pull() {
     return 0
 }
 
+function caddie_git_merge_main() {
+    local remote="${1:-origin}"
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    local current_branch=""
+    current_branch="$(git branch --show-current 2>/dev/null)"
+    if [ -z "$current_branch" ]; then
+        caddie cli:red "Error: Unable to detect current branch"
+        return 1
+    fi
+
+    local mainline=""
+    mainline="$(git symbolic-ref --quiet --short "refs/remotes/${remote}/HEAD" 2>/dev/null | sed "s#^${remote}/##")"
+    if [ -z "$mainline" ]; then
+        mainline="main"
+    fi
+
+    if [ "$current_branch" = "$mainline" ]; then
+        caddie cli:red "Already on ${mainline}; nothing to merge"
+        return 1
+    fi
+
+    caddie cli:title "Merging ${remote}/${mainline} into ${current_branch}"
+    if ! git fetch "$remote" "$mainline"; then
+        caddie cli:red "Failed to fetch ${remote}/${mainline}"
+        return 1
+    fi
+
+    if git merge "${remote}/${mainline}"; then
+        caddie cli:check "Merge completed"
+        return 0
+    fi
+
+    caddie cli:red "Merge failed"
+    return 1
+}
+
 function caddie_git_gacp() {
     local message="$1"
     if [ -z "$message" ]; then
@@ -707,6 +747,7 @@ function caddie_git_help() {
     caddie cli:indent "push               Push to remote repository"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
     caddie cli:indent "pull               Pull from remote repository"
+    caddie cli:indent "merge:main [remote]  Merge mainline into current branch"
     caddie cli:indent "clone <repo-name>  Clone repository using stored GitHub account"
     caddie cli:blank
     
@@ -738,6 +779,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
+    caddie cli:indent "caddie git:merge:main"
     caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
     caddie cli:indent "caddie git:worktree:list"
     caddie cli:blank
@@ -770,6 +812,7 @@ export -f caddie_git_worktree_completion_candidates
 export -f caddie_git_push
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull
+export -f caddie_git_merge_main
 export -f caddie_git_remote_add
 export -f caddie_git_remote_set_url
 export -f caddie_git_remote_list

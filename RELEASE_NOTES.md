@@ -1,5 +1,24 @@
 # Caddie.sh Release Notes
 
+## Version 6.2.0 - Worktree-Friendly Merge
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Git Merge Workflow**
+- **Worktree-Friendly Merge**: Added `caddie git:merge:main [remote]` to merge the mainline branch without checking it out
+- **Alias Cleanup**: Removed legacy `gmm` alias from `dot_bashrc` (use `caddie git:merge:main` instead)
+- **Marketing Version Control**: Added `caddie ios:version:get` and `caddie ios:version:set` to manage marketing versions
+
+### 📝 Usage Examples
+
+#### **Merge Mainline**
+```bash
+caddie git:merge:main
+caddie git:merge:main upstream
+```
+
 ## Version 6.0.0 - Git Worktree Workflow
 
 **Release Date:** January 2026

@@ -85,6 +85,24 @@ caddie ios:keychain:password:get 'your@apple.id'
 caddie ios:keychain:password:unset 'your@apple.id'
 ```
 
+### Versioning
+
+#### `caddie ios:version:get [scheme]`
+
+Show the marketing version (`CFBundleShortVersionString`).
+
+```bash
+caddie ios:version:get vCaddie
+```
+
+#### `caddie ios:version:set <version> [scheme]`
+
+Set the marketing version (`CFBundleShortVersionString`) using agvtool when available, with a project file fallback.
+
+```bash
+caddie ios:version:set 1.2 vCaddie
+```
+
 ### App Store / TestFlight
 
 #### `caddie ios:archive [scheme] [archive_path]`

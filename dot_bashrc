@@ -207,23 +207,6 @@ export -f gnb
 alias gmb='gnb "$@"'
 alias gcb='gnb "$@"'
 
-function gmm() {
-  local current_branch=$(git branch | grep '^*' | cut -d' ' -f2)
-  local mainline=$(basename $(git symbolic-ref --short refs/remotes/origin/HEAD))
-
-  if [[ "${current_branch}" == "${mainline}" ]]; then
-    echo "Cannot merge ${mainline} to ${mainline}"
-    return 1
-  fi
-
-  gco "${mainline}"
-  gl
-  gco "${current_branch}"
-  git merge "${mainline}"
-}
- 
-export -f gmm
-
 function gcp() {
   local message=$1
  
