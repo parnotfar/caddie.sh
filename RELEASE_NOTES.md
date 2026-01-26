@@ -1,5 +1,15 @@
 # Caddie.sh Release Notes
 
+## Version 6.2.1 - TestFlight Credential UX
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **TestFlight Upload UX**
+- **Masked Password Prompt**: App-specific password entry now shows masked feedback when prompting
+- **Keychain Default**: Post-upload keychain save prompt now defaults to yes
+
 ## Version 6.2.0 - Worktree-Friendly Merge
 
 **Release Date:** January 2026

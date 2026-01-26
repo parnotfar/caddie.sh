@@ -128,6 +128,49 @@ function _caddie_ios_keychain_password_read() {
     return 1
 }
 
+function _caddie_ios_prompt_secret() {
+    local prompt="$1"
+    local input=""
+    local char=""
+    local stty_state=""
+
+    if [ ! -t 0 ]; then
+        return 1
+    fi
+
+    if [ -n "$prompt" ]; then
+        caddie cli:indent "$prompt"
+    fi
+
+    stty_state=$(stty -g 2>/dev/null || true)
+    stty -echo 2>/dev/null || true
+    while IFS= read -r -n1 char; do
+        case "$char" in
+            $'\n'|$'\r')
+                break
+                ;;
+            $'\177'|$'\b')
+                if [ -n "$input" ]; then
+                    input="${input%?}"
+                    printf '\b \b'
+                fi
+                ;;
+            *)
+                input+="$char"
+                printf '*'
+                ;;
+        esac
+    done
+    if [ -n "$stty_state" ]; then
+        stty "$stty_state" 2>/dev/null || true
+    else
+        stty echo 2>/dev/null || true
+    fi
+    printf '\n'
+    printf '%s' "$input"
+    return 0
+}
+
 function _caddie_ios_api_key_path() {
     local api_key="$1"
     if [ -z "$api_key" ]; then
@@ -657,10 +700,17 @@ function caddie_ios_version_set() {
     caddie cli:indent "New version: $new_version"
 
     local update_success=false
+    local verify_version=""
     if command -v agvtool >/dev/null 2>&1; then
         caddie cli:indent "Using agvtool to update marketing version..."
         if agvtool new-marketing-version "$new_version" >/dev/null 2>&1; then
-            update_success=true
+            local check_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+            verify_version=$(echo "$check_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
+            if [ "$verify_version" = "$new_version" ]; then
+                update_success=true
+            else
+                caddie cli:yellow "agvtool did not update version, trying fallback method..."
+            fi
         else
             caddie cli:yellow "agvtool failed, trying fallback method..."
         fi
@@ -678,6 +728,20 @@ function caddie_ios_version_set() {
         if grep -Fq "MARKETING_VERSION = ${new_version};" "$project_file/project.pbxproj" 2>/dev/null; then
             update_success=true
         fi
+        if [ "$update_success" = false ]; then
+            local xcconfig_files=""
+            local xcconfig_file=""
+            xcconfig_files=$(find . -name "*.xcconfig" -type f 2>/dev/null)
+            if [ -n "$xcconfig_files" ]; then
+                caddie cli:indent "Updating marketing version in xcconfig files..."
+                while IFS= read -r xcconfig_file; do
+                    [ -n "$xcconfig_file" ] || continue
+                    if grep -q "MARKETING_VERSION" "$xcconfig_file"; then
+                        sed -i '' -E "s/^[[:space:]]*MARKETING_VERSION[[:space:]]*=.*/MARKETING_VERSION = ${escaped_new_version}/" "$xcconfig_file" 2>/dev/null || true
+                    fi
+                done <<< "$xcconfig_files"
+            fi
+        fi
 
         local info_plist=$(find . -name "Info.plist" -type f | head -1)
         if [ -n "$info_plist" ] && [ -f "$info_plist" ]; then
@@ -689,19 +753,16 @@ function caddie_ios_version_set() {
         fi
     fi
 
-    if [ "$update_success" = true ]; then
-        local verify_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
-        local verify_version=$(echo "$verify_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
-        if [ "$verify_version" = "$new_version" ]; then
-            caddie cli:check "Marketing version set to $new_version (verified)"
-            export CADDIE_IOS_VERSION="$new_version"
-            return 0
-        fi
-        caddie cli:red "Error: Version update failed verification (expected $new_version, got ${verify_version:-<empty>})"
-        return 1
+    local verify_settings=$(_caddie_ios_xcodebuild "$project_file" "$workspace_file" -scheme "$scheme" -configuration Release -showBuildSettings 2>/dev/null)
+    verify_version=$(echo "$verify_settings" | grep "MARKETING_VERSION" | head -1 | sed 's/.*= *//' | xargs)
+    if [ "$verify_version" = "$new_version" ]; then
+        caddie cli:check "Marketing version set to $new_version (verified)"
+        export CADDIE_IOS_VERSION="$new_version"
+        return 0
     fi
 
-    caddie cli:red "Error: Failed to update marketing version"
+    caddie cli:red "Error: Version update failed verification (expected $new_version, got ${verify_version:-<empty>})"
+    caddie cli:thought "Check if MARKETING_VERSION is controlled by xcconfig or build settings overrides."
     return 1
 }
 
@@ -869,7 +930,7 @@ function caddie_ios_export_ipa() {
         
         # Get team ID from archive
         local team_id=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:TeamIdentifier" "$archive_path/Info.plist" 2>/dev/null | head -1 | xargs)
-        local method="app-store"
+        local method="app-store-connect"
         
         caddie cli:indent "Creating export options plist..."
         cat > "$export_options_plist" <<EOF
@@ -1000,11 +1061,21 @@ function caddie_ios_upload_testflight() {
         auth_password="$password"
         caddie cli:indent "Using password (consider using app-specific password)"
     else
-        caddie cli:red "Error: Password or app-specific password not provided"
-        caddie cli:thought "Set it with: caddie ios:config:set password <app-specific-password>"
-        caddie cli:thought "Or store in keychain: caddie ios:keychain:password:set <apple_id> <app-specific-password>"
-        caddie cli:thought "Get app-specific password from: https://appleid.apple.com/account/manage"
-        return 1
+        if [ -t 0 ]; then
+            local prompt_password=""
+            prompt_password=$(_caddie_ios_prompt_secret "Enter app-specific password (masked):")
+            if [ -n "$prompt_password" ]; then
+                auth_password="$prompt_password"
+                caddie cli:indent "Using password from prompt"
+            fi
+        fi
+        if [ -z "$auth_password" ]; then
+            caddie cli:red "Error: Password or app-specific password not provided"
+            caddie cli:thought "Set it with: caddie ios:config:set password <app-specific-password>"
+            caddie cli:thought "Or store in keychain: caddie ios:keychain:password:set <apple_id> <app-specific-password>"
+            caddie cli:thought "Get app-specific password from: https://appleid.apple.com/account/manage"
+            return 1
+        fi
     fi
     
     caddie cli:indent "IPA: $ipa_path"
@@ -1027,6 +1098,21 @@ function caddie_ios_upload_testflight() {
         caddie cli:indent "2. Go to: https://appstoreconnect.apple.com"
         caddie cli:indent "3. Navigate to: My Apps → Your App → TestFlight"
         caddie cli:indent "4. Add build to testing groups when processing completes"
+        if [ -t 0 ]; then
+            caddie cli:blank
+            caddie cli:indent "Store app-specific password in keychain? [Y/n]"
+            local store_choice=""
+            read -r store_choice
+            if [ -z "$store_choice" ]; then
+                store_choice="y"
+            fi
+            case "$store_choice" in
+                y|Y|yes|YES)
+                    caddie_ios_keychain_password_set "$apple_id" "$auth_password" >/dev/null 2>&1 || true
+                    caddie cli:check "Keychain password stored"
+                    ;;
+            esac
+        fi
         return 0
     else
         caddie cli:red "Upload failed"

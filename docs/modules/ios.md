@@ -189,6 +189,7 @@ caddie ios:testflight
 - Configuration is stored in `~/.caddie_ios_config` and loaded into the shell when the module loads.
 - Prefer keychain storage for app-specific passwords (`ios:keychain:password:*`).
 - API key uploads require `AuthKey_<API_KEY>.p8` in `~/.private_keys` or `~/private_keys`.
+- If no password is configured, uploads will prompt for a masked app-specific password and offer to store it in the keychain (default: yes).
 - TestFlight uploads go to the App Store Connect account for the Apple ID you configure and the app bundle ID in the archive. Ensure the scheme builds the correct target and that the Apple ID has access to that app in App Store Connect.
 
 ## Troubleshooting
