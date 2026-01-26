@@ -211,6 +211,105 @@ function caddie_swift_xcode_project() {
     printf '%s\n' "$(basename "$project_file")"
 }
 
+function caddie_swift_xcode_packages_check() {
+    caddie_swift_require_xcode_project || return 1
+    local project_file=""
+    local pbxproj=""
+    local -a packages=()
+    local line=""
+    project_file=$(caddie_swift_xcode_project)
+    pbxproj="$project_file/project.pbxproj"
+
+    if [ ! -f "$pbxproj" ]; then
+        caddie cli:red "Error: project.pbxproj not found in $project_file"
+        return 1
+    fi
+
+    if ! grep -q "XCLocalSwiftPackageReference\|XCRemoteSwiftPackageReference" "$pbxproj" 2>/dev/null; then
+        caddie cli:yellow "No Swift Package dependencies found in project"
+        caddie cli:thought "Add packages in Xcode: Project Settings → Package Dependencies → Add Package"
+        return 1
+    fi
+
+    while read -r line; do
+        line="${line#*repositoryURL = }"
+        line="${line#*path = }"
+        line="${line%;}"
+        line="${line#\"}"
+        line="${line%\"}"
+        if [ -n "$line" ]; then
+            packages+=("$line")
+        fi
+    done < <(grep -E "repositoryURL =|path =" "$pbxproj" | sed -e 's/^[[:space:]]*//')
+
+    caddie cli:check "Swift Package dependencies detected"
+    if [ "${#packages[@]}" -gt 0 ]; then
+        caddie cli:title "Packages"
+        local package=""
+        for package in "${packages[@]}"; do
+            caddie cli:indent "$package"
+        done
+    fi
+
+    return 0
+}
+
+function caddie_swift_xcode_packages_add() {
+    caddie_swift_require_xcode_project || return 1
+    local target="$1"
+    shift || true
+
+    if [ -z "$target" ] || [ "$#" -lt 2 ] || [ $(( $# % 2 )) -ne 0 ]; then
+        caddie cli:red "Error: Provide a target and package/product pairs"
+        caddie cli:usage "caddie swift:xcode:packages:add <target> <package_path> <product> [<package_path> <product> ...]"
+        return 1
+    fi
+
+    if ! command -v ruby >/dev/null 2>&1; then
+        caddie cli:red "Error: Ruby is required to add packages"
+        caddie cli:indent "Install with: caddie ruby:setup"
+        return 1
+    fi
+
+    if ! ruby -e "require 'xcodeproj'" >/dev/null 2>&1; then
+        caddie cli:yellow "xcodeproj gem not found; installing..."
+        if command -v caddie >/dev/null 2>&1; then
+            caddie ruby:gem:install xcodeproj || return 1
+        else
+            caddie cli:red "Error: Unable to install xcodeproj gem"
+            caddie cli:indent "Run: caddie ruby:gem:install xcodeproj"
+            return 1
+        fi
+    fi
+
+    local script_path=""
+    local module_dir=""
+    module_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    if [ -f "$module_dir/bin/add_swift_packages.rb" ]; then
+        script_path="$module_dir/bin/add_swift_packages.rb"
+    elif [ -f "$module_dir/../bin/add_swift_packages.rb" ]; then
+        script_path="$module_dir/../bin/add_swift_packages.rb"
+    elif [ -f "$HOME/.caddie_modules/bin/add_swift_packages.rb" ]; then
+        script_path="$HOME/.caddie_modules/bin/add_swift_packages.rb"
+    fi
+
+    if [ -z "$script_path" ]; then
+        caddie cli:red "Error: add_swift_packages.rb script not found"
+        caddie cli:indent "Run: make install"
+        return 1
+    fi
+
+    local project_file=""
+    project_file=$(caddie_swift_xcode_project)
+
+    caddie cli:title "Adding Swift packages to $project_file"
+    caddie cli:indent "Target: $target"
+
+    ruby "$script_path" "$project_file" "$target" "$@"
+    return $?
+}
+
 function caddie_swift_xcode_ui_test_targets() {
     caddie_swift_require_xcode_project || return 1
     local project_file=$(caddie_swift_xcode_project)
@@ -632,6 +731,22 @@ function caddie_swift_xcode_build() {
 function caddie_swift_xcode_build_log() {
     caddie_swift_xcode_build_run "log" "$@"
     return $?
+}
+
+function caddie_swift_xcode_clean() {
+    caddie_swift_require_xcode_project || return 1
+    local scheme="$1"
+    scheme=$(caddie_swift_xcode_scheme "$scheme")
+    local project_file=$(caddie_swift_xcode_project)
+
+    caddie cli:title "Cleaning Xcode project '$project_file' (scheme: $scheme)..."
+    if xcodebuild -project "$project_file" -scheme "$scheme" clean; then
+        caddie cli:check "Clean completed"
+        return 0
+    fi
+
+    caddie cli:red "Clean failed"
+    return 1
 }
 
 function caddie_swift_xcode_play() {
