@@ -255,6 +255,13 @@ function caddie_git_find_remote_branch() {
     fi
 
     local remote_branch=""
+    if [[ "$branch" == */* ]]; then
+        if git show-ref --verify --quiet "refs/remotes/${branch}"; then
+            printf '%s\n' "$branch"
+            return 0
+        fi
+    fi
+
     while read -r ref; do
         if [[ "$ref" == */HEAD ]]; then
             continue

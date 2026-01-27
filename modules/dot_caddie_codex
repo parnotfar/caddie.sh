@@ -100,6 +100,26 @@ function caddie_codex_review_log_path() {
     return 0
 }
 
+function caddie_codex_review_hooks_dir() {
+    local repo_root="$1"
+    if [ -z "$repo_root" ]; then
+        return 1
+    fi
+
+    local hooks_dir=""
+    hooks_dir="$(git -C "$repo_root" rev-parse --git-path hooks 2>/dev/null)"
+    if [ -z "$hooks_dir" ]; then
+        return 1
+    fi
+
+    if [ "${hooks_dir:0:1}" != "/" ]; then
+        hooks_dir="${repo_root}/${hooks_dir}"
+    fi
+
+    printf '%s' "$hooks_dir"
+    return 0
+}
+
 function caddie_codex_review_prompt() {
     local repo_root="$1"
     local branch="$2"
@@ -393,8 +413,26 @@ function caddie_codex_review_watch() {
     mkdir -p "$(dirname "$log_file")"
     touch "$log_file"
 
-    local hook_path="$repo_root/.git/hooks/post-commit"
-    local prev_hook="$repo_root/.git/hooks/post-commit.caddie-prev"
+    local hooks_dir=""
+    hooks_dir="$(caddie_codex_review_hooks_dir "$repo_root")"
+    if [ -z "$hooks_dir" ]; then
+        caddie cli:red "Error: Unable to resolve hooks directory"
+        return 1
+    fi
+
+    if [ -e "$hooks_dir" ] && [ ! -d "$hooks_dir" ]; then
+        caddie cli:red "Error: Hooks path is not a directory: $hooks_dir"
+        return 1
+    fi
+
+    mkdir -p "$hooks_dir" >/dev/null 2>&1
+    if [ ! -d "$hooks_dir" ]; then
+        caddie cli:red "Error: Unable to create hooks directory: $hooks_dir"
+        return 1
+    fi
+
+    local hook_path="$hooks_dir/post-commit"
+    local prev_hook="$hooks_dir/post-commit.caddie-prev"
 
     if [ -f "$hook_path" ] && ! grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
         mv "$hook_path" "$prev_hook"
@@ -460,8 +498,20 @@ function caddie_codex_review_watch_stop() {
         return 1
     fi
 
-    local hook_path="$repo_root/.git/hooks/post-commit"
-    local prev_hook="$repo_root/.git/hooks/post-commit.caddie-prev"
+    local hooks_dir=""
+    hooks_dir="$(caddie_codex_review_hooks_dir "$repo_root")"
+    if [ -z "$hooks_dir" ]; then
+        caddie cli:red "Error: Unable to resolve hooks directory"
+        return 1
+    fi
+
+    if [ -e "$hooks_dir" ] && [ ! -d "$hooks_dir" ]; then
+        caddie cli:red "Error: Hooks path is not a directory: $hooks_dir"
+        return 1
+    fi
+
+    local hook_path="$hooks_dir/post-commit"
+    local prev_hook="$hooks_dir/post-commit.caddie-prev"
 
     if [ ! -f "$hook_path" ] || ! grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
         caddie cli:yellow "No Codex watch hook found"
@@ -494,7 +544,19 @@ function caddie_codex_review_watch_status() {
         return 1
     fi
 
-    local hook_path="$repo_root/.git/hooks/post-commit"
+    local hooks_dir=""
+    hooks_dir="$(caddie_codex_review_hooks_dir "$repo_root")"
+    if [ -z "$hooks_dir" ]; then
+        caddie cli:red "Error: Unable to resolve hooks directory"
+        return 1
+    fi
+
+    if [ -e "$hooks_dir" ] && [ ! -d "$hooks_dir" ]; then
+        caddie cli:red "Error: Hooks path is not a directory: $hooks_dir"
+        return 1
+    fi
+
+    local hook_path="$hooks_dir/post-commit"
     if [ -f "$hook_path" ] && grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
         caddie cli:green "Codex review watch is enabled"
         caddie cli:indent "Hook: $hook_path"
@@ -524,7 +586,7 @@ function caddie_codex_help() {
     caddie cli:title "Examples"
     caddie cli:indent "caddie codex:review ."
     caddie cli:indent "caddie codex:review:watch ."
-    caddie cli:indent "caddie codex:review:command:set 'codex'"
+    caddie cli:indent "caddie codex:review:command:set 'codex review -'"
     return 0
 }
 
