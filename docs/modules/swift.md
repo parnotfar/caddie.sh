@@ -118,7 +118,7 @@ caddie swift:xcode:target:unset
 
 When a target is set, the prompt shows `[xcode:target <name>]`. Target matching is case-insensitive and allows partial matches (for example, `Icaruus` can match `Icaruus’s iPhone`).
 
-### `caddie swift:xcode:play [scheme] [target]`
+### `caddie swift:xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]`
 
 Builds the Xcode project and launches the app on the specified target.
 
@@ -132,7 +132,14 @@ The command installs and launches the app on the simulator via `simctl`. For dev
 caddie swift:xcode:play
 caddie swift:xcode:play vCaddie "iPhone 16 Pro"
 caddie swift:xcode:play vCaddie Icaruus
+caddie swift:xcode:play --logs vCaddie "iPhone 16 Pro"
+caddie swift:xcode:play --logs:all --trace "Points of Interest" vCaddie "iPhone 16 Pro"
 ```
+
+**Logging & Tracing:**
+- `--logs` opens a Terminal window with a dedicated tab streaming your app logs.
+- `--logs:all` streams the full device/simulator log stream (very noisy).
+- `--trace <template>` starts an `xcrun xctrace` session in a separate tab (writes a `.trace` file).
 
 ### `caddie swift:xcode:test [scheme] [sim_name]`
 

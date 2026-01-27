@@ -733,6 +733,149 @@ function caddie_swift_xcode_build_log() {
     return $?
 }
 
+function caddie_swift_terminal_open_tab() {
+    local hub_title="$1"
+    local hub_command="$2"
+    local tab_title="$3"
+    local tab_command="$4"
+
+    if [ "$(uname -s)" != "Darwin" ]; then
+        return 0
+    fi
+
+    if ! command -v osascript >/dev/null 2>&1; then
+        return 0
+    fi
+
+    osascript - "$hub_title" "$hub_command" "$tab_title" "$tab_command" <<'APPLESCRIPT'
+on run argv
+    set hubTitle to item 1 of argv
+    set hubCommand to item 2 of argv
+    set tabTitle to item 3 of argv
+    set tabCommand to item 4 of argv
+
+    tell application "Terminal"
+        activate
+        set hubWindow to my findHubWindow(hubTitle)
+        if hubWindow is missing value then
+            try
+                set hubWindow to (make new window)
+            on error
+                set hubWindow to front window
+            end try
+            set hubTab to do script hubCommand in hubWindow
+            try
+                set custom title of hubTab to hubTitle
+            end try
+        end if
+
+        set newTab to do script tabCommand in hubWindow
+        try
+            set custom title of newTab to tabTitle
+        end try
+    end tell
+end run
+
+on findHubWindow(hubTitle)
+    tell application "Terminal"
+        repeat with w in windows
+            repeat with t in tabs of w
+                try
+                    if custom title of t is hubTitle then return w
+                end try
+                try
+                    if name of t is hubTitle then return w
+                end try
+            end repeat
+        end repeat
+    end tell
+    return missing value
+end findHubWindow
+APPLESCRIPT
+    return 0
+}
+
+function caddie_swift_xcode_play_open_tabs() {
+    local app_name="$1"
+    local bundle_id="$2"
+    local destination="$3"
+    local sim_udid="$4"
+    local device_udid="$5"
+    local trace_template="$6"
+    local logs_enabled="$7"
+    local logs_all_enabled="$8"
+
+    if [ "$(uname -s)" != "Darwin" ]; then
+        caddie cli:yellow "Terminal log/trace tabs are only supported on macOS"
+        return 0
+    fi
+
+    if ! command -v osascript >/dev/null 2>&1; then
+        caddie cli:yellow "osascript not available; skipping log/trace tabs"
+        return 0
+    fi
+
+    local hub_title="Caddie Swift Hub"
+    local hub_command="printf '\\033]1;${hub_title}\\007'; printf '\\033]2;${hub_title}\\007'; echo 'Caddie Swift Logs & Trace Window'; echo 'Use this window for log/trace tabs.'"
+    local log_command_base=""
+    local tab_title=""
+    local tab_command=""
+    local predicate=""
+
+    if [ "$destination" = "simulator" ]; then
+        if [ -n "$sim_udid" ]; then
+            log_command_base="xcrun simctl spawn \"$sim_udid\" log stream"
+        else
+            log_command_base="xcrun simctl spawn booted log stream"
+        fi
+    else
+        if [ -n "$device_udid" ]; then
+            log_command_base="xcrun devicectl device log stream --device \"$device_udid\""
+        else
+            log_command_base="xcrun devicectl device log stream"
+        fi
+    fi
+
+    if [ "$logs_enabled" = "true" ]; then
+        tab_title="Swift Logs"
+        predicate="process == \"$app_name\""
+        if [ -n "$bundle_id" ]; then
+            predicate="$predicate OR subsystem == \"$bundle_id\""
+        fi
+        tab_command="printf '\\033]1;${tab_title}\\007'; ${log_command_base} --predicate '$predicate'"
+        caddie_swift_terminal_open_tab "$hub_title" "$hub_command" "$tab_title" "$tab_command"
+    fi
+
+    if [ "$logs_all_enabled" = "true" ]; then
+        tab_title="Swift Logs (All)"
+        tab_command="printf '\\033]1;${tab_title}\\007'; ${log_command_base}"
+        caddie_swift_terminal_open_tab "$hub_title" "$hub_command" "$tab_title" "$tab_command"
+    fi
+
+    if [ -n "$trace_template" ]; then
+        if ! xcrun --find xctrace >/dev/null 2>&1; then
+            caddie cli:yellow "xctrace not found; skipping trace tab"
+            return 0
+        fi
+
+        local trace_device="${device_udid:-$sim_udid}"
+        if [ -z "$trace_device" ]; then
+            trace_device="$app_name"
+        fi
+        local trace_dir="$HOME/Library/Logs/Caddie/xctrace"
+        local trace_stamp=""
+        local trace_file=""
+        trace_stamp="$(date +%Y%m%d-%H%M%S)"
+        trace_file="${trace_dir}/${app_name}-${trace_stamp}.trace"
+
+        tab_title="Swift Trace"
+        tab_command="printf '\\033]1;${tab_title}\\007'; mkdir -p \"$trace_dir\"; xcrun xctrace record --template \"$trace_template\" --device \"$trace_device\" --output \"$trace_file\""
+        caddie_swift_terminal_open_tab "$hub_title" "$hub_command" "$tab_title" "$tab_command"
+    fi
+
+    return 0
+}
+
 function caddie_swift_xcode_clean() {
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
@@ -751,19 +894,64 @@ function caddie_swift_xcode_clean() {
 
 function caddie_swift_xcode_play() {
     caddie_swift_require_xcode_project || return 1
-    local first_arg="$1"
+    local first_arg=""
     local scheme=""
     local target=""
+    local logs_enabled="false"
+    local logs_all_enabled="false"
+    local trace_template=""
+    local -a play_args=()
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --logs)
+                logs_enabled="true"
+                ;;
+            --logs:all|--logs-all)
+                logs_all_enabled="true"
+                ;;
+            --trace)
+                shift
+                if [ -z "$1" ]; then
+                    caddie cli:red "Error: --trace requires a template name"
+                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]"
+                    return 1
+                fi
+                trace_template="$1"
+                ;;
+            --trace=*)
+                trace_template="${1#--trace=}"
+                if [ -z "$trace_template" ]; then
+                    caddie cli:red "Error: --trace requires a template name"
+                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]"
+                    return 1
+                fi
+                ;;
+            --)
+                shift
+                while [ "$#" -gt 0 ]; do
+                    play_args+=("$1")
+                    shift
+                done
+                break
+                ;;
+            *)
+                play_args+=("$1")
+                ;;
+        esac
+        shift
+    done
+
+    if [ "${#play_args[@]}" -gt 0 ]; then
+        first_arg="${play_args[0]}"
+    fi
 
     if [ -n "$first_arg" ]; then
         if caddie_swift_xcode_scheme_exists "$first_arg"; then
             scheme="$first_arg"
-            shift || true
-            target="$1"
-            [ -n "$1" ] && shift || true
+            target="${play_args[1]:-}"
         else
             target="$first_arg"
-            shift || true
         fi
     fi
 
@@ -820,6 +1008,12 @@ function caddie_swift_xcode_play() {
     if [ -z "$app_path" ] || [ -z "$bundle_id" ]; then
         caddie cli:red "Error: App path or bundle ID missing"
         return 1
+    fi
+    local app_name=""
+    app_name="$(basename "$app_path" .app)"
+
+    if [ "$logs_enabled" = "true" ] || [ "$logs_all_enabled" = "true" ] || [ -n "$trace_template" ]; then
+        caddie_swift_xcode_play_open_tabs "$app_name" "$bundle_id" "$destination" "$sim_udid" "$device_udid" "$trace_template" "$logs_enabled" "$logs_all_enabled"
     fi
 
     if [ "$destination" = "simulator" ]; then
@@ -1291,7 +1485,7 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:resolve            Resolve package dependencies"
     caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project (errors only)"
     caddie cli:indent "xcode:build:log [scheme] [simulator|device] [sim_name]  Build with full logs"
-    caddie cli:indent "xcode:play [scheme] [target]  Build and run app on target"
+    caddie cli:indent "xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]  Build/run with optional logs/trace tabs"
     caddie cli:indent "xcode:target:get          Show current Xcode target"
     caddie cli:indent "xcode:target:set <name>   Set Xcode target"
     caddie cli:indent "xcode:target:unset        Clear Xcode target"
