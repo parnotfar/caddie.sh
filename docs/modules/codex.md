@@ -47,13 +47,13 @@ caddie codex:review:tail ~/work/my-repo
 
 ### Review Command Configuration
 
-The module expects a command that accepts the review prompt via stdin and prints a response to stdout.
+The module expects a command that accepts the review prompt via stdin and prints a response to stdout. If `codex` is available, the default is `codex review -`.
 
 #### `caddie codex:review:command:set <command>`
 Set the review command used for all reviews.
 
 ```bash
-caddie codex:review:command:set "codex"
+caddie codex:review:command:set "codex review -"
 ```
 
 #### `caddie codex:review:command:append <args>`

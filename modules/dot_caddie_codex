@@ -46,6 +46,7 @@ function caddie_codex_review_command_get() {
         caddie cli:green "Codex review command: $value"
     else
         caddie cli:yellow "No Codex review command is set"
+        caddie cli:thought "Default: codex review -"
         caddie cli:thought "Set one with: caddie codex:review:command:set <command>"
     fi
     return 0
@@ -127,17 +128,19 @@ EOF
 
 function caddie_codex_review_execute() {
     local prompt="$1"
+    local repo_root="$2"
     local command="${CADDIE_CODEX_REVIEW_COMMAND:-}"
 
     if [ -z "$command" ]; then
         if command -v codex >/dev/null 2>&1; then
-            command="codex"
+            command="codex review -"
         fi
     fi
 
     if [ -z "$command" ]; then
         caddie cli:red "Error: No Codex review command configured"
-        caddie cli:thought "Set one with: caddie codex:review:command:set <command>"
+        caddie cli:thought "Defaults to: codex review -"
+        caddie cli:thought "Override with: caddie codex:review:command:set <command>"
         return 1
     fi
 
@@ -147,14 +150,33 @@ function caddie_codex_review_execute() {
         return 1
     fi
 
-    printf '%s\n' "$prompt" | eval "$command" | while IFS= read -r line; do
-        caddie cli:indent "$line"
-    done
-    local -a pipe_status=("${PIPESTATUS[@]}")
+    if [ "$command_bin" = "codex" ]; then
+        local remainder=""
+        remainder="${command#codex}"
+        remainder="$(printf '%s' "$remainder" | tr -d ' ')"
+        if [ -z "$remainder" ]; then
+            command="codex review -"
+        fi
+    fi
 
-    if [ ${pipe_status[1]:-0} -ne 0 ]; then
+    if [ -z "$repo_root" ]; then
+        repo_root="."
+    fi
+
+    local output_status=0
+    (
+        cd "$repo_root" 2>/dev/null || exit 1
+        printf '%s\n' "$prompt" | eval "$command" | while IFS= read -r line; do
+            caddie cli:indent "$line"
+        done
+        output_status=${PIPESTATUS[1]}
+        exit $output_status
+    )
+    output_status=$?
+
+    if [ $output_status -ne 0 ]; then
         caddie cli:red "Review command failed"
-        return ${pipe_status[1]}
+        return $output_status
     fi
 
     return 0
@@ -231,7 +253,7 @@ function caddie_codex_review_run() {
 
     local prompt=""
     prompt="$(caddie_codex_review_prompt "$repo_root" "$branch" "$short_commit" "$subject" "$diff")"
-    caddie_codex_review_execute "$prompt"
+    caddie_codex_review_execute "$prompt" "$repo_root"
     return $?
 }
 
