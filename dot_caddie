@@ -860,6 +860,9 @@ function _caddie_load_modules() {
                       swift)
                         caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:play swift:xcode:play:logs swift:xcode:play:trace swift:xcode:play:full swift:xcode:trace:templates swift:xcode:scene:get swift:xcode:scene:set swift:xcode:scene:unset swift:xcode:target:get swift:xcode:target:set swift:xcode:target:unset swift:xcode:test swift:xcode:test:unit swift:xcode:test:unit:failed swift:xcode:test:unit:log:get swift:xcode:test:unit:log:set swift:xcode:test:unit:log:unset swift:xcode:crash:stream swift:xcode:crash:stream:all swift:xcode:crash:latest swift:xcode:crash:symbolicate swift:xcode:clean swift:format swift:lint swift:gitignore"
                         ;;
+                      codex)
+                        caddie_completion_register "$module_name" "codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:command:set codex:review:command:get codex:review:command:unset"
+                        ;;
                       core)
                         caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
                         ;;

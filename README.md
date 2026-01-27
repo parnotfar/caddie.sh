@@ -318,6 +318,16 @@ caddie cursor:open ~/my-project
 caddie cursor:ai:explain src/main.rs
 ```
 
+### Codex Review
+
+```bash
+# Run a Codex review on the latest commit
+caddie codex:review .
+
+# Watch a repo and review every commit automatically
+caddie codex:review:watch ~/work/my-repo
+```
+
 ### Code Quality
 
 ```bash

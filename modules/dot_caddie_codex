@@ -1,0 +1,538 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Codex Review Module
+# This file provides local repository review helpers powered by Codex
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_codex_state_dir() {
+    printf '%s' "$HOME/.caddie_state/codex"
+    return 0
+}
+
+function caddie_codex_review_command_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a review command"
+        caddie cli:usage "caddie codex:review:command:set <command>"
+        return 1
+    fi
+    export CADDIE_CODEX_REVIEW_COMMAND="$value"
+    caddie cli:check "Codex review command set"
+    return 0
+}
+
+function caddie_codex_review_command_append() {
+    local current="${CADDIE_CODEX_REVIEW_COMMAND:-}"
+    local extra="$1"
+    if [ -z "$extra" ]; then
+        caddie cli:red "Error: Please provide command arguments to append"
+        caddie cli:usage "caddie codex:review:command:append <args>"
+        return 1
+    fi
+    if [ -z "$current" ]; then
+        caddie cli:red "Error: No Codex review command is set"
+        caddie cli:thought "Set one with: caddie codex:review:command:set <command>"
+        return 1
+    fi
+    export CADDIE_CODEX_REVIEW_COMMAND="${current} ${extra}"
+    caddie cli:check "Codex review command updated"
+    return 0
+}
+
+function caddie_codex_review_command_get() {
+    local value="${CADDIE_CODEX_REVIEW_COMMAND:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Codex review command: $value"
+    else
+        caddie cli:yellow "No Codex review command is set"
+        caddie cli:thought "Set one with: caddie codex:review:command:set <command>"
+    fi
+    return 0
+}
+
+function caddie_codex_review_command_unset() {
+    if [ -n "${CADDIE_CODEX_REVIEW_COMMAND:-}" ]; then
+        unset CADDIE_CODEX_REVIEW_COMMAND
+        caddie cli:check "Codex review command unset"
+    else
+        caddie cli:yellow "No Codex review command was set"
+    fi
+    return 0
+}
+
+function caddie_codex_repo_id() {
+    local repo_root="$1"
+    if [ -z "$repo_root" ]; then
+        return 1
+    fi
+
+    local base=""
+    base="$(basename "$repo_root")"
+
+    local hash=""
+    if command -v shasum >/dev/null 2>&1; then
+        hash="$(printf '%s' "$repo_root" | shasum -a 1 | awk '{print $1}')"
+    elif command -v sha1sum >/dev/null 2>&1; then
+        hash="$(printf '%s' "$repo_root" | sha1sum | awk '{print $1}')"
+    else
+        hash="$(printf '%s' "$repo_root" | cksum | awk '{print $1}')"
+    fi
+
+    printf '%s' "${base}-${hash:0:8}"
+    return 0
+}
+
+function caddie_codex_review_log_path() {
+    local repo_root="$1"
+    local state_dir=""
+    local repo_id=""
+
+    state_dir="$(caddie_codex_state_dir)/reviews"
+    repo_id="$(caddie_codex_repo_id "$repo_root")"
+
+    if [ -z "$repo_id" ]; then
+        return 1
+    fi
+
+    printf '%s' "${state_dir}/${repo_id}/review.log"
+    return 0
+}
+
+function caddie_codex_review_prompt() {
+    local repo_root="$1"
+    local branch="$2"
+    local commit="$3"
+    local subject="$4"
+    local diff="$5"
+
+    cat <<EOF
+You are a senior code reviewer. Review the commit below and respond with:
+
+1) Findings (with severity: high/medium/low)
+2) Risks or regressions to watch for
+3) Missing tests (if any)
+4) Action plan as a numbered list of concrete next steps
+
+Repository: ${repo_root}
+Branch: ${branch}
+Commit: ${commit}
+Subject: ${subject}
+
+Diff:
+${diff}
+EOF
+    return 0
+}
+
+function caddie_codex_review_execute() {
+    local prompt="$1"
+    local command="${CADDIE_CODEX_REVIEW_COMMAND:-}"
+
+    if [ -z "$command" ]; then
+        if command -v codex >/dev/null 2>&1; then
+            command="codex"
+        fi
+    fi
+
+    if [ -z "$command" ]; then
+        caddie cli:red "Error: No Codex review command configured"
+        caddie cli:thought "Set one with: caddie codex:review:command:set <command>"
+        return 1
+    fi
+
+    local command_bin="${command%% *}"
+    if ! command -v "$command_bin" >/dev/null 2>&1; then
+        caddie cli:red "Error: Review command not found: $command_bin"
+        return 1
+    fi
+
+    printf '%s\n' "$prompt" | eval "$command" | while IFS= read -r line; do
+        caddie cli:indent "$line"
+    done
+    local -a pipe_status=("${PIPESTATUS[@]}")
+
+    if [ ${pipe_status[1]:-0} -ne 0 ]; then
+        caddie cli:red "Review command failed"
+        return ${pipe_status[1]}
+    fi
+
+    return 0
+}
+
+function caddie_codex_review_run() {
+    local repo_dir="$1"
+    local commit="$2"
+
+    if [ -z "$repo_dir" ]; then
+        repo_dir="."
+    fi
+
+    local repo_root=""
+    repo_root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$repo_root" ]; then
+        caddie cli:red "Error: Not a git repository: $repo_dir"
+        return 1
+    fi
+
+    if [ -z "$commit" ]; then
+        commit="$(git -C "$repo_root" rev-parse HEAD 2>/dev/null)"
+    fi
+
+    if [ -z "$commit" ]; then
+        caddie cli:red "Error: Unable to determine commit"
+        return 1
+    fi
+
+    local parents=""
+    parents="$(git -C "$repo_root" show -s --pretty=%P "$commit" 2>/dev/null)"
+    if [ -n "$parents" ] && [ "$(printf '%s' "$parents" | wc -w | tr -d ' ')" -gt 1 ]; then
+        caddie cli:yellow "Skipping merge commit $commit"
+        return 0
+    fi
+
+    local branch=""
+    branch="$(git -C "$repo_root" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+    if [ -z "$branch" ]; then
+        branch="(detached)"
+    fi
+
+    local subject=""
+    subject="$(git -C "$repo_root" log -1 --pretty=%s "$commit" 2>/dev/null)"
+
+    local files=""
+    files="$(git -C "$repo_root" show --name-status --pretty="" "$commit" 2>/dev/null)"
+
+    local diff=""
+    diff="$(git -C "$repo_root" show "$commit" 2>/dev/null)"
+
+    local short_commit="${commit:0:7}"
+
+    caddie cli:title "Codex Review"
+    caddie cli:indent "Repo: $repo_root"
+    caddie cli:indent "Branch: $branch"
+    caddie cli:indent "Commit: $short_commit"
+    if [ -n "$subject" ]; then
+        caddie cli:indent "Subject: $subject"
+    fi
+    caddie cli:blank
+
+    caddie cli:title "Files"
+    if [ -n "$files" ]; then
+        while IFS= read -r line; do
+            [ -n "$line" ] && caddie cli:indent "$line"
+        done <<< "$files"
+    else
+        caddie cli:indent "No files detected"
+    fi
+
+    caddie cli:blank
+    caddie cli:title "Review"
+
+    local prompt=""
+    prompt="$(caddie_codex_review_prompt "$repo_root" "$branch" "$short_commit" "$subject" "$diff")"
+    caddie_codex_review_execute "$prompt"
+    return $?
+}
+
+function caddie_codex_review() {
+    local repo_dir="$1"
+    caddie_codex_review_run "$repo_dir"
+    return $?
+}
+
+function caddie_codex_review_tail() {
+    local repo_dir="$1"
+    if [ -z "$repo_dir" ]; then
+        repo_dir="."
+    fi
+
+    local repo_root=""
+    repo_root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$repo_root" ]; then
+        caddie cli:red "Error: Not a git repository: $repo_dir"
+        return 1
+    fi
+
+    local log_file=""
+    log_file="$(caddie_codex_review_log_path "$repo_root")"
+    if [ -z "$log_file" ]; then
+        caddie cli:red "Error: Unable to locate review log"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$log_file")"
+    touch "$log_file"
+
+    caddie cli:title "Codex Review Stream"
+    caddie cli:indent "Repo: $repo_root"
+    caddie cli:indent "Log: $log_file"
+    caddie cli:blank
+
+    tail -n 200 -f "$log_file"
+    return 0
+}
+
+function caddie_codex_terminal_open_tab() {
+    local hub_title="$1"
+    local hub_command="$2"
+    local tab_title="$3"
+    local tab_command="$4"
+
+    if [ "$(uname -s)" != "Darwin" ]; then
+        return 0
+    fi
+
+    if ! command -v osascript >/dev/null 2>&1; then
+        return 0
+    fi
+
+    osascript - "$hub_title" "$hub_command" "$tab_title" "$tab_command" <<'APPLESCRIPT'
+on run argv
+    set hubTitle to item 1 of argv
+    set hubCommand to item 2 of argv
+    set tabTitle to item 3 of argv
+    set tabCommand to item 4 of argv
+
+    tell application "Terminal"
+        activate
+        set hubWindow to my findHubWindow(hubTitle)
+        if hubWindow is missing value then
+            try
+                set hubWindow to (make new window)
+            on error
+                set hubWindow to front window
+            end try
+            set hubTab to do script hubCommand in hubWindow
+            try
+                set custom title of hubTab to hubTitle
+            end try
+        end if
+
+        set newTab to do script tabCommand in hubWindow
+        try
+            set custom title of newTab to tabTitle
+        end try
+    end tell
+end run
+
+on findHubWindow(hubTitle)
+    tell application "Terminal"
+        repeat with w in windows
+            repeat with t in tabs of w
+                try
+                    if custom title of t is hubTitle then return w
+                end try
+                try
+                    if name of t is hubTitle then return w
+                end try
+            end repeat
+        end repeat
+    end tell
+    return missing value
+end findHubWindow
+APPLESCRIPT
+    return 0
+}
+
+function caddie_codex_review_open_tab() {
+    local repo_root="$1"
+    local hub_title="Caddie Codex Hub"
+    local hub_command="printf '\033]1;${hub_title}\007'; printf '\033]2;${hub_title}\007'; echo 'Caddie Codex Review Window'; echo 'Streaming reviews from watched repos.'"
+    local tab_title="Codex Reviews"
+    local tab_command="caddie codex:review:tail \"$repo_root\""
+
+    caddie_codex_terminal_open_tab "$hub_title" "$hub_command" "$tab_title" "$tab_command"
+    return 0
+}
+
+function caddie_codex_review_watch() {
+    local repo_dir="$1"
+    if [ -z "$repo_dir" ]; then
+        caddie cli:red "Error: Provide a repository directory"
+        caddie cli:usage "caddie codex:review:watch <dir>"
+        return 1
+    fi
+
+    local repo_root=""
+    repo_root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$repo_root" ]; then
+        caddie cli:red "Error: Not a git repository: $repo_dir"
+        return 1
+    fi
+
+    local log_file=""
+    log_file="$(caddie_codex_review_log_path "$repo_root")"
+    if [ -z "$log_file" ]; then
+        caddie cli:red "Error: Unable to resolve review log"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$log_file")"
+    touch "$log_file"
+
+    local hook_path="$repo_root/.git/hooks/post-commit"
+    local prev_hook="$repo_root/.git/hooks/post-commit.caddie-prev"
+
+    if [ -f "$hook_path" ] && ! grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
+        mv "$hook_path" "$prev_hook"
+        caddie cli:yellow "Existing post-commit hook moved to $prev_hook"
+    fi
+
+    local repo_root_escaped=""
+    local log_file_escaped=""
+    local prev_hook_escaped=""
+    repo_root_escaped="$(printf '%s' "$repo_root" | sed "s/'/'\\\\''/g")"
+    log_file_escaped="$(printf '%s' "$log_file" | sed "s/'/'\\\\''/g")"
+    prev_hook_escaped="$(printf '%s' "$prev_hook" | sed "s/'/'\\\\''/g")"
+
+    cat > "$hook_path" <<EOF
+#!/usr/bin/env bash
+# CADDIE_CODEX_REVIEW_HOOK
+
+repo_root='$repo_root_escaped'
+log_file='$log_file_escaped'
+prev_hook='$prev_hook_escaped'
+
+if [ -n "$prev_hook" ] && [ -x "$prev_hook" ]; then
+  "$prev_hook" "$@" || true
+fi
+
+commit="$(git -C "$repo_root" rev-parse HEAD 2>/dev/null)"
+if [ -z "$commit" ]; then
+  exit 0
+fi
+
+mkdir -p "$(dirname "$log_file")" >/dev/null 2>&1 || true
+
+if command -v bash >/dev/null 2>&1; then
+  bash -lc "caddie codex:review:run \"$repo_root\" \"$commit\"" >> "$log_file" 2>&1 &
+fi
+
+exit 0
+EOF
+
+    chmod +x "$hook_path"
+
+    caddie cli:check "Codex review watch enabled"
+    caddie cli:indent "Repo: $repo_root"
+    caddie cli:indent "Hook: $hook_path"
+    caddie cli:indent "Log: $log_file"
+
+    caddie_codex_review_open_tab "$repo_root"
+    return 0
+}
+
+function caddie_codex_review_watch_stop() {
+    local repo_dir="$1"
+    if [ -z "$repo_dir" ]; then
+        caddie cli:red "Error: Provide a repository directory"
+        caddie cli:usage "caddie codex:review:watch:stop <dir>"
+        return 1
+    fi
+
+    local repo_root=""
+    repo_root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$repo_root" ]; then
+        caddie cli:red "Error: Not a git repository: $repo_dir"
+        return 1
+    fi
+
+    local hook_path="$repo_root/.git/hooks/post-commit"
+    local prev_hook="$repo_root/.git/hooks/post-commit.caddie-prev"
+
+    if [ ! -f "$hook_path" ] || ! grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
+        caddie cli:yellow "No Codex watch hook found"
+        return 0
+    fi
+
+    if [ -f "$prev_hook" ]; then
+        mv "$prev_hook" "$hook_path"
+        caddie cli:check "Restored previous post-commit hook"
+    else
+        rm -f "$hook_path"
+        caddie cli:check "Removed Codex post-commit hook"
+    fi
+
+    return 0
+}
+
+function caddie_codex_review_watch_status() {
+    local repo_dir="$1"
+    if [ -z "$repo_dir" ]; then
+        caddie cli:red "Error: Provide a repository directory"
+        caddie cli:usage "caddie codex:review:watch:status <dir>"
+        return 1
+    fi
+
+    local repo_root=""
+    repo_root="$(git -C "$repo_dir" rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$repo_root" ]; then
+        caddie cli:red "Error: Not a git repository: $repo_dir"
+        return 1
+    fi
+
+    local hook_path="$repo_root/.git/hooks/post-commit"
+    if [ -f "$hook_path" ] && grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
+        caddie cli:green "Codex review watch is enabled"
+        caddie cli:indent "Hook: $hook_path"
+        return 0
+    fi
+
+    caddie cli:yellow "Codex review watch is not enabled"
+    return 1
+}
+
+function caddie_codex_help() {
+    caddie cli:title "Codex Review Commands"
+    caddie cli:usage "caddie codex:<command>"
+    caddie cli:blank
+    caddie cli:indent "review [dir]                 Review the latest commit"
+    caddie cli:indent "review:watch <dir>           Run reviews on every commit"
+    caddie cli:indent "review:watch:stop <dir>      Disable commit reviews"
+    caddie cli:indent "review:watch:status <dir>    Check watch status"
+    caddie cli:indent "review:tail <dir>            Tail review output"
+    caddie cli:blank
+    caddie cli:title "Review Command Configuration"
+    caddie cli:indent "review:command:set <cmd>     Set Codex review command"
+    caddie cli:indent "review:command:append <args> Append args to review command"
+    caddie cli:indent "review:command:get           Show Codex review command"
+    caddie cli:indent "review:command:unset         Clear Codex review command"
+    caddie cli:blank
+    caddie cli:title "Examples"
+    caddie cli:indent "caddie codex:review ."
+    caddie cli:indent "caddie codex:review:watch ."
+    caddie cli:indent "caddie codex:review:command:set 'codex'"
+    return 0
+}
+
+function caddie_codex_description() {
+    printf '%s\n' 'Codex-powered code review helpers'
+    return 0
+}
+
+function caddie_codex_commands() {
+    printf '%s\n' "codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
+    return 0
+}
+
+export -f caddie_codex_state_dir
+export -f caddie_codex_review_command_set
+export -f caddie_codex_review_command_append
+export -f caddie_codex_review_command_get
+export -f caddie_codex_review_command_unset
+export -f caddie_codex_repo_id
+export -f caddie_codex_review_log_path
+export -f caddie_codex_review_prompt
+export -f caddie_codex_review_execute
+export -f caddie_codex_review_run
+export -f caddie_codex_review
+export -f caddie_codex_review_tail
+export -f caddie_codex_terminal_open_tab
+export -f caddie_codex_review_open_tab
+export -f caddie_codex_review_watch
+export -f caddie_codex_review_watch_stop
+export -f caddie_codex_review_watch_status
+export -f caddie_codex_help
+export -f caddie_codex_description
+export -f caddie_codex_commands

@@ -1,5 +1,24 @@
 # Caddie.sh Release Notes
 
+## Version 8.0.0 - Codex Review Automation
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Codex Review Automation**
+- **New Codex Module**: Added `codex:review` commands for local repo reviews and post-commit automation
+- **Commit Watcher**: `caddie codex:review:watch <dir>` installs a post-commit hook to trigger reviews
+- **Review Streaming**: Dedicated Terminal tab for streaming review output per repo
+- **Configurable Runner**: Set or append the review command via `codex:review:command:*`
+
+### 📝 Usage Examples
+
+```bash
+caddie codex:review .
+caddie codex:review:watch ~/work/my-repo
+```
+
 ## Version 6.2.1 - TestFlight Credential UX
 
 **Release Date:** January 2026
