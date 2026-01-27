@@ -116,9 +116,23 @@ caddie swift:xcode:target:set Icaruus
 caddie swift:xcode:target:unset
 ```
 
-When a target is set, the prompt shows `[xcode:target <name>]`. Target matching is case-insensitive and allows partial matches (for example, `Icaruus` can match `Icaruus’s iPhone`).
+When a scene and target are set, the prompt shows `[swift: <scene>-<target>]`. Target matching is case-insensitive and allows partial matches (for example, `Icaruus` can match `Icaruus’s iPhone`).
 
-### `caddie swift:xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]`
+### `caddie swift:xcode:scene:get|set|unset`
+
+Store a preferred Xcode **scene** (scheme) so you don’t need to pass it on every command.
+
+**Examples:**
+```bash
+caddie swift:xcode:scene:set vCaddie
+caddie swift:xcode:scene:get
+caddie swift:xcode:scene:unset
+```
+
+When a scene and target are set, the prompt shows `[swift: <scene>-<target>]`.
+Scene is required for `xcode:build`, `xcode:build:log`, `xcode:play`, `xcode:test`, and `xcode:clean` unless you pass a scheme explicitly.
+
+### `caddie swift:xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]`
 
 Builds the Xcode project and launches the app on the specified target.
 
@@ -139,7 +153,57 @@ caddie swift:xcode:play --logs:all --trace "Points of Interest" vCaddie "iPhone 
 **Logging & Tracing:**
 - `--logs` opens a Terminal window with a dedicated tab streaming your app logs.
 - `--logs:all` streams the full device/simulator log stream (very noisy).
+- `--crash` opens a crash log stream tab.
+- `--crash:all` opens an unfiltered crash log stream tab.
 - `--trace <template>` starts an `xcrun xctrace` session in a separate tab (writes a `.trace` file).
+
+### `caddie swift:xcode:play:logs [scheme] [target]`
+
+Run with log streaming tabs using caddie defaults.
+
+```bash
+caddie swift:xcode:play:logs vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:play:trace [template] [scheme] [target]`
+
+Run with a trace tab. If no template is provided, caddie shows a numbered list to pick from.
+
+```bash
+caddie swift:xcode:play:trace
+caddie swift:xcode:play:trace "Time Profiler" vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:play:full [template] [scheme] [target]`
+
+Run with logs + trace + crash stream tabs.
+
+```bash
+caddie swift:xcode:play:full
+caddie swift:xcode:play:full "Points of Interest" vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:trace:templates`
+
+List available Instruments templates with numbers for quick selection.
+
+```bash
+caddie swift:xcode:trace:templates
+```
+
+### Crash Logs
+
+#### `caddie swift:xcode:crash:stream [app]`
+Stream crash logs in a Terminal tab (optionally filtered by app name).
+
+#### `caddie swift:xcode:crash:stream:all`
+Stream full device/simulator logs for crash context.
+
+#### `caddie swift:xcode:crash:latest [filter]`
+Show the latest crash report (optionally filtered by name).
+
+#### `caddie swift:xcode:crash:symbolicate <crash> [dSYM]`
+Symbolicate a crash report using Xcode tools.
 
 ### `caddie swift:xcode:test [scheme] [sim_name]`
 

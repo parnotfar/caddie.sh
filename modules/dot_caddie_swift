@@ -402,6 +402,9 @@ function caddie_swift_xcode_test_bundle() {
 function caddie_swift_xcode_scheme() {
     local scheme="$1"
     if [ -z "$scheme" ]; then
+        scheme="${CADDIE_SWIFT_XCODE_SCENE:-}"
+    fi
+    if [ -z "$scheme" ]; then
         # Try to find default scheme from project
         local project_file=$(find . -maxdepth 1 -name "*.xcodeproj" -type d | head -1)
         if [ -n "$project_file" ]; then
@@ -568,6 +571,53 @@ function caddie_swift_xcode_target_set() {
     return 0
 }
 
+function caddie_swift_xcode_scene_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a scene name"
+        caddie cli:usage "caddie swift:xcode:scene:set <name>"
+        return 1
+    fi
+    export CADDIE_SWIFT_XCODE_SCENE="$value"
+    caddie cli:check "Xcode scene set to: $value"
+    return 0
+}
+
+function caddie_swift_xcode_scene_get() {
+    local value="${CADDIE_SWIFT_XCODE_SCENE:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Xcode scene: $value"
+    else
+        caddie cli:yellow "No Xcode scene is set"
+        caddie cli:thought "Use 'caddie swift:xcode:scene:set <name>' to set it"
+    fi
+    return 0
+}
+
+function caddie_swift_xcode_scene_unset() {
+    if [ -n "${CADDIE_SWIFT_XCODE_SCENE:-}" ]; then
+        unset CADDIE_SWIFT_XCODE_SCENE
+        caddie cli:check "Xcode scene unset"
+    else
+        caddie cli:yellow "No Xcode scene was set"
+    fi
+    return 0
+}
+
+function caddie_swift_xcode_scene_require() {
+    local scheme="$1"
+    if [ -n "$scheme" ]; then
+        return 0
+    fi
+    if [ -n "${CADDIE_SWIFT_XCODE_SCENE:-}" ]; then
+        return 0
+    fi
+    caddie cli:red "Error: Xcode scene is not set"
+    caddie cli:thought "Set with: caddie swift:xcode:scene:set <name>"
+    caddie cli:usage "caddie swift:xcode:scene:set <name>"
+    return 1
+}
+
 function caddie_swift_xcode_target_get() {
     local value="${CADDIE_SWIFT_XCODE_TARGET:-}"
     if [ -n "$value" ]; then
@@ -590,11 +640,20 @@ function caddie_swift_xcode_target_unset() {
 }
 
 function caddie_swift_prompt_segment() {
+    local scene="${CADDIE_SWIFT_XCODE_SCENE:-}"
     local target="${CADDIE_SWIFT_XCODE_TARGET:-}"
-    if [ -z "$target" ]; then
+    if [ -z "$scene" ] && [ -z "$target" ]; then
         return 0
     fi
-    printf '%s' "[xcode:target $target]"
+    local label=""
+    if [ -n "$scene" ] && [ -n "$target" ]; then
+        label="${scene}-${target}"
+    elif [ -n "$scene" ]; then
+        label="$scene"
+    else
+        label="$target"
+    fi
+    printf '%s' "[swift: ${label}]"
     return 0
 }
 
@@ -625,6 +684,7 @@ function caddie_swift_xcode_build_run() {
     [ -n "$1" ] && shift || true
     [ -n "$1" ] && shift || true
 
+    caddie_swift_xcode_scene_require "$scheme" || return 1
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
     local log_label="Building Xcode project '$project_file' (scheme: $scheme)..."
@@ -731,6 +791,95 @@ function caddie_swift_xcode_build() {
 function caddie_swift_xcode_build_log() {
     caddie_swift_xcode_build_run "log" "$@"
     return $?
+}
+
+function caddie_swift_xcode_trace_template_candidates() {
+    if ! xcrun --find xctrace >/dev/null 2>&1; then
+        return 0
+    fi
+
+    xcrun xctrace list templates 2>/dev/null | sed -e 's/^[* ]*//' -e '/^==/d' -e '/^$/d' | sort -u
+    return 0
+}
+
+function caddie_swift_xcode_trace_template_exists() {
+    local template="$1"
+    if [ -z "$template" ]; then
+        return 1
+    fi
+
+    if caddie_swift_xcode_trace_template_candidates | grep -Fxq "$template"; then
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_swift_xcode_trace_template_select() {
+    local selection=""
+    local template=""
+    local -a templates=()
+
+    while IFS= read -r template; do
+        [ -n "$template" ] && templates+=("$template")
+    done < <(caddie_swift_xcode_trace_template_candidates)
+
+    if [ "${#templates[@]}" -eq 0 ]; then
+        caddie cli:red "Error: No xctrace templates found"
+        caddie cli:indent "Make sure Xcode is installed"
+        return 1
+    fi
+
+    caddie cli:title "Select a trace template" >&2
+    local i=0
+    for template in "${templates[@]}"; do
+        caddie cli:indent "${i}) ${template}" >&2
+        i=$((i + 1))
+    done
+    caddie cli:indent "q) Quit" >&2
+    caddie cli:blank >&2
+    caddie cli:indent "Enter selection:" >&2
+    read -r selection
+
+    if [ -z "$selection" ] || [ "$selection" = "q" ]; then
+        return 1
+    fi
+
+    if ! [[ "$selection" =~ ^[0-9]+$ ]]; then
+        caddie cli:red "Error: Invalid selection" >&2
+        return 1
+    fi
+
+    if [ "$selection" -ge "${#templates[@]}" ]; then
+        caddie cli:red "Error: Selection out of range" >&2
+        return 1
+    fi
+
+    printf '%s\n' "${templates[$selection]}"
+    return 0
+}
+
+function caddie_swift_xcode_trace_templates() {
+    local template=""
+    local -a templates=()
+
+    while IFS= read -r template; do
+        [ -n "$template" ] && templates+=("$template")
+    done < <(caddie_swift_xcode_trace_template_candidates)
+
+    if [ "${#templates[@]}" -eq 0 ]; then
+        caddie cli:red "Error: No xctrace templates found"
+        caddie cli:indent "Make sure Xcode is installed"
+        return 1
+    fi
+
+    caddie cli:title "Available Xcode trace templates"
+    local i=0
+    for template in "${templates[@]}"; do
+        caddie cli:indent "${i}) ${template}"
+        i=$((i + 1))
+    done
+    return 0
 }
 
 function caddie_swift_terminal_open_tab() {
@@ -876,9 +1025,146 @@ function caddie_swift_xcode_play_open_tabs() {
     return 0
 }
 
+function caddie_swift_xcode_crash_stream() {
+    local app_name="$1"
+    local destination="${2:-simulator}"
+    local sim_udid="${3:-}"
+    local device_udid="${4:-}"
+
+    if [ "$(uname -s)" != "Darwin" ]; then
+        caddie cli:yellow "Crash stream is only supported on macOS"
+        return 0
+    fi
+
+    local hub_title="Caddie Swift Hub"
+    local hub_command="printf '\\033]1;${hub_title}\\007'; printf '\\033]2;${hub_title}\\007'; echo 'Caddie Swift Logs & Trace Window'; echo 'Use this window for log/trace tabs.'"
+    local log_command_base=""
+
+    if [ "$destination" = "device" ]; then
+        if [ -n "$device_udid" ]; then
+            log_command_base="xcrun devicectl device log stream --device \"$device_udid\""
+        else
+            log_command_base="xcrun devicectl device log stream"
+        fi
+    else
+        if [ -n "$sim_udid" ]; then
+            log_command_base="xcrun simctl spawn \"$sim_udid\" log stream"
+        else
+            log_command_base="xcrun simctl spawn booted log stream"
+        fi
+    fi
+
+    local predicate="subsystem == \"com.apple.crashreporter\" OR process == \"ReportCrash\""
+    if [ -n "$app_name" ]; then
+        predicate="process == \"$app_name\" OR $predicate"
+    fi
+
+    local tab_title="Swift Crash Logs"
+    local tab_command="printf '\\033]1;${tab_title}\\007'; ${log_command_base} --predicate '$predicate'"
+    caddie_swift_terminal_open_tab "$hub_title" "$hub_command" "$tab_title" "$tab_command"
+    return 0
+}
+
+function caddie_swift_xcode_crash_stream_all() {
+    local destination="${1:-simulator}"
+    local sim_udid="${2:-}"
+    local device_udid="${3:-}"
+
+    if [ "$(uname -s)" != "Darwin" ]; then
+        caddie cli:yellow "Crash stream is only supported on macOS"
+        return 0
+    fi
+
+    local hub_title="Caddie Swift Hub"
+    local hub_command="printf '\\033]1;${hub_title}\\007'; printf '\\033]2;${hub_title}\\007'; echo 'Caddie Swift Logs & Trace Window'; echo 'Use this window for log/trace tabs.'"
+    local log_command_base=""
+
+    if [ "$destination" = "device" ]; then
+        if [ -n "$device_udid" ]; then
+            log_command_base="xcrun devicectl device log stream --device \"$device_udid\""
+        else
+            log_command_base="xcrun devicectl device log stream"
+        fi
+    else
+        if [ -n "$sim_udid" ]; then
+            log_command_base="xcrun simctl spawn \"$sim_udid\" log stream"
+        else
+            log_command_base="xcrun simctl spawn booted log stream"
+        fi
+    fi
+
+    local tab_title="Swift Crash Logs (All)"
+    local tab_command="printf '\\033]1;${tab_title}\\007'; ${log_command_base}"
+    caddie_swift_terminal_open_tab "$hub_title" "$hub_command" "$tab_title" "$tab_command"
+    return 0
+}
+
+function caddie_swift_xcode_crash_latest() {
+    local filter="$1"
+    local crash_dir="$HOME/Library/Logs/DiagnosticReports"
+    local crash_file=""
+
+    if [ ! -d "$crash_dir" ]; then
+        caddie cli:red "Error: Crash report directory not found"
+        caddie cli:indent "$crash_dir"
+        return 1
+    fi
+
+    if [ -n "$filter" ]; then
+        crash_file="$(ls -t "$crash_dir"/*"$filter"*.crash 2>/dev/null | head -1)"
+    else
+        crash_file="$(ls -t "$crash_dir"/*.crash 2>/dev/null | head -1)"
+    fi
+
+    if [ -z "$crash_file" ]; then
+        caddie cli:yellow "No crash reports found"
+        return 1
+    fi
+
+    caddie cli:title "Latest crash report"
+    caddie cli:indent "Path: $crash_file"
+    caddie cli:blank
+    sed -n '1,200p' "$crash_file"
+    return 0
+}
+
+function caddie_swift_xcode_crash_symbolicate() {
+    local crash_path="$1"
+    local dsym_path="$2"
+
+    if [ -z "$crash_path" ]; then
+        caddie cli:red "Error: Provide a crash log path"
+        caddie cli:usage "caddie swift:xcode:crash:symbolicate <crash-path> [dSYM-path]"
+        return 1
+    fi
+
+    if [ ! -f "$crash_path" ]; then
+        caddie cli:red "Error: Crash log not found"
+        caddie cli:indent "$crash_path"
+        return 1
+    fi
+
+    local tool=""
+    tool="$(xcrun --find symbolicatecrash 2>/dev/null)"
+    if [ -z "$tool" ]; then
+        caddie cli:red "Error: symbolicatecrash not found"
+        caddie cli:indent "Install Xcode and Xcode command line tools"
+        return 1
+    fi
+
+    if [ -n "$dsym_path" ]; then
+        "$tool" -d "$dsym_path" "$crash_path"
+        return $?
+    fi
+
+    "$tool" "$crash_path"
+    return $?
+}
+
 function caddie_swift_xcode_clean() {
     caddie_swift_require_xcode_project || return 1
     local scheme="$1"
+    caddie_swift_xcode_scene_require "$scheme" || return 1
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
 
@@ -900,6 +1186,8 @@ function caddie_swift_xcode_play() {
     local logs_enabled="false"
     local logs_all_enabled="false"
     local trace_template=""
+    local crash_enabled="false"
+    local crash_all_enabled="false"
     local -a play_args=()
 
     while [ "$#" -gt 0 ]; do
@@ -910,11 +1198,17 @@ function caddie_swift_xcode_play() {
             --logs:all|--logs-all)
                 logs_all_enabled="true"
                 ;;
+            --crash)
+                crash_enabled="true"
+                ;;
+            --crash:all|--crash-all)
+                crash_all_enabled="true"
+                ;;
             --trace)
                 shift
                 if [ -z "$1" ]; then
                     caddie cli:red "Error: --trace requires a template name"
-                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]"
+                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]"
                     return 1
                 fi
                 trace_template="$1"
@@ -923,7 +1217,7 @@ function caddie_swift_xcode_play() {
                 trace_template="${1#--trace=}"
                 if [ -z "$trace_template" ]; then
                     caddie cli:red "Error: --trace requires a template name"
-                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]"
+                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]"
                     return 1
                 fi
                 ;;
@@ -955,6 +1249,7 @@ function caddie_swift_xcode_play() {
         fi
     fi
 
+    caddie_swift_xcode_scene_require "$scheme" || return 1
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     if [ -z "$target" ]; then
         target="${CADDIE_SWIFT_XCODE_TARGET:-}"
@@ -1016,6 +1311,14 @@ function caddie_swift_xcode_play() {
         caddie_swift_xcode_play_open_tabs "$app_name" "$bundle_id" "$destination" "$sim_udid" "$device_udid" "$trace_template" "$logs_enabled" "$logs_all_enabled"
     fi
 
+    if [ "$crash_enabled" = "true" ]; then
+        caddie_swift_xcode_crash_stream "$app_name" "$destination" "$sim_udid" "$device_udid"
+    fi
+
+    if [ "$crash_all_enabled" = "true" ]; then
+        caddie_swift_xcode_crash_stream_all "$destination" "$sim_udid" "$device_udid"
+    fi
+
     if [ "$destination" = "simulator" ]; then
         caddie cli:indent "Launching in simulator..."
         xcrun simctl boot "$sim_udid" >/dev/null 2>&1 || true
@@ -1066,6 +1369,57 @@ function caddie_swift_xcode_play() {
     return 0
 }
 
+function caddie_swift_xcode_play_logs() {
+    caddie_swift_xcode_play --logs "$@"
+    return $?
+}
+
+function caddie_swift_xcode_play_trace() {
+    local template=""
+
+    if [ "$1" = "--template" ]; then
+        shift
+        template="$1"
+        shift || true
+    elif [[ "$1" == --template=* ]]; then
+        template="${1#--template=}"
+        shift || true
+    elif [ -n "$1" ] && caddie_swift_xcode_trace_template_exists "$1"; then
+        template="$1"
+        shift || true
+    fi
+
+    if [ -z "$template" ]; then
+        template="$(caddie_swift_xcode_trace_template_select)" || return 1
+    fi
+
+    caddie_swift_xcode_play --trace "$template" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_play_full() {
+    local template=""
+
+    if [ "$1" = "--template" ]; then
+        shift
+        template="$1"
+        shift || true
+    elif [[ "$1" == --template=* ]]; then
+        template="${1#--template=}"
+        shift || true
+    elif [ -n "$1" ] && caddie_swift_xcode_trace_template_exists "$1"; then
+        template="$1"
+        shift || true
+    fi
+
+    if [ -z "$template" ]; then
+        template="$(caddie_swift_xcode_trace_template_select)" || return 1
+    fi
+
+    caddie_swift_xcode_play --logs --crash --trace "$template" "$@"
+    return $?
+}
+
 function caddie_swift_xcode_test_run() {
     local test_scope="$1"
     shift || true
@@ -1074,6 +1428,7 @@ function caddie_swift_xcode_test_run() {
     # Shift consumed arguments
     [ -n "$1" ] && shift || true
 
+    caddie_swift_xcode_scene_require "$scheme" || return 1
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
     local sim_name="${1:-iPhone 16}"
@@ -1290,6 +1645,7 @@ function caddie_swift_xcode_test_unit_failed() {
     local scheme="$1"
     [ -n "$1" ] && shift || true
 
+    caddie_swift_xcode_scene_require "$scheme" || return 1
     scheme=$(caddie_swift_xcode_scheme "$scheme")
     local project_file=$(caddie_swift_xcode_project)
     local sim_name="${1:-iPhone 16}"
@@ -1485,10 +1841,22 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:resolve            Resolve package dependencies"
     caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project (errors only)"
     caddie cli:indent "xcode:build:log [scheme] [simulator|device] [sim_name]  Build with full logs"
-    caddie cli:indent "xcode:play [--logs] [--logs:all] [--trace <template>] [scheme] [target]  Build/run with optional logs/trace tabs"
+    caddie cli:indent "xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]"
+    caddie cli:indent "xcode:play:logs [scheme] [target]  Build/run with logs tab"
+    caddie cli:indent "xcode:play:trace [template] [scheme] [target]  Build/run with trace tab"
+    caddie cli:indent "xcode:play:full [template] [scheme] [target]  Logs + trace + crash stream"
+    caddie cli:indent "xcode:trace:templates     List available trace templates"
+    caddie cli:indent "xcode:crash:stream [app]   Stream crash logs in a Terminal tab"
+    caddie cli:indent "xcode:crash:stream:all     Stream all device/simulator logs"
+    caddie cli:indent "xcode:crash:latest [filter]  Show latest crash report"
+    caddie cli:indent "xcode:crash:symbolicate <crash> [dSYM]  Symbolicate a crash log"
     caddie cli:indent "xcode:target:get          Show current Xcode target"
     caddie cli:indent "xcode:target:set <name>   Set Xcode target"
     caddie cli:indent "xcode:target:unset        Clear Xcode target"
+    caddie cli:indent "xcode:scene:get           Show current Xcode scene"
+    caddie cli:indent "xcode:scene:set <name>    Set Xcode scene (scheme)"
+    caddie cli:indent "xcode:scene:unset         Clear Xcode scene"
+    caddie cli:indent "Note: xcode build/test/play/clean require a scene unless you pass a scheme"
     caddie cli:indent "xcode:test [scheme] [sim_name]  Run Xcode tests (log to file)"
     caddie cli:indent "xcode:test:unit [scheme] [sim_name]  Run Xcode unit tests (skip UI, log to file)"
     caddie cli:indent "xcode:test:unit:failed [scheme] [sim_name]  Re-run failed unit tests from log"
@@ -1536,6 +1904,9 @@ export -f caddie_swift_xcode_scheme_exists
 export -f caddie_swift_xcode_simulator_udid
 export -f caddie_swift_xcode_device_udid
 export -f caddie_swift_xcode_app_info
+export -f caddie_swift_xcode_scene_set
+export -f caddie_swift_xcode_scene_get
+export -f caddie_swift_xcode_scene_unset
 export -f caddie_swift_xcode_target_set
 export -f caddie_swift_xcode_target_get
 export -f caddie_swift_xcode_target_unset
@@ -1544,7 +1915,12 @@ export -f caddie_swift_xcode_resolve
 export -f caddie_swift_xcode_build_run
 export -f caddie_swift_xcode_build
 export -f caddie_swift_xcode_build_log
+export -f caddie_swift_xcode_trace_template_candidates
+export -f caddie_swift_xcode_trace_templates
 export -f caddie_swift_xcode_play
+export -f caddie_swift_xcode_play_logs
+export -f caddie_swift_xcode_play_trace
+export -f caddie_swift_xcode_play_full
 export -f caddie_swift_xcode_test_run
 export -f caddie_swift_xcode_test
 export -f caddie_swift_xcode_test_unit
@@ -1555,5 +1931,9 @@ export -f caddie_swift_xcode_test_unit_failed
 export -f caddie_swift_xcode_clean
 export -f caddie_swift_xcode_packages_check
 export -f caddie_swift_xcode_packages_add
+export -f caddie_swift_xcode_crash_stream
+export -f caddie_swift_xcode_crash_stream_all
+export -f caddie_swift_xcode_crash_latest
+export -f caddie_swift_xcode_crash_symbolicate
 export -f caddie_swift_help
 export -f caddie_swift_description
