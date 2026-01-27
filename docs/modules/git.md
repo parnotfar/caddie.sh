@@ -274,10 +274,10 @@ Tip: If you previously used the `gmm` alias, use `caddie git:merge:main` instead
 ### Advanced Git Operations
 
 #### `caddie git:push:set:upstream [<remote>] [<branch>]`
-Set upstream branch for new repositories. Defaults to `origin` remote and `main` branch.
+Set upstream branch for the current branch. Defaults to `origin` remote and the current branch.
 
 ```bash
-# Set upstream to origin/main (default)
+# Set upstream to origin/<current-branch> (default)
 caddie git:push:set:upstream
 
 # Set upstream to origin/master
