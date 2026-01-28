@@ -24,6 +24,51 @@ caddie codex:review:watch ~/work/my-repo
 caddie codex:review:terminal:open ~/work/my-repo
 ```
 
+## Version 7.1.0 - Swift Xcode Observability
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Swift Xcode Play Enhancements**
+- **Scene Management**: Added `swift:xcode:scene:set|get|unset` and prompt support for scene/target
+- **Logs + Trace Shortcuts**: New `swift:xcode:play:logs`, `swift:xcode:play:trace`, and `swift:xcode:play:full`
+- **Trace Templates**: `swift:xcode:trace:templates` lists available templates and supports interactive selection
+- **Crash Tools**: Added crash stream, latest crash, and symbolication helpers
+- **Terminal Tabs**: Log/trace/crash streams open in dedicated Terminal tabs when supported
+
+### 📝 Usage Examples
+
+```bash
+caddie swift:xcode:scene:set Icaruus
+caddie swift:xcode:play:logs
+caddie swift:xcode:play:trace
+caddie swift:xcode:play:full
+caddie swift:xcode:trace:templates
+caddie swift:xcode:crash:stream
+caddie swift:xcode:crash:latest
+```
+
+## Version 7.0.0 - Git Command Expansion
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Git Workflow Consolidation**
+- **Alias Cleanup**: Removed short git aliases from `dot_bashrc` in favor of `caddie git:*` commands
+- **Git Module Expansion**: Broadened `caddie git:*` coverage to replace legacy shortcut usage
+- **Tab Completion**: Improved discovery via git subcommand completions
+
+### 📝 Usage Examples
+
+```bash
+caddie git:status
+caddie git:switch
+caddie git:new:branch feature/my-work
+caddie git:gacp "Commit message"
+```
+
 ## Version 6.2.1 - TestFlight Credential UX
 
 **Release Date:** January 2026

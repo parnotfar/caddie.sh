@@ -6,6 +6,8 @@ The Git module provides enhanced git workflows and shortcuts for efficient repos
 
 The Git module (`caddie git:<command>`) offers streamlined git operations with smart defaults and GitHub integration. It automatically uses SSH URLs for better security and convenience.
 
+Short git aliases in `dot_bashrc` have been removed; use `caddie git:*` commands for the supported workflows.
+
 ## Commands
 
 ### Basic Git Operations
