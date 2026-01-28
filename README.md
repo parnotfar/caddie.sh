@@ -329,6 +329,9 @@ caddie codex:review:watch ~/work/my-repo
 
 # Open the Codex review hub + tail tab for a repo
 caddie codex:review:terminal:open ~/work/my-repo
+
+# Debug Terminal automation (opens a test hub + tab)
+caddie codex:review:terminal:debug
 ```
 
 ### Code Quality

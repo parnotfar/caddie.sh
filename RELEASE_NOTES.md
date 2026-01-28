@@ -10,13 +10,18 @@
 - **New Codex Module**: Added `codex:review` commands for local repo reviews and post-commit automation
 - **Commit Watcher**: `caddie codex:review:watch <dir>` installs a post-commit hook to trigger reviews
 - **Review Streaming**: Dedicated Terminal tab for streaming review output per repo
-- **Configurable Runner**: Set or append the review command via `codex:review:command:*`
+- **Terminal Helpers**: New `codex:review:terminal:*` commands to debug, generate, and open review tabs
+- **Worktree Isolation**: Automatically enables `extensions.worktreeConfig` when possible to set per-worktree hooks paths
+- **Hook Reliability**: Hooks source `~/.caddie.sh` (or shell profile) to load caddie in non-interactive shells
+- **Traceable Hooks**: Review logs include a "Hook fired" line with timestamp and commit SHA
+- **Configurable Runner**: Set or append the review command via `codex:review:command:*` (default: `codex review -`)
 
 ### 📝 Usage Examples
 
 ```bash
 caddie codex:review .
 caddie codex:review:watch ~/work/my-repo
+caddie codex:review:terminal:open ~/work/my-repo
 ```
 
 ## Version 6.2.1 - TestFlight Credential UX

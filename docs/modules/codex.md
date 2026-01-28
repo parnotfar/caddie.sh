@@ -7,6 +7,7 @@ The Codex module provides automated code reviews for local git repositories. It 
 - **Manual review**: `codex:review` runs a review on the latest commit in a repo.
 - **Watch mode**: `codex:review:watch` installs a `post-commit` hook to trigger reviews after every commit.
 - **Streaming**: a dedicated Terminal tab tails review output for quick access.
+- **Terminal helpers**: debug, script, and open commands help validate automation.
 
 ## Commands
 
@@ -23,6 +24,8 @@ Enable automatic reviews on every commit for a repo.
 ```bash
 caddie codex:review:watch ~/work/my-repo
 ```
+
+When possible, caddie enables `extensions.worktreeConfig` and sets a per-worktree hooks path to avoid collisions.
 
 ### `caddie codex:review:watch:stop <dir>`
 Disable automatic reviews and restore the previous `post-commit` hook if present.
@@ -105,3 +108,6 @@ caddie codex:review:command:unset
 - Merge commits are skipped by design.
 - Reviews are written to `~/.caddie_state/codex/reviews/<repo-id>/review.log`.
 - The watcher opens a Terminal window/tab titled **Caddie Codex Hub** for streaming.
+- Hooks source `~/.caddie.sh` (or your shell profile) so caddie is available in hook shells.
+- Each hook writes a "Hook fired" line to the log with timestamp and commit SHA for troubleshooting.
+- If your Terminal does not open a new window, ensure Terminal > Settings > General > "Shells open with" is set to **New window**.
