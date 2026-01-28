@@ -120,6 +120,80 @@ function caddie_codex_review_hooks_dir() {
     return 0
 }
 
+function caddie_codex_review_hooks_state_dir() {
+    local repo_root="$1"
+    if [ -z "$repo_root" ]; then
+        return 1
+    fi
+
+    local repo_id=""
+    repo_id="$(caddie_codex_repo_id "$repo_root")"
+    if [ -z "$repo_id" ]; then
+        return 1
+    fi
+
+    printf '%s' "$(caddie_codex_state_dir)/hooks/${repo_id}"
+    return 0
+}
+
+function caddie_codex_review_hooks_prev_file() {
+    local repo_root="$1"
+    local state_dir=""
+
+    state_dir="$(caddie_codex_review_hooks_state_dir "$repo_root")"
+    if [ -z "$state_dir" ]; then
+        return 1
+    fi
+
+    printf '%s' "${state_dir}/prev_hooks_path"
+    return 0
+}
+
+function caddie_codex_review_hooks_scope_file() {
+    local repo_root="$1"
+    local state_dir=""
+
+    state_dir="$(caddie_codex_review_hooks_state_dir "$repo_root")"
+    if [ -z "$state_dir" ]; then
+        return 1
+    fi
+
+    printf '%s' "${state_dir}/hooks_scope"
+    return 0
+}
+
+function caddie_codex_git_supports_worktree_config() {
+    local repo_root="$1"
+    if [ -z "$repo_root" ]; then
+        return 1
+    fi
+
+    git -C "$repo_root" config --worktree --null --list >/dev/null 2>&1
+    return $?
+}
+
+function caddie_codex_resolve_hooks_path() {
+    local repo_root="$1"
+    local hooks_path="$2"
+    if [ -z "$repo_root" ] || [ -z "$hooks_path" ]; then
+        return 1
+    fi
+
+    if [ "${hooks_path:0:1}" = "/" ]; then
+        printf '%s' "$hooks_path"
+        return 0
+    fi
+
+    local resolved=""
+    resolved="$(git -C "$repo_root" rev-parse --git-path "$hooks_path" 2>/dev/null)"
+    if [ -z "$resolved" ]; then
+        return 1
+    fi
+
+    printf '%s' "$resolved"
+    return 0
+}
+
 function caddie_codex_review_prompt() {
     local repo_root="$1"
     local branch="$2"
@@ -413,6 +487,53 @@ function caddie_codex_review_watch() {
     mkdir -p "$(dirname "$log_file")"
     touch "$log_file"
 
+    local hooks_state_dir=""
+    hooks_state_dir="$(caddie_codex_review_hooks_state_dir "$repo_root")"
+    if [ -z "$hooks_state_dir" ]; then
+        caddie cli:red "Error: Unable to resolve hooks state directory"
+        return 1
+    fi
+
+    mkdir -p "$hooks_state_dir" >/dev/null 2>&1
+    if [ ! -d "$hooks_state_dir" ]; then
+        caddie cli:red "Error: Unable to create hooks state directory: $hooks_state_dir"
+        return 1
+    fi
+
+    local config_scope="--local"
+    if caddie_codex_git_supports_worktree_config "$repo_root"; then
+        config_scope="--worktree"
+    fi
+
+    local prev_hooks_path=""
+    prev_hooks_path="$(git -C "$repo_root" config "$config_scope" --get core.hooksPath 2>/dev/null)"
+
+    local prev_file=""
+    prev_file="$(caddie_codex_review_hooks_prev_file "$repo_root")"
+    if [ -z "$prev_file" ]; then
+        caddie cli:red "Error: Unable to resolve hooks state file"
+        return 1
+    fi
+
+    local scope_file=""
+    scope_file="$(caddie_codex_review_hooks_scope_file "$repo_root")"
+    if [ -z "$scope_file" ]; then
+        caddie cli:red "Error: Unable to resolve hooks scope file"
+        return 1
+    fi
+
+    if [ -n "$prev_hooks_path" ]; then
+        printf '%s\n' "$prev_hooks_path" > "$prev_file"
+    else
+        printf '%s\n' "__unset__" > "$prev_file"
+    fi
+    printf '%s\n' "$config_scope" > "$scope_file"
+
+    if ! git -C "$repo_root" config "$config_scope" core.hooksPath "$hooks_state_dir" >/dev/null 2>&1; then
+        caddie cli:red "Error: Unable to set core.hooksPath"
+        return 1
+    fi
+
     local hooks_dir=""
     hooks_dir="$(caddie_codex_review_hooks_dir "$repo_root")"
     if [ -z "$hooks_dir" ]; then
@@ -434,6 +555,15 @@ function caddie_codex_review_watch() {
     local hook_path="$hooks_dir/post-commit"
     local prev_hook="$hooks_dir/post-commit.caddie-prev"
 
+    local prev_hook_external=""
+    if [ -n "$prev_hooks_path" ]; then
+        local prev_hooks_dir=""
+        prev_hooks_dir="$(caddie_codex_resolve_hooks_path "$repo_root" "$prev_hooks_path")"
+        if [ -n "$prev_hooks_dir" ] && [ "$prev_hooks_dir" != "$hooks_dir" ]; then
+            prev_hook_external="${prev_hooks_dir}/post-commit"
+        fi
+    fi
+
     if [ -f "$hook_path" ] && ! grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
         mv "$hook_path" "$prev_hook"
         caddie cli:yellow "Existing post-commit hook moved to $prev_hook"
@@ -442,9 +572,11 @@ function caddie_codex_review_watch() {
     local repo_root_escaped=""
     local log_file_escaped=""
     local prev_hook_escaped=""
+    local prev_hook_external_escaped=""
     repo_root_escaped="$(printf '%s' "$repo_root" | sed "s/'/'\\\\''/g")"
     log_file_escaped="$(printf '%s' "$log_file" | sed "s/'/'\\\\''/g")"
     prev_hook_escaped="$(printf '%s' "$prev_hook" | sed "s/'/'\\\\''/g")"
+    prev_hook_external_escaped="$(printf '%s' "$prev_hook_external" | sed "s/'/'\\\\''/g")"
 
     cat > "$hook_path" <<EOF
 #!/usr/bin/env bash
@@ -453,9 +585,13 @@ function caddie_codex_review_watch() {
 repo_root='$repo_root_escaped'
 log_file='$log_file_escaped'
 prev_hook='$prev_hook_escaped'
+prev_hook_external='$prev_hook_external_escaped'
 
 if [ -n "$prev_hook" ] && [ -x "$prev_hook" ]; then
   "$prev_hook" "$@" || true
+fi
+if [ -n "$prev_hook_external" ] && [ -x "$prev_hook_external" ]; then
+  "$prev_hook_external" "$@" || true
 fi
 
 commit="$(git -C "$repo_root" rev-parse HEAD 2>/dev/null)"
@@ -478,6 +614,7 @@ EOF
     caddie cli:indent "Repo: $repo_root"
     caddie cli:indent "Hook: $hook_path"
     caddie cli:indent "Log: $log_file"
+    caddie cli:indent "Hooks Path: $hooks_dir"
 
     caddie_codex_review_open_tab "$repo_root"
     return 0
@@ -498,32 +635,44 @@ function caddie_codex_review_watch_stop() {
         return 1
     fi
 
-    local hooks_dir=""
-    hooks_dir="$(caddie_codex_review_hooks_dir "$repo_root")"
-    if [ -z "$hooks_dir" ]; then
-        caddie cli:red "Error: Unable to resolve hooks directory"
+    local hooks_state_dir=""
+    hooks_state_dir="$(caddie_codex_review_hooks_state_dir "$repo_root")"
+    if [ -z "$hooks_state_dir" ]; then
+        caddie cli:red "Error: Unable to resolve hooks state directory"
         return 1
     fi
 
-    if [ -e "$hooks_dir" ] && [ ! -d "$hooks_dir" ]; then
-        caddie cli:red "Error: Hooks path is not a directory: $hooks_dir"
-        return 1
+    local hook_path="$hooks_state_dir/post-commit"
+    local prev_hook="$hooks_state_dir/post-commit.caddie-prev"
+    local prev_file=""
+    prev_file="$(caddie_codex_review_hooks_prev_file "$repo_root")"
+    local scope_file=""
+    scope_file="$(caddie_codex_review_hooks_scope_file "$repo_root")"
+    local config_scope="--local"
+    if [ -n "$scope_file" ] && [ -f "$scope_file" ]; then
+        config_scope="$(cat "$scope_file")"
     fi
-
-    local hook_path="$hooks_dir/post-commit"
-    local prev_hook="$hooks_dir/post-commit.caddie-prev"
+    local prev_hooks_path="__unset__"
+    if [ -n "$prev_file" ] && [ -f "$prev_file" ]; then
+        prev_hooks_path="$(cat "$prev_file")"
+    fi
 
     if [ ! -f "$hook_path" ] || ! grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
         caddie cli:yellow "No Codex watch hook found"
-        return 0
+    else
+        if [ -f "$prev_hook" ]; then
+            mv "$prev_hook" "$hook_path"
+            caddie cli:check "Restored previous post-commit hook"
+        else
+            rm -f "$hook_path"
+            caddie cli:check "Removed Codex post-commit hook"
+        fi
     fi
 
-    if [ -f "$prev_hook" ]; then
-        mv "$prev_hook" "$hook_path"
-        caddie cli:check "Restored previous post-commit hook"
+    if [ "$prev_hooks_path" = "__unset__" ]; then
+        git -C "$repo_root" config "$config_scope" --unset core.hooksPath >/dev/null 2>&1 || true
     else
-        rm -f "$hook_path"
-        caddie cli:check "Removed Codex post-commit hook"
+        git -C "$repo_root" config "$config_scope" core.hooksPath "$prev_hooks_path" >/dev/null 2>&1 || true
     fi
 
     return 0
@@ -544,19 +693,14 @@ function caddie_codex_review_watch_status() {
         return 1
     fi
 
-    local hooks_dir=""
-    hooks_dir="$(caddie_codex_review_hooks_dir "$repo_root")"
-    if [ -z "$hooks_dir" ]; then
-        caddie cli:red "Error: Unable to resolve hooks directory"
+    local hooks_state_dir=""
+    hooks_state_dir="$(caddie_codex_review_hooks_state_dir "$repo_root")"
+    if [ -z "$hooks_state_dir" ]; then
+        caddie cli:red "Error: Unable to resolve hooks state directory"
         return 1
     fi
 
-    if [ -e "$hooks_dir" ] && [ ! -d "$hooks_dir" ]; then
-        caddie cli:red "Error: Hooks path is not a directory: $hooks_dir"
-        return 1
-    fi
-
-    local hook_path="$hooks_dir/post-commit"
+    local hook_path="$hooks_state_dir/post-commit"
     if [ -f "$hook_path" ] && grep -q "CADDIE_CODEX_REVIEW_HOOK" "$hook_path"; then
         caddie cli:green "Codex review watch is enabled"
         caddie cli:indent "Hook: $hook_path"
