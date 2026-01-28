@@ -573,6 +573,9 @@ type caddie_debug
 # Check aliases
 alias | grep caddie
 
+# Legacy git aliases were removed from dot_bashrc
+# Use caddie git:* commands instead
+
 # Check shell options
 set -o
 ```

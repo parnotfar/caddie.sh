@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Caddie.sh - Git Prompt and Custom File Management
 # This file handles git prompt setup and custom file sourcing
@@ -44,16 +44,505 @@ function caddie_git_branch() {
     return 0
 }
 
-function caddie_git_commit() {
+function caddie_git_branch_candidates() {
+    local mode="${1:-local}"
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        return 0
+    fi
+
+    if [ "$mode" = "all" ]; then
+        git for-each-ref --format='%(refname:short)' refs/heads refs/remotes \
+            | sed -e 's#^origin/##' -e '/HEAD$/d' \
+            | sort -u
+        return 0
+    fi
+
+    git for-each-ref --format='%(refname:short)' refs/heads | sort -u
+    return 0
+}
+
+function caddie_git_branch_describe() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    local current_branch=""
+    local branch=""
+    local desc=""
+    local output=""
+    local IFS="|"
+    current_branch="$(git branch --show-current 2>/dev/null)"
+
+    caddie cli:title "Local branches"
+
+    while read -r branch desc; do
+        output="$branch"
+        if [ -n "$desc" ]; then
+            output="${branch} (${desc})"
+        fi
+
+        if [ -n "$current_branch" ] && [ "$branch" = "$current_branch" ]; then
+            caddie cli:green "* ${output}"
+        else
+            caddie cli:indent "$output"
+        fi
+    done < <(git for-each-ref --sort=refname --format='%(refname:short)|%(description)' refs/heads)
+
+    return 0
+}
+
+function caddie_git_branch_delete() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    if [ "$#" -gt 0 ]; then
+        git branch -d "$@"
+        return $?
+    fi
+
+    local current_branch=""
+    local selection=""
+    local confirm=""
+    local entry=""
+    current_branch="$(git branch --show-current 2>/dev/null)"
+
+    local -a branches=()
+    while read -r branch; do
+        if [ -n "$branch" ] && [ "$branch" != "$current_branch" ]; then
+            branches+=("$branch")
+        fi
+    done < <(caddie_git_branch_candidates "local")
+
+    if [ "${#branches[@]}" -eq 0 ]; then
+        caddie cli:yellow "No local branches available to delete"
+        return 0
+    fi
+
+    caddie cli:title "Select branches to delete"
+    local i=0
+    for branch in "${branches[@]}"; do
+        caddie cli:indent "${i}) ${branch}"
+        i=$((i + 1))
+    done
+    caddie cli:indent "q) Quit"
+    caddie cli:blank
+    caddie cli:indent "Enter selections (space-separated):"
+    read -r selection
+
+    if [ -z "$selection" ]; then
+        return 0
+    fi
+
+    if [ "$selection" = "q" ]; then
+        return 0
+    fi
+
+    local IFS=" "
+    local -a selections=()
+    read -r -a selections <<< "$selection"
+
+    local -a to_delete=()
+    for entry in "${selections[@]}"; do
+        if ! [[ "$entry" =~ ^[0-9]+$ ]]; then
+            caddie cli:red "Error: Invalid selection '${entry}'"
+            return 1
+        fi
+        if [ "$entry" -ge "${#branches[@]}" ]; then
+            caddie cli:red "Error: Selection '${entry}' out of range"
+            return 1
+        fi
+        to_delete+=("${branches[$entry]}")
+    done
+
+    if [ "${#to_delete[@]}" -eq 0 ]; then
+        return 0
+    fi
+
+    caddie cli:blank
+    caddie cli:title "Branches to delete"
+    for branch in "${to_delete[@]}"; do
+        caddie cli:indent "$branch"
+    done
+    caddie cli:blank
+    caddie cli:indent "Delete these branches? (y/N)"
+    read -r confirm
+
+    confirm="$(printf '%s' "$confirm" | tr '[:lower:]' '[:upper:]')"
+    if [ "$confirm" != "Y" ]; then
+        caddie cli:yellow "Aborted"
+        return 1
+    fi
+
+    for branch in "${to_delete[@]}"; do
+        git branch -d "$branch"
+    done
+
+    return 0
+}
+
+function caddie_git_branch_clean_merged() {
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    local current_branch=""
+    local branch=""
+    local keep=""
+    local skip=""
+    local confirm=""
+    current_branch="$(git branch --show-current 2>/dev/null)"
+
+    local -a protected=("main" "master")
+    local -a merged=()
+
+    while read -r branch; do
+        if [ -z "$branch" ]; then
+            continue
+        fi
+
+        if [ "$branch" = "$current_branch" ]; then
+            continue
+        fi
+
+        skip="false"
+        for keep in "${protected[@]}"; do
+            if [ "$branch" = "$keep" ]; then
+                skip="true"
+                break
+            fi
+        done
+
+        if [ "$skip" = "false" ]; then
+            merged+=("$branch")
+        fi
+    done < <(git branch --merged | sed 's/^[* ]*//')
+
+    if [ "${#merged[@]}" -eq 0 ]; then
+        caddie cli:check "No merged branches to delete"
+        return 0
+    fi
+
+    caddie cli:title "Merged branches"
+    for branch in "${merged[@]}"; do
+        caddie cli:indent "$branch"
+    done
+    caddie cli:blank
+    caddie cli:indent "Delete merged branches? (y/N)"
+    read -r confirm
+
+    confirm="$(printf '%s' "$confirm" | tr '[:lower:]' '[:upper:]')"
+    if [ "$confirm" != "Y" ]; then
+        caddie cli:yellow "Aborted"
+        return 1
+    fi
+
+    for branch in "${merged[@]}"; do
+        git branch -d "$branch"
+    done
+
+    return 0
+}
+
+function caddie_git_find_remote_branch() {
+    local branch="$1"
+    if [ -z "$branch" ]; then
+        return 1
+    fi
+
+    local remote_branch=""
+    if [[ "$branch" == */* ]]; then
+        if git show-ref --verify --quiet "refs/remotes/${branch}"; then
+            printf '%s\n' "$branch"
+            return 0
+        fi
+    fi
+
+    while read -r ref; do
+        if [[ "$ref" == */HEAD ]]; then
+            continue
+        fi
+        if [[ "$ref" == */"$branch" ]]; then
+            remote_branch="$ref"
+            break
+        fi
+    done < <(git for-each-ref --format='%(refname:short)' refs/remotes 2>/dev/null)
+
+    if [ -n "$remote_branch" ]; then
+        printf '%s\n' "$remote_branch"
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_git_select_branch() {
+    local mode="${1:-all}"
+    local selection=""
+    local branch=""
+    local selected_branch=""
+
+    local -a branches=()
+    while read -r branch; do
+        [ -n "$branch" ] && branches+=("$branch")
+    done < <(caddie_git_branch_candidates "$mode")
+
+    if [ "${#branches[@]}" -eq 0 ]; then
+        caddie cli:yellow "No branches found" >&2
+        return 1
+    fi
+
+    caddie cli:title "Select a branch" >&2
+    local i=0
+    for branch in "${branches[@]}"; do
+        caddie cli:indent "${i}) ${branch}" >&2
+        i=$((i + 1))
+    done
+    caddie cli:indent "q) Quit" >&2
+    caddie cli:blank >&2
+    caddie cli:indent "Enter selection:" >&2
+    read -r selection
+
+    if [ -z "$selection" ]; then
+        return 1
+    fi
+
+    if [ "$selection" = "q" ]; then
+        return 1
+    fi
+
+    if ! [[ "$selection" =~ ^[0-9]+$ ]]; then
+        caddie cli:red "Error: Invalid selection" >&2
+        return 1
+    fi
+
+    if [ "$selection" -ge "${#branches[@]}" ]; then
+        caddie cli:red "Error: Selection out of range" >&2
+        return 1
+    fi
+
+    selected_branch="${branches[$selection]}"
+    printf '%s\n' "$selected_branch"
+    return 0
+}
+
+function caddie_git_checkout() {
+    if [ "$#" -eq 0 ]; then
+        caddie cli:red "Error: Please provide checkout arguments"
+        caddie cli:usage "caddie git:checkout <args>"
+        return 1
+    fi
+
+    git checkout "$@"
+    return $?
+}
+
+function caddie_git_switch_internal() {
+    local branch="$1"
+    local pull_after="${2:-false}"
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    if [ -z "$branch" ]; then
+        branch="$(caddie_git_select_branch "all")"
+        if [ -z "$branch" ]; then
+            return 1
+        fi
+    fi
+
+    if [ -z "$branch" ]; then
+        caddie cli:red "Error: No branch selected"
+        return 1
+    fi
+
+    if git show-ref --verify --quiet "refs/heads/${branch}"; then
+        git checkout "$branch" || return 1
+    else
+        local remote_branch=""
+        remote_branch="$(caddie_git_find_remote_branch "$branch")"
+        if [ -n "$remote_branch" ]; then
+            git checkout -t "$remote_branch" || return 1
+        else
+            caddie cli:red "Error: Branch '${branch}' not found"
+            return 1
+        fi
+    fi
+
+    if [ "$pull_after" = "true" ]; then
+        git pull
+    fi
+
+    return 0
+}
+
+function caddie_git_switch() {
+    caddie_git_switch_internal "$1" "false"
+    return $?
+}
+
+function caddie_git_switch_pull() {
+    caddie_git_switch_internal "$1" "true"
+    return $?
+}
+
+function caddie_git_add() {
+    if [ "$#" -eq 0 ]; then
+        caddie cli:red "Error: Please provide a path or use git:add:all"
+        caddie cli:usage "caddie git:add <path...>"
+        return 1
+    fi
+
+    git add "$@"
+    return $?
+}
+
+function caddie_git_add_all() {
+    git add -A
+    return $?
+}
+
+function caddie_git_diff() {
+    git diff "$@"
+    return $?
+}
+
+function caddie_git_diff_vim() {
+    if ! command -v mvim > /dev/null 2>&1; then
+        caddie cli:red "Error: mvim is not installed"
+        caddie cli:indent "Install MacVim or update this command to use another editor"
+        return 1
+    fi
+
+    git diff -w "$@" | mvim -
+    return $?
+}
+
+function caddie_git_log_oneline() {
+    git log --oneline "$@"
+    return $?
+}
+
+function caddie_git_log_graph() {
+    git log --graph --decorate --all "$@"
+    return $?
+}
+
+function caddie_git_fetch() {
+    git fetch "$@"
+    return $?
+}
+
+function caddie_git_fetch_prune() {
+    git fetch --prune "$@"
+    return $?
+}
+
+function caddie_git_stash_pop() {
+    git stash pop "$@"
+    return $?
+}
+
+function caddie_git_stash_clear() {
+    git stash clear
+    return $?
+}
+
+function caddie_git_stash_drop() {
+    local ref="${1:-stash@{0}}"
+    local confirm=""
+
+    caddie cli:yellow "This will permanently delete ${ref}"
+    caddie cli:indent "Proceed? (y/N)"
+    read -r confirm
+
+    confirm="$(printf '%s' "$confirm" | tr '[:lower:]' '[:upper:]')"
+    if [ "$confirm" != "Y" ]; then
+        caddie cli:yellow "Aborted"
+        return 1
+    fi
+
+    git stash drop "$ref"
+    return $?
+}
+
+function caddie_git_commit_staged() {
     local message="$1"
     if [ -z "$message" ]; then
         caddie cli:red "Error: Please provide a commit message"
-        caddie cli:usage "caddie git:commit <message>"
+        caddie cli:usage "caddie git:commit:staged <message>"
         return 1
     fi
-    git add .
+
     git commit -m "$message"
-    return 0
+    return $?
+}
+
+function caddie_git_commit_all() {
+    local message="$1"
+    if [ -z "$message" ]; then
+        caddie cli:red "Error: Please provide a commit message"
+        caddie cli:usage "caddie git:commit:all <message>"
+        return 1
+    fi
+
+    git add -A
+    git commit -m "$message"
+    return $?
+}
+
+function caddie_git_commit_amend() {
+    local message="$1"
+
+    if [ -n "$message" ]; then
+        git commit --amend -m "$message"
+        return $?
+    fi
+
+    git commit --amend
+    return $?
+}
+
+function caddie_git_commit_amend_all() {
+    local message="$1"
+
+    git add -A
+
+    if [ -n "$message" ]; then
+        git commit --amend -m "$message"
+        return $?
+    fi
+
+    git commit --amend
+    return $?
+}
+
+function caddie_git_commit_push() {
+    local message="$1"
+    if [ -z "$message" ]; then
+        caddie cli:red "Error: Please provide a commit message"
+        caddie cli:usage "caddie git:commit:push <message>"
+        return 1
+    fi
+
+    git commit -m "$message"
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    git push
+    return $?
+}
+
+function caddie_git_commit() {
+    caddie_git_commit_all "$@"
+    return $?
 }
 
 function caddie_git_push() {
@@ -61,18 +550,89 @@ function caddie_git_push() {
     return 0
 }
 
+function caddie_git_push_force() {
+    git push --force-with-lease "$@"
+    return $?
+}
+
 function caddie_git_push_set_upstream() {
-    local remote="${1:-origin}"
-    local branch="${2:-main}"
-    
+    local remote="$1"
+    local branch="$2"
+    local current_branch=""
+    current_branch="$(git branch --show-current 2>/dev/null)"
+
+    if [ -z "$remote" ]; then
+        remote="origin"
+    fi
+
+    if [ -z "$branch" ]; then
+        if [ -n "$remote" ] && [ -z "$2" ]; then
+            if git remote 2>/dev/null | grep -Fxq "$remote"; then
+                branch="$current_branch"
+            else
+                branch="$remote"
+                remote="origin"
+            fi
+        else
+            branch="$current_branch"
+        fi
+    fi
+
+    if [ -z "$branch" ]; then
+        caddie cli:red "Error: Unable to determine branch name"
+        caddie cli:usage "caddie git:push:set:upstream [<remote>] [<branch>]"
+        return 1
+    fi
+
     caddie cli:title "Setting upstream for branch '${branch}' to '${remote}/${branch}'"
-    git push --set-upstream "${remote}" "${branch}"
-    return 0
+    if git push --set-upstream "${remote}" "${branch}"; then
+        caddie cli:check "Upstream set for ${branch}"
+        return 0
+    fi
+    return 1
 }
 
 function caddie_git_pull() {
     git pull
     return 0
+}
+
+function caddie_git_rebase() {
+    if [ "$#" -eq 0 ]; then
+        caddie cli:red "Error: Please provide rebase arguments"
+        caddie cli:usage "caddie git:rebase <args>"
+        return 1
+    fi
+
+    git rebase "$@"
+    return $?
+}
+
+function caddie_git_rebase_abort() {
+    git rebase --abort
+    return $?
+}
+
+function caddie_git_rebase_continue() {
+    git rebase --continue
+    return $?
+}
+
+function caddie_git_rebase_skip() {
+    git rebase --skip
+    return $?
+}
+
+function caddie_git_rebase_interactive() {
+    local branch="$1"
+    if [ -z "$branch" ]; then
+        caddie cli:red "Error: Please provide a branch or commit"
+        caddie cli:usage "caddie git:rebase:interactive <branch>"
+        return 1
+    fi
+
+    git rebase -i "$branch"
+    return $?
 }
 
 function caddie_git_merge_main() {
@@ -124,14 +684,36 @@ function caddie_git_gacp() {
     fi
     
     caddie cli:title "Adding all changes..."
-    git add .
+    git add -A
     
     caddie cli:title "Committing with message: '${message}'"
     git commit -m "$message"
     
     caddie cli:title "Pushing to remote..."
-    git push
-    return 0
+    if git push; then
+        return 0
+    fi
+
+    local current_branch=""
+    current_branch="$(git branch --show-current 2>/dev/null)"
+    if [ -z "$current_branch" ]; then
+        caddie cli:red "Push failed and current branch could not be detected"
+        return 1
+    fi
+
+    if git rev-parse --abbrev-ref --symbolic-full-name "@{u}" >/dev/null 2>&1; then
+        caddie cli:red "Push failed; upstream already set"
+        return 1
+    fi
+
+    caddie cli:yellow "No upstream set; pushing with --set-upstream"
+    if git push --set-upstream origin "$current_branch"; then
+        caddie cli:check "Upstream set for ${current_branch}"
+        return 0
+    fi
+
+    caddie cli:red "Push failed"
+    return 1
 }
 
 function caddie_git_remote_add() {
@@ -207,9 +789,15 @@ function caddie_git_clone() {
         return 1
     fi
     
-    local github_account=$(caddie_github_account_get)
+    local github_account=""
+    github_account="$(caddie_github_account_get)"
     if [ -z "${github_account}" ]; then
-        caddie cli:red "Error: No GitHub account set. Use 'caddie github:account:set <account>' first"
+        github_account="$(git config --get github.user 2>/dev/null)"
+    fi
+    if [ -z "${github_account}" ]; then
+        caddie cli:red "Error: No GitHub account set"
+        caddie cli:indent "Set it with: caddie github:account:set <account>"
+        caddie cli:indent "Or configure git: git config --global github.user <account>"
         return 1
     fi
     
@@ -225,6 +813,28 @@ function caddie_git_clone() {
 
 function caddie_git_new_branch() {
     local branch_name="$1"
+    local description=""
+    shift || true
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -d|--description)
+                shift
+                if [ -z "$1" ]; then
+                    caddie cli:red "Error: Description value is required"
+                    caddie cli:usage "caddie git:new:branch <branch-name> [--description <text>]"
+                    return 1
+                fi
+                description="$1"
+                ;;
+            *)
+                caddie cli:red "Error: Unknown option '$1'"
+                caddie cli:usage "caddie git:new:branch <branch-name> [--description <text>]"
+                return 1
+                ;;
+        esac
+        shift
+    done
     
     if [ -z "${branch_name}" ]; then
         caddie cli:red "Error: Please provide a branch name"
@@ -256,7 +866,12 @@ function caddie_git_new_branch() {
     # Create and switch to new branch
     if git checkout -b "${branch_name}"; then
         caddie cli:check "Created and switched to branch '${branch_name}'"
-        
+
+        if [ -n "$description" ]; then
+            git config branch."${branch_name}".description "$description"
+            caddie cli:indent "Description set for ${branch_name}"
+        fi
+
         # Push branch to remote and set upstream
         caddie cli:indent "Pushing branch to remote and setting upstream..."
 
@@ -282,7 +897,7 @@ function caddie_git_worktree_completion_candidates() {
     local path=""
     local locked="false"
 
-    while IFS= read -r line; do
+    while read -r line; do
         case "$line" in
             worktree\ *)
                 if [ -n "$path" ]; then
@@ -398,7 +1013,7 @@ function caddie_git_worktree_remove() {
         caddie cli:usage "caddie git:worktree:remove <path>"
         caddie cli:blank
         caddie cli:title "Removable worktrees:"
-        caddie_git_worktree_completion_candidates "removable" | while IFS= read -r line; do
+        caddie_git_worktree_completion_candidates "removable" | while read -r line; do
             [ -n "$line" ] && caddie cli:indent "$line"
         done
         return 1
@@ -425,7 +1040,7 @@ function caddie_git_worktree_lock() {
         caddie cli:usage "caddie git:worktree:lock <path>"
         caddie cli:blank
         caddie cli:title "Unlocked worktrees:"
-        caddie_git_worktree_completion_candidates "lock" | while IFS= read -r line; do
+        caddie_git_worktree_completion_candidates "lock" | while read -r line; do
             [ -n "$line" ] && caddie cli:indent "$line"
         done
         return 1
@@ -446,7 +1061,7 @@ function caddie_git_worktree_unlock() {
         caddie cli:usage "caddie git:worktree:unlock <path>"
         caddie cli:blank
         caddie cli:title "Locked worktrees:"
-        caddie_git_worktree_completion_candidates "unlock" | while IFS= read -r line; do
+        caddie_git_worktree_completion_candidates "unlock" | while read -r line; do
             [ -n "$line" ] && caddie cli:indent "$line"
         done
         return 1
@@ -467,7 +1082,7 @@ function caddie_git_worktree_cd() {
         caddie cli:usage "caddie git:worktree:cd <path>"
         caddie cli:blank
         caddie cli:title "Available worktrees:"
-        caddie_git_worktree_completion_candidates "all" | while IFS= read -r line; do
+        caddie_git_worktree_completion_candidates "all" | while read -r line; do
             [ -n "$line" ] && caddie cli:indent "$line"
         done
         return 1
@@ -624,6 +1239,7 @@ function caddie_git_pr_completion_candidates() {
     local pr_lines
     declare -A seen_candidates=()
     local -a candidates=()
+    local IFS=$'\t'
 
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         return 0
@@ -642,7 +1258,7 @@ function caddie_git_pr_completion_candidates() {
         return 0
     fi
 
-    while IFS=$'\t' read -r pr_number pr_head_ref; do
+    while read -r pr_number pr_head_ref; do
         if [ -n "$pr_number" ] && [ -z "${seen_candidates[$pr_number]}" ]; then
             candidates+=("$pr_number")
             seen_candidates[$pr_number]=1
@@ -728,6 +1344,11 @@ function caddie_git_auth_login() {
     return 0
 }
 
+function caddie_git_commands() {
+    printf '%s\n' "git:status git:branch git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:new:branch git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    return 0
+}
+
 function caddie_git_help() {
     caddie cli:title "Git Module Commands"
     caddie cli:blank
@@ -735,20 +1356,66 @@ function caddie_git_help() {
     caddie cli:usage "caddie git:<command>"
     caddie cli:blank
     
-    caddie cli:title "Commands:"
-    caddie cli:indent "status              Show git status"
-    caddie cli:indent "branch              Show current and all branches"
-    caddie cli:indent "new:branch <name>   Create new branch and push to remote"
-    caddie cli:indent "commit <message>    Add all changes and commit with message"
-    caddie cli:indent "gacp <message>      Add all changes, commit, and push in one command"
-    caddie cli:indent "auth:login          Authenticate with GitHub CLI"
+    caddie cli:title "Basics:"
+    caddie cli:indent "status                 Show git status"
+    caddie cli:indent "branch                 Show current and all branches"
+    caddie cli:indent "branch:describe        List local branches with descriptions"
+    caddie cli:indent "branch:delete [name]   Delete branch (interactive if omitted)"
+    caddie cli:indent "branch:clean:merged    Delete merged local branches (safe list)"
+    caddie cli:indent "checkout <args>        Run git checkout with provided args"
+    caddie cli:indent "switch [branch]        Switch branches (interactive if omitted)"
+    caddie cli:indent "switch:pull [branch]   Switch and pull latest"
+    caddie cli:indent "new:branch <name> [--description <text>]  Create branch, set description, push"
+    caddie cli:blank
+
+    caddie cli:title "Staging & Commit:"
+    caddie cli:indent "add <path...>          Stage paths"
+    caddie cli:indent "add:all                Stage all changes"
+    caddie cli:indent "commit <message>       Stage all and commit"
+    caddie cli:indent "commit:staged <message> Commit staged changes only"
+    caddie cli:indent "commit:all <message>   Stage all and commit"
+    caddie cli:indent "commit:amend [message] Amend last commit (optional message)"
+    caddie cli:indent "commit:amend:all [message] Stage all and amend"
+    caddie cli:indent "commit:push <message>  Commit staged changes and push"
+    caddie cli:indent "gacp <message>         Stage all, commit, and push"
+    caddie cli:blank
+
+    caddie cli:title "Diff & Log:"
+    caddie cli:indent "diff [args]            Show git diff"
+    caddie cli:indent "diff:vim [args]        Open diff in MacVim (mvim)"
+    caddie cli:indent "log:oneline [args]     One-line log"
+    caddie cli:indent "log:graph [args]       Graph log"
+    caddie cli:blank
+
+    caddie cli:title "Fetch & Sync:"
+    caddie cli:indent "fetch [args]           Fetch from remote"
+    caddie cli:indent "fetch:prune [args]     Fetch and prune"
+    caddie cli:indent "pull                   Pull from remote"
+    caddie cli:indent "push                   Push to remote repository"
+    caddie cli:indent "push:force [args]      Push with --force-with-lease"
+    caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, current branch)"
+    caddie cli:indent "merge:main [remote]    Merge mainline into current branch"
+    caddie cli:blank
+
+    caddie cli:title "Rebase:"
+    caddie cli:indent "rebase <args>          Run git rebase"
+    caddie cli:indent "rebase:abort           Abort rebase"
+    caddie cli:indent "rebase:continue        Continue rebase"
+    caddie cli:indent "rebase:skip            Skip current rebase step"
+    caddie cli:indent "rebase:interactive <branch>  Interactive rebase"
+    caddie cli:blank
+
+    caddie cli:title "Stash:"
+    caddie cli:indent "stash:pop [args]       Pop stash"
+    caddie cli:indent "stash:clear            Clear all stashes"
+    caddie cli:indent "stash:drop [stash@{n}] Drop stash entry"
+    caddie cli:blank
+
+    caddie cli:title "GitHub & PRs:"
+    caddie cli:indent "auth:login            Authenticate with GitHub CLI"
     caddie cli:indent "pr:create [title] [body] [base]  Create pull request using GitHub CLI"
-    caddie cli:indent "pr:approve <pr>     Approve pull request using GitHub CLI"
-    caddie cli:indent "push               Push to remote repository"
-    caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, main)"
-    caddie cli:indent "pull               Pull from remote repository"
-    caddie cli:indent "merge:main [remote]  Merge mainline into current branch"
-    caddie cli:indent "clone <repo-name>  Clone repository using stored GitHub account"
+    caddie cli:indent "pr:approve <pr>        Approve pull request using GitHub CLI"
+    caddie cli:indent "clone <repo-name>      Clone repository using stored GitHub account"
     caddie cli:blank
     
     caddie cli:title "Worktrees:"
@@ -771,8 +1438,9 @@ function caddie_git_help() {
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
     caddie cli:indent "caddie git:auth:login"
-    caddie cli:indent "caddie git:new:branch feature/new-feature"
+    caddie cli:indent "caddie git:new:branch feature/new-feature --description 'Add search'"
     caddie cli:indent "caddie git:commit 'Add new feature'"
+    caddie cli:indent "caddie git:commit:staged 'Fix lint'"
     caddie cli:indent "caddie git:gacp 'Quick commit and push'"
     caddie cli:indent "caddie git:pr:create 'Add new feature' 'Description of changes'"
     caddie cli:indent "caddie git:pr:approve 42"
@@ -801,6 +1469,29 @@ function caddie_git_description() {
 export -f caddie_source_custom_files
 export -f caddie_git_status
 export -f caddie_git_branch
+export -f caddie_git_branch_candidates
+export -f caddie_git_branch_describe
+export -f caddie_git_branch_delete
+export -f caddie_git_branch_clean_merged
+export -f caddie_git_checkout
+export -f caddie_git_switch
+export -f caddie_git_switch_pull
+export -f caddie_git_add
+export -f caddie_git_add_all
+export -f caddie_git_diff
+export -f caddie_git_diff_vim
+export -f caddie_git_log_oneline
+export -f caddie_git_log_graph
+export -f caddie_git_fetch
+export -f caddie_git_fetch_prune
+export -f caddie_git_stash_pop
+export -f caddie_git_stash_clear
+export -f caddie_git_stash_drop
+export -f caddie_git_commit_staged
+export -f caddie_git_commit_all
+export -f caddie_git_commit_amend
+export -f caddie_git_commit_amend_all
+export -f caddie_git_commit_push
 export -f caddie_git_new_branch
 export -f caddie_git_commit
 export -f caddie_git_gacp
@@ -810,8 +1501,14 @@ export -f caddie_git_pr_approve
 export -f caddie_git_pr_completion_candidates
 export -f caddie_git_worktree_completion_candidates
 export -f caddie_git_push
+export -f caddie_git_push_force
 export -f caddie_git_push_set_upstream
 export -f caddie_git_pull
+export -f caddie_git_rebase
+export -f caddie_git_rebase_abort
+export -f caddie_git_rebase_continue
+export -f caddie_git_rebase_skip
+export -f caddie_git_rebase_interactive
 export -f caddie_git_merge_main
 export -f caddie_git_remote_add
 export -f caddie_git_remote_set_url
@@ -825,5 +1522,6 @@ export -f caddie_git_worktree_prune
 export -f caddie_git_worktree_lock
 export -f caddie_git_worktree_unlock
 export -f caddie_git_worktree_cd
+export -f caddie_git_commands
 export -f caddie_git_help
 export -f caddie_git_description

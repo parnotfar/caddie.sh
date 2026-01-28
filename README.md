@@ -113,6 +113,8 @@ caddie-3.7> rust build
 
 Caddie.sh comes with a comprehensive set of aliases that make development faster and more efficient:
 
+Note: legacy git aliases from `dot_bashrc` have been removed; use `caddie git:*` commands instead.
+
 ### Quick Access
 ```bash
 # View all available aliases
@@ -316,6 +318,22 @@ caddie cursor:open ~/my-project
 
 # Get AI-powered code explanation
 caddie cursor:ai:explain src/main.rs
+```
+
+### Codex Review
+
+```bash
+# Run a Codex review on the latest commit
+caddie codex:review .
+
+# Watch a repo and review every commit automatically
+caddie codex:review:watch ~/work/my-repo
+
+# Open the Codex review hub + tail tab for a repo
+caddie codex:review:terminal:open ~/work/my-repo
+
+# Debug Terminal automation (opens a test hub + tab)
+caddie codex:review:terminal:debug
 ```
 
 ### Code Quality

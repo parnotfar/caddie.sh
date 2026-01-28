@@ -725,6 +725,20 @@ function _caddie_completion() {
     return 0
   fi
 
+  if [[ "$prev" == swift:xcode:play:trace || "$prev" == swift:xcode:play:full ]]; then
+    local template_candidates=""
+    if declare -F caddie_swift_xcode_trace_template_candidates >/dev/null 2>&1; then
+      template_candidates=$(caddie_swift_xcode_trace_template_candidates 2>/dev/null || true)
+    fi
+    COMPREPLY=()
+    if [ -n "$template_candidates" ]; then
+      while IFS= read -r line; do
+        COMPREPLY+=("$line")
+      done < <(compgen -W "$template_candidates" -- "$cur")
+    fi
+    return 0
+  fi
+
   # Build a flat list of all accepted commands
   local base_opts="help version go:home shell --help -h --version -v reload --reload -r"
   local all_opts="$base_opts"
@@ -844,7 +858,10 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "ios:archive ios:archive:testflight ios:export:ipa ios:upload:testflight ios:testflight ios:testflight:publish ios:testflight:publish:increment:false ios:project:info ios:version:get ios:version:set ios:increment:build ios:config:get ios:config:set ios:config:unset ios:config:list ios:config:load:project ios:keychain:password:set ios:keychain:password:get ios:keychain:password:unset"
                         ;;
                       swift)
-                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:play swift:xcode:target:get swift:xcode:target:set swift:xcode:target:unset swift:xcode:test swift:xcode:test:unit swift:xcode:test:unit:failed swift:xcode:test:unit:log:get swift:xcode:test:unit:log:set swift:xcode:test:unit:log:unset swift:xcode:clean swift:format swift:lint swift:gitignore"
+                        caddie_completion_register "$module_name" "swift:init swift:build swift:run swift:run:tool swift:test swift:test:filter swift:package:resolve swift:package:update swift:package:clean swift:package:describe swift:xcode:packages:check swift:xcode:packages:add swift:xcode:resolve swift:xcode:build swift:xcode:build:log swift:xcode:play swift:xcode:play:logs swift:xcode:play:trace swift:xcode:play:full swift:xcode:trace:templates swift:xcode:scene:get swift:xcode:scene:set swift:xcode:scene:unset swift:xcode:target:get swift:xcode:target:set swift:xcode:target:unset swift:xcode:test swift:xcode:test:unit swift:xcode:test:unit:failed swift:xcode:test:unit:log:get swift:xcode:test:unit:log:set swift:xcode:test:unit:log:unset swift:xcode:crash:stream swift:xcode:crash:stream:all swift:xcode:crash:latest swift:xcode:crash:symbolicate swift:xcode:clean swift:format swift:lint swift:gitignore"
+                        ;;
+                      codex)
+                        caddie_completion_register "$module_name" "codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:command:set codex:review:command:get codex:review:command:unset"
                         ;;
                       core)
                         caddie_completion_register "$module_name" "core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"

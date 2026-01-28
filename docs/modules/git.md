@@ -6,6 +6,8 @@ The Git module provides enhanced git workflows and shortcuts for efficient repos
 
 The Git module (`caddie git:<command>`) offers streamlined git operations with smart defaults and GitHub integration. It automatically uses SSH URLs for better security and convenience.
 
+Short git aliases in `dot_bashrc` have been removed; use `caddie git:*` commands for the supported workflows.
+
 ## Commands
 
 ### Basic Git Operations
@@ -24,12 +26,114 @@ Show current branch and all available branches.
 caddie git:branch
 ```
 
+#### `caddie git:branch:describe`
+List local branches with descriptions (highlights current branch).
+
+```bash
+caddie git:branch:describe
+```
+
+#### `caddie git:branch:delete [name]`
+Delete a branch by name, or pick branches interactively when no name is provided.
+
+```bash
+caddie git:branch:delete feature/old-branch
+caddie git:branch:delete
+```
+
+#### `caddie git:branch:clean:merged`
+Delete merged local branches (safe list, excludes current and main/master).
+
+```bash
+caddie git:branch:clean:merged
+```
+
+#### `caddie git:switch [branch]`
+Switch branches (interactive selection if no branch is provided).
+
+```bash
+caddie git:switch feature/new-feature
+caddie git:switch
+```
+
+#### `caddie git:switch:pull [branch]`
+Switch branches and pull latest updates.
+
+```bash
+caddie git:switch:pull feature/new-feature
+```
+
+#### `caddie git:checkout <args>`
+Run `git checkout` with the provided arguments.
+
+```bash
+caddie git:checkout -b feature/quick-test
+```
+
+#### `caddie git:new:branch <name> [--description <text>]`
+Create a new branch, optionally set a description, and push it to the remote.
+
+```bash
+caddie git:new:branch feature/new-feature
+caddie git:new:branch feature/new-feature --description "Add search flow"
+```
+
+#### `caddie git:add <path...>`
+Stage specific paths.
+
+```bash
+caddie git:add README.md
+```
+
+#### `caddie git:add:all`
+Stage all changes.
+
+```bash
+caddie git:add:all
+```
+
 #### `caddie git:commit <message>`
 Add all changes and commit with the specified message.
 
 ```bash
 caddie git:commit "Add new feature"
 caddie git:commit "Fix bug in user authentication"
+```
+
+#### `caddie git:commit:staged <message>`
+Commit only staged changes.
+
+```bash
+caddie git:commit:staged "Fix lint"
+```
+
+#### `caddie git:commit:all <message>`
+Stage all changes and commit (explicit form of `git:commit`).
+
+```bash
+caddie git:commit:all "Ship feature"
+```
+
+#### `caddie git:commit:amend [message]`
+Amend the last commit (optionally with a new message).
+
+```bash
+caddie git:commit:amend
+caddie git:commit:amend "Updated commit message"
+```
+
+#### `caddie git:commit:amend:all [message]`
+Stage all changes and amend the last commit.
+
+```bash
+caddie git:commit:amend:all
+```
+
+#### `caddie git:commit:push <message>`
+Commit staged changes and push.
+
+```bash
+caddie git:commit:push "Ship patch"
 ```
 
 #### `caddie git:gacp <message>`
@@ -47,11 +151,116 @@ Push changes to the remote repository.
 caddie git:push
 ```
 
+#### `caddie git:push:force [args]`
+Force push with lease (safer than `--force`).
+
+```bash
+caddie git:push:force
+```
+
 #### `caddie git:pull`
 Pull changes from the remote repository.
 
 ```bash
 caddie git:pull
+```
+
+#### `caddie git:fetch [args]`
+Fetch from the remote.
+
+```bash
+caddie git:fetch
+```
+
+#### `caddie git:fetch:prune [args]`
+Fetch and prune stale refs.
+
+```bash
+caddie git:fetch:prune
+```
+
+#### `caddie git:diff [args]`
+Show a diff for your current changes.
+
+```bash
+caddie git:diff
+```
+
+#### `caddie git:diff:vim [args]`
+Open a diff in MacVim.
+
+```bash
+caddie git:diff:vim
+```
+
+#### `caddie git:log:oneline [args]`
+Show a compact log.
+
+```bash
+caddie git:log:oneline
+```
+
+#### `caddie git:log:graph [args]`
+Show a graph log.
+
+```bash
+caddie git:log:graph
+```
+
+#### `caddie git:stash:pop [args]`
+Pop the latest stash (or provided stash ref).
+
+```bash
+caddie git:stash:pop
+```
+
+#### `caddie git:stash:clear`
+Clear all stashes.
+
+```bash
+caddie git:stash:clear
+```
+
+#### `caddie git:stash:drop [stash@{n}]`
+Drop a specific stash entry (prompts for confirmation).
+
+```bash
+caddie git:stash:drop
+```
+
+#### `caddie git:rebase <args>`
+Run `git rebase` with provided args.
+
+```bash
+caddie git:rebase main
+```
+
+#### `caddie git:rebase:abort`
+Abort an in-progress rebase.
+
+```bash
+caddie git:rebase:abort
+```
+
+#### `caddie git:rebase:continue`
+Continue an in-progress rebase.
+
+```bash
+caddie git:rebase:continue
+```
+
+#### `caddie git:rebase:skip`
+Skip the current rebase step.
+
+```bash
+caddie git:rebase:skip
+```
+
+#### `caddie git:rebase:interactive <branch>`
+Interactive rebase.
+
+```bash
+caddie git:rebase:interactive main
 ```
 
 #### `caddie git:merge:main [remote]`
@@ -67,10 +276,10 @@ Tip: If you previously used the `gmm` alias, use `caddie git:merge:main` instead
 ### Advanced Git Operations
 
 #### `caddie git:push:set:upstream [<remote>] [<branch>]`
-Set upstream branch for new repositories. Defaults to `origin` remote and `main` branch.
+Set upstream branch for the current branch. Defaults to `origin` remote and the current branch.
 
 ```bash
-# Set upstream to origin/main (default)
+# Set upstream to origin/<current-branch> (default)
 caddie git:push:set:upstream
 
 # Set upstream to origin/master
