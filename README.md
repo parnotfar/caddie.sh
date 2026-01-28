@@ -113,6 +113,8 @@ caddie-3.7> rust build
 
 Caddie.sh comes with a comprehensive set of aliases that make development faster and more efficient:
 
+Note: legacy git aliases from `dot_bashrc` have been removed; use `caddie git:*` commands instead.
+
 ### Quick Access
 ```bash
 # View all available aliases

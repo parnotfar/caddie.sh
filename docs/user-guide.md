@@ -149,6 +149,8 @@ caddie reload
 
 Caddie.sh includes 50+ productivity aliases that make development faster:
 
+Legacy git aliases from `dot_bashrc` have been removed; use `caddie git:*` commands instead.
+
 ```bash
 # View all available aliases
 caddie core:aliases
