@@ -45,6 +45,29 @@ Tail the review output log for a repo.
 caddie codex:review:tail ~/work/my-repo
 ```
 
+### Terminal Helpers
+
+#### `caddie codex:review:terminal:debug`
+Open a debug Terminal window + tab to validate AppleScript automation.
+
+```bash
+caddie codex:review:terminal:debug
+```
+
+#### `caddie codex:review:terminal:script <dir>`
+Generate the hub and review tab scripts used by the Terminal automation.
+
+```bash
+caddie codex:review:terminal:script ~/work/my-repo
+```
+
+#### `caddie codex:review:terminal:open <dir>`
+Open the Codex review hub window + tab for a repo.
+
+```bash
+caddie codex:review:terminal:open ~/work/my-repo
+```
+
 ### Review Command Configuration
 
 The module expects a command that accepts the review prompt via stdin and prints a response to stdout. If `codex` is available, the default is `codex review -`.

@@ -326,6 +326,9 @@ caddie codex:review .
 
 # Watch a repo and review every commit automatically
 caddie codex:review:watch ~/work/my-repo
+
+# Open the Codex review hub + tail tab for a repo
+caddie codex:review:terminal:open ~/work/my-repo
 ```
 
 ### Code Quality
