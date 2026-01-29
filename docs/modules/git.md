@@ -41,6 +41,34 @@ caddie git:branch:delete feature/old-branch
 caddie git:branch:delete
 ```
 
+#### `caddie git:branch:new <name>`
+Create a new branch, push it to the remote, and set upstream tracking.
+
+```bash
+caddie git:branch:new feature/new-feature
+```
+
+#### `caddie git:branch:create <name>`
+Alias for `git:branch:new`.
+
+```bash
+caddie git:branch:create feature/new-feature
+```
+
+#### `caddie git:branch:new:feature <name>`
+Create a feature branch using the `feature/` prefix.
+
+```bash
+caddie git:branch:new:feature onboarding-flow
+```
+
+#### `caddie git:branch:new:bugfix <name>`
+Create a bugfix branch using the `bugfix/` prefix.
+
+```bash
+caddie git:branch:new:bugfix crash-loop
+```
+
 #### `caddie git:branch:clean:merged`
 Delete merged local branches (safe list, excludes current and main/master).
 

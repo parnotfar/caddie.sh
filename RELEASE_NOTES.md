@@ -1,5 +1,24 @@
 # Caddie.sh Release Notes
 
+## Version 8.2.0 - Git Branch Shortcuts
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Branch Creation Shortcuts**
+- **New Commands**: Added `git:branch:new` and `git:branch:create`
+- **Prefixed Flows**: `git:branch:new:feature` and `git:branch:new:bugfix` apply standard prefixes
+- **Discoverable**: Commands show up in git help and tab completion
+
+### 📝 Usage Examples
+
+```bash
+caddie git:branch:new feature/new-feature
+caddie git:branch:new:feature onboarding-flow
+caddie git:branch:new:bugfix crash-loop
+```
+
 ## Version 8.1.0 - Codex Review Log Clarity
 
 **Release Date:** January 2026
