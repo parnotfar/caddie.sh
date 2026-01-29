@@ -120,6 +120,12 @@ Note: legacy git aliases from `dot_bashrc` have been removed; use `caddie git:*`
 # View all available aliases
 caddie core:aliases
 
+# Run a narrated demo of caddie
+caddie core:demo
+#
+# Run the demo in a temporary repo
+caddie core:demo:run:tmp
+
 # Search aliases by keyword
 ag git          # or: caddie core:alias:grep git
 ag docker       # or: caddie core:alias:grep docker

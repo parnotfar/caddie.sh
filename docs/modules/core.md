@@ -144,6 +144,33 @@ Debug mode is: on
 Debug mode is: off
 ```
 
+### Demo Mode
+
+#### `caddie core:demo`
+
+Run a narrated demo of Caddie.sh. By default it prints a short script without executing commands.
+
+#### `caddie core:demo:run`
+Run the demo in the current directory with safe command execution.
+
+#### `caddie core:demo:run:repo <path>`
+Run the demo against a specific repo path.
+
+#### `caddie core:demo:run:tmp`
+Run the demo in a temporary git repo under `/tmp` with automatic cleanup.
+
+#### `caddie core:demo:mute:fast`
+Run the demo without narration or pauses.
+
+**Examples:**
+```bash
+caddie core:demo
+caddie core:demo:run
+caddie core:demo:run:repo .
+caddie core:demo:run:tmp
+caddie core:demo:mute:fast
+```
+
 ## Interactive Prompt
 
 Run `caddie` with no arguments to launch the interactive prompt. The prompt keeps you inside a caddie-focused shell where you can lead with a module name, then provide subcommands or flags.

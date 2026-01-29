@@ -844,6 +844,182 @@ function caddie_core_lint_limit() {
     caddie_core_lint "$target" "$limit"
 }
 
+function caddie_core_demo_say() {
+    local message="$1"
+    local say_enabled="${2:-false}"
+    local pause_seconds="${3:-0}"
+
+    caddie cli:thought "$message"
+    if [ "$say_enabled" = "true" ]; then
+        say "$message" >/dev/null 2>&1
+    fi
+
+    if [ "$pause_seconds" -gt 0 ]; then
+        sleep "$pause_seconds"
+    fi
+}
+
+function caddie_core_demo_cmd() {
+    local label="$1"
+    shift
+
+    caddie cli:indent "$label"
+    if [ "$#" -gt 0 ]; then
+        "$@" || true
+    fi
+    return 0
+}
+
+function caddie_core_demo() {
+    local run_demo="false"
+    local mute="false"
+    local fast="false"
+    local repo_dir=""
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --run)
+                run_demo="true"
+                ;;
+            --mute|--no-say)
+                mute="true"
+                ;;
+            --fast)
+                fast="true"
+                ;;
+            --repo)
+                repo_dir="$2"
+                shift
+                ;;
+            --help|-h)
+                caddie cli:usage "caddie core:demo [--run] [--repo <path>] [--mute] [--fast]"
+                caddie cli:indent "--run   Execute safe demo commands"
+                caddie cli:indent "--repo  Run repo-specific commands in this path"
+                caddie cli:indent "--mute  Disable narration (say)"
+                caddie cli:indent "--fast  Skip pauses between steps"
+                return 0
+                ;;
+        esac
+        shift
+    done
+
+    local say_enabled="false"
+    if [ "$mute" = "false" ] && command -v say >/dev/null 2>&1; then
+        say_enabled="true"
+    elif [ "$mute" = "false" ]; then
+        caddie cli:yellow "Narration disabled (say not available)"
+    fi
+
+    local pause_seconds=1
+    if [ "$fast" = "true" ]; then
+        pause_seconds=0
+    fi
+
+    local original_dir=""
+    original_dir="$(pwd)"
+    if [ -n "$repo_dir" ]; then
+        if [ -d "$repo_dir" ]; then
+            cd "$repo_dir" || true
+        else
+            caddie cli:yellow "Repo path not found: $repo_dir"
+        fi
+    fi
+
+    caddie cli:title "Caddie Demo"
+    caddie cli:blank
+
+    caddie_core_demo_say "Caddie is a single command language for your dev workflow." "$say_enabled" "$pause_seconds"
+    caddie_core_demo_cmd "caddie help"
+    if [ "$run_demo" = "true" ]; then
+        caddie help || true
+    fi
+
+    caddie cli:blank
+    caddie_core_demo_say "Git workflows are explicit and discoverable." "$say_enabled" "$pause_seconds"
+    caddie_core_demo_cmd "caddie git:status"
+    if [ "$run_demo" = "true" ]; then
+        if git rev-parse --git-dir >/dev/null 2>&1; then
+            caddie git:status || true
+        else
+            caddie cli:yellow "Skipping git demo (not a git repo)"
+        fi
+    fi
+
+    caddie_core_demo_cmd "caddie git:new:branch feature/demo"
+    caddie_core_demo_cmd "caddie git:gacp \"Commit message\""
+
+    caddie cli:blank
+    caddie_core_demo_say "Swift workflows use conventions instead of flags." "$say_enabled" "$pause_seconds"
+    caddie_core_demo_cmd "caddie swift:xcode:scene:set Icaruus"
+    caddie_core_demo_cmd "caddie swift:xcode:play:full"
+
+    caddie cli:blank
+    caddie_core_demo_say "Codex reviews can run automatically after every commit." "$say_enabled" "$pause_seconds"
+    caddie_core_demo_cmd "caddie codex:review:terminal:open ."
+    caddie_core_demo_cmd "caddie codex:review:watch ."
+
+    caddie cli:blank
+    caddie_core_demo_say "Caddie keeps teams aligned and makes workflows repeatable for humans and agents." "$say_enabled" "$pause_seconds"
+    caddie cli:check "Demo complete"
+
+    if [ -n "$repo_dir" ]; then
+        cd "$original_dir" || true
+    fi
+
+    return 0
+}
+
+function caddie_core_demo_run() {
+    caddie_core_demo --run
+    return $?
+}
+
+function caddie_core_demo_run_repo() {
+    local repo_dir="$1"
+    if [ -z "$repo_dir" ]; then
+        caddie cli:red "Error: Please provide a repo path"
+        caddie cli:usage "caddie core:demo:run:repo <path>"
+        return 1
+    fi
+
+    caddie_core_demo --run --repo "$repo_dir"
+    return $?
+}
+
+function caddie_core_demo_run_tmp() {
+    local tmp_dir=""
+    tmp_dir="$(mktemp -d "/tmp/caddie-demo.XXXXXX")"
+    if [ -z "$tmp_dir" ]; then
+        caddie cli:red "Error: Unable to create temp directory"
+        return 1
+    fi
+
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    if ! git -C "$tmp_dir" init >/dev/null 2>&1; then
+        caddie cli:red "Error: Unable to initialize demo repo"
+        return 1
+    fi
+
+    git -C "$tmp_dir" config user.email "caddie-demo@local" >/dev/null 2>&1 || true
+    git -C "$tmp_dir" config user.name "Caddie Demo" >/dev/null 2>&1 || true
+
+    printf '%s\n' "Caddie demo repo" > "$tmp_dir/README.md"
+    git -C "$tmp_dir" add README.md >/dev/null 2>&1 || true
+    git -C "$tmp_dir" commit -m "Initial commit" >/dev/null 2>&1 || true
+
+    caddie cli:check "Temporary demo repo created"
+    caddie cli:indent "$tmp_dir"
+
+    caddie_core_demo --run --repo "$tmp_dir"
+    return $?
+}
+
+function caddie_core_demo_mute_fast() {
+    caddie_core_demo --mute --fast
+    return $?
+}
+
 # Function to show core caddie help
 function caddie_core_help() {
     caddie cli:title "Core Caddie Functions"
@@ -865,6 +1041,13 @@ function caddie_core_help() {
     caddie cli:indent "lint [path]         Run caddie-specific linting (shows all issues)"
     caddie cli:indent "lint:limit <n> <path> Run linting with limit (shows max n issues per check)"
     caddie cli:blank
+    caddie cli:thought "Demo:"
+    caddie cli:indent "demo                 Run a narrated demo"
+    caddie cli:indent "demo:run             Run demo in current directory"
+    caddie cli:indent "demo:run:repo <path> Run demo in a specific repo"
+    caddie cli:indent "demo:run:tmp         Run demo in a temporary repo"
+    caddie cli:indent "demo:mute:fast       Run demo without narration or pauses"
+    caddie cli:blank
     caddie cli:magnifying_glass "Information:"
     caddie cli:indent "aliases             Show all available aliases"
     caddie cli:indent "alias:grep <keyword> Search aliases by keyword"
@@ -884,6 +1067,11 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:lint"
     caddie cli:indent "caddie core:lint modules/"
     caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
+    caddie cli:indent "caddie core:demo"
+    caddie cli:indent "caddie core:demo:run"
+    caddie cli:indent "caddie core:demo:run:repo ."
+    caddie cli:indent "caddie core:demo:run:tmp"
+    caddie cli:indent "caddie core:demo:mute:fast"
 }
 
 function caddie_core_description() {
@@ -915,3 +1103,8 @@ export -f caddie_core_alias_npm
 export -f caddie_core_alias_nav
 export -f caddie_core_lint
 export -f caddie_core_lint_limit
+export -f caddie_core_demo
+export -f caddie_core_demo_run
+export -f caddie_core_demo_run_repo
+export -f caddie_core_demo_run_tmp
+export -f caddie_core_demo_mute_fast

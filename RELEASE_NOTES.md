@@ -1,5 +1,29 @@
 # Caddie.sh Release Notes
 
+## Version 9.0.0 - Caddie Self Demo & Branch Shortcuts
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Caddie Self Demo**
+- **Built-in Demo**: New `caddie core:demo` command provides a narrated walkthrough
+- **Safe Execution**: `--run` executes safe commands, `--repo` targets a specific repo
+- **Narration Controls**: `--mute` disables voice; `--fast` skips pauses
+- **No-Flag Shortcuts**: `core:demo:run`, `core:demo:run:repo`, `core:demo:run:tmp`, and `core:demo:mute:fast`
+
+#### **Branch Creation Shortcuts**
+- **Git Branch Helpers**: Added `git:branch:new` and `git:branch:create`
+- **Prefixed Flows**: `git:branch:new:feature` and `git:branch:new:bugfix` apply standard prefixes
+
+### 📝 Usage Examples
+
+```bash
+caddie core:demo
+caddie core:demo --run --repo .
+caddie git:branch:new:feature onboarding-flow
+```
+
 ## Version 8.1.0 - Codex Review Log Clarity
 
 **Release Date:** January 2026
@@ -31,7 +55,6 @@ caddie codex:review:tail ~/work/my-repo
 - **Worktree Isolation**: Automatically enables `extensions.worktreeConfig` when possible to set per-worktree hooks paths
 - **Hook Reliability**: Hooks source `~/.caddie.sh` (or shell profile) to load caddie in non-interactive shells
 - **Traceable Hooks**: Review logs include a "Hook fired" line with timestamp and commit SHA
-- **Readable Logs**: `codex:review:tail` renders colored start/end banners between reviews
 - **Configurable Runner**: Set or append the review command via `codex:review:command:*` (default: `codex review -`)
 
 ### 📝 Usage Examples
