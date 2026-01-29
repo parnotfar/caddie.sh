@@ -1,5 +1,22 @@
 # Caddie.sh Release Notes
 
+## Version 8.1.0 - Codex Review Log Clarity
+
+**Release Date:** January 2026
+
+### 🚀 Major New Features
+
+#### **Codex Review Log Clarity**
+- **Clear Boundaries**: Review runs now include structured start/end markers
+- **Readable Tail**: `codex:review:tail` renders colored banners between reviews
+- **Duration + Status**: End markers include review status and elapsed seconds
+
+### 📝 Usage Examples
+
+```bash
+caddie codex:review:tail ~/work/my-repo
+```
+
 ## Version 8.0.0 - Codex Review Automation
 
 **Release Date:** January 2026
@@ -14,6 +31,7 @@
 - **Worktree Isolation**: Automatically enables `extensions.worktreeConfig` when possible to set per-worktree hooks paths
 - **Hook Reliability**: Hooks source `~/.caddie.sh` (or shell profile) to load caddie in non-interactive shells
 - **Traceable Hooks**: Review logs include a "Hook fired" line with timestamp and commit SHA
+- **Readable Logs**: `codex:review:tail` renders colored start/end banners between reviews
 - **Configurable Runner**: Set or append the review command via `codex:review:command:*` (default: `codex review -`)
 
 ### 📝 Usage Examples

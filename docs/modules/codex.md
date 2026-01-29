@@ -48,6 +48,8 @@ Tail the review output log for a repo.
 caddie codex:review:tail ~/work/my-repo
 ```
 
+The tail view renders review start/end banners with color while keeping the log file plain text.
+
 ### Terminal Helpers
 
 #### `caddie codex:review:terminal:debug`
@@ -110,4 +112,5 @@ caddie codex:review:command:unset
 - The watcher opens a Terminal window/tab titled **Caddie Codex Hub** for streaming.
 - Hooks source `~/.caddie.sh` (or your shell profile) so caddie is available in hook shells.
 - Each hook writes a "Hook fired" line to the log with timestamp and commit SHA for troubleshooting.
+- Log output includes structured start/end markers so `review:tail` can render clear separators.
 - If your Terminal does not open a new window, ensure Terminal > Settings > General > "Shells open with" is set to **New window**.
