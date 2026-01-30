@@ -8,8 +8,8 @@
 
 Caddie.sh is a powerful, modular shell application that transforms your macOS terminal into a standardized development
 environment.  Using a common language for tooling is a powerful multiplier for you and your team's success.  Think of it
-as your personal caddie on the golf course of development - always ready with the right tools, environment setup, and
-shortcuts to make your coding experience smooth and efficient.
+as your personal caddie on the golf course of development - always ready with the right tools and environment setup to
+make your coding experience smooth and efficient.
 
 📋 **[Release Notes](RELEASE_NOTES.md)** - See what's new in the latest version
 
@@ -34,7 +34,6 @@ shortcuts to make your coding experience smooth and efficient.
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
-- **Productivity Aliases**: 50+ aliases for faster development workflows
 - **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core
 
 ## 🚀 Quick Start
@@ -109,88 +108,6 @@ caddie-3.7> rust build
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
 - External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately
-
-## 🚀 Productivity Aliases
-
-Caddie.sh comes with a comprehensive set of aliases that make development faster and more efficient:
-
-Note: legacy git aliases from `dot_bashrc` have been removed; use `caddie git:*` commands instead.
-
-### Quick Access
-```bash
-# View all available aliases
-caddie core:aliases
-
-# Search aliases by keyword
-ag git          # or: caddie core:alias:grep git
-ag docker       # or: caddie core:alias:grep docker
-
-# Navigate to caddie home
-caddie go:home
-
-# CLI color utilities
-caddie cli:green "Success message"
-caddie cli:red "Error message"
-caddie cli:title "Section Header"
-
-# Common shortcuts
-g              # git
-gst            # git status
-gl             # git pull
-gp             # git push
-d              # docker
-ni             # npm install
-ns             # npm start
-r              # rails
-```
-
-### Navigation & File Management
-```bash
-bu, ud, dud    # cd .. (go back)
-c              # clear
-ll             # ls -laGFH
-dir            # ls -FH
-pcd            # pushd
-```
-
-### Development Workflow
-```bash
-maek, amek     # make (typo correction)
-bim            # vim (typo correction)
-ss             # source ~/.bashrc
-shitory        # search history
-externalip     # curl whatismyip.org
-```
-
-### Docker Commands
-```bash
-dps            # docker ps
-dsp            # docker system prune
-dcb            # docker compose build
-dcu            # docker compose up
-dcd            # docker compose down
-```
-
-### Git Workflow
-```bash
-ga             # git add
-gaa            # git add -A
-gc             # git commit
-gc!            # git commit --amend
-gdrop          # git add .; git stash; git stash drop
-glo            # git log --oneline
-```
-
-### Package Management
-```bash
-bsl            # brew services list
-nid            # npm install --save-dev
-nrl            # npm run lint
-nrt            # npm run test
-nrtw           # npm run test -- --watch
-```
-
-> 💡 **Pro Tip**: Use `ag <keyword>` or `caddie core:alias:grep <keyword>` to search aliases, and `caddie go:home` to quickly navigate to your caddie home directory!
 
 ## Use Cases
 
