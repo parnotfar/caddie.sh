@@ -93,12 +93,14 @@ caddie[csv]-3.7> set file data.csv
 caddie[csv]-3.7> back            # Return to the root prompt
 caddie-3.7> `ls -1`              # Inline shell command without leaving the REPL
 caddie-3.7> shell git status     # One-off shell command through the shell scope
+caddie-3.7> shell                # Enter shell scope
+caddie[shell]-3.7> switch git    # Jump to another module from any scope
 caddie-3.7> cargo test           # Long-running command
 # Press Ctrl+C to cancel without exiting the REPL
 caddie-3.7> exit                 # Leave the REPL entirely
 ```
 
-The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`). Caddie keeps the REPL history in `~/.caddie_history`, so commands stay recallable without touching your main shell history. `Ctrl+C` now interrupts the active command and drops you back at the same prompt instead of closing the session. While scoped, the prompt shows the active module (`caddie[module]-3.7>`), and `back`, `up`, or `..` return you to the root prompt.
+The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`). Caddie keeps the REPL history in `~/.caddie_history`, so commands stay recallable without touching your main shell history. `Ctrl+C` now interrupts the active command and drops you back at the same prompt instead of closing the session. While scoped, the prompt shows the active module (`caddie[module]-3.7>`). Use `back`, `up`, or `..` to return to the root prompt, or `switch <module>` to jump directly to another module from any scope.
 
 ### Debug System
 

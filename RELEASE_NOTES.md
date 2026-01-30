@@ -15,6 +15,10 @@
 - **New Command**: `cross:deploy:railway` deploys the MCP server using the Railway CLI
 - **Repo-Aware**: Locates `platform/mcp-server-rust` from any subdirectory
 
+#### **REPL Module Switcher**
+- **New Command**: `switch <module>` jumps between module scopes from any REPL context (including shell scope)
+- **Module List**: Running `switch` with no args shows a formatted module table for quick navigation
+
 ### 📝 Usage Examples
 
 ```bash
@@ -22,6 +26,7 @@ caddie mcp:run
 caddie mcp:test
 caddie mcp:build
 caddie cross:deploy:railway
+caddie switch git
 ```
 
 ## Version 8.2.0 - Git Branch Shortcuts
