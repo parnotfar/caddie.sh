@@ -8,7 +8,9 @@
 
 #### **MCP Server Shortcuts**
 - **New Module**: Added `mcp` module with repo-root shortcuts for the MCP server
-- **Commands**: `mcp:run`, `mcp:test`, and `mcp:build` resolve `platform/mcp-server-rust` automatically
+- **Commands**: `mcp:server:set|get|unset` configure the MCP server directory
+- **Prompt**: Configured server shows as `[mcp: <dirname>]` in your shell prompt
+- **Run/Test/Build**: `mcp:run`, `mcp:test`, and `mcp:build` use the configured server directory
 - **Consistent Behavior**: Commands delegate to existing `caddie rust:*` workflows
 
 #### **Railway Deployment Helper**

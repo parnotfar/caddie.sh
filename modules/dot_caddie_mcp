@@ -6,38 +6,96 @@
 # Source CLI module for formatting
 source "$HOME/.caddie_modules/.caddie_cli"
 
-function caddie_mcp_find_repo_root() {
-    local dir="$PWD"
-
-    while [ -n "$dir" ] && [ "$dir" != "/" ]; do
-        if [ -d "$dir/platform/mcp-server-rust" ]; then
-            printf '%s\n' "$dir"
-            return 0
-        fi
-        dir="$(dirname "$dir")"
-    done
-
-    return 1
+function caddie_mcp_server_value() {
+    printf '%s\n' "${CADDIE_MCP_SERVER:-}"
+    return 0
 }
 
-function caddie_mcp_resolve_dir() {
-    local repo_root=""
+function caddie_mcp_server_set() {
+    local value="$1"
 
-    repo_root="$(caddie_mcp_find_repo_root)"
-    if [ -z "$repo_root" ]; then
-        caddie cli:red "Error: Could not locate platform/mcp-server-rust"
-        caddie cli:indent "Run this command from the repo root or any subdirectory."
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a server path"
+        caddie cli:usage "caddie mcp:server:set <path>"
         return 1
     fi
 
-    printf '%s\n' "$repo_root/platform/mcp-server-rust"
+    local expanded_path
+    expanded_path="$(eval echo "$value")"
+    if [ ! -d "$expanded_path" ]; then
+        caddie cli:red "Error: Directory '$expanded_path' does not exist"
+        return 1
+    fi
+
+    local absolute_path
+    absolute_path="$(cd "$expanded_path" && pwd)"
+    export CADDIE_MCP_SERVER="$absolute_path"
+    caddie cli:check "MCP server set to: $absolute_path"
+    return 0
+}
+
+function caddie_mcp_server_get() {
+    local value="${CADDIE_MCP_SERVER:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "MCP server: $value"
+    else
+        caddie cli:yellow "No MCP server is set"
+        caddie cli:thought "Use 'caddie mcp:server:set <path>' to set it"
+    fi
+    return 0
+}
+
+function caddie_mcp_server_unset() {
+    if [ -n "${CADDIE_MCP_SERVER:-}" ]; then
+        unset CADDIE_MCP_SERVER
+        caddie cli:check "MCP server unset"
+    else
+        caddie cli:yellow "No MCP server was set"
+    fi
+    return 0
+}
+
+function caddie_mcp_server_dir() {
+    local server="${CADDIE_MCP_SERVER:-}"
+    if [ -z "$server" ]; then
+        caddie cli:red "Error: MCP server not set"
+        caddie cli:usage "caddie mcp:server:set <path>"
+        return 1
+    fi
+
+    local expanded_path
+    expanded_path="$(eval echo "$server")"
+    if [ ! -d "$expanded_path" ]; then
+        caddie cli:red "Error: MCP server directory not found: $expanded_path"
+        caddie cli:thought "Update with 'caddie mcp:server:set <path>'"
+        return 1
+    fi
+
+    local absolute_path
+    absolute_path="$(cd "$expanded_path" && pwd)"
+    printf '%s\n' "$absolute_path"
+    return 0
+}
+
+function caddie_mcp_prompt_segment() {
+    local server="${CADDIE_MCP_SERVER:-}"
+    if [ -z "$server" ]; then
+        return 0
+    fi
+    server="${server%/}"
+    local dirname="${server##*/}"
+    if [ -z "$dirname" ]; then
+        return 0
+    fi
+    printf '%s' "[mcp: ${dirname}]"
     return 0
 }
 
 function caddie_mcp_run() {
     local mcp_dir=""
 
-    mcp_dir="$(caddie_mcp_resolve_dir)" || return 1
+    caddie_mcp_server_get
+    mcp_dir="$(caddie_mcp_server_dir)" || return 1
     caddie cli:title "MCP server run"
 
     if ! (cd "$mcp_dir" && caddie rust:run); then
@@ -51,7 +109,8 @@ function caddie_mcp_run() {
 function caddie_mcp_test() {
     local mcp_dir=""
 
-    mcp_dir="$(caddie_mcp_resolve_dir)" || return 1
+    caddie_mcp_server_get
+    mcp_dir="$(caddie_mcp_server_dir)" || return 1
     caddie cli:title "MCP server tests"
 
     if ! (cd "$mcp_dir" && caddie rust:test:all); then
@@ -65,7 +124,8 @@ function caddie_mcp_test() {
 function caddie_mcp_build() {
     local mcp_dir=""
 
-    mcp_dir="$(caddie_mcp_resolve_dir)" || return 1
+    caddie_mcp_server_get
+    mcp_dir="$(caddie_mcp_server_dir)" || return 1
     caddie cli:title "MCP server build"
 
     if ! (cd "$mcp_dir" && caddie rust:build); then
@@ -81,14 +141,19 @@ function caddie_mcp_help() {
     caddie cli:blank
     caddie cli:usage "caddie mcp:<command>"
     caddie cli:blank
-    caddie cli:indent "mcp:run            Run the MCP server (platform/mcp-server-rust)"
-    caddie cli:indent "mcp:test           Run MCP server tests"
-    caddie cli:indent "mcp:build          Build the MCP server"
+    caddie cli:indent "mcp:server:set <path>   Set MCP server directory"
+    caddie cli:indent "mcp:server:get          Show current MCP server directory"
+    caddie cli:indent "mcp:server:unset        Clear MCP server directory"
     caddie cli:blank
-    caddie cli:indent "Commands resolve platform/mcp-server-rust from the repo root"
-    caddie cli:indent "and can be run from any subdirectory."
+    caddie cli:indent "mcp:run                 Run the MCP server"
+    caddie cli:indent "mcp:test                Run MCP server tests"
+    caddie cli:indent "mcp:build               Build the MCP server"
+    caddie cli:blank
+    caddie cli:indent "Run server:set once, then run/test/build from anywhere."
     caddie cli:blank
     caddie cli:title "Examples"
+    caddie cli:indent "caddie mcp:server:set ~/work/pnf/platform/mcp-server-rust"
+    caddie cli:indent "caddie mcp:server:get"
     caddie cli:indent "caddie mcp:run"
     caddie cli:indent "caddie mcp:test"
     caddie cli:indent "caddie mcp:build"
@@ -96,15 +161,19 @@ function caddie_mcp_help() {
 }
 
 function caddie_mcp_description() {
-    printf '%s\n' 'MCP server shortcuts for platform/mcp-server-rust'
+    printf '%s\n' 'MCP server shortcuts and configuration'
     return 0
 }
 
 function caddie_mcp_commands() {
-    printf '%s\n' "mcp:run mcp:test mcp:build"
+    printf '%s\n' "mcp:server:set mcp:server:get mcp:server:unset mcp:run mcp:test mcp:build"
     return 0
 }
 
+export -f caddie_mcp_server_set
+export -f caddie_mcp_server_get
+export -f caddie_mcp_server_unset
+export -f caddie_mcp_prompt_segment
 export -f caddie_mcp_run
 export -f caddie_mcp_test
 export -f caddie_mcp_build

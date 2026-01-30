@@ -1,16 +1,38 @@
 # MCP Module
 
-The MCP module provides shortcuts for working with the MCP server Rust crate located at `platform/mcp-server-rust`.
+The MCP module provides shortcuts for working with an MCP server Rust crate. Configure the server path once, then run, test, and build from anywhere.
 
 ## Overview
 
-The module is designed to simplify MCP server workflows from anywhere inside the repo:
+The module is designed to simplify MCP server workflows:
 
-- Resolve the repo root automatically
+- Configure the MCP server directory via get/set/unset commands
 - Run, test, and build the MCP server without manual `cd`
 - Reuse existing `caddie rust:*` behavior
 
 ## Commands
+
+### `caddie mcp:server:set <path>`
+
+Set the MCP server directory.
+
+**Examples:**
+```bash
+caddie mcp:server:set ~/work/pnf/platform/mcp-server-rust
+```
+
+**What it does:**
+- Validates the directory exists
+- Stores the absolute path in the current shell
+- Updates the prompt segment to show `[mcp: <dirname>]`
+
+### `caddie mcp:server:get`
+
+Show the configured MCP server directory (if set).
+
+### `caddie mcp:server:unset`
+
+Clear the MCP server directory.
 
 ### `caddie mcp:run`
 
@@ -22,7 +44,7 @@ caddie mcp:run
 ```
 
 **What it does:**
-- Locates `platform/mcp-server-rust` from the current directory
+- Uses the configured MCP server directory
 - Changes into that directory
 - Runs `caddie rust:run`
 
@@ -44,28 +66,28 @@ Build the MCP server via `caddie rust:build`.
 caddie mcp:build
 ```
 
-## Project Resolution
+## Prompt Segment
 
-The module walks up from the current directory until it finds a repo root that contains `platform/mcp-server-rust`. This means you can run the commands from any subdirectory within the repo.
+When a server is configured, the shell prompt includes a segment like `[mcp: <dirname>]` showing the directory name of the configured server.
 
 ## Requirements
 
-- The MCP server crate must exist at `platform/mcp-server-rust`
+- The MCP server directory must be configured with `caddie mcp:server:set`
 - Rust toolchain installed (`rustup`, `cargo`)
 - Caddie rust module installed and available
 
 ## Examples
 
 ```bash
-# From repo root
-caddie mcp:run
+# Configure once
+caddie mcp:server:set ~/work/pnf/platform/mcp-server-rust
 
-# From a subdirectory
-cd platform
+# Run from anywhere
+caddie mcp:run
 caddie mcp:test
 ```
 
 ## Troubleshooting
 
-- **"Could not locate platform/mcp-server-rust"**: Run the command from inside the repo.
+- **"MCP server not set"**: Run `caddie mcp:server:set <path>` first.
 - **Rust errors**: Ensure the Rust toolchain is installed and `Cargo.toml` exists in the MCP server crate.
