@@ -978,7 +978,7 @@ function caddie_cross_help() {
 }
 
 function caddie_cross_description() {
-    echo 'Cross-Language Features & Templates'
+    printf '%s\n' 'Cross-Language Features & Templates'
     return 0
 }
 
@@ -1008,31 +1008,6 @@ export -f caddie_cross_deploy_docker
 export -f caddie_cross_deploy_local
 export -f caddie_cross_deploy_railway
 export -f caddie_cross_tools_install
-# Function to show cross module help
-function caddie_cross_help() {
-    caddie cli:title "Cross-Language Development Help"
-    caddie cli:blank
-    caddie cli:indent "Available commands:"
-    caddie cli:indent "  caddie cross:env:status     - Show development environment status"
-    caddie cli:indent "  caddie cross:tools:setup    - Setup cross-language development tools"
-    caddie cli:indent "  caddie cross:tools:lint      - Lint cross-language projects"
-    caddie cli:indent "  caddie cross:tools:format    - Format cross-language projects"
-    caddie cli:indent "  caddie cross:deploy:railway - Deploy MCP server to Railway"
-    caddie cli:indent "  caddie cross:help            - Show this help"
-    caddie cli:blank
-    caddie cli:indent "This module provides cross-language development utilities"
-    caddie cli:indent "for managing multiple programming languages in a single project."
-    return 0
-}
-
-# Function to show cross module description
-function caddie_cross_description() {
-    # caddie:lint:disable
-    echo "Cross-language development utilities and environment management"
-    # caddie:lint:enable
-    return 0
-}
-
 export -f caddie_cross_tools_setup
 export -f caddie_cross_tools_lint
 export -f caddie_cross_tools_format

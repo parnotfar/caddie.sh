@@ -36,7 +36,7 @@ function caddie_cursor_detect() {
 }
 
 function caddie_cursor_description() {
-    echo 'Cursor IDE Integration'
+    printf '%s\n' 'Cursor IDE Integration'
     return 0
 }
 
@@ -868,38 +868,6 @@ export -f caddie_cursor_config_sync
 export -f caddie_cursor_config_optimize
 export -f caddie_cursor_help
 export -f caddie_cursor_description
-
-# Function to show cursor module help
-function caddie_cursor_help() {
-    caddie cli:title "Cursor IDE Integration Help"
-    caddie cli:blank
-    caddie cli:indent "Available commands:"
-    caddie cli:indent "  caddie cursor:open           - Open current directory in Cursor"
-    caddie cli:indent "  caddie cursor:new            - Create new Cursor project"
-    caddie cli:indent "  caddie cursor:ext:list       - List installed extensions"
-    caddie cli:indent "  caddie cursor:ext:install    - Install extension"
-    caddie cli:indent "  caddie cursor:ext:uninstall  - Uninstall extension"
-    caddie cli:indent "  caddie cursor:ext:update     - Update all extensions"
-    caddie cli:indent "  caddie cursor:config:show    - Show current configuration"
-    caddie cli:indent "  caddie cursor:config:backup  - Backup configuration"
-    caddie cli:indent "  caddie cursor:config:restore - Restore configuration"
-    caddie cli:indent "  caddie cursor:config:sync    - Sync configuration"
-    caddie cli:indent "  caddie cursor:config:optimize - Optimize configuration"
-    caddie cli:indent "  caddie cursor:help           - Show this help"
-    caddie cli:blank
-    caddie cli:indent "This module provides integration with Cursor IDE for"
-    caddie cli:indent "project management, extension handling, and configuration."
-    return 0
-}
-
-# Function to show cursor module description
-function caddie_cursor_description() {
-    # caddie:lint:disable
-    echo "Cursor IDE integration and project management utilities"
-    # caddie:lint:enable
-    return 0
-}
-
 export -f caddie_cursor_ext_recommend
 export -f caddie_cursor_config_show
 export -f caddie_cursor_config_backup

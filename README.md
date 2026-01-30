@@ -105,6 +105,8 @@ caddie-8.3.0 rust build
 - **[iOS Module](docs/modules/ios.md)** - App Store and TestFlight distribution tools
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
+- **[Codex Module](docs/modules/codex.md)** - Codex-powered review and automation helpers
+- **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
 - External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately

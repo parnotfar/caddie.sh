@@ -1,5 +1,7 @@
 # CSV Module
 
+> **Note**: The CSV module is an optional ecosystem module provided by `caddie-csv-tools` and is not part of the core caddie.sh install. Install it separately before using these commands.
+
 The CSV module provides fast analytics over CSV/TSV data with DuckDB SQL and optional matplotlib plots. It wraps the `bin/csvql.py` Python helper to make data analysis effortless and consistent.
 
 ## Overview

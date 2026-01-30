@@ -19,12 +19,15 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[Cross Module](cross.md)** - Multi-language project templates and tools
 - **[MCP Module](mcp.md)** - MCP server shortcuts and deployment helpers
 - **[Cursor Module](cursor.md)** - IDE integration and AI-powered development
+- **[Codex Module](codex.md)** - Codex-powered review and automation helpers
+- **[Debug Module](debug.md)** - Debug control and output helpers
 - **[Git Module](git.md)** - Enhanced git workflows and GitHub integration
 - **[GitHub Module](github.md)** - GitHub account and repository management
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
 
 ### Optional Ecosystem Modules
 - External modules maintained in separate repositories—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities.
+- **[CSV Module](csv.md)** - Optional CSV analytics module (requires separate install)
 
 #### Prompt & Completion APIs
 - Register prompt segments with `caddie_prompt_register_segment <function>` and return the text you want appended to PS1.
