@@ -1,15 +1,15 @@
 # Installation Guide
 
-This guide covers all the ways to install and set up Caddie.sh on your macOS system.
+This guide covers installation on macOS (primary) and Linux (best effort).
 
 ## Prerequisites
 
 ### System Requirements
 
-- **Operating System**: macOS 10.15 (Catalina) or later
+- **Operating System**: macOS 10.15 (Catalina) or later recommended; Linux supported with minor manual tweaks as needed
 - **Architecture**: Intel (x86_64) or Apple Silicon (ARM64)
 - **Shell**: Bash 4.0 or later (latest version recommended)
-- **Package Manager**: Homebrew (will be installed automatically if missing)
+- **Package Manager**: Homebrew on macOS (installed automatically if missing)
 
 ### Pre-Installation Checklist
 
@@ -20,7 +20,7 @@ This guide covers all the ways to install and set up Caddie.sh on your macOS sys
 
 ### macOS Terminal Configuration
 
-**Important**: If you're using the macOS Terminal app, you must configure it to use the Homebrew version of Bash for proper functionality.
+**Important**: If you're using the macOS Terminal app and want Homebrew Bash, configure it after Homebrew is installed. You can verify it is available by running `bash --version` and checking for version 4+.
 
 1. **Open Terminal Preferences**: Press `Cmd + ,` or go to Terminal → Preferences
 2. **Select the Profiles Tab**: Click on the "Profiles" tab
