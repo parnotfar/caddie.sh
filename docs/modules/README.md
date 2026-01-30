@@ -17,6 +17,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 ### Development Tools
 - **[iOS Module](ios.md)** - App Store and TestFlight distribution tools
 - **[Cross Module](cross.md)** - Multi-language project templates and tools
+- **[macOS Module](mac.md)** - macOS workflow helpers and utilities
 - **[MCP Module](mcp.md)** - MCP server shortcuts and deployment helpers
 - **[Cursor Module](cursor.md)** - IDE integration and AI-powered development
 - **[Codex Module](codex.md)** - Codex-powered review and automation helpers

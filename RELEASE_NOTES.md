@@ -1,5 +1,26 @@
 # Caddie.sh Release Notes
 
+## Version 8.4.0 - macOS Screenshot Archiving
+
+**Release Date:** January 30, 2026
+
+### 🚀 Major New Features
+
+#### **macOS Screenshot Archiving**
+- **New Module**: Added `mac` module with screenshot archiving helpers
+- **Command**: `mac:screenshot:archive` moves Desktop/Downloads screenshots into the archive directory
+- **Dry Run**: `mac:screenshot:archive:dry:run` previews actions without moving files
+- **Configurable Directory**: `mac:screenshot:archive:dir:set|get|unset` manage the archive location (defaults to `~/Desktop/Screenshot-Archive`)
+- **Cleanup**: Archived screenshots older than 30 days are moved to `~/.Trash`
+- **Reporting**: Archive output includes Desktop vs Downloads counts
+
+### 📝 Usage Examples
+
+```bash
+caddie mac:screenshot:archive
+caddie mac:screenshot:archive:dir:set ~/Desktop/Screenshot-Archive
+```
+
 ## Version 8.3.0 - MCP Server Shortcuts
 
 **Release Date:** January 30, 2026

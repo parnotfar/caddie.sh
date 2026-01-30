@@ -356,6 +356,8 @@ function caddie_<module>_<config>_unset() {
 6. **CLI Integration**: Always source CLI module and use `caddie cli:*` functions
 7. **Function Export**: Always export functions with `export -f`
 8. **Error Handling**: Follow established patterns with proper validation and error messages
+9. **Release Versioning**: Every release requires a version update (bugfix/minor/major) and a matching section in `RELEASE_NOTES.md`. If the release type is unclear when new functionality is requested, ask which release type to use before updating version numbers. Versioning follows `[major].[minor].[bugfix]`.
+10. **Human-Readable Commands**: Prefer descriptive subcommands over flags for user-facing behaviors (e.g., `mac:screenshot:archive:dry:run` instead of `--dry-run`) to improve readability and tab completion. If a request suggests flags, propose the equivalent named command.
 
 ### Development Commands
 

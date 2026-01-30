@@ -26,6 +26,7 @@ make your coding experience smooth and efficient.
 - **iOS Distribution**: App Store and TestFlight workflows
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
+- **macOS Utilities**: Screenshot archiving and cleanup helpers
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
@@ -104,6 +105,7 @@ caddie-8.3.0 rust build
 - **[JavaScript Module](docs/modules/javascript.md)** - Node.js and npm management
 - **[iOS Module](docs/modules/ios.md)** - App Store and TestFlight distribution tools
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
+- **[macOS Module](docs/modules/mac.md)** - macOS workflow helpers and utilities
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Codex Module](docs/modules/codex.md)** - Codex-powered review and automation helpers
 - **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
@@ -149,6 +151,7 @@ caddie.sh/
 │   ├── dot_caddie_js       # JavaScript/Node.js tools
 │   ├── dot_caddie_ios      # App Store and TestFlight tools
 │   ├── dot_caddie_cross    # Cross-language features
+│   ├── dot_caddie_mac      # macOS utilities
 │   ├── dot_caddie_cursor   # IDE integration
 │   └── dot_caddie_git      # Git enhancements
 ├── docs/                   # Documentation

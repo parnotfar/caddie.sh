@@ -1,0 +1,300 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - macOS Utilities
+# This file provides macOS workflow helpers and utilities
+
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
+# Function to provide module description
+function caddie_mac_description() {
+    printf '%s\n' 'macOS utilities and workflow helpers'
+    return 0
+}
+
+function caddie_mac_screenshot_archive_dir_default() {
+    printf '%s\n' "$HOME/Desktop/Screenshot-Archive"
+    return 0
+}
+
+function caddie_mac_screenshot_archive_dir_resolve() {
+    local configured="${CADDIE_MAC_SCREENSHOT_ARCHIVE_DIR:-}"
+
+    if [ -n "$configured" ]; then
+        printf '%s\n' "$configured"
+    else
+        caddie_mac_screenshot_archive_dir_default
+    fi
+    return 0
+}
+
+function caddie_mac_screenshot_archive_dir_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a directory"
+        caddie cli:usage "caddie mac:screenshot:archive:dir:set <path>"
+        return 1
+    fi
+
+    export CADDIE_MAC_SCREENSHOT_ARCHIVE_DIR="$value"
+    caddie cli:check "Screenshot archive directory set to: $value"
+    return 0
+}
+
+function caddie_mac_screenshot_archive_dir_get() {
+    local value="${CADDIE_MAC_SCREENSHOT_ARCHIVE_DIR:-}"
+    local default_dir=""
+
+    default_dir="$(caddie_mac_screenshot_archive_dir_default)"
+
+    if [ -n "$value" ]; then
+        caddie cli:green "Screenshot archive directory: $value"
+    else
+        caddie cli:yellow "No screenshot archive directory is set"
+        caddie cli:thought "Default: $default_dir"
+        caddie cli:thought "Use 'caddie mac:screenshot:archive:dir:set <path>' to override"
+    fi
+    return 0
+}
+
+function caddie_mac_screenshot_archive_dir_unset() {
+    if [ -n "${CADDIE_MAC_SCREENSHOT_ARCHIVE_DIR:-}" ]; then
+        unset CADDIE_MAC_SCREENSHOT_ARCHIVE_DIR
+        caddie cli:check "Screenshot archive directory unset"
+    else
+        caddie cli:yellow "No screenshot archive directory was set"
+    fi
+    return 0
+}
+
+function caddie_mac_screenshot_archive_run() {
+    local mode="$1"
+    local dry_run=0
+    local archive_dir=""
+    local trash_dir=""
+    local search_dirs=()
+    local search_dir=""
+    local file=""
+    local filename=""
+    local dest_path=""
+    local found=0
+    local moved=0
+    local skipped=0
+    local trashed=0
+    local desktop_found=0
+    local desktop_moved=0
+    local desktop_skipped=0
+    local downloads_found=0
+    local downloads_moved=0
+    local downloads_skipped=0
+    local old_count=0
+
+    if [ "$mode" = "dry" ]; then
+        dry_run=1
+    fi
+
+    archive_dir="$(caddie_mac_screenshot_archive_dir_resolve)"
+
+    if [ "$dry_run" -eq 1 ]; then
+        caddie cli:title "Dry Run: Archiving macOS screenshots"
+    else
+        caddie cli:title "Archiving macOS screenshots"
+    fi
+    caddie cli:indent "Archive directory: $archive_dir"
+
+    if [ "$dry_run" -eq 0 ]; then
+        if [ ! -d "$archive_dir" ]; then
+            if ! mkdir -p "$archive_dir"; then
+                caddie cli:red "Error: Unable to create archive directory"
+                return 1
+            fi
+        fi
+    else
+        if [ ! -d "$archive_dir" ]; then
+            caddie cli:warning "Archive directory does not exist (would create it)"
+        fi
+    fi
+
+    search_dirs=("$HOME/Desktop" "$HOME/Downloads")
+    for search_dir in "${search_dirs[@]}"; do
+        if [ -d "$search_dir" ]; then
+            while IFS= read -r -d '' file; do
+                found=$((found + 1))
+                if [ "$search_dir" = "$HOME/Desktop" ]; then
+                    desktop_found=$((desktop_found + 1))
+                elif [ "$search_dir" = "$HOME/Downloads" ]; then
+                    downloads_found=$((downloads_found + 1))
+                fi
+                filename="$(basename "$file")"
+                dest_path="$archive_dir/$filename"
+                if [ -e "$dest_path" ]; then
+                    skipped=$((skipped + 1))
+                    if [ "$search_dir" = "$HOME/Desktop" ]; then
+                        desktop_skipped=$((desktop_skipped + 1))
+                    elif [ "$search_dir" = "$HOME/Downloads" ]; then
+                        downloads_skipped=$((downloads_skipped + 1))
+                    fi
+                    continue
+                fi
+                if [ "$dry_run" -eq 1 ]; then
+                    moved=$((moved + 1))
+                    if [ "$search_dir" = "$HOME/Desktop" ]; then
+                        desktop_moved=$((desktop_moved + 1))
+                    elif [ "$search_dir" = "$HOME/Downloads" ]; then
+                        downloads_moved=$((downloads_moved + 1))
+                    fi
+                else
+                    if mv "$file" "$archive_dir/"; then
+                        moved=$((moved + 1))
+                        if [ "$search_dir" = "$HOME/Desktop" ]; then
+                            desktop_moved=$((desktop_moved + 1))
+                        elif [ "$search_dir" = "$HOME/Downloads" ]; then
+                            downloads_moved=$((downloads_moved + 1))
+                        fi
+                    else
+                        skipped=$((skipped + 1))
+                        if [ "$search_dir" = "$HOME/Desktop" ]; then
+                            desktop_skipped=$((desktop_skipped + 1))
+                        elif [ "$search_dir" = "$HOME/Downloads" ]; then
+                            downloads_skipped=$((downloads_skipped + 1))
+                        fi
+                    fi
+                fi
+            done < <(
+                find "$search_dir" -maxdepth 1 -type f \( \
+                    -name "Screenshot ????-??-??*.png" -o \
+                    -name "Screen Shot ????-??-??*.png" \
+                \) -print0 2>/dev/null
+            )
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
+        caddie cli:yellow "No matching screenshots found on Desktop or Downloads"
+    else
+        if [ "$dry_run" -eq 1 ]; then
+            caddie cli:check "Would archive $moved screenshot(s)"
+            if [ "$skipped" -gt 0 ]; then
+                caddie cli:warning "Would skip $skipped screenshot(s) (already archived)"
+            fi
+        else
+            caddie cli:check "Archived $moved screenshot(s)"
+            if [ "$skipped" -gt 0 ]; then
+                caddie cli:warning "Skipped $skipped screenshot(s) (already archived or could not move)"
+            fi
+        fi
+
+        if [ "$dry_run" -eq 1 ]; then
+            caddie cli:indent "Desktop: $desktop_found found, $desktop_moved would archive, $desktop_skipped already archived"
+            caddie cli:indent "Downloads: $downloads_found found, $downloads_moved would archive, $downloads_skipped already archived"
+        else
+            caddie cli:indent "Desktop: $desktop_found found, $desktop_moved archived, $desktop_skipped skipped"
+            caddie cli:indent "Downloads: $downloads_found found, $downloads_moved archived, $downloads_skipped skipped"
+        fi
+    fi
+
+    if [ "$dry_run" -eq 1 ]; then
+        if [ -d "$archive_dir" ]; then
+            while IFS= read -r -d '' file; do
+                old_count=$((old_count + 1))
+            done < <(
+                find "$archive_dir" -maxdepth 1 -type f \( \
+                    -name "Screenshot ????-??-??*.png" -o \
+                    -name "Screen Shot ????-??-??*.png" \
+                \) -mtime +30 -print0 2>/dev/null
+            )
+            if [ "$old_count" -gt 0 ]; then
+                caddie cli:check "Would move $old_count archived screenshot(s) older than 30 days to Trash"
+            else
+                caddie cli:indent "No archived screenshots older than 30 days to trash"
+            fi
+        else
+            caddie cli:indent "Archive directory does not exist; skipping old screenshot check"
+        fi
+        return 0
+    fi
+
+    trash_dir="$HOME/.Trash"
+    if [ ! -d "$trash_dir" ]; then
+        mkdir -p "$trash_dir" >/dev/null 2>&1 || true
+    fi
+
+    while IFS= read -r -d '' file; do
+        filename="$(basename "$file")"
+        dest_path="$trash_dir/$filename"
+        if [ -e "$dest_path" ]; then
+            continue
+        fi
+        if mv "$file" "$trash_dir/"; then
+            trashed=$((trashed + 1))
+        fi
+    done < <(
+        find "$archive_dir" -maxdepth 1 -type f \( \
+            -name "Screenshot ????-??-??*.png" -o \
+            -name "Screen Shot ????-??-??*.png" \
+        \) -mtime +30 -print0 2>/dev/null
+    )
+
+    if [ "$trashed" -gt 0 ]; then
+        caddie cli:check "Moved $trashed archived screenshot(s) older than 30 days to Trash"
+    else
+        caddie cli:indent "No archived screenshots older than 30 days to trash"
+    fi
+
+    return 0
+}
+
+function caddie_mac_screenshot_archive() {
+    caddie_mac_screenshot_archive_run "run"
+    return $?
+}
+
+function caddie_mac_screenshot_archive_dry_run() {
+    caddie_mac_screenshot_archive_run "dry"
+    return $?
+}
+
+function caddie_mac_commands() {
+    printf '%s\n' "mac:help mac:screenshot:archive mac:screenshot:archive:dry:run mac:screenshot:archive:dir:set mac:screenshot:archive:dir:get mac:screenshot:archive:dir:unset"
+    return 0
+}
+
+function caddie_mac_help() {
+    local default_dir=""
+
+    default_dir="$(caddie_mac_screenshot_archive_dir_default)"
+
+    caddie cli:title "macOS Module Help"
+    caddie cli:blank
+    caddie cli:title "Screenshot Management:"
+    caddie cli:indent "mac:screenshot:archive                 - Archive Desktop/Downloads screenshots"
+    caddie cli:indent "mac:screenshot:archive:dry:run         - Preview archive actions without moving files"
+    caddie cli:indent "mac:screenshot:archive:dir:set <path>  - Set archive directory"
+    caddie cli:indent "mac:screenshot:archive:dir:get         - Show archive directory"
+    caddie cli:indent "mac:screenshot:archive:dir:unset       - Reset to default archive directory"
+    caddie cli:blank
+    caddie cli:title "Notes:"
+    caddie cli:indent "Default archive directory: $default_dir"
+    caddie cli:indent "Matches: Screenshot YYYY-MM-DD*.png or Screen Shot YYYY-MM-DD*.png"
+    caddie cli:indent "Moves archived screenshots older than 30 days to Trash"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie mac:screenshot:archive"
+    caddie cli:indent "caddie mac:screenshot:archive:dry:run"
+    caddie cli:indent "caddie mac:screenshot:archive:dir:set ~/Desktop/Screenshot-Archive"
+    caddie cli:indent "caddie mac:screenshot:archive:dir:get"
+    return 0
+}
+
+export -f caddie_mac_description
+export -f caddie_mac_screenshot_archive_dir_default
+export -f caddie_mac_screenshot_archive_dir_resolve
+export -f caddie_mac_screenshot_archive_dir_set
+export -f caddie_mac_screenshot_archive_dir_get
+export -f caddie_mac_screenshot_archive_dir_unset
+export -f caddie_mac_screenshot_archive_run
+export -f caddie_mac_screenshot_archive
+export -f caddie_mac_screenshot_archive_dry_run
+export -f caddie_mac_commands
+export -f caddie_mac_help
