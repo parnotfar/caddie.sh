@@ -88,16 +88,9 @@ function caddie_version() {
 
 function _caddie_switch_list() {
     local active_module="${1:-}"
-    local label=""
 
     caddie cli:title "Switch Targets"
     caddie cli:blank
-
-    label="shell - Shell command scope"
-    if [ "$active_module" = "shell" ]; then
-        label="${label} (current)"
-    fi
-    caddie cli:indent "$label"
 
     local -a help_modules=()
     declare -A seen_help_modules=()
@@ -127,6 +120,16 @@ function _caddie_switch_list() {
         return 0
     fi
 
+    local -a display_modules=()
+    local -a display_descriptions=()
+
+    local shell_description="Shell command scope"
+    if [ "$active_module" = "shell" ]; then
+        shell_description="${shell_description} (current)"
+    fi
+    display_modules+=("shell")
+    display_descriptions+=("$shell_description")
+
     local module=""
     local description_function=""
     local module_description=""
@@ -139,13 +142,70 @@ function _caddie_switch_list() {
         if [ -z "$module_description" ]; then
             module_description="Registered module"
         fi
-        label="${module} - ${module_description}"
         if [ "$active_module" = "$module" ]; then
-            label="${label} (current)"
+            module_description="${module_description} (current)"
         fi
-        caddie cli:indent "$label"
+        display_modules+=("$module")
+        display_descriptions+=("$module_description")
     done
 
+    local header_module="Module"
+    local header_desc="Description"
+    local module_width=${#header_module}
+    local desc_width=${#header_desc}
+    local i
+    for ((i = 0; i < ${#display_modules[@]}; i++)); do
+        if [ ${#display_modules[$i]} -gt "$module_width" ]; then
+            module_width=${#display_modules[$i]}
+        fi
+        if [ ${#display_descriptions[$i]} -gt "$desc_width" ]; then
+            desc_width=${#display_descriptions[$i]}
+        fi
+    done
+
+    local module_col_width=$((module_width + 2))
+    local desc_col_width=$((desc_width + 2))
+
+    local box_tl box_tr box_bl box_br box_h box_v box_tm box_mm box_bm box_ml box_mr
+    box_tl="$(printf '\xE2\x94\x8C')"
+    box_tr="$(printf '\xE2\x94\x90')"
+    box_bl="$(printf '\xE2\x94\x94')"
+    box_br="$(printf '\xE2\x94\x98')"
+    box_h="$(printf '\xE2\x94\x80')"
+    box_v="$(printf '\xE2\x94\x82')"
+    box_tm="$(printf '\xE2\x94\xAC')"
+    box_mm="$(printf '\xE2\x94\xBC')"
+    box_bm="$(printf '\xE2\x94\xB4')"
+    box_ml="$(printf '\xE2\x94\x9C')"
+    box_mr="$(printf '\xE2\x94\xA4')"
+
+    local module_border
+    local desc_border
+    module_border="$(printf '%*s' "$module_col_width" '' | tr ' ' "$box_h")"
+    desc_border="$(printf '%*s' "$desc_col_width" '' | tr ' ' "$box_h")"
+
+    local line_top="${box_tl}${module_border}${box_tm}${desc_border}${box_tr}"
+    local line_mid="${box_ml}${module_border}${box_mm}${desc_border}${box_mr}"
+    local line_bottom="${box_bl}${module_border}${box_bm}${desc_border}${box_br}"
+
+    local header_module_cell
+    local header_desc_cell
+    header_module_cell="$(printf "%-${module_width}s" "$header_module")"
+    header_desc_cell="$(printf "%-${desc_width}s" "$header_desc")"
+
+    caddie cli:indent "$line_top"
+    caddie cli:indent "${box_v} ${BOLD}${WHITE}${header_module_cell}${RESET} ${box_v} ${BOLD}${WHITE}${header_desc_cell}${RESET} ${box_v}"
+    caddie cli:indent "$line_mid"
+
+    for ((i = 0; i < ${#display_modules[@]}; i++)); do
+        local module_cell_plain
+        local desc_cell_plain
+        module_cell_plain="$(printf "%-${module_width}s" "${display_modules[$i]}")"
+        desc_cell_plain="$(printf "%-${desc_width}s" "${display_descriptions[$i]}")"
+        caddie cli:indent "${box_v} ${BOLD}${CYAN}${module_cell_plain}${RESET} ${box_v} ${GREY}${desc_cell_plain}${RESET} ${box_v}"
+    done
+
+    caddie cli:indent "$line_bottom"
     return 0
 }
 
