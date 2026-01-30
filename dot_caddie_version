@@ -4,7 +4,7 @@
 source "$HOME/.caddie_modules/.caddie_cli"
 
 # Private version variable
-CADDIE_SH_VERSION="8.4.0"
+CADDIE_SH_VERSION="9.0.0"
 
 # Function to get the current version
 function caddie_version_get() {

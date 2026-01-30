@@ -1,5 +1,29 @@
 # Caddie.sh Release Notes
 
+## Version 9.0.0 - Debian Support
+
+**Release Date:** January 30, 2026
+
+### 🚀 Major New Features
+
+#### **Debian Installation & Manifests**
+- **OS-Aware Install**: `make install` and `make install-dot` now select targets based on OS detection
+- **Explicit Targets**: Added `install-debian`, `install-dot-debian`, and `setup-dev-debian`
+- **Module Manifests**: OS-specific module lists under `modules/manifests/` control what gets installed
+
+#### **Debian & Server Modules**
+- **New Modules**: Added `debian` and `server` modules for production environments
+- **Package Helpers**: `debian:pkg:*` commands wrap apt workflows
+- **Remote Ops**: `server:ssh` and `server:service:*` handle SSH and systemd actions
+
+### 📝 Usage Examples
+
+```bash
+make install-debian
+caddie debian:pkg:update
+caddie server:ssh
+```
+
 ## Version 8.4.0 - macOS Screenshot Archiving
 
 **Release Date:** January 30, 2026

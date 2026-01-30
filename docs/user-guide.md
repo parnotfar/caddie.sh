@@ -91,20 +91,20 @@ Run `caddie` without arguments to enter an interactive prompt. Start with a modu
 
 ```bash
 $ caddie
-caddie-8.3.0> python venv create   # Equivalent to `caddie python:venv:create`
-caddie-8.3.0> csv                  # Switch to the CSV module scope
-caddie[csv]-8.3.0> set file data.csv
-caddie[csv]-8.3.0> back            # Return to the root prompt
-caddie-8.3.0> `ls -1`              # Inline shell command without leaving the REPL
-caddie-8.3.0> shell git status     # One-off shell command through the shell scope
-caddie-8.3.0> shell                # Enter shell scope
-caddie[shell]-8.3.0> switch git    # Jump to another module from any scope
-caddie-8.3.0> cargo test           # Long-running command
+caddie-9.0.0> python venv create   # Equivalent to `caddie python:venv:create`
+caddie-9.0.0> csv                  # Switch to the CSV module scope
+caddie[csv]-9.0.0> set file data.csv
+caddie[csv]-9.0.0> back            # Return to the root prompt
+caddie-9.0.0> `ls -1`              # Inline shell command without leaving the REPL
+caddie-9.0.0> shell git status     # One-off shell command through the shell scope
+caddie-9.0.0> shell                # Enter shell scope
+caddie[shell]-9.0.0> switch git    # Jump to another module from any scope
+caddie-9.0.0> cargo test           # Long-running command
 # Press Ctrl+C to cancel without exiting the REPL
-caddie-8.3.0> exit                 # Leave the REPL entirely
+caddie-9.0.0> exit                 # Leave the REPL entirely
 ```
 
-The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`). Caddie keeps the REPL history in `~/.caddie_history`, so commands stay recallable without touching your main shell history. `Ctrl+C` now interrupts the active command and drops you back at the same prompt instead of closing the session. While scoped, the prompt shows the active module (`caddie[module]-8.3.0>`). Use `back`, `up`, or `..` to return to the root prompt, or `switch <module>` to jump directly to another module from any scope.
+The prompt supports Readline editing, history, and cursor controls (e.g., `Ctrl+A`, `Ctrl+E`, `Ctrl+P`). Caddie keeps the REPL history in `~/.caddie_history`, so commands stay recallable without touching your main shell history. `Ctrl+C` now interrupts the active command and drops you back at the same prompt instead of closing the session. While scoped, the prompt shows the active module (`caddie[module]-9.0.0>`). Use `back`, `up`, or `..` to return to the root prompt, or `switch <module>` to jump directly to another module from any scope.
 
 ### Debug System
 
