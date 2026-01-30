@@ -1,5 +1,29 @@
 # Caddie.sh Release Notes
 
+## Version 8.3.0 - MCP Server Shortcuts
+
+**Release Date:** January 30, 2026
+
+### 🚀 Major New Features
+
+#### **MCP Server Shortcuts**
+- **New Module**: Added `mcp` module with repo-root shortcuts for the MCP server
+- **Commands**: `mcp:run`, `mcp:test`, and `mcp:build` resolve `platform/mcp-server-rust` automatically
+- **Consistent Behavior**: Commands delegate to existing `caddie rust:*` workflows
+
+#### **Railway Deployment Helper**
+- **New Command**: `cross:deploy:railway` deploys the MCP server using the Railway CLI
+- **Repo-Aware**: Locates `platform/mcp-server-rust` from any subdirectory
+
+### 📝 Usage Examples
+
+```bash
+caddie mcp:run
+caddie mcp:test
+caddie mcp:build
+caddie cross:deploy:railway
+```
+
 ## Version 8.2.0 - Git Branch Shortcuts
 
 **Release Date:** January 2026

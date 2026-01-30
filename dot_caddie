@@ -86,6 +86,69 @@ function caddie_version() {
     return 0
 }
 
+function _caddie_switch_list() {
+    local active_module="${1:-}"
+    local label=""
+
+    caddie cli:title "Switch Targets"
+    caddie cli:blank
+
+    label="shell - Shell command scope"
+    if [ "$active_module" = "shell" ]; then
+        label="${label} (current)"
+    fi
+    caddie cli:indent "$label"
+
+    local -a help_modules=()
+    declare -A seen_help_modules=()
+
+    if [ ${#CADDIE_MODULES[@]} -gt 0 ] 2>/dev/null; then
+        local m
+        for m in "${CADDIE_MODULES[@]}"; do
+            if [ -n "$m" ] && [ -z "${seen_help_modules[$m]}" ]; then
+                help_modules+=("$m")
+                seen_help_modules[$m]=1
+            fi
+        done
+    fi
+
+    if [ ${#CADDIE_COMPLETION_ORDER[@]} -gt 0 ] 2>/dev/null; then
+        local m
+        for m in "${CADDIE_COMPLETION_ORDER[@]}"; do
+            if [ -n "$m" ] && [ -z "${seen_help_modules[$m]}" ]; then
+                help_modules+=("$m")
+                seen_help_modules[$m]=1
+            fi
+        done
+    fi
+
+    if [ ${#help_modules[@]} -eq 0 ]; then
+        caddie cli:indent "No modules registered"
+        return 0
+    fi
+
+    local module=""
+    local description_function=""
+    local module_description=""
+    for module in "${help_modules[@]}"; do
+        description_function="caddie_${module}_description"
+        module_description=""
+        if declare -F "$description_function" >/dev/null 2>&1; then
+            module_description="$($description_function)"
+        fi
+        if [ -z "$module_description" ]; then
+            module_description="Registered module"
+        fi
+        label="${module} - ${module_description}"
+        if [ "$active_module" = "$module" ]; then
+            label="${label} (current)"
+        fi
+        caddie cli:indent "$label"
+    done
+
+    return 0
+}
+
 function _caddie_module_exists() {
     local needle="$1"
     local module
@@ -136,6 +199,22 @@ function _caddie_repl_normalize() {
         shell_inline="${shell_inline%\`}"  # trim trailing backtick
         printf '__SHELL_EVAL__%s\n' "$shell_inline"
         return 0
+    fi
+
+    if [ "$allow_scopes" = "1" ]; then
+        case "$line" in
+            switch|switch[[:space:]]*)
+                local switch_target
+                switch_target="${line#switch}"
+                switch_target="${switch_target#${switch_target%%[![:space:]]*}}"
+                if [ -n "$switch_target" ]; then
+                    printf '%s\n' "__SWITCH_MODULE__:${switch_target}"
+                else
+                    printf '%s\n' "__SWITCH_MODULE__"
+                fi
+                return 0
+                ;;
+        esac
     fi
 
     case "$line" in
@@ -398,6 +477,17 @@ function _caddie_repl() {
                     normalized="__MODULE_EXIT__"
                     normalized_set=1
                     ;;
+                switch|switch[[:space:]]*)
+                    local switch_target
+                    switch_target="${line#switch}"
+                    switch_target="${switch_target#${switch_target%%[![:space:]]*}}"
+                    if [ -n "$switch_target" ]; then
+                        normalized="__SWITCH_MODULE__:${switch_target}"
+                    else
+                        normalized="__SWITCH_MODULE__"
+                    fi
+                    normalized_set=1
+                    ;;
                 help|--help|-h)
                     normalized="__SHELL_HELP__"
                     normalized_set=1
@@ -436,6 +526,46 @@ function _caddie_repl() {
                 caddie cli:indent "Run shell commands directly from the REPL without leaving context."
                 caddie cli:indent "Use backticks or 'shell <cmd>' for one-offs, or enter the scope with 'shell'."
                 caddie cli:indent "Leave the shell scope with 'back', 'up', or '..'."
+                caddie cli:indent "Jump to another module with 'switch <module>'."
+                continue
+                ;;
+            "__SWITCH_MODULE__")
+                _caddie_switch_list "$active_module"
+                continue
+                ;;
+            __SWITCH_MODULE__*)
+                local switch_target
+                local switch_module
+                local switch_remainder
+                switch_target="${normalized#__SWITCH_MODULE__:}"
+                switch_target="${switch_target#${switch_target%%[![:space:]]*}}"
+                switch_module="${switch_target%%[[:space:]]*}"
+                switch_remainder="${switch_target#${switch_module}}"
+                switch_remainder="${switch_remainder#${switch_remainder%%[![:space:]]*}}"
+
+                if [ -z "$switch_module" ]; then
+                    caddie cli:usage "switch <module>"
+                    caddie cli:indent "Use 'help' to list available modules."
+                    continue
+                fi
+
+                if [ -n "$switch_remainder" ]; then
+                    caddie cli:red "Error: switch expects a single module name"
+                    caddie cli:usage "switch <module>"
+                    continue
+                fi
+
+                if ! _caddie_module_exists "$switch_module"; then
+                    caddie cli:red "Error: Unknown module '${switch_module}'"
+                    caddie cli:indent "Use 'help' to list available modules."
+                    continue
+                fi
+
+                if [ -n "$active_module" ] && [ "$active_module" != "$switch_module" ]; then
+                    caddie cli:indent "Leaving module '${active_module}'"
+                fi
+                active_module="$switch_module"
+                caddie cli:title "Module scope: ${active_module}"
                 continue
                 ;;
             __SET_MODULE__*)
@@ -521,6 +651,7 @@ function caddie() {
             caddie cli:indent "Use backticks (\`command\`) to run ad-hoc shell commands inside the REPL."
             caddie cli:indent "Type 'shell <command>' for one-off commands or 'shell' to enter shell scope."
             caddie cli:indent "Exit shell scope with 'back', 'up', or '..'."
+            caddie cli:indent "Jump to another module with 'switch <module>'."
             return 0
         fi
 
@@ -870,7 +1001,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
                         ;;
                       cross)
-                        caddie_completion_register "$module_name" "cross:template:create"
+                        caddie_completion_register "$module_name" "cross:template:create cross:template:list cross:deploy:docker cross:deploy:local cross:deploy:railway"
                         ;;
                       git)
                         caddie_completion_register "$module_name" "git:status git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"

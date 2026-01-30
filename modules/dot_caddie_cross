@@ -727,6 +727,20 @@ function caddie_cross_build_ios() {
     return 0
 }
 
+function caddie_cross_mcp_dir() {
+    local dir="$PWD"
+
+    while [ -n "$dir" ] && [ "$dir" != "/" ]; do
+        if [ -d "$dir/platform/mcp-server-rust" ]; then
+            printf '%s\n' "$dir/platform/mcp-server-rust"
+            return 0
+        fi
+        dir="$(dirname "$dir")"
+    done
+
+    return 1
+}
+
 # Deployment functions
 function caddie_cross_deploy_docker() {
     caddie cli:whale "Creating Docker deployment setup..."
@@ -786,6 +800,32 @@ EOF
     chmod +x deploy.sh
     
     caddie cli:check "Local deployment setup created"
+    return 0
+}
+
+function caddie_cross_deploy_railway() {
+    local mcp_dir=""
+
+    if ! command -v railway >/dev/null 2>&1; then
+        caddie cli:red "Error: Railway CLI not found"
+        caddie cli:indent "Install with: brew install railway or npm i -g @railway/cli"
+        return 1
+    fi
+
+    mcp_dir="$(caddie_cross_mcp_dir)"
+    if [ -z "$mcp_dir" ]; then
+        caddie cli:red "Error: Could not locate platform/mcp-server-rust"
+        caddie cli:indent "Run this from the repo root or any subdirectory."
+        return 1
+    fi
+
+    caddie cli:rocket "Deploying MCP server to Railway..."
+    if ! (cd "$mcp_dir" && railway up); then
+        caddie cli:red "Error: Railway deploy failed"
+        return 1
+    fi
+
+    caddie cli:check "Railway deploy completed"
     return 0
 }
 
@@ -919,6 +959,7 @@ function caddie_cross_help() {
     caddie cli:indent "build:ios          Build iOS project"
     caddie cli:indent "deploy:docker      Create Docker setup"
     caddie cli:indent "deploy:local       Local deployment"
+    caddie cli:indent "deploy:railway     Deploy MCP server to Railway"
     caddie cli:blank
     caddie cli:title "Development Tools:"
     caddie cli:indent "tools:install      Install dev tools"
@@ -965,6 +1006,7 @@ export -f caddie_cross_build_rust
 export -f caddie_cross_build_ios
 export -f caddie_cross_deploy_docker
 export -f caddie_cross_deploy_local
+export -f caddie_cross_deploy_railway
 export -f caddie_cross_tools_install
 # Function to show cross module help
 function caddie_cross_help() {
@@ -975,6 +1017,7 @@ function caddie_cross_help() {
     caddie cli:indent "  caddie cross:tools:setup    - Setup cross-language development tools"
     caddie cli:indent "  caddie cross:tools:lint      - Lint cross-language projects"
     caddie cli:indent "  caddie cross:tools:format    - Format cross-language projects"
+    caddie cli:indent "  caddie cross:deploy:railway - Deploy MCP server to Railway"
     caddie cli:indent "  caddie cross:help            - Show this help"
     caddie cli:blank
     caddie cli:indent "This module provides cross-language development utilities"

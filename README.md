@@ -100,6 +100,7 @@ caddie-3.7> rust build
 - **[Core Module](docs/modules/core.md)** - Basic caddie functions and debug system
 - **[Python Module](docs/modules/python.md)** - Python environment management
 - **[Rust Module](docs/modules/rust.md)** - Rust development tools and cross-platform integration
+- **[MCP Module](docs/modules/mcp.md)** - MCP server shortcuts and deployment helpers
 - **[Ruby Module](docs/modules/ruby.md)** - Ruby environment with RVM
 - **[JavaScript Module](docs/modules/javascript.md)** - Node.js and npm management
 - **[iOS Module](docs/modules/ios.md)** - App Store and TestFlight distribution tools

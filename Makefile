@@ -120,6 +120,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ios"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_cross" "$(DEST_MODULES_DIR)/.caddie_cross"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cross"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_mcp" "$(DEST_MODULES_DIR)/.caddie_mcp"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_mcp"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_cursor" "$(DEST_MODULES_DIR)/.caddie_cursor"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cursor"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_ruby" "$(DEST_MODULES_DIR)/.caddie_ruby"
