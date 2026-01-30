@@ -47,6 +47,9 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`ios`**: App Store and TestFlight distribution tools
 - **`cross`**: Multi-language project templates and tools
 - **`mac`**: macOS workflow helpers and utilities
+- **`mcp`**: MCP server shortcuts and deployment helpers
+- **`debian`**: Debian package management helpers
+- **`server`**: Remote server access and service controls
 - **`cursor`**: IDE integration and AI-powered development
 - **`git`**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
 - **`cli`**: Color utilities and formatting functions

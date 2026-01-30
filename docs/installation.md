@@ -1,15 +1,15 @@
 # Installation Guide
 
-This guide covers installation on macOS (primary) and Linux (best effort).
+This guide covers installation on macOS and Debian-based Linux.
 
 ## Prerequisites
 
 ### System Requirements
 
-- **Operating System**: macOS 10.15 (Catalina) or later recommended; Linux supported with minor manual tweaks as needed
+- **Operating System**: macOS 10.15 (Catalina) or later recommended; Debian-based Linux supported via OS-aware installer
 - **Architecture**: Intel (x86_64) or Apple Silicon (ARM64)
 - **Shell**: Bash 4.0 or later (latest version recommended)
-- **Package Manager**: Homebrew on macOS (installed automatically if missing)
+- **Package Manager**: Homebrew on macOS (installed automatically if missing), apt on Debian
 
 ### Pre-Installation Checklist
 
@@ -58,6 +58,22 @@ This will:
 - Install Ruby build dependencies (OpenSSL, readline, libyaml, etc.) for compiling Ruby
 - Enable cross-platform Rust development for iOS, WatchOS, and Android
 
+### Debian Install (Explicit)
+
+If you want to run the Debian flow explicitly:
+
+```bash
+git clone https://github.com/parnotfar/caddie.sh.git
+cd caddie.sh
+make install-debian
+```
+
+The Debian install:
+- Detects Debian-based systems
+- Installs Debian-appropriate modules
+- Uses `apt-get` to install baseline dependencies
+ - Uses `modules/manifests/debian.txt` to determine which modules are installed
+
 ### Method 2: Minimal Install
 
 If you only want the core Caddie.sh functionality without development tools:
@@ -69,6 +85,12 @@ cd caddie.sh
 make install-dot
 ```
 
+For Debian-only minimal install:
+
+```bash
+make install-dot-debian
+```
+
 ### Method 3: Development Tools Only
 
 If you already have Caddie.sh installed but want to add development tools:
@@ -76,6 +98,12 @@ If you already have Caddie.sh installed but want to add development tools:
 ```bash
 cd caddie.sh
 make setup-dev
+```
+
+For Debian explicitly:
+
+```bash
+make setup-dev-debian
 ```
 
 ## Installation Process

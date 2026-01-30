@@ -1,0 +1,15 @@
+# Modules installed on Debian
+core
+cli
+debug
+git
+github
+python
+rust
+ruby
+js
+cross
+mcp
+codex
+debian
+server

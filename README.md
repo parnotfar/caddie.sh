@@ -27,6 +27,8 @@ make your coding experience smooth and efficient.
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **macOS Utilities**: Screenshot archiving and cleanup helpers
+- **Debian Support**: OS-aware installation and Debian package helpers
+- **Server Operations**: Remote SSH helpers and systemd service controls
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
@@ -43,7 +45,7 @@ make your coding experience smooth and efficient.
 
 - Bash 4.0+ (Homebrew Bash recommended on macOS)
 - Homebrew on macOS (installed automatically if missing)
-- macOS 10.15+ recommended; Linux is supported but may require minor manual tweaks depending on your distro
+- macOS 10.15+ recommended; Debian-based Linux supported via OS-aware installer (other distros may require manual tweaks)
 
 > **macOS Terminal configuration (after install)**: If you want to use Homebrew Bash, configure your Terminal profile to run `/opt/homebrew/bin/bash --login` after Homebrew is installed. See the [Installation Guide](docs/installation.md#macos-terminal-configuration) for details.
 
@@ -56,6 +58,18 @@ cd caddie.sh
 
 # Run the installer
 make install
+```
+
+For Debian explicitly:
+
+```bash
+make install-debian
+```
+
+For Debian minimal install:
+
+```bash
+make install-dot-debian
 ```
 
 ### First Use
@@ -106,6 +120,8 @@ caddie-8.3.0 rust build
 - **[iOS Module](docs/modules/ios.md)** - App Store and TestFlight distribution tools
 - **[Cross Module](docs/modules/cross.md)** - Multi-language project templates
 - **[macOS Module](docs/modules/mac.md)** - macOS workflow helpers and utilities
+- **[Debian Module](docs/modules/debian.md)** - Debian package management helpers
+- **[Server Module](docs/modules/server.md)** - Remote server access and service controls
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Codex Module](docs/modules/codex.md)** - Codex-powered review and automation helpers
 - **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
@@ -152,6 +168,8 @@ caddie.sh/
 │   ├── dot_caddie_ios      # App Store and TestFlight tools
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_mac      # macOS utilities
+│   ├── dot_caddie_debian   # Debian package helpers
+│   ├── dot_caddie_server   # Server utilities
 │   ├── dot_caddie_cursor   # IDE integration
 │   └── dot_caddie_git      # Git enhancements
 ├── docs/                   # Documentation

@@ -1,0 +1,220 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Server Utilities
+# This file provides remote server helpers and service controls
+
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_server_description() {
+    printf '%s\n' 'Remote server helpers and service controls'
+    return 0
+}
+
+function caddie_server_host_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a host"
+        caddie cli:usage "caddie server:host:set <host>"
+        return 1
+    fi
+
+    export CADDIE_SERVER_HOST="$value"
+    caddie cli:check "Server host set to: $value"
+    return 0
+}
+
+function caddie_server_host_get() {
+    local value="${CADDIE_SERVER_HOST:-}"
+
+    if [ -n "$value" ]; then
+        caddie cli:green "Server host: $value"
+    else
+        caddie cli:yellow "No server host is set"
+        caddie cli:thought "Use 'caddie server:host:set <host>' to set it"
+    fi
+    return 0
+}
+
+function caddie_server_host_unset() {
+    if [ -n "${CADDIE_SERVER_HOST:-}" ]; then
+        unset CADDIE_SERVER_HOST
+        caddie cli:check "Server host unset"
+    else
+        caddie cli:yellow "No server host was set"
+    fi
+    return 0
+}
+
+function caddie_server_user_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a user"
+        caddie cli:usage "caddie server:user:set <user>"
+        return 1
+    fi
+
+    export CADDIE_SERVER_USER="$value"
+    caddie cli:check "Server user set to: $value"
+    return 0
+}
+
+function caddie_server_user_get() {
+    local value="${CADDIE_SERVER_USER:-}"
+
+    if [ -n "$value" ]; then
+        caddie cli:green "Server user: $value"
+    else
+        caddie cli:yellow "No server user is set"
+        caddie cli:thought "Use 'caddie server:user:set <user>' to set it"
+    fi
+    return 0
+}
+
+function caddie_server_user_unset() {
+    if [ -n "${CADDIE_SERVER_USER:-}" ]; then
+        unset CADDIE_SERVER_USER
+        caddie cli:check "Server user unset"
+    else
+        caddie cli:yellow "No server user was set"
+    fi
+    return 0
+}
+
+function caddie_server_host_resolve() {
+    local host="${1:-${CADDIE_SERVER_HOST:-}}"
+
+    if [ -z "$host" ]; then
+        caddie cli:red "Error: No server host set"
+        caddie cli:usage "caddie server:host:set <host>"
+        return 1
+    fi
+
+    printf '%s\n' "$host"
+    return 0
+}
+
+function caddie_server_user_resolve() {
+    local user="${1:-${CADDIE_SERVER_USER:-$USER}}"
+
+    if [ -z "$user" ]; then
+        caddie cli:red "Error: No server user set"
+        caddie cli:usage "caddie server:user:set <user>"
+        return 1
+    fi
+
+    printf '%s\n' "$user"
+    return 0
+}
+
+function caddie_server_require_ssh() {
+    if ! command -v ssh >/dev/null 2>&1; then
+        caddie cli:red "Error: ssh not found"
+        return 1
+    fi
+    return 0
+}
+
+function caddie_server_ssh() {
+    local host=""
+    local user=""
+
+    caddie_server_require_ssh || return 1
+
+    host="$(caddie_server_host_resolve "$1")" || return 1
+    user="$(caddie_server_user_resolve "$2")" || return 1
+
+    caddie cli:title "Connecting to ${user}@${host}"
+    ssh "${user}@${host}"
+    return $?
+}
+
+function caddie_server_service_status() {
+    local service="$1"
+    local host=""
+    local user=""
+
+    if [ -z "$service" ]; then
+        caddie cli:red "Error: Please provide a service name"
+        caddie cli:usage "caddie server:service:status <service> [host] [user]"
+        return 1
+    fi
+
+    caddie_server_require_ssh || return 1
+    host="$(caddie_server_host_resolve "$2")" || return 1
+    user="$(caddie_server_user_resolve "$3")" || return 1
+
+    caddie cli:title "Service status: $service"
+    ssh "${user}@${host}" "systemctl status \"$service\" --no-pager"
+    return $?
+}
+
+function caddie_server_service_restart() {
+    local service="$1"
+    local host=""
+    local user=""
+
+    if [ -z "$service" ]; then
+        caddie cli:red "Error: Please provide a service name"
+        caddie cli:usage "caddie server:service:restart <service> [host] [user]"
+        return 1
+    fi
+
+    caddie_server_require_ssh || return 1
+    host="$(caddie_server_host_resolve "$2")" || return 1
+    user="$(caddie_server_user_resolve "$3")" || return 1
+
+    caddie cli:title "Restarting service: $service"
+    ssh "${user}@${host}" "sudo systemctl restart \"$service\""
+    return $?
+}
+
+function caddie_server_commands() {
+    printf '%s\n' "server:help server:host:set server:host:get server:host:unset server:user:set server:user:get server:user:unset server:ssh server:service:status server:service:restart"
+    return 0
+}
+
+function caddie_server_help() {
+    caddie cli:title "Server Module Help"
+    caddie cli:blank
+    caddie cli:title "Configuration:"
+    caddie cli:indent "server:host:set <host>            - Set default server host"
+    caddie cli:indent "server:host:get                   - Show default server host"
+    caddie cli:indent "server:host:unset                 - Unset default server host"
+    caddie cli:indent "server:user:set <user>            - Set default server user"
+    caddie cli:indent "server:user:get                   - Show default server user"
+    caddie cli:indent "server:user:unset                 - Unset default server user"
+    caddie cli:blank
+    caddie cli:title "Remote Access:"
+    caddie cli:indent "server:ssh [host] [user]          - Open SSH session (uses defaults if omitted)"
+    caddie cli:blank
+    caddie cli:title "Service Management:"
+    caddie cli:indent "server:service:status <svc> [host] [user]  - Check service status"
+    caddie cli:indent "server:service:restart <svc> [host] [user] - Restart a service"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie server:host:set prod.example.com"
+    caddie cli:indent "caddie server:user:set deploy"
+    caddie cli:indent "caddie server:ssh"
+    caddie cli:indent "caddie server:service:status nginx"
+    caddie cli:indent "caddie server:service:restart nginx"
+    return 0
+}
+
+export -f caddie_server_description
+export -f caddie_server_host_set
+export -f caddie_server_host_get
+export -f caddie_server_host_unset
+export -f caddie_server_user_set
+export -f caddie_server_user_get
+export -f caddie_server_user_unset
+export -f caddie_server_host_resolve
+export -f caddie_server_user_resolve
+export -f caddie_server_require_ssh
+export -f caddie_server_ssh
+export -f caddie_server_service_status
+export -f caddie_server_service_restart
+export -f caddie_server_commands
+export -f caddie_server_help

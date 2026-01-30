@@ -1,6 +1,6 @@
 # Caddie.sh Documentation
 
-Welcome to the comprehensive documentation for Caddie.sh, the ultimate development environment manager for macOS.
+Welcome to the comprehensive documentation for Caddie.sh, the development environment manager for macOS and Debian-based Linux.
 
 ## Getting Started
 
@@ -27,6 +27,8 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [JavaScript Module](modules/javascript.md) - Node.js tools
   - [iOS Module](modules/ios.md) - App Store and TestFlight distribution tools
   - [Cross Module](modules/cross.md) - Multi-language templates
+  - [Debian Module](modules/debian.md) - Debian package management helpers
+  - [Server Module](modules/server.md) - Remote server access and service controls
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
   - Optional ecosystem modules (e.g. [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately

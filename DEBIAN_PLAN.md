@@ -52,18 +52,29 @@ Goal: Evaluate the legacy bashy Makefile and supporting scripts, assess portabil
 - Help patterns map to `caddie <module>:help`.
 
 ### Poor Fits / Adjustments Needed
-- Hard-coded secrets and Carrum-specific files are not suitable for caddie core.
+- Carrum-specific files and legacy app integrations are out of scope for caddie Debian support.
 - Many bashy functions use `echo`, hyphenated function names, and direct env access.
 - macOS-specific tooling (Homebrew, Docker Desktop, Terminal behaviors) doesn’t map to Debian servers.
-- Snap usage for Heroku may be undesired on production machines.
+- Heroku-specific workflows are legacy and can be ignored in the Debian port.
 
 ## Proposed Debian Module Set (Draft)
+
+### Current Module Inventory
+
+**Cross-platform (safe on macOS + Debian):**
+- `core`, `cli`, `debug`, `git`, `github`, `python`, `rust`, `ruby`, `js`, `cross`, `mcp`, `codex`, `server`
+
+**macOS-specific:**
+- `ios`, `swift`, `cursor`, `mac`
+
+**Debian-specific:**
+- `debian`
 
 ### Core (existing)
 - `core`, `cli`, `git`, `debug`
 
 ### Dev-Friendly Modules (optional on servers)
-- `python`, `rust`, `js`, `cross`, `mcp` (if needed)
+- `python`, `rust`, `js`, `cross`, `mcp`
 
 ### New Debian/Production Modules (proposed)
 - `debian`: apt/apt-get helpers, package audit, upgrade, autoremove, clean
@@ -71,7 +82,7 @@ Goal: Evaluate the legacy bashy Makefile and supporting scripts, assess portabil
 - `audit`: security updates, unattended-upgrades checks, log summaries
 - `service`: `systemctl` wrappers for restart/status/logs
 
-Each module must follow caddie patterns: help/description, exported functions, get/set/unset for config.
+Each module must follow caddie patterns and AGENTS standards: help/description functions, exported functions, explicit returns, `caddie cli:*` output (no raw `echo`), and get/set/unset for config.
 
 ## Install Target Outline (caddie Makefile)
 
@@ -85,8 +96,8 @@ Each module must follow caddie patterns: help/description, exported functions, g
    - Optional tools for dev work: `python3`, `pip`, `node`, `cargo` (or leave to modules)
 
 3) **Module install segregation**
-   - Keep `install-dot` as the general copy logic, but allow a Debian install path that copies only the chosen modules.
-   - Consider an OS guard in install steps or a module manifest list.
+   - Refactor `install` and `install-dot` to detect OS and delegate to OS-specific targets (keeps direct targets available for testing).
+   - Use an OS module manifest list so each target installs only approved modules.
 
 ## Minimal Debian MVP (First Release Scope)
 

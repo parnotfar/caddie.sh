@@ -13,7 +13,7 @@ WHITE := \033[0;37m
 NC := \033[0m # No Color
 
 # Default target
-.PHONY: all install help
+.PHONY: all install install-dot install-dot-darwin install-dot-debian install-dot-unsupported install-dot-common install-modules install-dot-finalize help check-prerequisites check-prerequisites-darwin check-prerequisites-debian check-prerequisites-unsupported setup-dev setup-dev-darwin setup-dev-debian setup-dev-unsupported
 .DEFAULT_GOAL := help
 .SILENT:
 
@@ -22,6 +22,20 @@ HOME_DIR := $(HOME)
 CADDIE_DIR := $(shell pwd)
 SRC_MODULES_DIR := $(CADDIE_DIR)/modules
 DEST_MODULES_DIR := $(HOME_DIR)/.caddie_modules
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  OS_TARGET := darwin
+else ifeq ($(UNAME_S),Linux)
+  ifneq ("$(wildcard /etc/debian_version)","")
+    OS_TARGET := debian
+  else
+    OS_TARGET := unsupported
+  endif
+else
+  OS_TARGET := unsupported
+endif
+MANIFEST_DIR := $(SRC_MODULES_DIR)/manifests
+MODULE_MANIFEST := $(MANIFEST_DIR)/$(OS_TARGET).txt
 
 help: ## Show this help message
 	echo "$(CYAN)Caddie.sh Installation Makefile$(NC)"
@@ -31,9 +45,15 @@ help: ## Show this help message
 	awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(CYAN)%-20s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	echo ""
 	echo "$(YELLOW)Usage:$(NC)"
-	echo "  make install        - Full installation (recommended)"
-	echo "  make install-dot    - Install only dot files (with backup)"
-	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, Ruby deps, GitHub CLI)"
+	echo "  make install        - Full installation (OS-aware)"
+	echo "  make install-dot    - Install only dot files (OS-aware)"
+	echo "  make setup-dev      - Setup development environment (OS-aware)"
+	echo "  make install-darwin - Full installation for macOS"
+	echo "  make install-dot-darwin - Install only dot files for macOS"
+	echo "  make setup-dev-darwin   - Setup development environment for macOS"
+	echo "  make install-debian - Full installation for Debian"
+	echo "  make install-dot-debian - Install only dot files for Debian"
+	echo "  make setup-dev-debian   - Setup development environment for Debian"
 	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
 	echo "  make restore-backup - Restore from backup files"
@@ -41,27 +61,55 @@ help: ## Show this help message
 	echo "  make uninstall      - Remove caddie files (keeps backups)"
 	echo ""
 	echo "$(CYAN)Safety Features:$(NC)"
-	echo "  • Automatically backs up existing .bash_profile and .bashrc"
-	echo "  • Backups stored as .caddie-backup files (e.g., .bash_profile.caddie-backup)"
-	echo "  • Easy restore with 'make restore-backup'"
+	echo "  - Automatically backs up existing .bash_profile and .bashrc"
+	echo "  - Backups stored as .caddie-backup files (e.g., .bash_profile.caddie-backup)"
+	echo "  - Easy restore with 'make restore-backup'"
 	echo ""
 	echo "$(CYAN)Directory Structure:$(NC)"
-	echo "  • Source modules: $(SRC_MODULES_DIR)"
-	echo "  • Destination modules: $(DEST_MODULES_DIR)"
+	echo "  - Source modules: $(SRC_MODULES_DIR)"
+	echo "  - Destination modules: $(DEST_MODULES_DIR)"
 
 all: install ## Alias for install
 
-install: check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
+install: install-$(OS_TARGET) ## Complete installation of caddie.sh (OS-aware)
+
+install-darwin: check-prerequisites-darwin install-dot-darwin setup-dev-darwin ## Complete installation for macOS
 	@echo "$(GREEN)✓$(NC) Installation complete! Run 'source ~/.bash_profile' to activate."
 
-check-prerequisites: ## Check system prerequisites
-	echo "$(BLUE)🔍$(NC) Checking system prerequisites..."
+install-debian: check-prerequisites-debian install-dot-debian setup-dev-debian ## Complete installation for Debian
+	@echo "$(GREEN)✓$(NC) Installation complete! Run 'source ~/.bash_profile' to activate."
+
+install-unsupported: ## Complete installation for unsupported OS
+	echo "$(RED)✗$(NC) Unsupported OS detected. Supported: macOS (Darwin) and Debian-based Linux"
+	exit 1
+
+check-prerequisites: check-prerequisites-$(OS_TARGET) ## Check system prerequisites
+
+check-prerequisites-darwin: ## Check prerequisites for macOS
+	echo "$(BLUE)🔍$(NC) Checking macOS prerequisites..."
 	if [ "$$(uname -s)" != "Darwin" ]; then \
-		echo "$(RED)✗$(NC) This installer is designed for macOS (Darwin)"; \
+		echo "$(RED)✗$(NC) Expected macOS but detected different OS"; \
 		exit 1; \
 	fi
 	echo "$(GREEN)✓$(NC) macOS detected"
 	echo "$(GREEN)✓$(NC) Prerequisites check passed"
+
+check-prerequisites-debian: ## Check prerequisites for Debian
+	echo "$(BLUE)🔍$(NC) Checking Debian prerequisites..."
+	if [ "$$(uname -s)" != "Linux" ]; then \
+		echo "$(RED)✗$(NC) Expected Linux but detected different OS"; \
+		exit 1; \
+	fi
+	if [ ! -f /etc/debian_version ]; then \
+		echo "$(RED)✗$(NC) Debian-based system not detected (/etc/debian_version missing)"; \
+		exit 1; \
+	fi
+	echo "$(GREEN)✓$(NC) Debian detected"
+	echo "$(GREEN)✓$(NC) Prerequisites check passed"
+
+check-prerequisites-unsupported: ## Check prerequisites for unsupported OS
+	echo "$(RED)✗$(NC) Unsupported OS detected. Supported: macOS (Darwin) and Debian-based Linux"
+	exit 1
 
 backup-existing: check-prerequisites ## Backup existing bash configuration files
 	echo "$(BLUE)💾$(NC) Backing up existing configuration files..."
@@ -77,7 +125,19 @@ backup-existing: check-prerequisites ## Backup existing bash configuration files
 	done
 	echo "$(GREEN)✓$(NC) Backup completed"
 
-install-dot: backup-existing ## Install dot files to home directory
+install-dot: install-dot-$(OS_TARGET) ## Install dot files to home directory (OS-aware)
+
+install-dot-darwin: MODULE_MANIFEST := $(MANIFEST_DIR)/darwin.txt
+install-dot-darwin: install-dot-common install-modules install-dot-finalize ## Install dot files for macOS
+
+install-dot-debian: MODULE_MANIFEST := $(MANIFEST_DIR)/debian.txt
+install-dot-debian: install-dot-common install-modules install-dot-finalize ## Install dot files for Debian
+
+install-dot-unsupported: ## Install dot files for unsupported OS
+	echo "$(RED)✗$(NC) Unsupported OS detected. Supported: macOS (Darwin) and Debian-based Linux"
+	exit 1
+
+install-dot-common: backup-existing ## Install base dot files and caddie data
 	echo "$(BLUE)📁$(NC) Installing dot files to home directory..."
 	
 	echo "$(YELLOW)  →$(NC) Installing dot_bash_profile as ~/.bash_profile"
@@ -106,42 +166,33 @@ install-dot: backup-existing ## Install dot files to home directory
 	cp dot_caddie_modules "$(HOME_DIR)/.caddie_data/.caddie_modules"
 	echo "$(GREEN)    ✓$(NC) Successfully installed ~/.caddie_data/.caddie_modules"
 	
-	echo "$(YELLOW)  →$(NC) Installing modular caddie files..."
+	echo "$(YELLOW)  →$(NC) Preparing caddie module directory..."
 	mkdir -p "$(DEST_MODULES_DIR)"
 	echo "$(GREEN)    ✓$(NC) ~/.caddie_modules directory ready"
 
-	cp "$(SRC_MODULES_DIR)/dot_caddie_core" "$(DEST_MODULES_DIR)/.caddie_core"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_core"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_python" "$(DEST_MODULES_DIR)/.caddie_python"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_python"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_rust" "$(DEST_MODULES_DIR)/.caddie_rust"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_rust"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_ios" "$(DEST_MODULES_DIR)/.caddie_ios"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ios"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_cross" "$(DEST_MODULES_DIR)/.caddie_cross"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cross"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_mcp" "$(DEST_MODULES_DIR)/.caddie_mcp"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_mcp"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_cursor" "$(DEST_MODULES_DIR)/.caddie_cursor"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cursor"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_mac" "$(DEST_MODULES_DIR)/.caddie_mac"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_mac"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_ruby" "$(DEST_MODULES_DIR)/.caddie_ruby"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ruby"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_js" "$(DEST_MODULES_DIR)/.caddie_js"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_js"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_git" "$(DEST_MODULES_DIR)/.caddie_git"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_git"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_github" "$(DEST_MODULES_DIR)/.caddie_github"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_github"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_swift" "$(DEST_MODULES_DIR)/.caddie_swift"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_swift"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_codex" "$(DEST_MODULES_DIR)/.caddie_codex"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_codex"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(DEST_MODULES_DIR)/.caddie_cli"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_debug"
+install-modules: ## Install caddie modules from manifest
+	@manifest="$(MODULE_MANIFEST)"; \
+	if [ ! -f "$$manifest" ]; then \
+		echo "$(RED)✗$(NC) Module manifest not found: $$manifest"; \
+		exit 1; \
+	fi; \
+	echo "$(YELLOW)  →$(NC) Installing modules from $$manifest"; \
+	while IFS= read -r module; do \
+		if [ -z "$$module" ]; then \
+			continue; \
+		fi; \
+		case "$$module" in \#*) continue ;; esac; \
+		src="$(SRC_MODULES_DIR)/dot_caddie_$$module"; \
+		dest="$(DEST_MODULES_DIR)/.caddie_$$module"; \
+		if [ ! -f "$$src" ]; then \
+			echo "$(RED)    ✗$(NC) Missing module file: $$src"; \
+			exit 1; \
+		fi; \
+		cp "$$src" "$$dest"; \
+		echo "$(GREEN)    ✓$(NC) Successfully installed $$dest"; \
+	done < "$$manifest"
+
+install-dot-finalize: ## Finalize dot file installation
 	echo "$(YELLOW)  →$(NC) Installing caddie binary scripts..."
 	mkdir -p "$(DEST_MODULES_DIR)/bin"
 	if [ -d "$(CADDIE_DIR)/bin" ]; then \
@@ -154,8 +205,20 @@ install-dot: backup-existing ## Install dot files to home directory
 	
 	echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
-setup-dev: setup-homebrew setup-python setup-rust setup-ruby-deps setup-github ## Setup development environment (Homebrew, Python, Rust, Ruby build deps, GitHub CLI)
+setup-dev: setup-dev-$(OS_TARGET) ## Setup development environment (OS-aware)
+
+setup-dev-darwin: setup-homebrew setup-python setup-rust setup-ruby-deps setup-github ## Setup development environment (Homebrew, Python, Rust, Ruby deps, GitHub CLI)
 	echo "$(GREEN)✓$(NC) Development environment setup completed"
+
+setup-dev-debian: ## Setup development environment (Debian)
+	echo "$(BLUE)🐧$(NC) Setting up Debian development prerequisites..."
+	sudo apt-get update
+	sudo apt-get install -y curl git jq ripgrep ca-certificates build-essential bash
+	echo "$(GREEN)✓$(NC) Debian prerequisites installed"
+
+setup-dev-unsupported: ## Setup development environment for unsupported OS
+	echo "$(RED)✗$(NC) Unsupported OS detected. Supported: macOS (Darwin) and Debian-based Linux"
+	exit 1
 
 setup-homebrew: ## Install and update Homebrew
 	echo "$(BLUE)🍺$(NC) Setting up Homebrew..."

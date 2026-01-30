@@ -26,6 +26,10 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[GitHub Module](github.md)** - GitHub account and repository management
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
 
+### Operations
+- **[Debian Module](debian.md)** - Debian package management helpers
+- **[Server Module](server.md)** - Remote server access and service controls
+
 ### Optional Ecosystem Modules
 - External modules maintained in separate repositories—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities.
 - **[CSV Module](csv.md)** - Optional CSV analytics module (requires separate install)

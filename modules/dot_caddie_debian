@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Debian Package Management
+# This file provides Debian/Ubuntu package management helpers
+
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_debian_description() {
+    printf '%s\n' 'Debian package management helpers'
+    return 0
+}
+
+function caddie_debian_require_apt() {
+    if ! command -v apt-get >/dev/null 2>&1; then
+        caddie cli:red "Error: apt-get not found. This module requires Debian-based Linux."
+        return 1
+    fi
+    return 0
+}
+
+function caddie_debian_pkg_update() {
+    caddie_debian_require_apt || return 1
+    caddie cli:title "Updating package lists..."
+    if sudo apt-get update; then
+        caddie cli:check "Package lists updated"
+        return 0
+    fi
+    caddie cli:red "Package list update failed"
+    return 1
+}
+
+function caddie_debian_pkg_upgrade() {
+    caddie_debian_require_apt || return 1
+    caddie cli:title "Upgrading installed packages..."
+    if sudo apt-get upgrade -y; then
+        caddie cli:check "Packages upgraded"
+        return 0
+    fi
+    caddie cli:red "Package upgrade failed"
+    return 1
+}
+
+function caddie_debian_pkg_install() {
+    local packages=("$@")
+
+    caddie_debian_require_apt || return 1
+    if [ "${#packages[@]}" -eq 0 ]; then
+        caddie cli:red "Error: Please provide one or more packages"
+        caddie cli:usage "caddie debian:pkg:install <package> [package...]"
+        return 1
+    fi
+
+    caddie cli:title "Installing packages: ${packages[*]}"
+    if sudo apt-get install -y "${packages[@]}"; then
+        caddie cli:check "Packages installed"
+        return 0
+    fi
+    caddie cli:red "Package install failed"
+    return 1
+}
+
+function caddie_debian_pkg_remove() {
+    local packages=("$@")
+
+    caddie_debian_require_apt || return 1
+    if [ "${#packages[@]}" -eq 0 ]; then
+        caddie cli:red "Error: Please provide one or more packages"
+        caddie cli:usage "caddie debian:pkg:remove <package> [package...]"
+        return 1
+    fi
+
+    caddie cli:title "Removing packages: ${packages[*]}"
+    if sudo apt-get remove -y "${packages[@]}"; then
+        caddie cli:check "Packages removed"
+        return 0
+    fi
+    caddie cli:red "Package removal failed"
+    return 1
+}
+
+function caddie_debian_pkg_autoremove() {
+    caddie_debian_require_apt || return 1
+    caddie cli:title "Auto-removing unused packages..."
+    if sudo apt-get autoremove -y; then
+        caddie cli:check "Unused packages removed"
+        return 0
+    fi
+    caddie cli:red "Autoremove failed"
+    return 1
+}
+
+function caddie_debian_pkg_clean() {
+    caddie_debian_require_apt || return 1
+    caddie cli:title "Cleaning apt cache..."
+    if sudo apt-get clean; then
+        caddie cli:check "Apt cache cleaned"
+        return 0
+    fi
+    caddie cli:red "Apt cache clean failed"
+    return 1
+}
+
+function caddie_debian_pkg_search() {
+    local query="$1"
+
+    if [ -z "$query" ]; then
+        caddie cli:red "Error: Please provide a search query"
+        caddie cli:usage "caddie debian:pkg:search <query>"
+        return 1
+    fi
+
+    caddie cli:title "Searching packages for: $query"
+    apt-cache search "$query"
+    return 0
+}
+
+function caddie_debian_commands() {
+    printf '%s\n' "debian:help debian:pkg:update debian:pkg:upgrade debian:pkg:install debian:pkg:remove debian:pkg:autoremove debian:pkg:clean debian:pkg:search"
+    return 0
+}
+
+function caddie_debian_help() {
+    caddie cli:title "Debian Module Help"
+    caddie cli:blank
+    caddie cli:title "Package Management:"
+    caddie cli:indent "debian:pkg:update                 - Update apt package lists"
+    caddie cli:indent "debian:pkg:upgrade                - Upgrade installed packages"
+    caddie cli:indent "debian:pkg:install <pkg> [pkg...] - Install packages"
+    caddie cli:indent "debian:pkg:remove <pkg> [pkg...]  - Remove packages"
+    caddie cli:indent "debian:pkg:autoremove             - Remove unused packages"
+    caddie cli:indent "debian:pkg:clean                  - Clean apt cache"
+    caddie cli:indent "debian:pkg:search <query>         - Search for packages"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie debian:pkg:update"
+    caddie cli:indent "caddie debian:pkg:install curl git"
+    caddie cli:indent "caddie debian:pkg:search nginx"
+    return 0
+}
+
+export -f caddie_debian_description
+export -f caddie_debian_require_apt
+export -f caddie_debian_pkg_update
+export -f caddie_debian_pkg_upgrade
+export -f caddie_debian_pkg_install
+export -f caddie_debian_pkg_remove
+export -f caddie_debian_pkg_autoremove
+export -f caddie_debian_pkg_clean
+export -f caddie_debian_pkg_search
+export -f caddie_debian_commands
+export -f caddie_debian_help

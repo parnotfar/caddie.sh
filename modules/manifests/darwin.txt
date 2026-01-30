@@ -1,0 +1,18 @@
+# Modules installed on macOS (Darwin)
+core
+cli
+debug
+git
+github
+server
+python
+rust
+ruby
+js
+swift
+ios
+cross
+cursor
+codex
+mcp
+mac
