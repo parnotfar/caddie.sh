@@ -12,6 +12,13 @@ Short git aliases in `dot_bashrc` have been removed; use `caddie git:*` commands
 
 ### Basic Git Operations
 
+#### `caddie git:info`
+Show repository summary (root, branch, changes, upstream).
+
+```bash
+caddie git:info
+```
+
 #### `caddie git:status`
 Show git status with enhanced formatting.
 
@@ -169,8 +176,10 @@ Add all changes, commit, and push in one command. This is a wrapper for the comm
 
 ```bash
 caddie git:gacp Quick commit and push
-caddie git:gacp Update documentation
+caddie git:gacp "Update documentation"
 ```
+
+Quotes are optional; all arguments are joined into a single commit message.
 
 #### `caddie git:push`
 Push changes to the remote repository.
@@ -456,10 +465,10 @@ cd my-new-project
 
 # 3. Make changes and commit
 echo "# My New Project" > README.md
-caddie git:gacp Initial commit
+caddie git:gacp "Initial commit"
 
 # 4. Future changes are simple
-caddie git:gacp Add new feature
+caddie git:gacp "Add new feature"
 
 # 5. Create pull requests
 caddie git:pr:create "Add new feature" "Description of changes"

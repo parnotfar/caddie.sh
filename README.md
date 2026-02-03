@@ -33,6 +33,7 @@ make your coding experience smooth and efficient.
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
 - **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
+- **Module Info Commands**: `caddie <module>:info` summaries for toolchain status and configuration
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
 - **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core
@@ -68,18 +69,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-8.5.0 (update this for each release)
+caddie  # prompt shows as caddie-8.3.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-8.5.0 rust  # prompt switches to caddie[rust]-8.5.0
-caddie[rust]-8.5.0 back  # exits scope (also accepts `up` or `..`)
+caddie-8.3.0 rust  # prompt switches to caddie[rust]-8.3.0
+caddie[rust]-8.3.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-8.5.0 `ls -la`
-caddie-8.5.0 shell git status  # one-off shell command
+caddie-8.3.0 `ls -la`
+caddie-8.3.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-8.5.0 rust build
+caddie-8.3.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 

@@ -110,6 +110,29 @@ function caddie_github_repo_url() {
     return 0
 }
 
+function caddie_github_info() {
+    local account="${CADDIE_GITHUB_ACCOUNT:-}"
+
+    caddie cli:title "GitHub Info"
+    if [ -n "$account" ]; then
+        caddie cli:indent "account: $account"
+    else
+        caddie cli:yellow "No GitHub account is set"
+        caddie cli:thought "Use 'caddie github:account:set <account>' to set it"
+    fi
+
+    if command -v gh >/dev/null 2>&1; then
+        if gh auth status >/dev/null 2>&1; then
+            caddie cli:check "gh auth: authenticated"
+        else
+            caddie cli:yellow "gh auth: not authenticated"
+        fi
+    else
+        caddie cli:yellow "gh: not installed"
+    fi
+    return 0
+}
+
 # Function to show GitHub module help
 function caddie_github_help() {
     caddie cli:title "GitHub Module Commands"
@@ -117,6 +140,7 @@ function caddie_github_help() {
     caddie cli:usage "caddie github:<command>"
     caddie cli:blank
     caddie cli:title "Account Management:"
+    caddie cli:indent "info                   Show GitHub account status"
     caddie cli:indent "account:set <name>      Set GitHub account name"
     caddie cli:indent "account:get            Get current GitHub account"
     caddie cli:indent "account:unset         Unset GitHub account"
@@ -127,6 +151,7 @@ function caddie_github_help() {
     caddie cli:blank
     caddie cli:title "Examples:"
     caddie cli:indent "caddie github:account:set parnotfar"
+    caddie cli:indent "caddie github:info"
     caddie cli:indent "caddie github:repo:create my-project 'My awesome project'"
     caddie cli:indent "caddie github:repo:url"
     caddie cli:blank
@@ -146,5 +171,6 @@ export -f caddie_github_account_get
 export -f caddie_github_account_unset
 export -f caddie_github_repo_create
 export -f caddie_github_repo_url
+export -f caddie_github_info
 export -f caddie_github_help
 export -f caddie_github_description

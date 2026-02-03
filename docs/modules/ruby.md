@@ -16,6 +16,10 @@ The Ruby module provides comprehensive Ruby environment management using RVM (Ru
 
 ### Environment Management
 
+#### `caddie ruby:info`
+
+Show Ruby toolchain summary (ruby, gem, rvm, bundler, rails, gemset).
+
 #### `caddie ruby:setup`
 
 Sets up the Ruby development environment with RVM. This command:

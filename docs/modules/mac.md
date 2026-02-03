@@ -11,6 +11,10 @@ Use this module to:
 
 ## Commands
 
+### General
+
+- `caddie mac:info` - Show macOS environment info
+
 ### Screenshot Archive
 
 - `caddie mac:screenshot:archive` - Move matching screenshots into the archive and trash older ones

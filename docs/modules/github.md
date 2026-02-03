@@ -10,6 +10,13 @@ The GitHub module (`caddie github:<command>`) manages your GitHub account inform
 
 ### Account Management
 
+#### `caddie github:info`
+Show GitHub account status and auth summary.
+
+```bash
+caddie github:info
+```
+
 #### `caddie github:account:set <account>`
 Set your GitHub account username for use with other commands.
 
@@ -176,4 +183,3 @@ The GitHub module requires:
 - GitHub CLI (`gh`) for repository creation
 - SSH keys configured with GitHub
 - Git module for integration features
-

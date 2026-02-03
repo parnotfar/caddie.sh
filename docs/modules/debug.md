@@ -10,6 +10,7 @@ Use this module to:
 
 ## Commands
 
+- `caddie debug:info` - Show debug summary
 - `caddie debug:on` - Enable debug output
 - `caddie debug:off` - Disable debug output
 - `caddie debug:status` - Show current debug status

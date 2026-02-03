@@ -63,6 +63,9 @@ caddie cli:white:bold "Bold white text"
 
 ## Utility Functions
 
+### `cli:info`
+Shows CLI environment details (color support and UTF-8 status).
+
 ### `cli:usage <text>`
 Prints usage text in blue with bold formatting.
 

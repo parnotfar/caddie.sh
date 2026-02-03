@@ -40,6 +40,38 @@ function caddie_cursor_description() {
     return 0
 }
 
+function caddie_cursor_info() {
+    local cli_path=""
+    local cli_version=""
+
+    caddie cli:title "Cursor Info"
+
+    if command -v cursor >/dev/null 2>&1; then
+        cli_path="$(command -v cursor)"
+        caddie cli:indent "cli: $cli_path"
+        cli_version="$(cursor --version 2>/dev/null | head -n1)"
+        if [ -n "$cli_version" ]; then
+            caddie cli:indent "version: $cli_version"
+        fi
+    else
+        caddie cli:yellow "cli: not found"
+    fi
+
+    if [ -d "/Applications/Cursor.app" ]; then
+        caddie cli:indent "app: /Applications/Cursor.app"
+    else
+        caddie cli:indent "app: not found"
+    fi
+
+    if [ -d "$HOME/.cursor" ]; then
+        caddie cli:indent "config: $HOME/.cursor"
+    else
+        caddie cli:indent "config: not found"
+    fi
+
+    return 0
+}
+
 # Function to setup Cursor integration
 function caddie_cursor_setup() {
     caddie cli:title "Setting up Cursor IDE integration..."
@@ -801,6 +833,7 @@ function caddie_cursor_help() {
     caddie cli:usage "caddie cursor:<command>"
     caddie cli:blank
     caddie cli:title "Setup & Verification:"
+    caddie cli:indent "info               Show Cursor environment info"
     caddie cli:indent "detect             Detect Cursor installation"
     caddie cli:indent "setup              Setup Cursor integration"
     caddie cli:indent "verify             Verify Cursor integration"
@@ -844,6 +877,7 @@ function caddie_cursor_help() {
 }
 # Export Cursor functions
 export -f caddie_cursor_description
+export -f caddie_cursor_info
 export -f caddie_cursor_detect
 export -f caddie_cursor_verify
 export -f caddie_cursor_open

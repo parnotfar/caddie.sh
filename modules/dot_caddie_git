@@ -774,6 +774,38 @@ function caddie_git_gacp() {
     return 1
 }
 
+function caddie_git_info() {
+    local root=""
+    local branch=""
+    local changes="0"
+    local upstream=""
+
+    caddie cli:title "Git Info"
+
+    root="$(git rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$root" ]; then
+        caddie cli:yellow "Not in a git repository"
+        return 0
+    fi
+
+    branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+    changes="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+    upstream="$(git rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>/dev/null)"
+
+    if [ -z "$branch" ]; then
+        branch="(detached)"
+    fi
+    if [ -z "$upstream" ]; then
+        upstream="not set"
+    fi
+
+    caddie cli:indent "root: $root"
+    caddie cli:indent "branch: $branch"
+    caddie cli:indent "changes: ${changes}"
+    caddie cli:indent "upstream: $upstream"
+    return 0
+}
+
 function caddie_git_remote_add() {
     local name="$1"
     local url="$2"
@@ -1403,7 +1435,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:new:branch git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:new:branch git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1416,6 +1448,7 @@ function caddie_git_help() {
     
     caddie cli:title "Basics:"
     caddie cli:indent "status                 Show git status"
+    caddie cli:indent "info                   Show repository summary"
     caddie cli:indent "branch                 Show current and all branches"
     caddie cli:indent "branch:describe        List local branches with descriptions"
     caddie cli:indent "branch:delete [name]   Delete branch (interactive if omitted)"
@@ -1561,6 +1594,7 @@ export -f caddie_git_branch_new_feature
 export -f caddie_git_branch_new_bugfix
 export -f caddie_git_commit
 export -f caddie_git_gacp
+export -f caddie_git_info
 export -f caddie_git_auth_login
 export -f caddie_git_pr_create
 export -f caddie_git_pr_approve

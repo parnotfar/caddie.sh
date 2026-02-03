@@ -11,6 +11,9 @@ The Codex module provides automated code reviews for local git repositories. It 
 
 ## Commands
 
+### `caddie codex:info`
+Show Codex review configuration details (state directory, review command, and current repo log path).
+
 ### `caddie codex:review [dir]`
 Run a review on the latest commit in the repo (defaults to current directory).
 

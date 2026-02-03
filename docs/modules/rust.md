@@ -13,6 +13,12 @@ The Rust module is designed to streamline Rust development workflows by providin
 
 ## Commands
 
+### Toolchain Summary
+
+#### `caddie rust:info`
+
+Show Rust toolchain summary (rustc, cargo, active toolchain).
+
 ### Project Management
 
 #### `caddie rust:new <name>`

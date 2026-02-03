@@ -14,6 +14,7 @@ Use this module to:
 
 ### Setup & Verification
 
+- `caddie cursor:info` - Show Cursor environment info
 - `caddie cursor:detect` - Detect Cursor installation
 - `caddie cursor:setup` - Configure Cursor integration
 - `caddie cursor:verify` - Verify integration

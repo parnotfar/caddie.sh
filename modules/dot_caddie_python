@@ -434,6 +434,35 @@ function caddie_python_format() {
     return 0
 }
 
+function caddie_python_info() {
+    local py_version=""
+    local pip_version=""
+    local venv="${VIRTUAL_ENV:-}"
+
+    caddie cli:title "Python Info"
+
+    if command -v python3 >/dev/null 2>&1; then
+        py_version="$(python3 --version 2>/dev/null)"
+        caddie cli:indent "python: ${py_version}"
+    else
+        caddie cli:yellow "python: not installed"
+    fi
+
+    if command -v pip3 >/dev/null 2>&1; then
+        pip_version="$(pip3 --version 2>/dev/null | awk '{print $2}')"
+        caddie cli:indent "pip: ${pip_version}"
+    else
+        caddie cli:yellow "pip: not installed"
+    fi
+
+    if [ -n "$venv" ]; then
+        caddie cli:indent "venv: $venv"
+    else
+        caddie cli:indent "venv: none"
+    fi
+    return 0
+}
+
 function caddie_python_description() {
     # caddie:lint:disable
     echo 'Python environment management'
@@ -448,6 +477,7 @@ function caddie_python_help() {
     caddie cli:usage "caddie python:<command>"
     caddie cli:blank
     caddie cli:title "Virtual Environment Management:"
+    caddie cli:indent "info              Show environment summary"
     caddie cli:indent "create <name>     Create new virtual environment"
     caddie cli:indent "activate <name>   Activate environment"
     caddie cli:indent "deactivate        Deactivate current environment"
@@ -497,4 +527,5 @@ export -f caddie_python_init
 export -f caddie_python_test
 export -f caddie_python_lint
 export -f caddie_python_format
+export -f caddie_python_info
 export -f caddie_python_help

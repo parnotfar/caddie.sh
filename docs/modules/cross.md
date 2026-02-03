@@ -14,6 +14,7 @@ Use this module when you want to:
 
 ### Environment Management
 
+- `caddie cross:info` - Show toolchain summary
 - `caddie cross:env:status` - Show Python/Rust/Node/iOS/Git/Docker status
 - `caddie cross:env:setup` - Install common tooling via Homebrew
 - `caddie cross:env:reset` - Clean local environments in the current directory

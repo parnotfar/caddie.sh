@@ -11,6 +11,24 @@ function caddie_mcp_server_value() {
     return 0
 }
 
+function caddie_mcp_info() {
+    local server="${CADDIE_MCP_SERVER:-}"
+
+    caddie cli:title "MCP Info"
+    if [ -n "$server" ]; then
+        caddie cli:indent "server: $server"
+        if [ -d "$server" ]; then
+            caddie cli:indent "status: available"
+        else
+            caddie cli:yellow "status: directory missing"
+        fi
+    else
+        caddie cli:yellow "server: not set"
+        caddie cli:thought "Use 'caddie mcp:server:set <path>' to configure it"
+    fi
+    return 0
+}
+
 function caddie_mcp_server_set() {
     local value="$1"
 
@@ -141,6 +159,8 @@ function caddie_mcp_help() {
     caddie cli:blank
     caddie cli:usage "caddie mcp:<command>"
     caddie cli:blank
+    caddie cli:indent "mcp:info               Show MCP server summary"
+    caddie cli:blank
     caddie cli:indent "mcp:server:set <path>   Set MCP server directory"
     caddie cli:indent "mcp:server:get          Show current MCP server directory"
     caddie cli:indent "mcp:server:unset        Clear MCP server directory"
@@ -166,10 +186,11 @@ function caddie_mcp_description() {
 }
 
 function caddie_mcp_commands() {
-    printf '%s\n' "mcp:server:set mcp:server:get mcp:server:unset mcp:run mcp:test mcp:build"
+    printf '%s\n' "mcp:info mcp:server:set mcp:server:get mcp:server:unset mcp:run mcp:test mcp:build"
     return 0
 }
 
+export -f caddie_mcp_info
 export -f caddie_mcp_server_set
 export -f caddie_mcp_server_get
 export -f caddie_mcp_server_unset

@@ -1817,11 +1817,42 @@ function caddie_swift_xcode_test_unit_failed() {
     return 0
 }
 
+function caddie_swift_info() {
+    local swift_version="not installed"
+    local xcode_version="not installed"
+    local scene="${CADDIE_SWIFT_XCODE_SCENE:-}"
+    local target="${CADDIE_SWIFT_XCODE_TARGET:-}"
+
+    caddie cli:title "Swift Info"
+
+    if command -v swift >/dev/null 2>&1; then
+        swift_version="$(swift --version 2>/dev/null | head -n1 | awk '{print $3}')"
+    fi
+    if command -v xcodebuild >/dev/null 2>&1; then
+        xcode_version="$(xcodebuild -version 2>/dev/null | head -n1 | awk '{print $2}')"
+    fi
+
+    caddie cli:indent "swift: $swift_version"
+    caddie cli:indent "xcode: $xcode_version"
+    if [ -n "$scene" ]; then
+        caddie cli:indent "scene: $scene"
+    else
+        caddie cli:indent "scene: not set"
+    fi
+    if [ -n "$target" ]; then
+        caddie cli:indent "target: $target"
+    else
+        caddie cli:indent "target: not set"
+    fi
+    return 0
+}
+
 function caddie_swift_help() {
     caddie cli:title "Swift Package Manager Commands"
     caddie cli:usage "caddie swift:<command>"
     caddie cli:blank
     caddie cli:title "Swift Package Manager (Package.swift)"
+    caddie cli:indent "info                    Show Swift toolchain info"
     caddie cli:indent "init <name> [--type ...]   Create new Swift package"
     caddie cli:indent "build [args]              Run swift build"
     caddie cli:indent "run [args]                Run default executable"
@@ -1935,5 +1966,6 @@ export -f caddie_swift_xcode_crash_stream
 export -f caddie_swift_xcode_crash_stream_all
 export -f caddie_swift_xcode_crash_latest
 export -f caddie_swift_xcode_crash_symbolicate
+export -f caddie_swift_info
 export -f caddie_swift_help
 export -f caddie_swift_description

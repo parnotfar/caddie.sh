@@ -314,6 +314,18 @@ function caddie_cli_indent() {
     echo "  ${text}"
     return 0
 }
+
+function caddie_cli_info() {
+    local colors="unknown"
+
+    caddie cli:title "CLI Info"
+    if command -v tput >/dev/null 2>&1; then
+        colors="$(tput colors 2>/dev/null || printf 'unknown')"
+    fi
+    caddie cli:indent "colors: ${colors}"
+    caddie cli:indent "utf-8 icons: enabled"
+    return 0
+}
 # caddie:lint:enable
 
 function caddie_cli_help() {
@@ -342,6 +354,7 @@ function caddie_cli_help() {
     caddie cli:indent "white:bold <text>       - Print text in bold white"
     caddie cli:blank
     caddie cli:wrench "Utility Commands:"
+    caddie cli:indent "info                   - Show CLI environment info"
     caddie cli:indent "usage <text>            - Print usage text in blue"
     caddie cli:indent "installed               - Print 'installed' in blue"
     caddie cli:indent "complete                - Print 'complete' in blue"
@@ -382,6 +395,6 @@ function caddie_cli_help() {
 export -f caddie_cli_description
 export -f caddie_cli_red caddie_cli_green caddie_cli_yellow caddie_cli_blue caddie_cli_purple caddie_cli_cyan caddie_cli_grey caddie_cli_orange caddie_cli_white
 export -f caddie_cli_red_bold caddie_cli_green_bold caddie_cli_yellow_bold caddie_cli_blue_bold caddie_cli_purple_bold caddie_cli_cyan_bold caddie_cli_grey_bold caddie_cli_orange_bold caddie_cli_white_bold
-export -f caddie_cli_usage caddie_cli_installed caddie_cli_complete caddie_cli_title caddie_cli_colorlist caddie_cli_help
+export -f caddie_cli_usage caddie_cli_installed caddie_cli_complete caddie_cli_title caddie_cli_colorlist caddie_cli_help caddie_cli_info
 export -f caddie_cli_check caddie_cli_x caddie_cli_arrow caddie_cli_folder caddie_cli_beer caddie_cli_snake caddie_cli_crab caddie_cli_trash caddie_cli_rotate caddie_cli_chart caddie_cli_magnify caddie_cli_save caddie_cli_warning caddie_cli_debug
 export -f caddie_cli_wrench caddie_cli_whale caddie_cli_package caddie_cli_git caddie_cli_rocket caddie_cli_thought caddie_cli_lightbulb caddie_cli_magnifying_glass caddie_cli_blank caddie_cli_indent

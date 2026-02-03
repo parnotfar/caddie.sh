@@ -9,13 +9,6 @@ function __wrap_nonprint() {
   esac
 }
 
-function __wrap_nonprint_repl() {
-  case "$1" in
-    *$'\001'*$'\002'*) printf '%s' "$1" ;;
-    *)                   printf '\001%s\002' "$1" ;;
-  esac
-}
-
 RAW_RESET="$(tput sgr0 2>/dev/null || printf '\033[0m')"
 RAW_RED="$(tput setaf 1 2>/dev/null || printf '\033[31m')"
 RAW_GREEN="$(tput setaf 2 2>/dev/null || printf '\033[32m')"
@@ -31,14 +24,6 @@ PS_YELLOW="$(__wrap_nonprint "$RAW_YELLOW")"
 PS_BLUE="$(__wrap_nonprint "$RAW_BLUE")"
 PS_PURPLE="$(__wrap_nonprint "$RAW_PURPLE")"
 PS_CYAN="$(__wrap_nonprint "$RAW_CYAN")"
-
-REPL_RESET="$(__wrap_nonprint_repl "$RAW_RESET")"
-REPL_RED="$(__wrap_nonprint_repl "$RAW_RED")"
-REPL_GREEN="$(__wrap_nonprint_repl "$RAW_GREEN")"
-REPL_YELLOW="$(__wrap_nonprint_repl "$RAW_YELLOW")"
-REPL_BLUE="$(__wrap_nonprint_repl "$RAW_BLUE")"
-REPL_PURPLE="$(__wrap_nonprint_repl "$RAW_PURPLE")"
-REPL_CYAN="$(__wrap_nonprint_repl "$RAW_CYAN")"
 
 CADDIE_PROMPT_SEGMENTS=()
 
@@ -80,179 +65,6 @@ function __caddie_version() {
 
 function __ps1_branch() {
   git rev-parse --abbrev-ref HEAD 2>/dev/null || return 0
-}
-
-function __caddie_prompt_trim_path() {
-  local path="$1"
-  local max_segments=3
-  local prefix=""
-  local trimmed=""
-
-  if [ -z "$path" ]; then
-    printf '%s' ""
-    return 0
-  fi
-
-  if [ -n "$HOME" ] && [[ "$path" == "$HOME"* ]]; then
-    path="~${path#$HOME}"
-  fi
-
-  if [[ "$path" == "~" ]]; then
-    printf '%s' "~"
-    return 0
-  fi
-
-  if [[ "$path" == "~/"* ]]; then
-    prefix="~/"
-    path="${path#~/}"
-  elif [[ "$path" == /* ]]; then
-    prefix="/"
-    path="${path#/}"
-  fi
-
-  local -a parts=()
-  local IFS='/'
-  read -r -a parts <<< "$path"
-
-  if [ "${#parts[@]}" -eq 0 ] || [ -z "${parts[0]}" ]; then
-    printf '%s' "$prefix"
-    return 0
-  fi
-
-  if [ "${#parts[@]}" -gt "$max_segments" ]; then
-    parts=("${parts[@]: -$max_segments}")
-    trimmed=".../$(printf '%s' "${parts[*]}")"
-    printf '%s%s' "$prefix" "$trimmed"
-  else
-    printf '%s%s' "$prefix" "$(printf '%s' "${parts[*]}")"
-  fi
-  return 0
-}
-
-function __caddie_prompt_project_name() {
-  local root=""
-  local name=""
-
-  root="$(git rev-parse --show-toplevel 2>/dev/null)"
-  if [ -n "$root" ]; then
-    name="$(basename "$root")"
-  else
-    name="$(basename "$PWD")"
-  fi
-
-  if [ "$name" = "/" ]; then
-    printf '%s' ""
-  else
-    printf '%s' "$name"
-  fi
-  return 0
-}
-
-function __caddie_prompt_git_segment() {
-  local branch=""
-  local changes=""
-  local segment=""
-
-  branch="$(__ps1_branch)"
-  if [ -z "$branch" ]; then
-    printf '%s' ""
-    return 0
-  fi
-
-  changes="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
-  if [ "${changes:-0}" -gt 0 ]; then
-    segment="[git:${REPL_PURPLE}${branch}${REPL_RESET}|${REPL_CYAN}+${changes}${REPL_RESET}]"
-  else
-    segment="[git:${REPL_PURPLE}${branch}${REPL_RESET}|${REPL_GREEN}clean${REPL_RESET}]"
-  fi
-
-  printf '%s' "$segment"
-  return 0
-}
-
-function __caddie_prompt_project_segment() {
-  local name=""
-  name="$(__caddie_prompt_project_name)"
-  if [ -z "$name" ]; then
-    printf '%s' ""
-    return 0
-  fi
-  printf '%s' "[proj:${REPL_GREEN}${name}${REPL_RESET}]"
-  return 0
-}
-
-function __caddie_prompt_cwd_segment() {
-  local trimmed=""
-  trimmed="$(__caddie_prompt_trim_path "$PWD")"
-  if [ -z "$trimmed" ]; then
-    printf '%s' ""
-    return 0
-  fi
-  printf '%s' "${REPL_YELLOW}${trimmed}${REPL_RESET}"
-  return 0
-}
-
-function caddie_prompt_render_repl() {
-  local active_module="$1"
-  local version=""
-  local base=""
-  local marker="${CADDIE_REPL_MARKER:-⛳}"
-  local marker_segment=""
-  local module_segment=""
-  local project_segment=""
-  local git_segment=""
-  local cwd_segment=""
-  local -a segments=()
-
-  version="$(__caddie_version)"
-  if [ -n "$marker" ]; then
-    marker_segment="${REPL_GREEN}${marker}${REPL_RESET} "
-  fi
-
-  base="${marker_segment}[${REPL_BLUE}Caddie${REPL_RESET}"
-  if [ -n "$version" ] && [ "$version" != "unknown" ]; then
-    base+="${REPL_RESET}-${REPL_YELLOW}${version}${REPL_RESET}"
-  fi
-  base+="]"
-
-  if [ -n "$active_module" ]; then
-    module_segment="[${REPL_PURPLE}${active_module}${REPL_RESET}]"
-  fi
-
-  project_segment="$(__caddie_prompt_project_segment)"
-  git_segment="$(__caddie_prompt_git_segment)"
-  cwd_segment="$(__caddie_prompt_cwd_segment)"
-
-  if [ -n "$module_segment" ]; then
-    segments+=("$module_segment")
-  fi
-  if [ -n "$project_segment" ]; then
-    segments+=("$project_segment")
-  fi
-  if [ -n "$git_segment" ]; then
-    segments+=("$git_segment")
-  fi
-
-  local segment_line=""
-  if [ "${#segments[@]}" -gt 0 ]; then
-    local IFS=''
-    segment_line="${segments[*]}"
-  fi
-
-  if [ -n "$cwd_segment" ]; then
-    if [ -n "$segment_line" ]; then
-      printf '%s%s%s> ' "$base" "$segment_line" "$cwd_segment"
-    else
-      printf '%s%s> ' "$base" "$cwd_segment"
-    fi
-  else
-    if [ -n "$segment_line" ]; then
-      printf '%s%s> ' "$base" "$segment_line"
-    else
-      printf '%s> ' "$base"
-    fi
-  fi
-  return 0
 }
 
 function set_caddie_prompt_ps1() {

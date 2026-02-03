@@ -854,6 +854,36 @@ function caddie_rust_component() {
     caddie cli:check "Installed Rust component '$component'"
 }
 
+function caddie_rust_info() {
+    local rustc_version=""
+    local cargo_version=""
+    local toolchain=""
+
+    caddie cli:title "Rust Info"
+
+    if command -v rustc >/dev/null 2>&1; then
+        rustc_version="$(rustc --version 2>/dev/null)"
+        caddie cli:indent "rustc: ${rustc_version}"
+    else
+        caddie cli:yellow "rustc: not installed"
+    fi
+
+    if command -v cargo >/dev/null 2>&1; then
+        cargo_version="$(cargo --version 2>/dev/null)"
+        caddie cli:indent "cargo: ${cargo_version}"
+    else
+        caddie cli:yellow "cargo: not installed"
+    fi
+
+    if command -v rustup >/dev/null 2>&1; then
+        toolchain="$(rustup show active-toolchain 2>/dev/null | awk '{print $1}')"
+        if [ -n "$toolchain" ]; then
+            caddie cli:indent "toolchain: ${toolchain}"
+        fi
+    fi
+    return 0
+}
+
 # Function to display Rust module help
 function caddie_rust_help() {
     caddie cli:title "Rust Development Tools"
@@ -861,6 +891,7 @@ function caddie_rust_help() {
     caddie cli:usage "caddie rust:<command>"
     caddie cli:blank
     caddie cli:title "Project Management:"
+    caddie cli:indent "info               Show Rust environment summary"
     caddie cli:indent "init <name>        Create new Rust project with .gitignore"
     caddie cli:indent "new <name>         Create new Rust project"
     caddie cli:indent "build              Build current project"
@@ -956,6 +987,7 @@ export -f caddie_rust_audit
 export -f caddie_rust_toolchain
 export -f caddie_rust_target
 export -f caddie_rust_component
+export -f caddie_rust_info
 export -f caddie_rust_git_status
 export -f caddie_rust_gitignore
 export -f caddie_rust_git_clean

@@ -593,6 +593,44 @@ function caddie_js_framework_build() {
     return 0
 }
 
+function caddie_js_info() {
+    local node="not installed"
+    local npm="not installed"
+    local nvm="not installed"
+    local yarn="not installed"
+    local pnpm="not installed"
+    local tsc="not installed"
+
+    caddie cli:title "JavaScript Info"
+
+    if command -v node >/dev/null 2>&1; then
+        node="$(node --version 2>/dev/null)"
+    fi
+    if command -v npm >/dev/null 2>&1; then
+        npm="$(npm --version 2>/dev/null)"
+    fi
+    if command -v nvm >/dev/null 2>&1; then
+        nvm="$(nvm --version 2>/dev/null)"
+    fi
+    if command -v yarn >/dev/null 2>&1; then
+        yarn="$(yarn --version 2>/dev/null)"
+    fi
+    if command -v pnpm >/dev/null 2>&1; then
+        pnpm="$(pnpm --version 2>/dev/null)"
+    fi
+    if command -v tsc >/dev/null 2>&1; then
+        tsc="$(tsc --version 2>/dev/null | awk '{print $2}')"
+    fi
+
+    caddie cli:indent "node: $node"
+    caddie cli:indent "npm: $npm"
+    caddie cli:indent "nvm: $nvm"
+    caddie cli:indent "yarn: $yarn"
+    caddie cli:indent "pnpm: $pnpm"
+    caddie cli:indent "typescript: $tsc"
+    return 0
+}
+
 # Function to show Node.js and NVM version information
 function caddie_js_version() {
     caddie cli:title "Node.js Environment Information"
@@ -611,6 +649,7 @@ function caddie_js_help() {
     caddie cli:title "JavaScript Module Help"
     caddie cli:blank
     caddie cli:title "Setup and Installation:"
+    caddie cli:indent "info                     - Show JavaScript toolchain info"
     caddie cli:indent "setup                    - Install Node.js and NVM"
     caddie cli:indent "install                  - Install additional tools (Yarn, pnpm, TypeScript)"
     caddie cli:indent "use <version>            - Switch to specific Node.js version"
@@ -655,6 +694,7 @@ export -f caddie_js_setup
 export -f caddie_js_install
 export -f caddie_js_use
 export -f caddie_js_list
+export -f caddie_js_info
 export -f caddie_js_help
 export -f caddie_js_project_init
 export -f caddie_js_project_install

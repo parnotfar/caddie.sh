@@ -34,6 +34,12 @@ function caddie_debug_status() {
     return 0
 }
 
+function caddie_debug_info() {
+    caddie cli:title "Debug Info"
+    caddie_debug_status
+    return 0
+}
+
 # Check if debug is enabled
 function caddie_debug_is_enabled() {
     [ "$CADDIE_DEBUG" -eq 1 ]
@@ -60,6 +66,7 @@ function caddie_debug_help() {
     caddie cli:blank
     
     caddie cli:title "Available Commands:"
+    caddie cli:indent "info            - Show debug summary"
     caddie cli:indent "on              - Enable debug mode"
     caddie cli:indent "off             - Disable debug mode"
     caddie cli:indent "status          - Show current debug status"
@@ -87,6 +94,7 @@ function caddie_debug_description() {
 export -f caddie_debug_on
 export -f caddie_debug_off
 export -f caddie_debug_status
+export -f caddie_debug_info
 export -f caddie_debug_is_enabled
 export -f caddie_debug
 export -f caddie_debug_help

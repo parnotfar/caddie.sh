@@ -20,6 +20,7 @@ function caddie_ruby_help() {
     caddie cli:usage "caddie ruby:<command> [args]"
     caddie cli:blank
     caddie cli:title "Environment Management:"
+    caddie cli:indent "info                     Show Ruby toolchain info"
     caddie cli:indent "setup                    Setup Ruby development environment with RVM (uses latest stable)"
     caddie cli:indent "install <version>        Install specific Ruby version"
     caddie cli:indent "use <version>            Switch to specific Ruby version"
@@ -864,6 +865,42 @@ function caddie_ruby_rails_routes() {
     return 0
 }
 
+function caddie_ruby_info() {
+    local ruby="not installed"
+    local gem="not installed"
+    local rvm="not installed"
+    local bundler="not installed"
+    local rails="not installed"
+    local gemset="default"
+
+    caddie cli:title "Ruby Info"
+
+    if command -v ruby >/dev/null 2>&1; then
+        ruby="$(ruby --version 2>/dev/null | awk '{print $2}')"
+    fi
+    if command -v gem >/dev/null 2>&1; then
+        gem="$(gem --version 2>/dev/null)"
+    fi
+    if command -v rvm >/dev/null 2>&1; then
+        rvm="$(rvm --version 2>/dev/null | head -n1)"
+        gemset="$(rvm gemset name 2>/dev/null || printf 'default')"
+    fi
+    if command -v bundle >/dev/null 2>&1; then
+        bundler="$(bundle --version 2>/dev/null | awk '{print $2}')"
+    fi
+    if command -v rails >/dev/null 2>&1; then
+        rails="$(rails --version 2>/dev/null | awk '{print $2}')"
+    fi
+
+    caddie cli:indent "ruby: $ruby"
+    caddie cli:indent "gem: $gem"
+    caddie cli:indent "rvm: $rvm"
+    caddie cli:indent "bundler: $bundler"
+    caddie cli:indent "rails: $rails"
+    caddie cli:indent "gemset: $gemset"
+    return 0
+}
+
 # Function to show Ruby and RVM version information
 function caddie_ruby_version() {
     caddie cli:title "Ruby Environment Information"
@@ -906,6 +943,7 @@ export -f caddie_ruby_rails_console
 export -f caddie_ruby_rails_generate
 export -f caddie_ruby_rails_migrate
 export -f caddie_ruby_rails_routes
+export -f caddie_ruby_info
 export -f caddie_ruby_version
 export -f caddie_ruby_pin_set
 export -f caddie_ruby_pin_get

@@ -14,6 +14,7 @@ Use this module to:
 
 ### Setup & Versioning
 
+- `caddie js:info` - Show JavaScript toolchain info
 - `caddie js:setup` - Install Node.js and NVM
 - `caddie js:install` - Install Yarn, pnpm, and TypeScript
 - `caddie js:use <version>` - Switch Node.js version

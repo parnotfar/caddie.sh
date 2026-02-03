@@ -84,6 +84,44 @@ function caddie_cross_env_status() {
     return 0
 }
 
+function caddie_cross_info() {
+    local python="not installed"
+    local rust="not installed"
+    local node="not installed"
+    local git="not installed"
+    local docker="not installed"
+    local xcode="not installed"
+
+    caddie cli:title "Cross Info"
+
+    if command -v python3 >/dev/null 2>&1; then
+        python="$(python3 --version 2>/dev/null | cut -d' ' -f2)"
+    fi
+    if command -v rustc >/dev/null 2>&1; then
+        rust="$(rustc --version 2>/dev/null | cut -d' ' -f2)"
+    fi
+    if command -v node >/dev/null 2>&1; then
+        node="$(node --version 2>/dev/null)"
+    fi
+    if command -v git >/dev/null 2>&1; then
+        git="$(git --version 2>/dev/null | cut -d' ' -f3)"
+    fi
+    if command -v docker >/dev/null 2>&1; then
+        docker="$(docker --version 2>/dev/null | cut -d' ' -f3 | cut -d',' -f1)"
+    fi
+    if command -v xcodebuild >/dev/null 2>&1; then
+        xcode="$(xcodebuild -version 2>/dev/null | head -n1 | awk '{print $2}')"
+    fi
+
+    caddie cli:indent "python: $python"
+    caddie cli:indent "rust: $rust"
+    caddie cli:indent "node: $node"
+    caddie cli:indent "git: $git"
+    caddie cli:indent "docker: $docker"
+    caddie cli:indent "xcode: $xcode"
+    return 0
+}
+
 # Function to setup development environment
 function caddie_cross_env_setup() {
     caddie cli:title "Setting up development environment..."
@@ -930,6 +968,7 @@ function caddie_cross_help() {
     caddie cli:usage "caddie <command>"
     caddie cli:blank
     caddie cli:title "Environment Management:"
+    caddie cli:indent "info              Show toolchain summary"
     caddie cli:indent "env:status         Show all environment status"
     caddie cli:indent "env:setup          Setup development environment"
     caddie cli:indent "env:reset          Reset all environments"
@@ -984,6 +1023,7 @@ function caddie_cross_description() {
 
 # Export cross-language functions
 export -f caddie_cross_env_status
+export -f caddie_cross_info
 export -f caddie_cross_env_setup
 export -f caddie_cross_env_reset
 export -f caddie_cross_env_backup

@@ -13,6 +13,12 @@ The Python module is designed to make Python development effortless and consiste
 
 ## Commands
 
+### Environment Summary
+
+#### `caddie python:info`
+
+Show Python toolchain summary (python, pip, virtualenv status).
+
 ### Virtual Environment Management
 
 #### `caddie python:create <name>`

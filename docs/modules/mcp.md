@@ -12,6 +12,10 @@ The module is designed to simplify MCP server workflows:
 
 ## Commands
 
+### `caddie mcp:info`
+
+Show MCP server configuration summary (path and availability).
+
 ### `caddie mcp:server:set <path>`
 
 Set the MCP server directory.

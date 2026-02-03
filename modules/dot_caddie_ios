@@ -1267,12 +1267,45 @@ function caddie_ios_testflight_publish_increment_false() {
     return 0
 }
 
+function caddie_ios_info() {
+    local xcode="not installed"
+    local swift="not installed"
+    local config_state="missing"
+    local config_file="${CADDIE_IOS_CONFIG_FILE:-$HOME/.caddie_ios_config}"
+    local scheme="${CADDIE_IOS_SCHEME:-}"
+
+    caddie cli:title "iOS Info"
+
+    if command -v xcodebuild >/dev/null 2>&1; then
+        xcode="$(xcodebuild -version 2>/dev/null | head -n1 | awk '{print $2}')"
+    fi
+    if command -v swift >/dev/null 2>&1; then
+        swift="$(swift --version 2>/dev/null | head -n1 | awk '{print $3}')"
+    fi
+    if [ -f "$config_file" ]; then
+        config_state="loaded"
+    fi
+
+    caddie cli:indent "xcode: $xcode"
+    caddie cli:indent "swift: $swift"
+    caddie cli:indent "config file: $config_file ($config_state)"
+    if [ -n "$scheme" ]; then
+        caddie cli:indent "scheme: $scheme"
+    else
+        caddie cli:indent "scheme: not set"
+    fi
+    return 0
+}
+
 # Function to setup Rust development environment for iOS
 # Function to display iOS module help
 function caddie_ios_help() {
     caddie cli:title "iOS Distribution Tools"
     caddie cli:blank
     caddie cli:usage "caddie ios:<command>"
+    caddie cli:blank
+    caddie cli:title "General:"
+    caddie cli:indent "info                         Show iOS toolchain summary"
     caddie cli:blank
     caddie cli:title "Project Information:"
     caddie cli:indent "project:info [scheme]          Show bundle ID, version, build number"
@@ -1327,6 +1360,7 @@ export -f caddie_ios_upload_testflight
 export -f caddie_ios_testflight
 export -f caddie_ios_testflight_publish
 export -f caddie_ios_testflight_publish_increment_false
+export -f caddie_ios_info
 export -f caddie_ios_config_get
 export -f caddie_ios_config_set
 export -f caddie_ios_config_unset

@@ -10,6 +10,12 @@ The iOS module focuses on App Store and TestFlight distribution workflows.
 
 ## Commands
 
+### General
+
+#### `caddie ios:info`
+
+Show iOS toolchain summary (Xcode, Swift, config file, and scheme).
+
 ### Project Information
 
 #### `caddie ios:project:info [scheme]`

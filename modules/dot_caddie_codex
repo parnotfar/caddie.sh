@@ -1141,10 +1141,40 @@ function caddie_codex_review_watch_status() {
     return 1
 }
 
+function caddie_codex_info() {
+    local state_dir=""
+    local review_command="${CADDIE_CODEX_REVIEW_COMMAND:-}"
+    local repo_root=""
+    local log_path=""
+
+    caddie cli:title "Codex Info"
+
+    state_dir="$(caddie_codex_state_dir)"
+    caddie cli:indent "state dir: $state_dir"
+
+    if [ -n "$review_command" ]; then
+        caddie cli:indent "review command: $review_command"
+    else
+        caddie cli:indent "review command: default (codex review -)"
+    fi
+
+    repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+    if [ -n "$repo_root" ]; then
+        log_path="$(caddie_codex_review_log_path "$repo_root" 2>/dev/null || true)"
+        if [ -n "$log_path" ]; then
+            caddie cli:indent "review log: $log_path"
+        fi
+    else
+        caddie cli:indent "repo: not in git"
+    fi
+    return 0
+}
+
 function caddie_codex_help() {
     caddie cli:title "Codex Review Commands"
     caddie cli:usage "caddie codex:<command>"
     caddie cli:blank
+    caddie cli:indent "info                        Show review configuration info"
     caddie cli:indent "review [dir]                 Review the latest commit"
     caddie cli:indent "review:watch <dir>           Run reviews on every commit"
     caddie cli:indent "review:watch:stop <dir>      Disable commit reviews"
@@ -1175,7 +1205,7 @@ function caddie_codex_description() {
 }
 
 function caddie_codex_commands() {
-    printf '%s\n' "codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:terminal:debug codex:review:terminal:script codex:review:terminal:open codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
+    printf '%s\n' "codex:info codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:terminal:debug codex:review:terminal:script codex:review:terminal:open codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
     return 0
 }
 
@@ -1199,6 +1229,7 @@ export -f caddie_codex_review_open_tab
 export -f caddie_codex_review_watch
 export -f caddie_codex_review_watch_stop
 export -f caddie_codex_review_watch_status
+export -f caddie_codex_info
 export -f caddie_codex_help
 export -f caddie_codex_description
 export -f caddie_codex_commands

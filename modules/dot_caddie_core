@@ -101,6 +101,30 @@ function caddie_core_debug() {
     esac
 }
 
+function caddie_core_info() {
+    local version="${CADDIE_SH_VERSION:-}"
+    local home_dir="${CADDIE_HOME:-$HOME}"
+    local debug="${CADDIE_DEBUG:-0}"
+    local module_count="0"
+
+    if [ -z "$version" ] && [ -f "$HOME/.caddie_version" ]; then
+        # shellcheck disable=SC1090
+        source "$HOME/.caddie_version"
+        version="${CADDIE_SH_VERSION:-}"
+    fi
+
+    if declare -F caddie_modules_count >/dev/null 2>&1; then
+        module_count="$(caddie_modules_count 2>/dev/null || printf '0')"
+    fi
+
+    caddie cli:title "Core Info"
+    caddie cli:indent "version: ${version:-unknown}"
+    caddie cli:indent "home: ${home_dir}"
+    caddie cli:indent "debug: ${debug}"
+    caddie cli:indent "modules loaded: ${module_count}"
+    return 0
+}
+
 # Function to grep aliases by keyword
 function caddie_core_alias_grep() {
     local keyword="$1"
@@ -866,6 +890,7 @@ function caddie_core_help() {
     caddie cli:indent "lint:limit <n> <path> Run linting with limit (shows max n issues per check)"
     caddie cli:blank
     caddie cli:magnifying_glass "Information:"
+    caddie cli:indent "info                Show core configuration summary"
     caddie cli:indent "aliases             Show all available aliases"
     caddie cli:indent "alias:grep <keyword> Search aliases by keyword"
     caddie cli:indent "alias:git            Show git-related aliases"
@@ -879,6 +904,7 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:reset:home"
     caddie cli:indent "caddie go:home"
     caddie cli:indent "caddie core:aliases"
+    caddie cli:indent "caddie core:info"
     caddie cli:indent "caddie core:alias:grep git"
     caddie cli:indent "caddie core:alias:git"
     caddie cli:indent "caddie core:lint"
@@ -907,6 +933,7 @@ export -f caddie_core_go_home
 export -f caddie_core_help
 export -f caddie_core_description
 export -f caddie_core_debug
+export -f caddie_core_info
 export -f caddie_core_aliases
 export -f caddie_core_alias_grep
 export -f caddie_core_alias_git

@@ -12,6 +12,36 @@ function caddie_mac_description() {
     return 0
 }
 
+function caddie_mac_info() {
+    local os_name=""
+    local os_version=""
+    local archive_dir=""
+    local archive_state="missing"
+
+    caddie cli:title "macOS Info"
+
+    os_name="$(uname -s 2>/dev/null || true)"
+    if [ "$os_name" = "Darwin" ]; then
+        if command -v sw_vers >/dev/null 2>&1; then
+            os_version="$(sw_vers -productVersion 2>/dev/null)"
+        fi
+        if [ -n "$os_version" ]; then
+            caddie cli:indent "version: $os_version"
+        else
+            caddie cli:indent "version: unknown"
+        fi
+    else
+        caddie cli:yellow "Not running on macOS (detected: ${os_name:-unknown})"
+    fi
+
+    archive_dir="$(caddie_mac_screenshot_archive_dir_resolve)"
+    if [ -d "$archive_dir" ]; then
+        archive_state="exists"
+    fi
+    caddie cli:indent "screenshot archive: $archive_dir ($archive_state)"
+    return 0
+}
+
 function caddie_mac_screenshot_archive_dir_default() {
     printf '%s\n' "$HOME/Desktop/Screenshot-Archive"
     return 0
@@ -256,7 +286,7 @@ function caddie_mac_screenshot_archive_dry_run() {
 }
 
 function caddie_mac_commands() {
-    printf '%s\n' "mac:help mac:screenshot:archive mac:screenshot:archive:dry:run mac:screenshot:archive:dir:set mac:screenshot:archive:dir:get mac:screenshot:archive:dir:unset"
+    printf '%s\n' "mac:info mac:help mac:screenshot:archive mac:screenshot:archive:dry:run mac:screenshot:archive:dir:set mac:screenshot:archive:dir:get mac:screenshot:archive:dir:unset"
     return 0
 }
 
@@ -266,6 +296,9 @@ function caddie_mac_help() {
     default_dir="$(caddie_mac_screenshot_archive_dir_default)"
 
     caddie cli:title "macOS Module Help"
+    caddie cli:blank
+    caddie cli:title "General:"
+    caddie cli:indent "mac:info                              - Show macOS environment info"
     caddie cli:blank
     caddie cli:title "Screenshot Management:"
     caddie cli:indent "mac:screenshot:archive                 - Archive Desktop/Downloads screenshots"
@@ -288,6 +321,7 @@ function caddie_mac_help() {
 }
 
 export -f caddie_mac_description
+export -f caddie_mac_info
 export -f caddie_mac_screenshot_archive_dir_default
 export -f caddie_mac_screenshot_archive_dir_resolve
 export -f caddie_mac_screenshot_archive_dir_set

@@ -11,6 +11,10 @@ The Swift module mirrors the Rust workflow but for Swift Package Manager project
 
 ## Commands
 
+### `caddie swift:info`
+
+Show Swift toolchain summary (Swift/Xcode versions, scene, target).
+
 ### `caddie swift:init <name> [--type executable|library]`
 
 Scaffolds a Swift package and writes a `.gitignore`. Example:
