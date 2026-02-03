@@ -223,7 +223,7 @@ caddie git:clone my-project
 caddie git:new:branch feature/new-feature
 
 # Quick commit and push
-caddie git:gacp "Add new feature"
+caddie git:gacp Add new feature
 
 # Create pull request
 caddie git:pr:create "Add new feature" "Description of changes"

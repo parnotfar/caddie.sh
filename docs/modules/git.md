@@ -164,12 +164,12 @@ Commit staged changes and push.
 caddie git:commit:push "Ship patch"
 ```
 
-#### `caddie git:gacp <message>`
+#### `caddie git:gacp <message...>`
 Add all changes, commit, and push in one command. This is a wrapper for the common workflow of adding, committing, and pushing changes.
 
 ```bash
-caddie git:gacp "Quick commit and push"
-caddie git:gacp "Update documentation"
+caddie git:gacp Quick commit and push
+caddie git:gacp Update documentation
 ```
 
 #### `caddie git:push`
@@ -456,10 +456,10 @@ cd my-new-project
 
 # 3. Make changes and commit
 echo "# My New Project" > README.md
-caddie git:gacp "Initial commit"
+caddie git:gacp Initial commit
 
 # 4. Future changes are simple
-caddie git:gacp "Add new feature"
+caddie git:gacp Add new feature
 
 # 5. Create pull requests
 caddie git:pr:create "Add new feature" "Description of changes"
