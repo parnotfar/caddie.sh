@@ -150,22 +150,22 @@ Run `caddie` with no arguments to launch the interactive prompt. The prompt keep
 
 ```bash
 $ caddie
-caddie-8.3.0> rust fix           # Equivalent to `caddie rust:fix`
-caddie-8.3.0> rust               # Switches scope to the Rust module
-caddie[rust]-8.3.0> fix all      # Equivalent to `caddie rust:fix:all`
-caddie[rust]-8.3.0> back         # Leaves the module scope
-caddie-8.3.0> `git status`       # Run an inline shell command without leaving the REPL
-caddie-8.3.0> shell ls -1        # One-off shell command via the shell bridge
-caddie-8.3.0> shell              # Enter shell scope
-caddie[shell]-8.3.0> switch git  # Jump to another module from any scope
-caddie-8.3.0> rust build         # Start a long-running task
+caddie-8.5.0> rust fix           # Equivalent to `caddie rust:fix`
+caddie-8.5.0> rust               # Switches scope to the Rust module
+caddie[rust]-8.5.0> fix all      # Equivalent to `caddie rust:fix:all`
+caddie[rust]-8.5.0> back         # Leaves the module scope
+caddie-8.5.0> `git status`       # Run an inline shell command without leaving the REPL
+caddie-8.5.0> shell ls -1        # One-off shell command via the shell bridge
+caddie-8.5.0> shell              # Enter shell scope
+caddie[shell]-8.5.0> switch git  # Jump to another module from any scope
+caddie-8.5.0> rust build         # Start a long-running task
 # Press Ctrl+C here to cancel the task while staying in the prompt
-caddie-8.3.0> exit
+caddie-8.5.0> exit
 ```
 
 **Features:**
 - Converts `module subcommand` into `module:subcommand` automatically (e.g., `rust test unit` → `rust:test:unit`).
-- Typing a module name enters a scoped prompt (`caddie[module]-8.3.0>`), so subsequent commands assume that module until you `back`, `up`, or `..`.
+- Typing a module name enters a scoped prompt (`caddie[module]-8.5.0>`), so subsequent commands assume that module until you `back`, `up`, or `..`.
 - Run raw shell commands inline with backticks or the `shell` helper, no context switching required.
 - Use `switch <module>` from any scope to jump directly to another module.
 - REPL history is written to `~/.caddie_history` so shell history stays untouched while arrow keys still recall commands.

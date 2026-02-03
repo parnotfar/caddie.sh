@@ -240,6 +240,154 @@ function _caddie_module_exists() {
     return 1
 }
 
+function _caddie_completion_commands_for_module() {
+    local needle="$1"
+    local i
+
+    if [ -z "$needle" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    if [ ${#CADDIE_COMPLETION_MODULES[@]} -gt 0 ] 2>/dev/null; then
+        for ((i = 0; i < ${#CADDIE_COMPLETION_MODULES[@]}; i++)); do
+            if [ "${CADDIE_COMPLETION_MODULES[$i]}" = "$needle" ]; then
+                printf '%s' "${CADDIE_COMPLETION_COMMANDS[$i]}"
+                return 0
+            fi
+        done
+    fi
+
+    printf '%s' ""
+    return 0
+}
+
+function _caddie_command_prefix_exists() {
+    local commands="$1"
+    local candidate="$2"
+    local cmd
+
+    for cmd in $commands; do
+        if [[ "$cmd" == "$candidate"* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+function _caddie_command_exact_exists() {
+    local commands="$1"
+    local candidate="$2"
+    local cmd
+
+    for cmd in $commands; do
+        if [ "$cmd" = "$candidate" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+function _caddie_join_args() {
+    local out=""
+    local arg
+    local escaped=""
+
+    for arg in "$@"; do
+        printf -v escaped '%q' "$arg"
+        if [ -n "$out" ]; then
+            out+=" "
+        fi
+        out+="$escaped"
+    done
+
+    printf '%s' "$out"
+    return 0
+}
+
+function _caddie_resolve_command_from_tokens() {
+    local module="$1"
+    local rest="$2"
+    local commands=""
+    local candidate=""
+    local best=""
+    local best_index=0
+    local i
+    local token
+    local args_str=""
+    local -a tokens=()
+    local -a args=()
+
+    if [ -z "$module" ]; then
+        printf '%s\n' ""
+        return 0
+    fi
+
+    if [ -n "$rest" ]; then
+        if eval "set -- $rest" 2>/dev/null; then
+            tokens=("$@")
+        else
+            IFS=' ' read -r -a tokens <<< "$rest"
+        fi
+    fi
+
+    if [ "${#tokens[@]}" -eq 0 ]; then
+        printf '%s\n' "${module}:help"
+        return 0
+    fi
+
+    commands="$(_caddie_completion_commands_for_module "$module")"
+    candidate="$module"
+
+    for ((i = 0; i < ${#tokens[@]}; i++)); do
+        token="${tokens[$i]}"
+        if [[ "$token" == -* ]]; then
+            break
+        fi
+        if ! [[ "$token" =~ ^[[:alnum:]_-]+$ ]]; then
+            break
+        fi
+
+        candidate="${candidate}:${token}"
+
+        if [ -n "$commands" ]; then
+            if _caddie_command_prefix_exists "$commands" "$candidate"; then
+                if _caddie_command_exact_exists "$commands" "$candidate"; then
+                    best="$candidate"
+                    best_index=$((i + 1))
+                fi
+                continue
+            fi
+            break
+        fi
+
+        if command -v "caddie_${candidate//:/_}" >/dev/null 2>&1; then
+            best="$candidate"
+            best_index=$((i + 1))
+        else
+            if [ -z "$best" ]; then
+                best="${module}:${tokens[0]}"
+                best_index=1
+            fi
+            break
+        fi
+    done
+
+    if [ -z "$best" ]; then
+        best="${module}:${tokens[0]}"
+        best_index=1
+    fi
+
+    args=("${tokens[@]:$best_index}")
+    if [ "${#args[@]}" -gt 0 ]; then
+        args_str="$(_caddie_join_args "${args[@]}")"
+        printf '%s\n' "${best} ${args_str}"
+    else
+        printf '%s\n' "${best}"
+    fi
+    return 0
+}
+
 function _caddie_repl_normalize() {
     local line="$1"
     local active_module="${2:-}"
@@ -376,37 +524,8 @@ function _caddie_repl_normalize() {
         return 0
     fi
 
-    local command command_tail
-    command="${rest%%[[:space:]]*}"
-    if [ "$command" = "$rest" ]; then
-        printf '%s\n' "${module}:${command}"
-        return 0
-    fi
-
-    command_tail="${rest#${command}}"
-    command_tail="${command_tail#${command_tail%%[![:space:]]*}}"
-
-    if [ -n "$command_tail" ]; then
-        local next_token remaining
-        next_token="${command_tail%%[[:space:]]*}"
-        remaining="${command_tail#${next_token}}"
-        remaining="${remaining#${remaining%%[![:space:]]*}}"
-
-        if [ -n "$next_token" ] \
-            && [[ "$command" != *:* ]] \
-            && [[ "$next_token" != -* ]] \
-            && [[ "$next_token" =~ ^[[:alnum:]_-]+$ ]]; then
-            command="${command}:${next_token}"
-            command_tail="$remaining"
-        fi
-    fi
-
-    if [ -n "$command_tail" ]; then
-        printf '%s\n' "${module}:${command} ${command_tail}"
-    else
-        printf '%s\n' "${module}:${command}"
-    fi
-    return 0
+    _caddie_resolve_command_from_tokens "$module" "$rest"
+    return $?
 }
 
 function _caddie_repl() {
@@ -484,19 +603,25 @@ function _caddie_repl() {
             prompt_label="${prompt_name}${prompt_version}"
         fi
 
-        local prompt_display
-        if [ "$prompt_color_enabled" -eq 1 ]; then
-            local colored_label
-            colored_label="${prompt_color_name}${prompt_name}${prompt_color_reset}"
-            if [ -n "$active_module" ]; then
-                colored_label+="${prompt_color_bracket}[${prompt_color_module}${active_module}${prompt_color_bracket}]${prompt_color_reset}"
+        local prompt_display=""
+        if declare -F caddie_prompt_render_repl >/dev/null 2>&1; then
+            prompt_display="$(caddie_prompt_render_repl "$active_module")"
+        fi
+
+        if [ -z "$prompt_display" ]; then
+            if [ "$prompt_color_enabled" -eq 1 ]; then
+                local colored_label
+                colored_label="${prompt_color_name}${prompt_name}${prompt_color_reset}"
+                if [ -n "$active_module" ]; then
+                    colored_label+="${prompt_color_bracket}[${prompt_color_module}${active_module}${prompt_color_bracket}]${prompt_color_reset}"
+                fi
+                if [ -n "$prompt_version_value" ]; then
+                    colored_label+="${prompt_color_dash}-${prompt_color_version}${prompt_version_value}${prompt_color_reset}"
+                fi
+                prompt_display="${colored_label}${prompt_color_prompt}> ${prompt_color_reset}"
+            else
+                prompt_display="${prompt_label}> "
             fi
-            if [ -n "$prompt_version_value" ]; then
-                colored_label+="${prompt_color_dash}-${prompt_color_version}${prompt_version_value}${prompt_color_reset}"
-            fi
-            prompt_display="${colored_label}${prompt_color_prompt}> ${prompt_color_reset}"
-        else
-            prompt_display="${prompt_label}> "
         fi
 
         interrupted=0

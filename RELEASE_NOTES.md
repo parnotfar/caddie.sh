@@ -1,5 +1,28 @@
 # Caddie.sh Release Notes
 
+## Version 8.5.0 - REPL Prompt Parity
+
+**Release Date:** February 2, 2026
+
+### 🚀 Major New Features
+
+#### **Prompt Parity in the REPL**
+- **Rich Prompt**: REPL now shows git status, current directory, and project name
+- **Module Scope**: Existing module scope remains visible in the prompt
+- **Visual Marker**: REPL prompt now starts with a distinct marker for quick recognition
+
+#### **English-Style REPL Commands**
+- **Multi-Word Commands**: Nested commands resolve from spaced input (e.g., `test unit failed`)
+- **Top-Level Support**: Space-based command parsing works in and out of module scope
+
+### 📝 Usage Examples
+
+```bash
+caddie
+caddie> git branch new feature/prompt
+caddie[swift]> test unit failed
+```
+
 ## Version 8.4.0 - macOS Screenshot Archiving
 
 **Release Date:** January 30, 2026
