@@ -734,10 +734,10 @@ function caddie_git_merge_main() {
 }
 
 function caddie_git_gacp() {
-    local message="$1"
+    local message="$*"
     if [ -z "$message" ]; then
         caddie cli:red "Error: Please provide a commit message"
-        caddie cli:usage "caddie git:gacp <message>"
+        caddie cli:usage "caddie git:gacp <message...>"
         return 1
     fi
     
@@ -1439,7 +1439,7 @@ function caddie_git_help() {
     caddie cli:indent "commit:amend [message] Amend last commit (optional message)"
     caddie cli:indent "commit:amend:all [message] Stage all and amend"
     caddie cli:indent "commit:push <message>  Commit staged changes and push"
-    caddie cli:indent "gacp <message>         Stage all, commit, and push"
+    caddie cli:indent "gacp <message...>      Stage all, commit, and push"
     caddie cli:blank
 
     caddie cli:title "Diff & Log:"
@@ -1503,7 +1503,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:new:branch feature/new-feature --description 'Add search'"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:commit:staged 'Fix lint'"
-    caddie cli:indent "caddie git:gacp 'Quick commit and push'"
+    caddie cli:indent "caddie git:gacp Quick commit and push"
     caddie cli:indent "caddie git:pr:create 'Add new feature' 'Description of changes'"
     caddie cli:indent "caddie git:pr:approve 42"
     caddie cli:indent "caddie git:remote:add"
