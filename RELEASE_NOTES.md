@@ -2,7 +2,7 @@
 
 ## Version 8.5.0 - Module Info & REPL Commands
 
-**Release Date:** February 3, 2026
+**Release Date:** Feb 3, 2026
 
 ### 🚀 Major New Features
 
@@ -10,6 +10,7 @@
 - **Universal Summary**: Each module now provides `<module>:info` for a quick environment summary
 - **Toolchain Snapshot**: See versions and configuration at a glance (git, python, rust, swift, mac, etc.)
 - **Consistent Pattern**: Works across core, language, and tooling modules
+- **REPL Shortcut**: `i` (or `info`) resolves to `<module>:info` in scope, or `core:info` at top level
 
 #### **English-Style REPL Commands**
 - **Multi-Word Commands**: Nested commands resolve from spaced input (e.g., `test unit failed`)
