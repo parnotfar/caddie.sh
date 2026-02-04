@@ -477,7 +477,11 @@ function _caddie_repl_normalize() {
 
     if [ -n "$active_module" ]; then
         if [[ "$first_token" == *:* ]]; then
-            printf '%s\n' "$line"
+            if [[ "$first_token" == "${active_module}:"* ]]; then
+                printf '%s\n' "$line"
+            else
+                printf '%s\n' "${active_module}:${line}"
+            fi
             return 0
         fi
 

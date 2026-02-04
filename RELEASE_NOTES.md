@@ -1,5 +1,14 @@
 # Caddie.sh Release Notes
 
+## Version 8.5.1 - REPL Command Resolution Fix
+
+**Release Date:** Feb 4, 2026
+
+### 🐛 Bug Fixes
+
+- **Module-Scoped Colon Commands**: `log:oneline`-style commands now resolve within module scope (e.g., in `git` scope it runs `git:log:oneline`)
+- **REPL Consistency**: Colon commands in scope now behave the same as spaced nested commands
+
 ## Version 8.5.0 - Module Info & REPL Commands
 
 **Release Date:** Feb 3, 2026
