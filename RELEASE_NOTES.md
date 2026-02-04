@@ -20,6 +20,12 @@
 - **No Quotes Required**: `git:gacp` now joins all arguments into a single commit message
 - **Backward Compatible**: Quoted messages still work as expected
 
+#### **Branch Merge to Main**
+- **One-Step Merge**: `git:branch:merge:main` merges the current branch into main, pushes, deletes the branch locally and on origin, and prunes
+
+#### **Branch Description Command**
+- **Caddie Style**: `git:branch:new:description <branch> <description>` replaces the old description flag workflow
+
 ### 📝 Usage Examples
 
 ```bash

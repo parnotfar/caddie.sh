@@ -1081,7 +1081,7 @@ function caddie_git_worktree_add() {
 
     if ! git show-ref --verify --quiet "refs/heads/$branch" && ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
         caddie cli:red "Error: Branch '$branch' does not exist"
-        caddie cli:thought "Create it first: caddie git:new:branch $branch"
+        caddie cli:thought "Create it first: caddie git:branch:new $branch"
         caddie cli:thought "Or create it with: caddie git:worktree:add $path $branch --new"
         return 1
     fi
@@ -1217,7 +1217,7 @@ function caddie_git_pr_create() {
     local current_branch=$(git branch --show-current)
     if [ "$current_branch" = "main" ] || [ "$current_branch" = "master" ]; then
         caddie cli:red "Error: Cannot create PR from main/master branch"
-        caddie cli:indent "Create a feature branch first: caddie git:new:branch feature/your-feature"
+        caddie cli:indent "Create a feature branch first: caddie git:branch:new feature/your-feature"
         return 1
     fi
     
@@ -1435,7 +1435,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:new:branch git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:branch:merge:main git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1460,7 +1460,7 @@ function caddie_git_help() {
     caddie cli:indent "branch:create <name>   Alias for branch:new"
     caddie cli:indent "branch:new:feature <name>  Create feature/<name>"
     caddie cli:indent "branch:new:bugfix <name>   Create bugfix/<name>"
-    caddie cli:indent "new:branch <name> [--description <text>]  Create branch, set description, push"
+    caddie cli:indent "branch:new:description <branch> <description>  Create branch with description"
     caddie cli:blank
 
     caddie cli:title "Staging & Commit:"
@@ -1490,6 +1490,7 @@ function caddie_git_help() {
     caddie cli:indent "push:force [args]      Push with --force-with-lease"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, current branch)"
     caddie cli:indent "merge:main [remote]    Merge mainline into current branch"
+    caddie cli:indent "branch:merge:main       Merge current branch into main and delete it"
     caddie cli:blank
 
     caddie cli:title "Rebase:"
@@ -1533,7 +1534,7 @@ function caddie_git_help() {
     caddie cli:title "Examples:"
     caddie cli:indent "caddie git:status"
     caddie cli:indent "caddie git:auth:login"
-    caddie cli:indent "caddie git:new:branch feature/new-feature --description 'Add search'"
+    caddie cli:indent "caddie git:branch:new:description feature/new-feature Add search"
     caddie cli:indent "caddie git:commit 'Add new feature'"
     caddie cli:indent "caddie git:commit:staged 'Fix lint'"
     caddie cli:indent "caddie git:gacp Quick commit and push"
@@ -1543,6 +1544,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
     caddie cli:indent "caddie git:merge:main"
+    caddie cli:indent "caddie git:branch:merge:main"
     caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
     caddie cli:indent "caddie git:worktree:list"
     caddie cli:blank

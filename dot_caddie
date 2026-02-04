@@ -1191,7 +1191,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "cross:info cross:template:create cross:template:list cross:deploy:docker cross:deploy:local cross:deploy:railway"
                         ;;
                       git)
-                        caddie_completion_register "$module_name" "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:new:branch git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+                        caddie_completion_register "$module_name" "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:branch:merge:main git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
                         ;;
                       github)
                         caddie_completion_register "$module_name" "github:info github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"

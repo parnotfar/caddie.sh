@@ -221,7 +221,7 @@ caddie github:account:set parnotfar
 caddie git:clone my-project
 
 # Create and publish new branch
-caddie git:new:branch feature/new-feature
+caddie git:branch:new feature/new-feature
 
 # Quick commit and push
 caddie git:gacp Add new feature

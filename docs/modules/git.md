@@ -105,12 +105,11 @@ Run `git checkout` with the provided arguments.
 caddie git:checkout -b feature/quick-test
 ```
 
-#### `caddie git:new:branch <name> [--description <text>]`
-Create a new branch, optionally set a description, and push it to the remote.
+#### `caddie git:branch:new:description <branch> <description>`
+Create a new branch with a description and push it to the remote.
 
 ```bash
-caddie git:new:branch feature/new-feature
-caddie git:new:branch feature/new-feature --description "Add search flow"
+caddie git:branch:new:description feature/new-feature Add search flow
 ```
 
 #### `caddie git:add <path...>`
@@ -299,6 +298,15 @@ Interactive rebase.
 ```bash
 caddie git:rebase:interactive main
 ```
+
+#### `caddie git:branch:merge:main`
+Merge the current branch into the mainline branch, push, delete the branch locally and on origin, and prune stale references.
+
+```bash
+caddie git:branch:merge:main
+```
+
+Note: Requires a clean working tree and will delete the merged branch locally and on origin.
 
 #### `caddie git:merge:main [remote]`
 Merge the mainline branch from the remote into the current branch without checking it out (worktree-friendly).
