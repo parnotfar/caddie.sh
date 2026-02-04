@@ -21,7 +21,7 @@
 - **Backward Compatible**: Quoted messages still work as expected
 
 #### **Branch Merge to Main**
-- **One-Step Merge**: `git:branch:merge:main` merges the current branch into main, pushes, deletes the branch locally and on origin, and prunes
+- **One-Step Merge**: `git:main:merge:branch` merges the current branch into main, pushes, deletes the branch locally and on origin, and prunes
 
 #### **Branch Description Command**
 - **Caddie Style**: `git:branch:new:description <branch> <description>` replaces the old description flag workflow

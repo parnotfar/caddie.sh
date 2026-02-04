@@ -733,6 +733,181 @@ function caddie_git_merge_main() {
     return 1
 }
 
+
+function caddie_git_main_merge_branch() {
+    local remote="origin"
+    local current_branch=""
+    local mainline=""
+    local current_worktree=""
+    local main_worktree=""
+    local feature_worktree=""
+    local worktree_path=""
+    local worktree_branch=""
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    current_branch="$(git branch --show-current 2>/dev/null)"
+    if [ -z "$current_branch" ]; then
+        caddie cli:red "Error: Unable to detect current branch"
+        return 1
+    fi
+
+    mainline="$(git symbolic-ref --quiet --short "refs/remotes/${remote}/HEAD" 2>/dev/null | sed "s#^${remote}/##")"
+    if [ -z "$mainline" ]; then
+        mainline="main"
+    fi
+
+    if [ "$current_branch" = "$mainline" ]; then
+        caddie cli:red "Error: Already on ${mainline}; run from a feature branch"
+        return 1
+    fi
+
+    current_worktree="$(git rev-parse --show-toplevel 2>/dev/null)"
+    if [ -z "$current_worktree" ]; then
+        caddie cli:red "Error: Unable to detect repository root"
+        return 1
+    fi
+
+    while IFS= read -r line; do
+        case "$line" in
+            worktree\ *)
+                worktree_path="${line#worktree }"
+                worktree_branch=""
+                ;;
+            branch\ *)
+                worktree_branch="${line#branch }"
+                if [ "$worktree_branch" = "refs/heads/${mainline}" ]; then
+                    main_worktree="$worktree_path"
+                fi
+                if [ "$worktree_branch" = "refs/heads/${current_branch}" ]; then
+                    feature_worktree="$worktree_path"
+                fi
+                ;;
+        esac
+    done < <(git worktree list --porcelain 2>/dev/null || true)
+
+    if [ -z "$main_worktree" ]; then
+        main_worktree="$current_worktree"
+    fi
+    if [ -z "$feature_worktree" ]; then
+        feature_worktree="$current_worktree"
+    fi
+
+    if [ -n "$(git -C "$feature_worktree" status --porcelain 2>/dev/null)" ]; then
+        caddie cli:red "Error: Feature branch worktree is not clean"
+        caddie cli:indent "Commit or stash changes before merging"
+        return 1
+    fi
+
+    if [ "$main_worktree" != "$current_worktree" ]; then
+        if [ -n "$(git -C "$main_worktree" status --porcelain 2>/dev/null)" ]; then
+            caddie cli:red "Error: Main worktree has uncommitted changes"
+            return 1
+        fi
+
+        caddie cli:indent "Switching to main worktree: $main_worktree"
+        if ! builtin cd "$main_worktree"; then
+            caddie cli:red "Error: Unable to switch to main worktree"
+            return 1
+        fi
+    fi
+
+    if ! git remote get-url "$remote" >/dev/null 2>&1; then
+        caddie cli:red "Error: Remote '${remote}' not found"
+        return 1
+    fi
+
+    caddie cli:title "Preparing to merge ${current_branch} into ${mainline}"
+
+    if ! git -C "$main_worktree" fetch "$remote" "$mainline"; then
+        caddie cli:red "Error: Failed to fetch ${remote}/${mainline}"
+        return 1
+    fi
+
+    local main_current=""
+    main_current="$(git -C "$main_worktree" branch --show-current 2>/dev/null)"
+    if [ "$main_current" != "$mainline" ]; then
+        if ! git -C "$main_worktree" checkout "$mainline" >/dev/null 2>&1; then
+            caddie cli:red "Error: Failed to checkout ${mainline}"
+            return 1
+        fi
+    fi
+
+    if ! git -C "$main_worktree" pull --ff-only "$remote" "$mainline"; then
+        caddie cli:red "Error: Unable to fast-forward ${mainline} from ${remote}"
+        return 1
+    fi
+
+    caddie cli:title "Checking merge for conflicts"
+    if git -C "$main_worktree" merge --no-commit --no-ff "$current_branch" >/dev/null 2>&1; then
+        git -C "$main_worktree" merge --abort >/dev/null 2>&1 || true
+        caddie cli:check "Merge check passed"
+    else
+        caddie cli:red "Error: Merge conflicts detected"
+        git -C "$main_worktree" merge --abort >/dev/null 2>&1 || true
+        return 1
+    fi
+
+    caddie cli:title "Merging ${current_branch} into ${mainline}"
+    if ! git -C "$main_worktree" merge "$current_branch"; then
+        caddie cli:red "Error: Merge failed"
+        git -C "$main_worktree" merge --abort >/dev/null 2>&1 || true
+        return 1
+    fi
+
+    caddie cli:title "Pushing ${mainline} to ${remote}"
+    if ! git -C "$main_worktree" push "$remote" "$mainline"; then
+        caddie cli:red "Error: Failed to push ${mainline} to ${remote}"
+        return 1
+    fi
+
+    caddie cli:title "Deleting merged branch"
+    if git -C "$main_worktree" show-ref --verify --quiet "refs/remotes/${remote}/${current_branch}"; then
+        if git -C "$main_worktree" push "$remote" --delete "$current_branch"; then
+            caddie cli:check "Deleted remote branch ${remote}/${current_branch}"
+        else
+            caddie cli:red "Error: Failed to delete remote branch ${remote}/${current_branch}"
+            return 1
+        fi
+    else
+        caddie cli:warning "Remote branch ${remote}/${current_branch} not found"
+    fi
+
+    if [ "$feature_worktree" != "$main_worktree" ]; then
+        if git -C "$main_worktree" worktree remove "$feature_worktree"; then
+            caddie cli:check "Removed worktree ${feature_worktree}"
+        else
+            caddie cli:red "Error: Failed to remove worktree ${feature_worktree}"
+            return 1
+        fi
+    fi
+
+    if git -C "$main_worktree" branch -d "$current_branch"; then
+        caddie cli:check "Deleted local branch ${current_branch}"
+    else
+        caddie cli:red "Error: Failed to delete local branch ${current_branch}"
+        return 1
+    fi
+
+    if git -C "$main_worktree" fetch --prune "$remote" >/dev/null 2>&1; then
+        caddie cli:check "Pruned stale remote references"
+    else
+        caddie cli:warning "Failed to prune remote references"
+    fi
+
+    return 0
+}
+
+function caddie_git_branch_merge_main() {
+    caddie cli:warning "Deprecated: use 'caddie git:main:merge:branch' instead"
+    caddie_git_main_merge_branch
+    return $?
+}
+
+
 function caddie_git_gacp() {
     local message="$*"
     if [ -z "$message" ]; then
@@ -1435,7 +1610,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:branch:merge:main git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1490,7 +1665,7 @@ function caddie_git_help() {
     caddie cli:indent "push:force [args]      Push with --force-with-lease"
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Set upstream branch (defaults: origin, current branch)"
     caddie cli:indent "merge:main [remote]    Merge mainline into current branch"
-    caddie cli:indent "branch:merge:main       Merge current branch into main and delete it"
+    caddie cli:indent "main:merge:branch       Merge current branch into main and delete it"
     caddie cli:blank
 
     caddie cli:title "Rebase:"
@@ -1544,7 +1719,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
     caddie cli:indent "caddie git:merge:main"
-    caddie cli:indent "caddie git:branch:merge:main"
+    caddie cli:indent "caddie git:main:merge:branch"
     caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
     caddie cli:indent "caddie git:worktree:list"
     caddie cli:blank

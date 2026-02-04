@@ -299,14 +299,14 @@ Interactive rebase.
 caddie git:rebase:interactive main
 ```
 
-#### `caddie git:branch:merge:main`
+#### `caddie git:main:merge:branch`
 Merge the current branch into the mainline branch, push, delete the branch locally and on origin, and prune stale references.
 
 ```bash
-caddie git:branch:merge:main
+caddie git:main:merge:branch
 ```
 
-Note: Requires a clean working tree and will delete the merged branch locally and on origin.
+Note: Requires a clean working tree and will delete the merged branch locally and on origin. When a separate main worktree exists, the command switches you into it to complete cleanup.
 
 #### `caddie git:merge:main [remote]`
 Merge the mainline branch from the remote into the current branch without checking it out (worktree-friendly).
