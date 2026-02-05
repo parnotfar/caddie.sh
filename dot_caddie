@@ -288,6 +288,30 @@ function _caddie_command_exact_exists() {
     return 1
 }
 
+function _caddie_command_suffix_match() {
+    local commands="$1"
+    local suffix="$2"
+    local cmd
+    local match=""
+    local count=0
+
+    for cmd in $commands; do
+        if [[ "$cmd" == *"$suffix" ]]; then
+            match="$cmd"
+            count=$((count + 1))
+            if [ "$count" -gt 1 ]; then
+                break
+            fi
+        fi
+    done
+
+    if [ "$count" -eq 1 ]; then
+        printf '%s' "$match"
+        return 0
+    fi
+    return 1
+}
+
 function _caddie_join_args() {
     local out=""
     local arg
@@ -315,6 +339,7 @@ function _caddie_resolve_command_from_tokens() {
     local i
     local token
     local args_str=""
+    local valid_count=0
     local -a tokens=()
     local -a args=()
 
@@ -336,9 +361,6 @@ function _caddie_resolve_command_from_tokens() {
         return 0
     fi
 
-    commands="$(_caddie_completion_commands_for_module "$module")"
-    candidate="$module"
-
     for ((i = 0; i < ${#tokens[@]}; i++)); do
         token="${tokens[$i]}"
         if [[ "$token" == -* ]]; then
@@ -347,7 +369,14 @@ function _caddie_resolve_command_from_tokens() {
         if ! [[ "$token" =~ ^[[:alnum:]_-]+$ ]]; then
             break
         fi
+        valid_count=$((valid_count + 1))
+    done
 
+    commands="$(_caddie_completion_commands_for_module "$module")"
+    candidate="$module"
+
+    for ((i = 0; i < valid_count; i++)); do
+        token="${tokens[$i]}"
         candidate="${candidate}:${token}"
 
         if [ -n "$commands" ]; then
@@ -372,6 +401,27 @@ function _caddie_resolve_command_from_tokens() {
             break
         fi
     done
+
+    if [ -z "$best" ] && [ -n "$commands" ] && [ "$valid_count" -gt 0 ]; then
+        local suffix=""
+        local match=""
+        local k
+        for ((k = valid_count; k >= 1; k--)); do
+            suffix=":${tokens[0]}"
+            if [ "$k" -gt 1 ]; then
+                local j
+                for ((j = 1; j < k; j++)); do
+                    suffix+=":${tokens[$j]}"
+                done
+            fi
+            match="$(_caddie_command_suffix_match "$commands" "$suffix")"
+            if [ -n "$match" ]; then
+                best="$match"
+                best_index=$k
+                break
+            fi
+        done
+    fi
 
     if [ -z "$best" ]; then
         best="${module}:${tokens[0]}"
@@ -480,9 +530,14 @@ function _caddie_repl_normalize() {
             if [[ "$first_token" == "${active_module}:"* ]]; then
                 printf '%s\n' "$line"
             else
-                printf '%s\n' "${active_module}:${line}"
+                local rest_line=""
+                rest_line="${line#${first_token}}"
+                first_token="${first_token//:/ }"
+                line="${first_token}${rest_line}"
+                line="${line#${line%%[![:space:]]*}}"
+                line="${line%${line##*[![:space:]]}}"
+                first_token="${line%%[[:space:]]*}"
             fi
-            return 0
         fi
 
         if [ "$line" = "$first_token" ] && _caddie_module_exists "$first_token" && [ "$allow_scopes" = "1" ]; then

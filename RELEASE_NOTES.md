@@ -8,6 +8,7 @@
 
 - **Module-Scoped Colon Commands**: `log:oneline`-style commands now resolve within module scope (e.g., in `git` scope it runs `git:log:oneline`)
 - **REPL Consistency**: Colon commands in scope now behave the same as spaced nested commands
+- **Deeper Nested Commands**: Commands like `target set` in module scope now resolve to the nearest matching nested command (e.g., `swift:xcode:target:set`)
 
 ## Version 8.5.0 - Module Info & REPL Commands
 
