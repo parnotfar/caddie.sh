@@ -301,7 +301,11 @@ function caddie_rust_fix_all() {
 function caddie_rust_fmt() {
     caddie_rust_require_project || return 1
 
-    local fmt_args=("$@")
+    if [ $# -gt 0 ]; then
+        caddie cli:red "Error: rust:fmt no longer accepts flags"
+        caddie cli:thought "Use: caddie rust:fmt:check"
+        return 1
+    fi
 
     caddie cli:title "Formatting Rust code..."
     if ! command -v rustfmt >/dev/null 2>&1; then
@@ -318,7 +322,7 @@ function caddie_rust_fmt() {
         fi
     fi
 
-    cargo fmt "${fmt_args[@]}"
+    cargo fmt
     local status=$?
     if [ $status -eq 0 ]; then
         caddie cli:check "Rust code formatted successfully"
@@ -328,9 +332,42 @@ function caddie_rust_fmt() {
     return $status
 }
 
+function caddie_rust_fmt_check() {
+    caddie_rust_require_project || return 1
+
+    caddie cli:title "Checking Rust formatting..."
+    if ! command -v rustfmt >/dev/null 2>&1; then
+        if command -v rustup >/dev/null 2>&1; then
+            caddie cli:yellow "rustfmt component not found; installing..."
+            if ! rustup component add rustfmt; then
+                caddie cli:red "Error: Failed to install rustfmt component"
+                return 1
+            fi
+        else
+            caddie cli:red "Error: rustfmt is not installed and rustup is unavailable"
+            caddie cli:thought "Install rustup from https://rustup.rs/ or add rustfmt to your PATH"
+            return 1
+        fi
+    fi
+
+    cargo fmt -- --check
+    local status=$?
+    if [ $status -eq 0 ]; then
+        caddie cli:check "Rust formatting check passed"
+    else
+        caddie cli:red "Rust formatting check failed (exit $status)"
+    fi
+    return $status
+}
+
 # Alias to provide rust:format command
 function caddie_rust_format() {
     caddie_rust_fmt "$@"
+    return $?
+}
+
+function caddie_rust_format_check() {
+    caddie_rust_fmt_check "$@"
     return $?
 }
 
@@ -908,10 +945,12 @@ function caddie_rust_help() {
     caddie cli:indent "test:watch         Run tests in watch mode"
     caddie cli:indent "test:coverage      Run tests with coverage"
     caddie cli:indent "check              Check without building"
-    caddie cli:indent "fmt [--check]      Format project using cargo fmt"
+    caddie cli:indent "fmt               Format project using cargo fmt"
+    caddie cli:indent "fmt:check         Check formatting (cargo fmt -- --check)"
     caddie cli:indent "fix                Apply compiler suggestions (cargo fix)"
     caddie cli:indent "fix:all            Apply fixes for all targets"
-    caddie cli:indent "format [--check]   Alias for fmt"
+    caddie cli:indent "format            Alias for fmt"
+    caddie cli:indent "format:check      Alias for fmt:check"
     caddie cli:indent "clean              Clean build artifacts"
     caddie cli:blank
     caddie cli:title "Git Integration:"
@@ -976,7 +1015,9 @@ export -f caddie_rust_check
 export -f caddie_rust_fix
 export -f caddie_rust_fix_all
 export -f caddie_rust_fmt
+export -f caddie_rust_fmt_check
 export -f caddie_rust_format
+export -f caddie_rust_format_check
 export -f caddie_rust_clean
 export -f caddie_rust_update
 export -f caddie_rust_add

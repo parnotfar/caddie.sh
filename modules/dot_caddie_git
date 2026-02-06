@@ -1076,58 +1076,37 @@ function caddie_git_clone() {
     return 0
 }
 
-function caddie_git_new_branch() {
+function caddie_git_new_branch_internal() {
     local branch_name="$1"
-    local description=""
-    shift || true
+    local description="$2"
 
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            -d|--description)
-                shift
-                if [ -z "$1" ]; then
-                    caddie cli:red "Error: Description value is required"
-                    caddie cli:usage "caddie git:new:branch <branch-name> [--description <text>]"
-                    return 1
-                fi
-                description="$1"
-                ;;
-            *)
-                caddie cli:red "Error: Unknown option '$1'"
-                caddie cli:usage "caddie git:new:branch <branch-name> [--description <text>]"
-                return 1
-                ;;
-        esac
-        shift
-    done
-    
     if [ -z "${branch_name}" ]; then
         caddie cli:red "Error: Please provide a branch name"
         caddie cli:usage "caddie git:new:branch <branch-name>"
         caddie cli:indent "Example: caddie git:new:branch feature/new-feature"
         return 1
     fi
-    
+
     # Check if we're in a git repository
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         caddie cli:red "Error: Not in a git repository"
         return 1
     fi
-    
+
     # Check if branch already exists locally
     if git show-ref --verify --quiet refs/heads/"${branch_name}"; then
         caddie cli:red "Error: Branch '${branch_name}' already exists locally"
         return 1
     fi
-    
+
     # Check if branch already exists on remote
     if git show-ref --verify --quiet refs/remotes/origin/"${branch_name}"; then
         caddie cli:red "Error: Branch '${branch_name}' already exists on remote"
         return 1
     fi
-    
+
     caddie cli:indent "Creating new branch: ${branch_name}"
-    
+
     # Create and switch to new branch
     if git checkout -b "${branch_name}"; then
         caddie cli:check "Created and switched to branch '${branch_name}'"
@@ -1150,8 +1129,37 @@ function caddie_git_new_branch() {
         caddie cli:red "Failed to create branch '${branch_name}'"
         return 1
     fi
-    
+
     return 0
+}
+
+function caddie_git_new_branch() {
+    local branch_name="$1"
+    shift || true
+
+    if [ $# -gt 0 ]; then
+        caddie cli:red "Error: git:new:branch no longer accepts flags"
+        caddie cli:thought "Use: caddie git:branch:new:description <branch> <description>"
+        return 1
+    fi
+
+    caddie_git_new_branch_internal "$branch_name" ""
+    return $?
+}
+
+function caddie_git_branch_new_description() {
+    local branch_name="$1"
+    shift || true
+
+    if [ -z "$branch_name" ] || [ $# -eq 0 ]; then
+        caddie cli:red "Error: Branch name and description are required"
+        caddie cli:usage "caddie git:branch:new:description <branch> <description>"
+        return 1
+    fi
+
+    local description="$*"
+    caddie_git_new_branch_internal "$branch_name" "$description"
+    return $?
 }
 
 function caddie_git_worktree_completion_candidates() {
@@ -1231,11 +1239,10 @@ function caddie_git_worktree_list() {
 function caddie_git_worktree_add() {
     local path="$1"
     local branch="$2"
-    local create_flag="${3:-}"
 
     if [ -z "$path" ] || [ -z "$branch" ]; then
         caddie cli:red "Error: Worktree path and branch are required"
-        caddie cli:usage "caddie git:worktree:add <path> <branch> [--new]"
+        caddie cli:usage "caddie git:worktree:add <path> <branch>"
         return 1
     fi
 
@@ -1244,20 +1251,16 @@ function caddie_git_worktree_add() {
         return 1
     fi
 
-    if [ "$create_flag" = "--new" ] || [ "$create_flag" = "--create" ]; then
-        caddie cli:title "Creating worktree (new branch: $branch)"
-        if git worktree add -b "$branch" "$path"; then
-            caddie cli:check "Worktree created at $path"
-            return 0
-        fi
-        caddie cli:red "Failed to create worktree"
+    if [ $# -gt 2 ]; then
+        caddie cli:red "Error: Unexpected argument '$3'"
+        caddie cli:thought "Use: caddie git:worktree:add:new <path> <branch>"
         return 1
     fi
 
     if ! git show-ref --verify --quiet "refs/heads/$branch" && ! git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
         caddie cli:red "Error: Branch '$branch' does not exist"
         caddie cli:thought "Create it first: caddie git:branch:new $branch"
-        caddie cli:thought "Or create it with: caddie git:worktree:add $path $branch --new"
+        caddie cli:thought "Or create it with: caddie git:worktree:add:new $path $branch"
         return 1
     fi
 
@@ -1267,6 +1270,36 @@ function caddie_git_worktree_add() {
         return 0
     fi
 
+    caddie cli:red "Failed to create worktree"
+    return 1
+}
+
+function caddie_git_worktree_add_new() {
+    local path="$1"
+    local branch="$2"
+
+    if [ -z "$path" ] || [ -z "$branch" ]; then
+        caddie cli:red "Error: Worktree path and branch are required"
+        caddie cli:usage "caddie git:worktree:add:new <path> <branch>"
+        return 1
+    fi
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    if git show-ref --verify --quiet "refs/heads/$branch" || git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        caddie cli:red "Error: Branch '$branch' already exists"
+        caddie cli:thought "Use: caddie git:worktree:add $path $branch"
+        return 1
+    fi
+
+    caddie cli:title "Creating worktree (new branch: $branch)"
+    if git worktree add -b "$branch" "$path"; then
+        caddie cli:check "Worktree created at $path"
+        return 0
+    fi
     caddie cli:red "Failed to create worktree"
     return 1
 }
@@ -1610,7 +1643,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1691,7 +1724,8 @@ function caddie_git_help() {
     
     caddie cli:title "Worktrees:"
     caddie cli:indent "worktree:list                  List worktrees"
-    caddie cli:indent "worktree:add <path> <branch> [--new]  Add worktree"
+    caddie cli:indent "worktree:add <path> <branch>         Add worktree"
+    caddie cli:indent "worktree:add:new <path> <branch>     Add worktree with new branch"
     caddie cli:indent "worktree:remove <path>         Remove worktree"
     caddie cli:indent "worktree:prune                 Prune stale worktrees"
     caddie cli:indent "worktree:lock <path>           Lock worktree"
@@ -1721,6 +1755,7 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:merge:main"
     caddie cli:indent "caddie git:main:merge:branch"
     caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
+    caddie cli:indent "caddie git:worktree:add:new ../repo-worktree feature/analytics"
     caddie cli:indent "caddie git:worktree:list"
     caddie cli:blank
     caddie cli:title "Setup GitHub Integration:"
@@ -1769,6 +1804,7 @@ export -f caddie_git_branch_new
 export -f caddie_git_branch_create
 export -f caddie_git_branch_new_feature
 export -f caddie_git_branch_new_bugfix
+export -f caddie_git_branch_new_description
 export -f caddie_git_commit
 export -f caddie_git_gacp
 export -f caddie_git_info
@@ -1794,6 +1830,7 @@ export -f caddie_git_remote_remove
 export -f caddie_git_clone
 export -f caddie_git_worktree_list
 export -f caddie_git_worktree_add
+export -f caddie_git_worktree_add_new
 export -f caddie_git_worktree_remove
 export -f caddie_git_worktree_prune
 export -f caddie_git_worktree_lock

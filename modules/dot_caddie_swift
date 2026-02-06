@@ -22,24 +22,31 @@ function caddie_swift_require_package() {
     return 0
 }
 
-function caddie_swift_init() {
+function caddie_swift_init_internal() {
     caddie_swift_require_toolchain || return 1
     local name="$1"
-    shift || true
+    local type="$2"
+
     if [ -z "$name" ]; then
         caddie cli:red "Error: Please provide a package name"
-        caddie cli:usage "caddie swift:init <name> [--type executable|library]"
+        caddie cli:usage "caddie swift:init <name>"
+        caddie cli:thought "Use: caddie swift:init:library <name>"
+        return 1
+    fi
+    if [ -z "$type" ]; then
+        type="executable"
+    fi
+    if [ "$type" != "executable" ] && [ "$type" != "library" ]; then
+        caddie cli:red "Error: Invalid package type '$type'"
+        caddie cli:thought "Use: caddie swift:init:executable <name>"
+        caddie cli:thought "Use: caddie swift:init:library <name>"
         return 1
     fi
     if [ -d "$name" ]; then
         caddie cli:red "Error: Directory '$name' already exists"
         return 1
     fi
-    local type="executable"
-    if [ "$1" = "--type" ] && [ -n "$2" ]; then
-        type="$2"
-        shift 2 || true
-    fi
+
     caddie cli:title "Creating Swift package '$name' (type: $type)..."
     if ! mkdir "$name"; then
         caddie cli:red "Failed to create directory '$name'"
@@ -62,6 +69,43 @@ GIT
     caddie cli:check "Swift package '$name' created"
     caddie cli:indent "Location: $(pwd)/$name"
     caddie cli:indent "Build: cd $name && caddie swift:build"
+}
+
+function caddie_swift_init() {
+    local name="$1"
+    shift || true
+    if [ $# -gt 0 ]; then
+        caddie cli:red "Error: swift:init no longer accepts flags"
+        caddie cli:thought "Use: caddie swift:init:library <name>"
+        caddie cli:thought "Use: caddie swift:init:executable <name>"
+        return 1
+    fi
+    caddie_swift_init_internal "$name" "executable"
+    return $?
+}
+
+function caddie_swift_init_executable() {
+    local name="$1"
+    shift || true
+    if [ $# -gt 0 ]; then
+        caddie cli:red "Error: Unexpected arguments for swift:init:executable"
+        caddie cli:usage "caddie swift:init:executable <name>"
+        return 1
+    fi
+    caddie_swift_init_internal "$name" "executable"
+    return $?
+}
+
+function caddie_swift_init_library() {
+    local name="$1"
+    shift || true
+    if [ $# -gt 0 ]; then
+        caddie cli:red "Error: Unexpected arguments for swift:init:library"
+        caddie cli:usage "caddie swift:init:library <name>"
+        return 1
+    fi
+    caddie_swift_init_internal "$name" "library"
+    return $?
 }
 
 function caddie_swift_build() {
@@ -153,17 +197,24 @@ function caddie_swift_format() {
         caddie cli:thought "Install via Homebrew: brew install swift-format"
         return 1
     fi
-    local mode="format"
-    if [ "$1" = "--lint" ] || [ "$1" = "--check" ]; then
-        mode="lint"
+    if [ $# -gt 0 ]; then
+        caddie cli:red "Error: swift:format no longer accepts flags"
+        caddie cli:thought "Use: caddie swift:format:lint"
+        return 1
     fi
-    if [ "$mode" = "lint" ]; then
-        caddie cli:title "Checking Swift formatting..."
-        swift-format lint --recursive Sources Tests
-    else
-        caddie cli:title "Formatting Swift sources..."
-        swift-format format --in-place --recursive Sources Tests
+    caddie cli:title "Formatting Swift sources..."
+    swift-format format --in-place --recursive Sources Tests
+}
+
+function caddie_swift_format_lint() {
+    caddie_swift_require_package || return 1
+    if ! command -v swift-format >/dev/null 2>&1; then
+        caddie cli:red "swift-format not installed"
+        caddie cli:thought "Install via Homebrew: brew install swift-format"
+        return 1
     fi
+    caddie cli:title "Checking Swift formatting..."
+    swift-format lint --recursive Sources Tests
 }
 
 function caddie_swift_lint() {
@@ -1178,63 +1229,23 @@ function caddie_swift_xcode_clean() {
     return 1
 }
 
-function caddie_swift_xcode_play() {
+function caddie_swift_xcode_play_run() {
+    local logs_enabled="$1"
+    local logs_all_enabled="$2"
+    local crash_enabled="$3"
+    local crash_all_enabled="$4"
+    local trace_template="$5"
+    shift 5 || true
+
     caddie_swift_require_xcode_project || return 1
     local first_arg=""
     local scheme=""
     local target=""
-    local logs_enabled="false"
-    local logs_all_enabled="false"
-    local trace_template=""
-    local crash_enabled="false"
-    local crash_all_enabled="false"
     local -a play_args=()
 
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            --logs)
-                logs_enabled="true"
-                ;;
-            --logs:all|--logs-all)
-                logs_all_enabled="true"
-                ;;
-            --crash)
-                crash_enabled="true"
-                ;;
-            --crash:all|--crash-all)
-                crash_all_enabled="true"
-                ;;
-            --trace)
-                shift
-                if [ -z "$1" ]; then
-                    caddie cli:red "Error: --trace requires a template name"
-                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]"
-                    return 1
-                fi
-                trace_template="$1"
-                ;;
-            --trace=*)
-                trace_template="${1#--trace=}"
-                if [ -z "$trace_template" ]; then
-                    caddie cli:red "Error: --trace requires a template name"
-                    caddie cli:usage "caddie swift:xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]"
-                    return 1
-                fi
-                ;;
-            --)
-                shift
-                while [ "$#" -gt 0 ]; do
-                    play_args+=("$1")
-                    shift
-                done
-                break
-                ;;
-            *)
-                play_args+=("$1")
-                ;;
-        esac
-        shift
-    done
+    if [ $# -gt 0 ]; then
+        play_args=("$@")
+    fi
 
     if [ "${#play_args[@]}" -gt 0 ]; then
         first_arg="${play_args[0]}"
@@ -1369,22 +1380,55 @@ function caddie_swift_xcode_play() {
     return 0
 }
 
+function caddie_swift_xcode_play() {
+    local arg=""
+    for arg in "$@"; do
+        if [[ "$arg" == --* ]]; then
+            caddie cli:red "Error: swift:xcode:play no longer accepts flags"
+            caddie cli:thought "Use: caddie swift:xcode:play:logs"
+            caddie cli:thought "Use: caddie swift:xcode:play:logs:all"
+            caddie cli:thought "Use: caddie swift:xcode:play:crash"
+            caddie cli:thought "Use: caddie swift:xcode:play:crash:all"
+            caddie cli:thought "Use: caddie swift:xcode:play:trace <template>"
+            caddie cli:thought "Use: caddie swift:xcode:play:full [template]"
+            return 1
+        fi
+    done
+
+    caddie_swift_xcode_play_run "false" "false" "false" "false" "" "$@"
+    return $?
+}
+
 function caddie_swift_xcode_play_logs() {
-    caddie_swift_xcode_play --logs "$@"
+    caddie_swift_xcode_play_run "true" "false" "false" "false" "" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_play_logs_all() {
+    caddie_swift_xcode_play_run "false" "true" "false" "false" "" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_play_crash() {
+    caddie_swift_xcode_play_run "false" "false" "true" "false" "" "$@"
+    return $?
+}
+
+function caddie_swift_xcode_play_crash_all() {
+    caddie_swift_xcode_play_run "false" "false" "false" "true" "" "$@"
     return $?
 }
 
 function caddie_swift_xcode_play_trace() {
     local template=""
 
-    if [ "$1" = "--template" ]; then
-        shift
-        template="$1"
-        shift || true
-    elif [[ "$1" == --template=* ]]; then
-        template="${1#--template=}"
-        shift || true
-    elif [ -n "$1" ] && caddie_swift_xcode_trace_template_exists "$1"; then
+    if [ -n "$1" ] && [[ "$1" == --* ]]; then
+        caddie cli:red "Error: swift:xcode:play:trace no longer accepts flags"
+        caddie cli:usage "caddie swift:xcode:play:trace [template] [scheme] [target]"
+        return 1
+    fi
+
+    if [ -n "$1" ] && caddie_swift_xcode_trace_template_exists "$1"; then
         template="$1"
         shift || true
     fi
@@ -1393,21 +1437,20 @@ function caddie_swift_xcode_play_trace() {
         template="$(caddie_swift_xcode_trace_template_select)" || return 1
     fi
 
-    caddie_swift_xcode_play --trace "$template" "$@"
+    caddie_swift_xcode_play_run "false" "false" "false" "false" "$template" "$@"
     return $?
 }
 
 function caddie_swift_xcode_play_full() {
     local template=""
 
-    if [ "$1" = "--template" ]; then
-        shift
-        template="$1"
-        shift || true
-    elif [[ "$1" == --template=* ]]; then
-        template="${1#--template=}"
-        shift || true
-    elif [ -n "$1" ] && caddie_swift_xcode_trace_template_exists "$1"; then
+    if [ -n "$1" ] && [[ "$1" == --* ]]; then
+        caddie cli:red "Error: swift:xcode:play:full no longer accepts flags"
+        caddie cli:usage "caddie swift:xcode:play:full [template] [scheme] [target]"
+        return 1
+    fi
+
+    if [ -n "$1" ] && caddie_swift_xcode_trace_template_exists "$1"; then
         template="$1"
         shift || true
     fi
@@ -1416,8 +1459,126 @@ function caddie_swift_xcode_play_full() {
         template="$(caddie_swift_xcode_trace_template_select)" || return 1
     fi
 
-    caddie_swift_xcode_play --logs --crash --trace "$template" "$@"
+    caddie_swift_xcode_play_run "true" "false" "true" "false" "$template" "$@"
     return $?
+}
+
+function caddie_swift_xcode_targets() {
+    caddie_swift_require_xcode_project || return 1
+
+    if ! command -v xcrun >/dev/null 2>&1; then
+        caddie cli:red "Error: xcrun not available"
+        caddie cli:thought "Install Xcode or the command line tools via xcode-select --install"
+        return 1
+    fi
+
+    local scene="${CADDIE_SWIFT_XCODE_SCENE:-}"
+    local target="${CADDIE_SWIFT_XCODE_TARGET:-}"
+
+    caddie cli:title "Xcode Targets"
+    if [ -n "$scene" ]; then
+        caddie cli:indent "scene: $scene"
+    else
+        caddie cli:indent "scene: not set"
+    fi
+    if [ -n "$target" ]; then
+        caddie cli:indent "target: $target"
+    else
+        caddie cli:indent "target: not set"
+    fi
+
+    local sim_output=""
+    sim_output="$(xcrun simctl list devices available 2>/dev/null || true)"
+    if [ -n "$sim_output" ]; then
+        caddie cli:blank
+        caddie cli:title "Simulators"
+        while IFS= read -r line; do
+            local trimmed="${line#"${line%%[![:space:]]*}"}"
+            [ -n "$trimmed" ] || continue
+            if [[ "$trimmed" == "=="* ]]; then
+                continue
+            fi
+            if [[ "$trimmed" == --* ]]; then
+                trimmed="${trimmed#-- }"
+                trimmed="${trimmed% --}"
+                caddie cli:indent "$trimmed"
+            else
+                caddie cli:indent "  $trimmed"
+            fi
+        done <<< "$sim_output"
+    else
+        caddie cli:yellow "No simulators found (simctl unavailable)"
+    fi
+
+    local device_output=""
+    device_output="$(xcrun xctrace list devices 2>/dev/null || true)"
+    if [ -n "$device_output" ]; then
+        local devices=""
+        devices="$(printf '%s\n' "$device_output" | awk '
+            BEGIN { in_devices = 0 }
+            /^== Devices ==/ { in_devices = 1; next }
+            /^==/ { if (in_devices) exit }
+            { if (in_devices && $0 !~ /^[[:space:]]*$/) print }
+        ')"
+        caddie cli:blank
+        if [ -n "$devices" ]; then
+            caddie cli:title "Devices"
+            while IFS= read -r line; do
+                [ -n "$line" ] || continue
+                caddie cli:indent "$line"
+            done <<< "$devices"
+        else
+            caddie cli:yellow "No physical devices detected"
+        fi
+    else
+        caddie cli:yellow "xctrace not available; skipping devices list"
+    fi
+
+    caddie cli:blank
+    caddie cli:thought "Install additional runtimes in Xcode → Settings → Platforms"
+    return 0
+}
+
+function caddie_swift_xcode_play_watch() {
+    caddie_swift_require_xcode_project || return 1
+    caddie_swift_xcode_scene_require "" || return 1
+
+    caddie cli:title "Watching for Swift changes"
+    caddie cli:indent "Command: caddie swift:xcode:play"
+    caddie cli:indent "Filter: *.swift"
+    caddie cli:thought "Press Ctrl-C to stop"
+
+    if command -v watchexec >/dev/null 2>&1; then
+        caddie cli:indent "Watcher: watchexec"
+        watchexec --no-initial --exts swift -- caddie swift:xcode:play
+        return $?
+    fi
+
+    if command -v fswatch >/dev/null 2>&1; then
+        caddie cli:indent "Watcher: fswatch"
+        fswatch -o -l 1 -e ".*" -i ".*\\.swift$" . | while read -r _; do
+            caddie cli:title "Swift change detected"
+            caddie_swift_xcode_play
+        done
+        return 0
+    fi
+
+    if command -v entr >/dev/null 2>&1; then
+        caddie cli:indent "Watcher: entr"
+        while true; do
+            find . -type f -name "*.swift" -print | entr -d caddie swift:xcode:play
+            local status=$?
+            if [ $status -ne 0 ]; then
+                caddie cli:red "entr exited ($status)"
+                return $status
+            fi
+        done
+        return 0
+    fi
+
+    caddie cli:red "Error: No file watcher found"
+    caddie cli:thought "Install watchexec (recommended), fswatch, or entr"
+    return 1
 }
 
 function caddie_swift_xcode_test_run() {
@@ -1853,7 +2014,9 @@ function caddie_swift_help() {
     caddie cli:blank
     caddie cli:title "Swift Package Manager (Package.swift)"
     caddie cli:indent "info                    Show Swift toolchain info"
-    caddie cli:indent "init <name> [--type ...]   Create new Swift package"
+    caddie cli:indent "init <name>             Create new Swift package (executable)"
+    caddie cli:indent "init:executable <name>  Create executable Swift package"
+    caddie cli:indent "init:library <name>     Create library Swift package"
     caddie cli:indent "build [args]              Run swift build"
     caddie cli:indent "run [args]                Run default executable"
     caddie cli:indent "run:tool <target> [--]    Run named executable"
@@ -1872,10 +2035,15 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:resolve            Resolve package dependencies"
     caddie cli:indent "xcode:build [scheme] [simulator|device] [sim_name]  Build Xcode project (errors only)"
     caddie cli:indent "xcode:build:log [scheme] [simulator|device] [sim_name]  Build with full logs"
-    caddie cli:indent "xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]"
+    caddie cli:indent "xcode:play [scheme] [target]  Build/run without extra logging"
     caddie cli:indent "xcode:play:logs [scheme] [target]  Build/run with logs tab"
+    caddie cli:indent "xcode:play:logs:all [scheme] [target]  Build/run with full logs"
+    caddie cli:indent "xcode:play:crash [scheme] [target]  Build/run with crash stream"
+    caddie cli:indent "xcode:play:crash:all [scheme] [target]  Build/run with full crash stream"
     caddie cli:indent "xcode:play:trace [template] [scheme] [target]  Build/run with trace tab"
     caddie cli:indent "xcode:play:full [template] [scheme] [target]  Logs + trace + crash stream"
+    caddie cli:indent "xcode:play:watch          Watch .swift changes and run xcode:play"
+    caddie cli:indent "xcode:targets             List available simulator/device targets"
     caddie cli:indent "xcode:trace:templates     List available trace templates"
     caddie cli:indent "xcode:crash:stream [app]   Stream crash logs in a Terminal tab"
     caddie cli:indent "xcode:crash:stream:all     Stream all device/simulator logs"
@@ -1897,7 +2065,8 @@ function caddie_swift_help() {
     caddie cli:indent "xcode:clean [scheme]     Clean Xcode build"
     caddie cli:blank
     caddie cli:title "Quality"
-    caddie cli:indent "format [--lint]          Run swift-format"
+    caddie cli:indent "format                  Run swift-format"
+    caddie cli:indent "format:lint             Run swift-format lint"
     caddie cli:indent "lint [args]              Run SwiftLint"
     caddie cli:blank
     caddie cli:title "Git"
@@ -1913,6 +2082,8 @@ function caddie_swift_description() {
 export -f caddie_swift_require_toolchain
 export -f caddie_swift_require_package
 export -f caddie_swift_init
+export -f caddie_swift_init_executable
+export -f caddie_swift_init_library
 export -f caddie_swift_build
 export -f caddie_swift_test
 export -f caddie_swift_test_filter
@@ -1923,6 +2094,7 @@ export -f caddie_swift_package_update
 export -f caddie_swift_package_clean
 export -f caddie_swift_package_describe
 export -f caddie_swift_format
+export -f caddie_swift_format_lint
 export -f caddie_swift_lint
 export -f caddie_swift_gitignore
 export -f caddie_swift_require_xcode_project
@@ -1950,8 +2122,13 @@ export -f caddie_swift_xcode_trace_template_candidates
 export -f caddie_swift_xcode_trace_templates
 export -f caddie_swift_xcode_play
 export -f caddie_swift_xcode_play_logs
+export -f caddie_swift_xcode_play_logs_all
+export -f caddie_swift_xcode_play_crash
+export -f caddie_swift_xcode_play_crash_all
 export -f caddie_swift_xcode_play_trace
 export -f caddie_swift_xcode_play_full
+export -f caddie_swift_xcode_targets
+export -f caddie_swift_xcode_play_watch
 export -f caddie_swift_xcode_test_run
 export -f caddie_swift_xcode_test
 export -f caddie_swift_xcode_test_unit

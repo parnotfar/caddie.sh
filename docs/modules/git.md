@@ -370,12 +370,18 @@ List all worktrees.
 caddie git:worktree:list
 ```
 
-#### `caddie git:worktree:add <path> <branch> [--new]`
-Add a worktree at the given path for an existing branch. Use `--new` to create a new branch.
+#### `caddie git:worktree:add <path> <branch>`
+Add a worktree at the given path for an existing branch.
 
 ```bash
 caddie git:worktree:add ../vcaddie-swift-analytics feature/analytics
-caddie git:worktree:add ../vcaddie-swift-analytics feature/analytics --new
+```
+
+#### `caddie git:worktree:add:new <path> <branch>`
+Add a worktree and create a new branch in one step.
+
+```bash
+caddie git:worktree:add:new ../vcaddie-swift-analytics feature/analytics
 ```
 
 #### `caddie git:worktree:remove <path>`

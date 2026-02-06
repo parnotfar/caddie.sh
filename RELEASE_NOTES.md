@@ -1,5 +1,61 @@
 # Caddie.sh Release Notes
 
+## Version 8.7.0 - Structured Command Cleanup
+
+**Release Date:** Feb 6, 2026
+
+### 🚀 Major New Features
+
+#### **Structured Swift Init & Format**
+- **Init Variants**: `swift:init:executable` and `swift:init:library` replace `--type`
+- **Format Lint**: `swift:format:lint` replaces `--lint`
+
+#### **Structured Xcode Play Modes**
+- **Log Commands**: `swift:xcode:play:logs` and `swift:xcode:play:logs:all`
+- **Crash Commands**: `swift:xcode:play:crash` and `swift:xcode:play:crash:all`
+- **Flag-Free Play**: `swift:xcode:play` now uses structured subcommands instead of flags
+
+#### **Rust Format Checks**
+- **Check Commands**: `rust:fmt:check` and `rust:format:check` replace `--check`
+
+#### **Branch Description Command**
+- **Caddie Style**: `git:branch:new:description` replaces the `--description` flag on `git:new:branch`
+
+### 📝 Usage Examples
+
+```bash
+caddie swift:init:library short-game
+caddie swift:format:lint
+caddie swift:xcode:play:logs:all vCaddie "iPhone 16 Pro"
+caddie rust:fmt:check
+caddie git:branch:new:description feature/new-feature Add search flow
+```
+
+## Version 8.6.0 - Swift Xcode Play Watch
+
+**Release Date:** Feb 5, 2026
+
+### 🚀 Major New Features
+
+#### **Swift Xcode Play Watch**
+- **File Watcher**: `swift:xcode:play:watch` watches for `.swift` changes and runs `swift:xcode:play`
+- **Scene/Target Defaults**: Uses the configured Xcode scene and target without extra flags
+- **Watcher Support**: Works with `watchexec`, `fswatch`, or `entr`
+
+#### **Swift Xcode Targets**
+- **Target Listing**: `swift:xcode:targets` lists available simulator and device targets (including watchOS runtimes if installed)
+
+#### **Git Worktree Add New**
+- **Caddie-Style Command**: `git:worktree:add:new` replaces the `--new` flag for creating branches with worktrees
+- **Clearer Flow**: `git:worktree:add` now expects an existing branch, with guidance to use `add:new` when needed
+
+### 📝 Usage Examples
+
+```bash
+caddie swift:xcode:play:watch
+caddie git:worktree:add:new ../repo-worktree feature/analytics
+```
+
 ## Version 8.5.1 - REPL Command Resolution Fix
 
 **Release Date:** Feb 4, 2026

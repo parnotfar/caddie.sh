@@ -15,13 +15,29 @@ The Swift module mirrors the Rust workflow but for Swift Package Manager project
 
 Show Swift toolchain summary (Swift/Xcode versions, scene, target).
 
-### `caddie swift:init <name> [--type executable|library]`
+### `caddie swift:init <name>`
 
-Scaffolds a Swift package and writes a `.gitignore`. Example:
+Scaffolds an executable Swift package and writes a `.gitignore`. Example:
 
 ```bash
-caddie swift:init short-game --type library
+caddie swift:init short-game
 cd short-game && caddie swift:build
+```
+
+### `caddie swift:init:executable <name>`
+
+Explicitly create an executable Swift package.
+
+```bash
+caddie swift:init:executable short-game
+```
+
+### `caddie swift:init:library <name>`
+
+Create a library Swift package.
+
+```bash
+caddie swift:init:library short-game
 ```
 
 ### `caddie swift:build [args]`
@@ -40,9 +56,17 @@ Wraps `swift test`, optionally filtering to `TestCase/testMethod`.
 
 Direct wrappers around `swift package` subcommands for dependency management.
 
-### `caddie swift:format [--lint]`
+### `caddie swift:format`
 
-Invokes `swift-format` (if installed). Default formats Sources/Tests in place; `--lint` runs read-only checks.
+Invokes `swift-format` (if installed). Formats Sources/Tests in place.
+
+### `caddie swift:format:lint`
+
+Runs read-only formatting checks with `swift-format`.
+
+```bash
+caddie swift:format:lint
+```
 
 ### `caddie swift:lint`
 
@@ -136,7 +160,7 @@ caddie swift:xcode:scene:unset
 When a scene and target are set, the prompt shows `[swift: <scene>-<target>]`.
 Scene is required for `xcode:build`, `xcode:build:log`, `xcode:play`, `xcode:test`, and `xcode:clean` unless you pass a scheme explicitly.
 
-### `caddie swift:xcode:play [--logs] [--logs:all] [--crash] [--crash:all] [--trace <template>] [scheme] [target]`
+### `caddie swift:xcode:play [scheme] [target]`
 
 Builds the Xcode project and launches the app on the specified target.
 
@@ -150,16 +174,16 @@ The command installs and launches the app on the simulator via `simctl`. For dev
 caddie swift:xcode:play
 caddie swift:xcode:play vCaddie "iPhone 16 Pro"
 caddie swift:xcode:play vCaddie Icaruus
-caddie swift:xcode:play --logs vCaddie "iPhone 16 Pro"
-caddie swift:xcode:play --logs:all --trace "Points of Interest" vCaddie "iPhone 16 Pro"
+caddie swift:xcode:play:logs vCaddie "iPhone 16 Pro"
+caddie swift:xcode:play:trace "Points of Interest" vCaddie "iPhone 16 Pro"
 ```
 
 **Logging & Tracing:**
-- `--logs` opens a Terminal window with a dedicated tab streaming your app logs.
-- `--logs:all` streams the full device/simulator log stream (very noisy).
-- `--crash` opens a crash log stream tab.
-- `--crash:all` opens an unfiltered crash log stream tab.
-- `--trace <template>` starts an `xcrun xctrace` session in a separate tab (writes a `.trace` file).
+- `swift:xcode:play:logs` opens a Terminal window with a dedicated tab streaming your app logs.
+- `swift:xcode:play:logs:all` streams the full device/simulator log stream (very noisy).
+- `swift:xcode:play:crash` opens a crash log stream tab.
+- `swift:xcode:play:crash:all` opens an unfiltered crash log stream tab.
+- `swift:xcode:play:trace <template>` starts an `xcrun xctrace` session in a separate tab (writes a `.trace` file).
 
 ### `caddie swift:xcode:play:logs [scheme] [target]`
 
@@ -167,6 +191,30 @@ Run with log streaming tabs using caddie defaults.
 
 ```bash
 caddie swift:xcode:play:logs vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:play:logs:all [scheme] [target]`
+
+Run with the full device/simulator log stream.
+
+```bash
+caddie swift:xcode:play:logs:all vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:play:crash [scheme] [target]`
+
+Run with a crash log stream tab.
+
+```bash
+caddie swift:xcode:play:crash vCaddie "iPhone 16 Pro"
+```
+
+### `caddie swift:xcode:play:crash:all [scheme] [target]`
+
+Run with an unfiltered crash log stream tab.
+
+```bash
+caddie swift:xcode:play:crash:all vCaddie "iPhone 16 Pro"
 ```
 
 ### `caddie swift:xcode:play:trace [template] [scheme] [target]`
@@ -186,6 +234,29 @@ Run with logs + trace + crash stream tabs.
 caddie swift:xcode:play:full
 caddie swift:xcode:play:full "Points of Interest" vCaddie "iPhone 16 Pro"
 ```
+
+### `caddie swift:xcode:play:watch`
+
+Watch for `.swift` file changes and re-run `xcode:play` using the currently set scene/target.
+
+```bash
+caddie swift:xcode:play:watch
+```
+
+**Notes:**
+- Requires a file watcher: `watchexec` (preferred), `fswatch`, or `entr`.
+- Runs only on changes (no initial build).
+
+### `caddie swift:xcode:targets`
+
+Lists available simulator/device targets (including watchOS runtimes if installed).
+
+```bash
+caddie swift:xcode:targets
+```
+
+**Notes:**
+- Install additional runtimes in Xcode → Settings → Platforms.
 
 ### `caddie swift:xcode:trace:templates`
 
