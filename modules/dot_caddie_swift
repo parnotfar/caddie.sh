@@ -1241,11 +1241,7 @@ function caddie_swift_xcode_play_run() {
     local first_arg=""
     local scheme=""
     local target=""
-    local -a play_args=()
-
-    if [ $# -gt 0 ]; then
-        play_args=("$@")
-    fi
+    local -a play_args=("$@")
 
     if [ "${#play_args[@]}" -gt 0 ]; then
         first_arg="${play_args[0]}"
