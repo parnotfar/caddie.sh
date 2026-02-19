@@ -598,6 +598,160 @@ EOF
     return 0
 }
 
+# Cursor plugin (Marketplace) scaffolding
+function caddie_cursor_plugin_new() {
+    local plugin_name="$1"
+    local target_dir="${2:-.}"
+
+    if [ -z "$plugin_name" ]; then
+        caddie cli:red "Error: Please provide a plugin name (lowercase kebab-case)"
+        caddie cli:usage "caddie cursor:plugin:new <plugin-name> [target-dir]"
+        caddie cli:thought "Example: caddie cursor:plugin:new my-cursor-plugin ."
+        return 1
+    fi
+
+    if [ ! -d "$target_dir" ]; then
+        caddie cli:red "Error: Target directory '$target_dir' does not exist"
+        return 1
+    fi
+
+    local root
+    root="$(cd "$target_dir" && pwd)"
+    local plugins_dir="$root/plugins/$plugin_name"
+    local cursor_plugin_dir="$root/.cursor-plugin"
+
+    caddie cli:title "Creating Cursor plugin scaffold: $plugin_name"
+    caddie cli:blank
+
+    mkdir -p "$plugins_dir/.cursor-plugin"
+    mkdir -p "$plugins_dir/rules"
+    mkdir -p "$plugins_dir/skills/example-skill"
+    mkdir -p "$plugins_dir/assets"
+    mkdir -p "$root/scripts"
+
+    # Marketplace manifest (single plugin)
+    cat > "$cursor_plugin_dir/marketplace.json" << EOF
+{
+  "name": "$plugin_name-marketplace",
+  "owner": {
+    "name": "Your Org",
+    "email": "plugins@example.com"
+  },
+  "metadata": {
+    "description": "Cursor Marketplace plugin: $plugin_name",
+    "version": "0.1.0",
+    "pluginRoot": "plugins"
+  },
+  "plugins": [
+    {
+      "name": "$plugin_name",
+      "source": "plugins/$plugin_name",
+      "description": "Cursor plugin: $plugin_name"
+    }
+  ]
+}
+EOF
+
+    # Plugin manifest
+    local display_name
+    display_name="$(printf '%s' "$plugin_name" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')"
+    cat > "$plugins_dir/.cursor-plugin/plugin.json" << EOF
+{
+  "name": "$plugin_name",
+  "displayName": "$display_name",
+  "version": "0.1.0",
+  "description": "Cursor plugin: $plugin_name. Add rules, skills, and optional agents/commands.",
+  "author": {
+    "name": "Your Org",
+    "email": "plugins@example.com"
+  },
+  "license": "MIT",
+  "keywords": ["cursor", "plugin", "rules", "skills"],
+  "logo": "assets/logo.svg",
+  "rules": "rules",
+  "skills": "skills"
+}
+EOF
+
+    # Sample rule
+    cat > "$plugins_dir/rules/example-rule.mdc" << 'RULEEOF'
+---
+description: Example rule — replace with your own. When to apply this rule.
+alwaysApply: false
+---
+
+# Example rule
+
+- Replace this file with your plugin rules.
+- Use YAML frontmatter with at least `description`.
+- Add more `.mdc` or `.md` files in `rules/` as needed.
+RULEEOF
+
+    # Sample skill
+    mkdir -p "$plugins_dir/skills/example-skill"
+    cat > "$plugins_dir/skills/example-skill/SKILL.md" << 'SKILLEOF'
+---
+name: example-skill
+description: Example skill — replace with your own. Use when the user needs X.
+---
+
+# Example skill
+
+- Replace this file with your plugin skills.
+- Each skill lives in `skills/<name>/SKILL.md` with frontmatter `name` and `description`.
+- Add more skill folders under `skills/` as needed.
+SKILLEOF
+
+    # Minimal logo SVG
+    cat > "$plugins_dir/assets/logo.svg" << 'SVGEOF'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" stroke-width="3"/>
+</svg>
+SVGEOF
+
+    caddie cli:check "Plugin scaffold created under $root"
+    caddie cli:indent "Marketplace: $cursor_plugin_dir/marketplace.json"
+    caddie cli:indent "Plugin: $plugins_dir/"
+    caddie cli:blank
+    caddie cli:thought "Next: add scripts/validate-template.mjs from https://github.com/cursor/plugin-template (scripts/validate-template.mjs), then run: caddie cursor:plugin:validate"
+    return 0
+}
+
+function caddie_cursor_plugin_validate() {
+    local dir="${1:-.}"
+
+    if [ ! -d "$dir" ]; then
+        caddie cli:red "Error: Directory '$dir' does not exist"
+        return 1
+    fi
+
+    local script_path="$dir/scripts/validate-template.mjs"
+    if [ ! -f "$script_path" ]; then
+        caddie cli:red "Error: Validator not found: $script_path"
+        caddie cli:thought "Copy scripts/validate-template.mjs from https://github.com/cursor/plugin-template into scripts/"
+        caddie cli:thought "Or create a plugin with: caddie cursor:plugin:new <name> [dir]"
+        return 1
+    fi
+
+    caddie cli:title "Validating Cursor plugin (from $dir)"
+    caddie cli:blank
+
+    if ! command -v node >/dev/null 2>&1; then
+        caddie cli:red "Error: Node.js not found. Required to run the Cursor plugin validator."
+        caddie cli:thought "Install Node with: caddie js:setup"
+        return 1
+    fi
+
+    (cd "$dir" && node scripts/validate-template.mjs)
+    local ret=$?
+    if [ $ret -eq 0 ]; then
+        caddie cli:check "Validation passed"
+    else
+        caddie cli:x "Validation failed (exit code $ret)"
+    fi
+    return $ret
+}
+
 # Extension management functions
 function caddie_cursor_ext_install() {
     local extension_id="$1"
@@ -866,15 +1020,27 @@ function caddie_cursor_help() {
     caddie cli:indent "config:sync        Sync Cursor settings"
     caddie cli:indent "config:optimize    Optimize Cursor for performance"
     caddie cli:blank
+    caddie cli:title "Cursor Plugin (Marketplace):"
+    caddie cli:indent "plugin:new <name> [dir]  Scaffold a new Cursor plugin"
+    caddie cli:indent "plugin:validate [dir]    Run Cursor plugin validator (requires Node)"
+    caddie cli:blank
     caddie cli:title "Examples:"
     caddie cli:indent "caddie cursor:detect"
     caddie cli:indent "caddie cursor:open ~/projects/myapp"
     caddie cli:indent "caddie cursor:ai:explain src/main.py"
     caddie cli:indent "caddie cursor:ext:install ms-python.python"
     caddie cli:indent "caddie cursor:config:backup"
+    caddie cli:indent "caddie cursor:plugin:new my-plugin ."
+    caddie cli:indent "caddie cursor:plugin:validate"
     caddie cli:blank
     return 0
 }
+
+function caddie_cursor_commands() {
+    printf '%s\n' "cursor:info cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:plugin:new cursor:plugin:validate cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize cursor:help"
+    return 0
+}
+
 # Export Cursor functions
 export -f caddie_cursor_description
 export -f caddie_cursor_info
@@ -900,6 +1066,9 @@ export -f caddie_cursor_config_backup
 export -f caddie_cursor_config_restore
 export -f caddie_cursor_config_sync
 export -f caddie_cursor_config_optimize
+export -f caddie_cursor_plugin_new
+export -f caddie_cursor_plugin_validate
+export -f caddie_cursor_commands
 export -f caddie_cursor_help
 export -f caddie_cursor_description
 export -f caddie_cursor_ext_recommend

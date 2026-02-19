@@ -52,6 +52,11 @@ Use this module to:
 - `caddie cursor:config:sync` - Sync settings
 - `caddie cursor:config:optimize` - Apply performance-focused settings
 
+### Cursor Plugin (Marketplace)
+
+- `caddie cursor:plugin:new <name> [target-dir]` - Scaffold a new Cursor Marketplace plugin (marketplace.json, plugin folder with rules/skills/assets, sample rule and skill). Default target-dir is current directory. Add `scripts/validate-template.mjs` from [cursor/plugin-template](https://github.com/cursor/plugin-template) to validate.
+- `caddie cursor:plugin:validate [dir]` - Run the Cursor plugin validator in the given directory (default current). Requires Node.js; use `caddie js:setup` if needed.
+
 ## Examples
 
 ```bash
@@ -60,4 +65,6 @@ caddie cursor:open ~/projects/myapp
 caddie cursor:ai:explain src/main.py
 caddie cursor:ext:install ms-python.python
 caddie cursor:config:backup
+caddie cursor:plugin:new my-plugin .
+caddie cursor:plugin:validate
 ```

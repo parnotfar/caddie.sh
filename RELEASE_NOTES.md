@@ -1,5 +1,29 @@
 # Caddie.sh Release Notes
 
+## Version 9.0.0 - Cursor Plugin Support
+
+**Release Date:** February 19, 2026
+
+### 🚀 Major New Features
+
+#### **Cursor Marketplace Plugin Scaffolding**
+- **Plugin Scaffold**: `cursor:plugin:new <name> [target-dir]` creates a Cursor Marketplace plugin layout (marketplace.json, plugin folder with rules, skills, assets, sample rule and skill, logo)
+- **Plugin Validate**: `cursor:plugin:validate [dir]` runs the official Cursor template validator; suggests `caddie js:setup` if Node.js is not installed
+- **Tab Completion**: Cursor module now exposes `caddie_cursor_commands()` for completions (includes `cursor:plugin:new`, `cursor:plugin:validate`)
+
+#### **Documentation**
+- **Cursor Module Docs**: New "Cursor Plugin (Marketplace)" section in `docs/modules/cursor.md` with usage and examples
+
+### 📝 Usage Examples
+
+```bash
+caddie cursor:plugin:new my-cursor-plugin .
+# Add scripts/validate-template.mjs from https://github.com/cursor/plugin-template
+caddie js:setup          # if Node not installed
+caddie cursor:plugin:validate
+caddie cursor:help
+```
+
 ## Version 8.7.0 - Structured Command Cleanup
 
 **Release Date:** Feb 6, 2026
