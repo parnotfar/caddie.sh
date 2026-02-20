@@ -1,5 +1,29 @@
 # Caddie.sh Release Notes
 
+## Version 9.1.0 - Doc / Markdown Preview
+
+**Release Date:** February 19, 2026
+
+### Major New Features
+
+#### Doc Module (Markdown Preview)
+- **User-selectable backends**: Preview markdown with mdview (terminal + Mermaid), glow, mdcat, or PDF in Preview. Set preference with `doc:prefer:set <backend>`.
+- **doc:preview [file]**: Uses preferred backend or first available (mdview → glow → mdcat → pdf → plain less). Default file: README.md.
+- **Explicit backends**: `doc:preview:mdview`, `doc:preview:glow`, `doc:preview:mdcat`, `doc:preview:pdf <file>`.
+- **PDF path**: `doc:preview:pdf` renders to a Caddie-managed directory (~/.caddie_doc_rendered), opens in Preview; `doc:preview:clean` removes rendered files.
+- **doc:setup**: Interactive setup that asks which tools you want to use and prints install commands (no automatic install; many options so users choose).
+- **Fallback**: When no rich viewer is installed, `doc:preview` shows the file in `less` so content is always visible (no blank screen).
+
+### Usage Examples
+
+```bash
+caddie doc:setup
+caddie doc:prefer:set mdview
+caddie doc:preview README.md
+caddie doc:preview:pdf docs/guide.md
+caddie doc:info
+```
+
 ## Version 9.0.0 - Cursor Plugin Support
 
 **Release Date:** February 19, 2026

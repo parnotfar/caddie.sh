@@ -138,6 +138,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_swift"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_codex" "$(DEST_MODULES_DIR)/.caddie_codex"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_codex"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_doc" "$(DEST_MODULES_DIR)/.caddie_doc"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_doc"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(DEST_MODULES_DIR)/.caddie_cli"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"

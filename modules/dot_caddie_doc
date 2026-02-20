@@ -1,0 +1,669 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Doc / Markdown Preview
+# This file provides markdown preview with user-selectable backends (mdview, glow, mdcat, PDF in Preview)
+
+# Source CLI module for formatting
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_doc_description() {
+    printf '%s\n' 'Markdown preview with user-selectable backends (terminal or PDF in Preview)'
+    return 0
+}
+
+# Rendered directory for PDF output
+function caddie_doc_rendered_dir_default() {
+    printf '%s\n' "$HOME/.caddie_doc_rendered"
+    return 0
+}
+
+function caddie_doc_rendered_dir_resolve() {
+    local configured="${CADDIE_DOC_RENDERED_DIR:-}"
+    local resolved=""
+
+    if [ -n "$configured" ]; then
+        resolved="$(eval echo "$configured")"
+        if [ -n "$resolved" ]; then
+            printf '%s\n' "$(cd "$resolved" 2>/dev/null && pwd)" || printf '%s\n' "$resolved"
+            return 0
+        fi
+    fi
+    printf '%s\n' "$(caddie_doc_rendered_dir_default)"
+    return 0
+}
+
+function caddie_doc_rendered_dir_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a directory path"
+        caddie cli:usage "caddie doc:rendered:dir:set <path>"
+        return 1
+    fi
+
+    local expanded_path
+    expanded_path="$(eval echo "$value")"
+    if [ ! -d "$expanded_path" ]; then
+        mkdir -p "$expanded_path" || true
+        if [ ! -d "$expanded_path" ]; then
+            caddie cli:red "Error: Could not create directory: $expanded_path"
+            return 1
+        fi
+    fi
+
+    local absolute_path
+    absolute_path="$(cd "$expanded_path" && pwd)"
+    export CADDIE_DOC_RENDERED_DIR="$absolute_path"
+    caddie cli:check "Rendered directory set to: $absolute_path"
+    return 0
+}
+
+function caddie_doc_rendered_dir_get() {
+    local value="${CADDIE_DOC_RENDERED_DIR:-}"
+    local default_dir=""
+
+    default_dir="$(caddie_doc_rendered_dir_default)"
+
+    if [ -n "$value" ]; then
+        caddie cli:green "Rendered directory: $value"
+    else
+        caddie cli:yellow "No rendered directory is set"
+        caddie cli:thought "Default: $default_dir"
+        caddie cli:thought "Use 'caddie doc:rendered:dir:set <path>' to override"
+    fi
+    return 0
+}
+
+function caddie_doc_rendered_dir_unset() {
+    if [ -n "${CADDIE_DOC_RENDERED_DIR:-}" ]; then
+        unset CADDIE_DOC_RENDERED_DIR
+        caddie cli:check "Rendered directory unset"
+    else
+        caddie cli:yellow "No rendered directory was set"
+    fi
+    return 0
+}
+
+# Preferred backend: mdview, glow, mdcat, pdf
+function caddie_doc_prefer_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a backend name"
+        caddie cli:usage "caddie doc:prefer:set <mdview|glow|mdcat|pdf>"
+        caddie cli:thought "Options: mdview (terminal + mermaid), glow, mdcat, pdf (Preview app)"
+        return 1
+    fi
+
+    case "$value" in
+        mdview|glow|mdcat|pdf)
+            export CADDIE_DOC_PREFER="$value"
+            caddie cli:check "Preferred preview backend set to: $value"
+            return 0
+            ;;
+        *)
+            caddie cli:red "Error: Unknown backend '$value'"
+            caddie cli:thought "Options: mdview, glow, mdcat, pdf"
+            return 1
+            ;;
+    esac
+}
+
+function caddie_doc_prefer_get() {
+    local value="${CADDIE_DOC_PREFER:-}"
+
+    if [ -n "$value" ]; then
+        caddie cli:green "Preferred backend: $value"
+    else
+        caddie cli:yellow "No preference set (will use first available: mdview → glow → mdcat → pandoc/less)"
+        caddie cli:thought "Use 'caddie doc:prefer:set <backend>' to set"
+    fi
+    return 0
+}
+
+function caddie_doc_prefer_unset() {
+    if [ -n "${CADDIE_DOC_PREFER:-}" ]; then
+        unset CADDIE_DOC_PREFER
+        caddie cli:check "Preferred backend unset"
+    else
+        caddie cli:yellow "No preference was set"
+    fi
+    return 0
+}
+
+# Detect which backends are available
+function caddie_doc_has_mdview() {
+    command -v mdview >/dev/null 2>&1
+}
+
+function caddie_doc_has_glow() {
+    command -v glow >/dev/null 2>&1
+}
+
+function caddie_doc_has_mdcat() {
+    command -v mdcat >/dev/null 2>&1
+}
+
+function caddie_doc_has_pandoc() {
+    command -v pandoc >/dev/null 2>&1
+}
+
+# Resolve which backend to use (prefer setting or fallback order)
+function caddie_doc_resolve_backend() {
+    local prefer="${CADDIE_DOC_PREFER:-}"
+
+    if [ -n "$prefer" ]; then
+        case "$prefer" in
+            mdview) caddie_doc_has_mdview && { printf '%s\n' "mdview"; return 0; } ;;
+            glow)   caddie_doc_has_glow   && { printf '%s\n' "glow";   return 0; } ;;
+            mdcat)  caddie_doc_has_mdcat  && { printf '%s\n' "mdcat";  return 0; } ;;
+            pdf)    caddie_doc_has_pandoc && { printf '%s\n' "pdf";    return 0; } ;;
+        esac
+    fi
+
+    if caddie_doc_has_mdview; then printf '%s\n' "mdview"; return 0; fi
+    if caddie_doc_has_glow;   then printf '%s\n' "glow";   return 0; fi
+    if caddie_doc_has_mdcat;  then printf '%s\n' "mdcat";  return 0; fi
+    if caddie_doc_has_pandoc; then printf '%s\n' "pandoc"; return 0; fi
+    printf '%s\n' ""
+    return 1
+}
+
+# Main preview: use preferred or fallback, then run appropriate viewer
+function caddie_doc_preview() {
+    local file="${1:-README.md}"
+
+    if [ "$file" = "-" ]; then
+        file="-"
+    else
+        if [ "$file" != "-" ] && [ ! -f "$file" ]; then
+            caddie cli:red "Error: File not found: $file"
+            caddie cli:usage "caddie doc:preview [file]"
+            return 1
+        fi
+    fi
+
+    local backend
+    backend="$(caddie_doc_resolve_backend)"
+    if [ -z "$backend" ]; then
+        if [ "$file" != "-" ]; then
+            caddie cli:thought "No rich viewer installed; showing file in less. Run 'caddie doc:setup' to choose and install a viewer."
+            less -R "$file"
+            return $?
+        fi
+        caddie cli:red "Error: No markdown viewer available and no file path for fallback."
+        caddie cli:thought "Install a viewer: caddie doc:setup:mdview | doc:setup:glow | doc:setup:mdcat | doc:setup:pandoc"
+        return 1
+    fi
+
+    case "$backend" in
+        mdview)
+            if [ "$file" = "-" ]; then
+                mdview -
+            else
+                mdview "$file"
+            fi
+            ;;
+        glow)
+            if [ "$file" = "-" ]; then
+                glow -
+            else
+                glow "$file" -p
+            fi
+            ;;
+        mdcat)
+            if [ "$file" = "-" ]; then
+                mdcat -
+            else
+                mdcat "$file"
+            fi
+            ;;
+        pdf)
+            if [ "$file" = "-" ]; then
+                caddie cli:red "Error: PDF preview requires a file path (no stdin)"
+                return 1
+            fi
+            caddie_doc_preview_pdf "$file"
+            return $?
+            ;;
+        pandoc)
+            if [ "$file" = "-" ]; then
+                caddie cli:red "Error: Fallback requires a file path (no stdin)"
+                return 1
+            fi
+            less -R "$file"
+            ;;
+        *)
+            caddie cli:red "Error: Unknown backend: $backend"
+            return 1
+            ;;
+    esac
+    return $?
+}
+
+function caddie_doc_preview_mdview() {
+    local file="${1:-README.md}"
+
+    if [ "$file" != "-" ] && [ ! -f "$file" ]; then
+        caddie cli:red "Error: File not found: $file"
+        caddie cli:usage "caddie doc:preview:mdview [file]"
+        return 1
+    fi
+
+    if ! caddie_doc_has_mdview; then
+        caddie cli:red "Error: mdview not found. Install: curl -fsSL https://raw.githubusercontent.com/tzachbon/mdview/main/install.sh | sh"
+        return 1
+    fi
+
+    if [ "$file" = "-" ]; then
+        mdview -
+    else
+        mdview "$file"
+    fi
+    return $?
+}
+
+function caddie_doc_preview_glow() {
+    local file="${1:-README.md}"
+
+    if [ "$file" != "-" ] && [ ! -f "$file" ]; then
+        caddie cli:red "Error: File not found: $file"
+        caddie cli:usage "caddie doc:preview:glow [file]"
+        return 1
+    fi
+
+    if ! caddie_doc_has_glow; then
+        caddie cli:red "Error: glow not found. Install: brew install glow"
+        return 1
+    fi
+
+    if [ "$file" = "-" ]; then
+        glow -
+    else
+        glow "$file" -p
+    fi
+    return $?
+}
+
+function caddie_doc_preview_mdcat() {
+    local file="${1:-README.md}"
+
+    if [ "$file" != "-" ] && [ ! -f "$file" ]; then
+        caddie cli:red "Error: File not found: $file"
+        caddie cli:usage "caddie doc:preview:mdcat [file]"
+        return 1
+    fi
+
+    if ! caddie_doc_has_mdcat; then
+        caddie cli:red "Error: mdcat not found. Install: cargo install mdcat"
+        return 1
+    fi
+
+    if [ "$file" = "-" ]; then
+        mdcat -
+    else
+        mdcat "$file"
+    fi
+    return $?
+}
+
+function caddie_doc_preview_pdf() {
+    local file="${1:-}"
+
+    if [ -z "$file" ]; then
+        caddie cli:red "Error: Please provide a markdown file"
+        caddie cli:usage "caddie doc:preview:pdf <file>"
+        return 1
+    fi
+
+    if [ ! -f "$file" ]; then
+        caddie cli:red "Error: File not found: $file"
+        return 1
+    fi
+
+    if ! caddie_doc_has_pandoc; then
+        caddie cli:red "Error: pandoc not found. Install: brew install pandoc"
+        return 1
+    fi
+
+    local rendered_dir
+    rendered_dir="$(caddie_doc_rendered_dir_resolve)"
+    if [ ! -d "$rendered_dir" ]; then
+        mkdir -p "$rendered_dir" || {
+            caddie cli:red "Error: Could not create rendered directory: $rendered_dir"
+            return 1
+        }
+    fi
+
+    local base
+    base="$(basename "$file" .md)"
+    local pdf_path="$rendered_dir/${base}.pdf"
+
+    caddie cli:title "Rendering $file to PDF"
+    if ! pandoc -s -f markdown -t pdf -o "$pdf_path" "$file" 2>/dev/null; then
+        pandoc -s -f markdown -t html "$file" 2>/dev/null | pandoc -s -f html -t pdf -o "$pdf_path" 2>/dev/null || {
+            caddie cli:red "Error: pandoc PDF conversion failed"
+            return 1
+        }
+    fi
+
+    caddie cli:check "PDF written to: $pdf_path"
+
+    if [ "$(uname -s)" = "Darwin" ]; then
+        open "$pdf_path"
+        caddie cli:check "Opened in Preview"
+    else
+        if command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "$pdf_path"
+        else
+            caddie cli:indent "Open manually: $pdf_path"
+        fi
+    fi
+    return 0
+}
+
+function caddie_doc_preview_clean() {
+    local rendered_dir
+    rendered_dir="$(caddie_doc_rendered_dir_resolve)"
+
+    if [ ! -d "$rendered_dir" ]; then
+        caddie cli:yellow "Rendered directory does not exist: $rendered_dir"
+        return 0
+    fi
+
+    local count
+    count="$(find "$rendered_dir" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "${count:-0}" -eq 0 ]; then
+        caddie cli:indent "No files to remove in $rendered_dir"
+        return 0
+    fi
+
+    caddie cli:title "Removing rendered files from $rendered_dir"
+    find "$rendered_dir" -maxdepth 1 -type f -delete 2>/dev/null || true
+    caddie cli:check "Cleanup complete"
+    return 0
+}
+
+function caddie_doc_info() {
+    local backend=""
+    local rendered_dir=""
+
+    caddie cli:title "Doc / Markdown Preview Info"
+    caddie cli:blank
+
+    caddie cli:title "Backends:"
+    if caddie_doc_has_mdview; then caddie cli:check "mdview (terminal + mermaid)"; else caddie cli:x "mdview"; fi
+    if caddie_doc_has_glow;   then caddie cli:check "glow";   else caddie cli:x "glow"; fi
+    if caddie_doc_has_mdcat;  then caddie cli:check "mdcat";  else caddie cli:x "mdcat"; fi
+    if caddie_doc_has_pandoc; then caddie cli:check "pandoc (PDF)"; else caddie cli:x "pandoc"; fi
+
+    caddie cli:blank
+    caddie cli:title "Preference:"
+    if [ -n "${CADDIE_DOC_PREFER:-}" ]; then
+        caddie cli:indent "CADDIE_DOC_PREFER=$CADDIE_DOC_PREFER"
+    else
+        caddie cli:indent "none (auto: mdview → glow → mdcat → pandoc)"
+    fi
+
+    backend="$(caddie_doc_resolve_backend)"
+    if [ -n "$backend" ]; then
+        caddie cli:indent "default for doc:preview: $backend"
+    else
+        caddie cli:yellow "no backend available"
+    fi
+
+    caddie cli:blank
+    caddie cli:title "Rendered directory (PDF output):"
+    rendered_dir="$(caddie_doc_rendered_dir_resolve)"
+    caddie cli:indent "$rendered_dir"
+    return 0
+}
+
+function caddie_doc_setup_mdview() {
+    if caddie_doc_has_mdview; then
+        caddie cli:check "mdview already installed: $(command -v mdview)"
+        caddie_doc_prefer_set "mdview"
+        return 0
+    fi
+    caddie cli:title "Installing mdview (terminal markdown + Mermaid)"
+    if curl -fsSL https://raw.githubusercontent.com/tzachbon/mdview/main/install.sh | sh; then
+        caddie cli:check "mdview installed"
+        if command -v mdview >/dev/null 2>&1; then
+            caddie_doc_prefer_set "mdview"
+        fi
+        return 0
+    fi
+    caddie cli:x "mdview install failed"
+    return 1
+}
+
+function caddie_doc_setup_glow() {
+    if caddie_doc_has_glow; then
+        caddie cli:check "glow already installed: $(command -v glow)"
+        caddie_doc_prefer_set "glow"
+        return 0
+    fi
+    if ! command -v brew >/dev/null 2>&1; then
+        caddie cli:red "Error: Homebrew not found. Install from https://brew.sh"
+        return 1
+    fi
+    caddie cli:title "Installing glow via Homebrew"
+    if brew install glow; then
+        caddie cli:check "glow installed"
+        if command -v glow >/dev/null 2>&1; then
+            caddie_doc_prefer_set "glow"
+        fi
+        return 0
+    fi
+    caddie cli:x "glow install failed"
+    return 1
+}
+
+function caddie_doc_setup_mdcat() {
+    if caddie_doc_has_mdcat; then
+        caddie cli:check "mdcat already installed: $(command -v mdcat)"
+        caddie_doc_prefer_set "mdcat"
+        return 0
+    fi
+    if ! command -v cargo >/dev/null 2>&1; then
+        caddie cli:red "Error: Cargo not found. Install Rust first, e.g. caddie rust:setup or https://rustup.rs"
+        return 1
+    fi
+    caddie cli:title "Installing mdcat via Cargo"
+    if cargo install mdcat; then
+        caddie cli:check "mdcat installed"
+        if command -v mdcat >/dev/null 2>&1; then
+            caddie_doc_prefer_set "mdcat"
+        fi
+        return 0
+    fi
+    caddie cli:x "mdcat install failed"
+    return 1
+}
+
+function caddie_doc_setup_pandoc() {
+    if caddie_doc_has_pandoc; then
+        caddie cli:check "pandoc already installed: $(command -v pandoc)"
+        caddie_doc_prefer_set "pdf"
+        return 0
+    fi
+    if ! command -v brew >/dev/null 2>&1; then
+        caddie cli:red "Error: Homebrew not found. Install from https://brew.sh"
+        return 1
+    fi
+    caddie cli:title "Installing pandoc via Homebrew (for doc:preview:pdf)"
+    if brew install pandoc; then
+        caddie cli:check "pandoc installed"
+        if command -v pandoc >/dev/null 2>&1; then
+            caddie_doc_prefer_set "pdf"
+        fi
+        return 0
+    fi
+    caddie cli:x "pandoc install failed"
+    return 1
+}
+
+function caddie_doc_install_mdview() {
+    caddie_doc_setup_mdview
+    return $?
+}
+
+function caddie_doc_install_glow() {
+    caddie_doc_setup_glow
+    return $?
+}
+
+function caddie_doc_install_mdcat() {
+    caddie_doc_setup_mdcat
+    return $?
+}
+
+function caddie_doc_install_pandoc() {
+    caddie_doc_setup_pandoc
+    return $?
+}
+
+function caddie_doc_setup() {
+    local answer=""
+    local choice=""
+
+    caddie cli:title "Doc / Markdown Preview Setup"
+    caddie cli:blank
+    caddie cli:indent "Install a viewer with: caddie doc:setup:mdview | doc:setup:glow | doc:setup:mdcat | doc:setup:pandoc"
+    caddie cli:blank
+    caddie cli:title "Backends:"
+    if caddie_doc_has_mdview; then
+        caddie cli:check "mdview (terminal + Mermaid)"
+    else
+        caddie cli:indent "mdview: caddie doc:setup:mdview"
+    fi
+    if caddie_doc_has_glow; then
+        caddie cli:check "glow"
+    else
+        caddie cli:indent "glow:   caddie doc:setup:glow"
+    fi
+    if caddie_doc_has_mdcat; then
+        caddie cli:check "mdcat"
+    else
+        caddie cli:indent "mdcat:  caddie doc:setup:mdcat (requires Rust)"
+    fi
+    if caddie_doc_has_pandoc; then
+        caddie cli:check "pandoc (for PDF)"
+    else
+        caddie cli:indent "pandoc: caddie doc:setup:pandoc"
+    fi
+    caddie cli:blank
+
+    if [ -t 0 ]; then
+        read -r -p "Install which? (mdview/glow/mdcat/pandoc or Enter to skip): " answer || true
+        choice="$(printf '%s' "$answer" | tr '[:upper:]' '[:lower:]' | tr -d ' ')"
+        if [ -n "$choice" ]; then
+            case "$choice" in
+                mdview)
+                    caddie_doc_setup_mdview
+                    return $?
+                    ;;
+                glow)
+                    caddie_doc_setup_glow
+                    return $?
+                    ;;
+                mdcat)
+                    caddie_doc_setup_mdcat
+                    return $?
+                    ;;
+                pandoc)
+                    caddie_doc_setup_pandoc
+                    return $?
+                    ;;
+                *)
+                    caddie cli:yellow "Unknown choice. Run e.g. caddie doc:setup:mdview"
+                    ;;
+            esac
+        fi
+    fi
+    return 0
+}
+
+function caddie_doc_help() {
+    caddie cli:title "Doc / Markdown Preview Help"
+    caddie cli:blank
+    caddie cli:usage "caddie doc:<command> [args]"
+    caddie cli:blank
+    caddie cli:title "Setup / Install:"
+    caddie cli:indent "doc:setup               List backends and optionally install one (interactive)"
+    caddie cli:indent "doc:setup:mdview        Install mdview (terminal + Mermaid)"
+    caddie cli:indent "doc:setup:glow          Install glow (Homebrew)"
+    caddie cli:indent "doc:setup:mdcat         Install mdcat (Cargo; requires Rust)"
+    caddie cli:indent "doc:setup:pandoc        Install pandoc (Homebrew; for PDF)"
+    caddie cli:indent "doc:install:mdview      Alias for doc:setup:mdview"
+    caddie cli:indent "doc:install:glow        Alias for doc:setup:glow"
+    caddie cli:indent "doc:install:mdcat       Alias for doc:setup:mdcat"
+    caddie cli:indent "doc:install:pandoc      Alias for doc:setup:pandoc"
+    caddie cli:blank
+    caddie cli:title "Preview:"
+    caddie cli:indent "doc:preview [file]       Preview markdown (uses preference or first available backend)"
+    caddie cli:indent "doc:preview:mdview [file] Preview with mdview (terminal + mermaid)"
+    caddie cli:indent "doc:preview:glow [file]   Preview with glow"
+    caddie cli:indent "doc:preview:mdcat [file]  Preview with mdcat"
+    caddie cli:indent "doc:preview:pdf <file>    Render to PDF and open in Preview"
+    caddie cli:indent "doc:preview:clean         Remove files in rendered directory"
+    caddie cli:blank
+    caddie cli:title "Preference:"
+    caddie cli:indent "doc:prefer:set <backend>  Set preferred backend (mdview, glow, mdcat, pdf)"
+    caddie cli:indent "doc:prefer:get            Show current preference"
+    caddie cli:indent "doc:prefer:unset          Clear preference"
+    caddie cli:blank
+    caddie cli:title "Rendered directory:"
+    caddie cli:indent "doc:rendered:dir:set <path>  Set directory for PDF output"
+    caddie cli:indent "doc:rendered:dir:get         Show rendered directory"
+    caddie cli:indent "doc:rendered:dir:unset       Reset to default"
+    caddie cli:blank
+    caddie cli:title "Info:"
+    caddie cli:indent "doc:info                 Show backends, preference, and rendered dir"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie doc:setup"
+    caddie cli:indent "caddie doc:preview README.md"
+    caddie cli:indent "caddie doc:prefer:set mdview"
+    caddie cli:indent "caddie doc:preview:pdf docs/guide.md"
+    caddie cli:indent "caddie doc:preview:clean"
+    return 0
+}
+
+function caddie_doc_commands() {
+    printf '%s\n' "doc:info doc:help doc:setup doc:setup:mdview doc:setup:glow doc:setup:mdcat doc:setup:pandoc doc:install:mdview doc:install:glow doc:install:mdcat doc:install:pandoc doc:preview doc:preview:mdview doc:preview:glow doc:preview:mdcat doc:preview:pdf doc:preview:clean doc:prefer:set doc:prefer:get doc:prefer:unset doc:rendered:dir:set doc:rendered:dir:get doc:rendered:dir:unset"
+    return 0
+}
+
+export -f caddie_doc_description
+export -f caddie_doc_rendered_dir_default
+export -f caddie_doc_rendered_dir_resolve
+export -f caddie_doc_rendered_dir_set
+export -f caddie_doc_rendered_dir_get
+export -f caddie_doc_rendered_dir_unset
+export -f caddie_doc_prefer_set
+export -f caddie_doc_prefer_get
+export -f caddie_doc_prefer_unset
+export -f caddie_doc_has_mdview
+export -f caddie_doc_has_glow
+export -f caddie_doc_has_mdcat
+export -f caddie_doc_has_pandoc
+export -f caddie_doc_resolve_backend
+export -f caddie_doc_preview
+export -f caddie_doc_preview_mdview
+export -f caddie_doc_preview_glow
+export -f caddie_doc_preview_mdcat
+export -f caddie_doc_preview_pdf
+export -f caddie_doc_preview_clean
+export -f caddie_doc_info
+export -f caddie_doc_setup_mdview
+export -f caddie_doc_setup_glow
+export -f caddie_doc_setup_mdcat
+export -f caddie_doc_setup_pandoc
+export -f caddie_doc_install_mdview
+export -f caddie_doc_install_glow
+export -f caddie_doc_install_mdcat
+export -f caddie_doc_install_pandoc
+export -f caddie_doc_setup
+export -f caddie_doc_help
+export -f caddie_doc_commands
