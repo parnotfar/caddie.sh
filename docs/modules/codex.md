@@ -1,119 +1,93 @@
 # Codex Module
 
-The Codex module provides automated code reviews for local git repositories. It can run reviews on demand or automatically after every commit.
+The Codex module provides two workflows:
+- Daily Codex CLI usage (`run`, `exec`, `resume`, auth, MCP, cloud)
+- Automated git commit reviews (`review`, `review:watch`, `review:tail`)
 
 ## Overview
 
-- **Manual review**: `codex:review` runs a review on the latest commit in a repo.
-- **Watch mode**: `codex:review:watch` installs a `post-commit` hook to trigger reviews after every commit.
-- **Streaming**: a dedicated Terminal tab tails review output for quick access.
-- **Terminal helpers**: debug, script, and open commands help validate automation.
+Use this module to:
+- Start Codex sessions from caddie
+- Run non-interactive Codex tasks
+- Manage CLI defaults for model, approval mode, and sandbox mode
+- Automatically review commits and stream review logs
 
 ## Commands
 
-### `caddie codex:info`
-Show Codex review configuration details (state directory, review command, and current repo log path).
+### Core Codex CLI
 
-### `caddie codex:review [dir]`
-Run a review on the latest commit in the repo (defaults to current directory).
+- `caddie codex:info` - Show CLI path/version, defaults, and review state
+- `caddie codex:run [prompt]` - Start Codex (or run one prompt)
+- `caddie codex:exec <prompt> [exec-options...]` - Run a non-interactive task
+- `caddie codex:resume [session-id]` - Resume a previous session
+- `caddie codex:status` - Show Codex login/account status
+- `caddie codex:auth:login` - Authenticate with Codex
+- `caddie codex:auth:logout` - Remove local Codex auth
+- `caddie codex:mcp [args...]` - Forward args to `codex mcp`
+- `caddie codex:cloud [args...]` - Forward args to `codex cloud`
+- `caddie codex:completion [shell]` - Print shell completion script
 
-```bash
-caddie codex:review .
-```
+### CLI Defaults
 
-### `caddie codex:review:watch <dir>`
-Enable automatic reviews on every commit for a repo.
+- `caddie codex:model:set <model>`
+- `caddie codex:model:get`
+- `caddie codex:model:unset`
 
-```bash
-caddie codex:review:watch ~/work/my-repo
-```
+- `caddie codex:approval:set <untrusted|on-failure|on-request|never>`
+- `caddie codex:approval:get`
+- `caddie codex:approval:unset`
 
-When possible, caddie enables `extensions.worktreeConfig` and sets a per-worktree hooks path to avoid collisions.
+- `caddie codex:sandbox:set <read-only|workspace-write|danger-full-access>`
+- `caddie codex:sandbox:get`
+- `caddie codex:sandbox:unset`
 
-### `caddie codex:review:watch:stop <dir>`
-Disable automatic reviews and restore the previous `post-commit` hook if present.
+These defaults are applied by `codex:run` and `codex:exec`.
 
-```bash
-caddie codex:review:watch:stop ~/work/my-repo
-```
+### Review Automation
 
-### `caddie codex:review:watch:status <dir>`
-Check whether the watch hook is installed.
-
-```bash
-caddie codex:review:watch:status ~/work/my-repo
-```
-
-### `caddie codex:review:tail <dir>`
-Tail the review output log for a repo.
-
-```bash
-caddie codex:review:tail ~/work/my-repo
-```
-
-The tail view renders review start/end banners with color while keeping the log file plain text.
-
-### Terminal Helpers
-
-#### `caddie codex:review:terminal:debug`
-Open a debug Terminal window + tab to validate AppleScript automation.
-
-```bash
-caddie codex:review:terminal:debug
-```
-
-#### `caddie codex:review:terminal:script <dir>`
-Generate the hub and review tab scripts used by the Terminal automation.
-
-```bash
-caddie codex:review:terminal:script ~/work/my-repo
-```
-
-#### `caddie codex:review:terminal:open <dir>`
-Open the Codex review hub window + tab for a repo.
-
-```bash
-caddie codex:review:terminal:open ~/work/my-repo
-```
+- `caddie codex:review [dir]` - Review the latest commit in the repo
+- `caddie codex:review:watch <dir>` - Install a post-commit hook for auto-review
+- `caddie codex:review:watch:stop <dir>` - Remove auto-review hook and restore prior hook
+- `caddie codex:review:watch:status <dir>` - Check watch-hook status
+- `caddie codex:review:tail <dir>` - Tail and format review logs
+- `caddie codex:review:terminal:debug` - Validate Terminal AppleScript automation
+- `caddie codex:review:terminal:script <dir>` - Generate Terminal helper scripts
+- `caddie codex:review:terminal:open <dir>` - Open review hub + tail tab
 
 ### Review Command Configuration
 
-The module expects a command that accepts the review prompt via stdin and prints a response to stdout. If `codex` is available, the default is `codex review -`.
+- `caddie codex:review:command:set <command>`
+- `caddie codex:review:command:append <args>`
+- `caddie codex:review:command:get`
+- `caddie codex:review:command:unset`
 
-#### `caddie codex:review:command:set <command>`
-Set the review command used for all reviews.
+Default review command:
 
 ```bash
-caddie codex:review:command:set "codex review -"
+codex exec --full-auto __PROMPT__
 ```
 
-#### `caddie codex:review:command:append <args>`
-Append arguments to the configured review command.
+`__PROMPT__` is replaced with the generated review prompt. For stdin-style commands, keep your command without `__PROMPT__`.
+
+## Examples
 
 ```bash
-caddie codex:review:command:append "--model gpt-5 --temperature 0.2"
-```
+# Day-to-day CLI usage
+caddie codex:run
+caddie codex:exec "Summarize the current branch risk"
+caddie codex:model:set gpt-5.3-codex
+caddie codex:approval:set on-request
 
-#### `caddie codex:review:command:get`
-Show the configured review command.
-
-```bash
-caddie codex:review:command:get
-```
-
-#### `caddie codex:review:command:unset`
-Clear the configured review command.
-
-```bash
-caddie codex:review:command:unset
+# Review automation
+caddie codex:review .
+caddie codex:review:watch ~/work/my-repo
+caddie codex:review:tail ~/work/my-repo
+caddie codex:review:command:set "codex exec --full-auto __PROMPT__"
 ```
 
 ## Notes
 
 - Merge commits are skipped by design.
 - Reviews are written to `~/.caddie_state/codex/reviews/<repo-id>/review.log`.
-- The watcher opens a Terminal window/tab titled **Caddie Codex Hub** for streaming.
-- Hooks source `~/.caddie.sh` (or your shell profile) so caddie is available in hook shells.
-- Each hook writes a "Hook fired" line to the log with timestamp and commit SHA for troubleshooting.
-- Log output includes structured start/end markers so `review:tail` can render clear separators.
-- If your Terminal does not open a new window, ensure Terminal > Settings > General > "Shells open with" is set to **New window**.
+- Hook execution is asynchronous and logs start/end markers for stream parsing.
+- If your terminal tab automation fails, run `caddie codex:review:terminal:debug`.

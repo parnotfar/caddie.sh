@@ -1,5 +1,52 @@
 # Caddie.sh Release Notes
 
+## Version 9.2.0 - Codex & Claude Code Support
+
+**Release Date:** February 27, 2026
+
+### Major New Features
+
+#### Codex Module Refresh
+- **Expanded CLI coverage**: Added `codex:run`, `codex:exec`, `codex:resume`, `codex:status`, `codex:auth:login`, `codex:auth:logout`, `codex:mcp`, `codex:cloud`, and `codex:completion`.
+- **Environment-backed defaults**: Added `codex:model:set|get|unset`, `codex:approval:set|get|unset`, and `codex:sandbox:set|get|unset`.
+- **Modern review runner default**: `codex:review` now defaults to `codex exec --full-auto __PROMPT__` (with placeholder replacement), while still supporting stdin-based custom commands.
+- **Info/help updates**: `codex:info`, `codex:help`, and command completion now reflect the expanded command surface.
+
+#### New Claude Module
+- **New module**: Added `claude` module for onboarding and daily Claude Code workflows.
+- **Project bootstrap**: `claude:init [dir]` creates `CLAUDE.md` and `.claude/commands/review.md`.
+- **Session commands**: Added `claude:run`, `claude:print`, `claude:continue`, and `claude:resume`.
+- **Auth and maintenance**: Added `claude:auth:login`, `claude:auth:logout`, `claude:doctor`, `claude:update`.
+- **Advanced passthroughs**: Added `claude:mcp` and `claude:agents`.
+- **Defaults API**: Added `claude:model:set|get|unset` and `claude:permission:mode:set|get|unset`.
+
+### Shell & Profile Improvements
+
+- **cpwd helper**: Added `cpwd` to copy the current directory to clipboard.
+- **Cross-platform clipboard fallback**: `cpwd` now supports `pbcopy`, `wl-copy`, or `xclip` with clear error messaging when none are available.
+- **Alias cleanup**: Removed obsolete aliases (including broken `shitory`).
+- **Profile safety fixes**: Quoted `source` paths and corrected `$HOME/.local/bin` check to use directory semantics.
+
+### Documentation Updates
+
+- Added new module docs: `docs/modules/claude.md`.
+- Updated Codex module docs: `docs/modules/codex.md`.
+- Updated module indices in `README.md` and `docs/modules/README.md`.
+
+### Usage Examples
+
+```bash
+caddie codex:run
+caddie codex:exec "Summarize this repo"
+caddie codex:model:set gpt-5.3-codex
+caddie codex:approval:set on-request
+
+caddie claude:init .
+caddie claude:auth:login
+caddie claude:run
+caddie claude:print "Review staged changes" --output-format text
+```
+
 ## Version 9.1.0 - Doc / Markdown Preview
 
 **Release Date:** February 19, 2026

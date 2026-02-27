@@ -29,6 +29,7 @@ make your coding experience smooth and efficient.
 - **macOS Utilities**: Screenshot archiving and cleanup helpers
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **IDE Integration**: Cursor IDE integration with AI-powered development
+- **Claude Code Integration**: Onboarding and CLI workflows for Claude Code teams
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
 - **GitHub Integration**: Account management and repository creation with seamless Git workflow
 - **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
@@ -72,15 +73,15 @@ caddie help
 caddie  # prompt shows as caddie-9.1.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-9.1.0 rust  # prompt switches to caddie[rust]-9.1.0
-caddie[rust]-9.1.0 back  # exits scope (also accepts `up` or `..`)
+caddie-9.2.0 rust  # prompt switches to caddie[rust]-9.2.0
+caddie[rust]-9.2.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-9.1.0 `ls -la`
-caddie-9.1.0 shell git status  # one-off shell command
+caddie-9.2.0 `ls -la`
+caddie-9.2.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-9.1.0 rust build
+caddie-9.2.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 
@@ -109,6 +110,7 @@ caddie-9.1.0 rust build
 - **[macOS Module](docs/modules/mac.md)** - macOS workflow helpers and utilities
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Codex Module](docs/modules/codex.md)** - Codex-powered review and automation helpers
+- **[Claude Module](docs/modules/claude.md)** - Claude Code onboarding and CLI helpers
 - **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
@@ -326,17 +328,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Discussions**: [GitHub Discussions](https://github.com/parnotfar/caddie.sh/discussions)
 - **Wiki**: [Project Wiki](https://github.com/parnotfar/caddie.sh/wiki)
 
-## Roadmap
-
-- [ ] **v1.1**: Docker integration and containerization
-- [ ] **v1.2**: Additional language support (Go, Java, C++)
-- [ ] **v1.3**: Cloud development tools (AWS, GCP, Azure)
-- [ ] **v1.4**: Team collaboration features
-- [ ] **v2.0**: Cross-platform support (Linux, Windows)
-
 ---
 
-**Made with ❤️ for the developer community**
+**Made for the developer community**
 
 *Caddie.sh – Because every developer, DevOps engineer, and data engineer deserves a great caddie on the course of
 *building, deploying, and innovating.*

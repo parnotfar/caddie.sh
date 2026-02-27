@@ -12,19 +12,10 @@ alias bim='vim'
 alias pcd='pushd'
 alias externalip='curl whatismyip.org'
 alias ss="source $HOME/.bashrc"
-alias shitory="history | sed -E 's/ *[0-9]+ *//g' | grep '$1' | grep -v '^s*his*tory' | sort | uniq 2> /dev/null"
 alias r=rails
 alias dud='cd .. && cd -'
 alias bud='dud'
 alias ud='dud'
-alias d='docker'
-alias dps='docker ps'
-alias dsp='docker system prune'
-alias di='docker images'
-alias dcb='docker compose build'
-alias dcu='docker compose up'
-alias dcd='docker compose down'
-alias bsl='brew services list'
 
 # Coloring for LESS and man pages
 export LESS_TERMCAP_mb=$'\e[1;31m'     # begin bold
@@ -46,17 +37,27 @@ function set_terminal_tab_name() {
   echo -en "\033]1; ${1} \007"
 }
 
-# NPM aliases
+function cpwd() {
+  if command -v pbcopy >/dev/null 2>&1; then
+    printf "%s" "$PWD" | pbcopy
+    return 0
+  fi
 
-alias ni='npm install'
-alias nid='npm install --save-dev'
-alias ns='npm start'
-alias nr='npm run'
-alias nrl='npm run lint'
-alias nrlf='npm run --fix'
-alias nrt='npm run test'
-alias nrtu='npm run test -- --updateSnapshot' 
-alias nrtw='npm run test -- --watch' 
+  if command -v wl-copy >/dev/null 2>&1; then
+    printf "%s" "$PWD" | wl-copy
+    return 0
+  fi
+
+  if command -v xclip >/dev/null 2>&1; then
+    printf "%s" "$PWD" | xclip -selection clipboard
+    return 0
+  fi
+
+  printf '%s\n' "Error: No clipboard tool found (pbcopy, wl-copy, or xclip)" >&2
+  return 1
+}
+
+export -f cpwd
 
 # Handy functions
 function blanks() {
@@ -95,40 +96,6 @@ function take() {
 
 export -f take
  
-# function latest-gemfile-versions() {
-#   for g in $(grep -E '^.*> *[0-9\.]*' Gemfile | awk -F' ' '{print $2}' | sed -e "s/'//g" -e 's/,//'); do
-#     installed_version=$(bundle info $g | grep '*' | sed 's/[^(]*(\([^)]*\))/\1/')
-#     current_version=$(latest-gem $g | sed 's/[^(]*(\([^)]*\))/\1/' | awk '{print $1}')
-# 
-#     color='red'
-#     endcap="${installed_version} (${current_version})"
-# 
-#     if [[ ${current_version} == ${installed_version} ]] || [ -z "${current_version}" ]; then
-#       color='green'
-#       endcap="${installed_version}"
-#     fi
-# 
-#     caddie cli:$color "$(ch-marker-rpad "${g}" '.' 40) ${endcap}"
-#   done
-# }
-
-# function latest-gem() {
-#     PRVIFS="${IFS}"
-# 
-#     results=$(gem list -ra $@)
-# 
-#     IFS=$'\n'
-# 
-#     for f in "${results}"; do
-#       for g in "$@"; do
-#         echo "${f}" | grep "^$g .*$" | awk '{printf("%s %s\n", $1, $2)}' | sed -e 's/,$/\)/g' -e 's/\([0-9]\)$/\1\)/g'
-#       done
-#     done
-
-#     IFS="${PRVIFS}"
-# }
-# }
-
 function lessdown() {
   command -v pandoc || brew install pandoc
 
@@ -176,27 +143,6 @@ if [[ "$(uname -s)" == 'Darwin' ]]; then
     eval $(/usr/local/bin/brew shellenv)
   fi
 fi
-
-function __rake_completion() {
-  COMPREPLY=()
-
-  if [ ! -f 'Rakefile' ]; then
-    return 0
-  fi
-
-  local cur prev tasks
-
-  cur=${COMP_WORDS[COMP_CWORD]}
-  prev=${COMP_WORDS[COMP_CWORD-1]}
-
-  COMP_WORDBREAKS=${COMP_WORDBREAKS/\:/}
-
-  tasks=`rake -T | cut -d' ' -f2 | sed 's/\[.*/\[/g' | paste -sd' ' -`
-
-  COMPREPLY=( $(compgen -W "${tasks}" -- ${cur}) )
-}
-
-complete -F __rake_completion rake
 
 function __brew_completion() {
   local cur prev options

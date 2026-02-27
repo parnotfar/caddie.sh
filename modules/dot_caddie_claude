@@ -1,0 +1,384 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Claude Code Module
+# This file provides Claude Code onboarding and CLI helpers
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_claude_require_cli() {
+    if command -v claude >/dev/null 2>&1; then
+        return 0
+    fi
+
+    caddie cli:red "Error: Claude Code CLI is not installed"
+    caddie cli:thought "Install with: npm install -g @anthropic-ai/claude-code"
+    return 1
+}
+
+function caddie_claude_model_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a model"
+        caddie cli:usage "caddie claude:model:set <model>"
+        return 1
+    fi
+
+    export CADDIE_CLAUDE_MODEL="$value"
+    caddie cli:check "Claude model set to: $value"
+    return 0
+}
+
+function caddie_claude_model_get() {
+    local value="${CADDIE_CLAUDE_MODEL:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Claude model: $value"
+    else
+        caddie cli:yellow "No Claude model is set"
+        caddie cli:thought "Use 'caddie claude:model:set <model>' to set one"
+    fi
+    return 0
+}
+
+function caddie_claude_model_unset() {
+    if [ -n "${CADDIE_CLAUDE_MODEL:-}" ]; then
+        unset CADDIE_CLAUDE_MODEL
+        caddie cli:check "Claude model unset"
+    else
+        caddie cli:yellow "No Claude model was set"
+    fi
+    return 0
+}
+
+function caddie_claude_permission_mode_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a permission mode"
+        caddie cli:usage "caddie claude:permission:mode:set <default|acceptEdits|bypassPermissions|plan>"
+        return 1
+    fi
+
+    case "$value" in
+      default|acceptEdits|bypassPermissions|plan)
+        ;;
+      *)
+        caddie cli:red "Error: Invalid permission mode: $value"
+        caddie cli:thought "Allowed: default, acceptEdits, bypassPermissions, plan"
+        return 1
+        ;;
+    esac
+
+    export CADDIE_CLAUDE_PERMISSION_MODE="$value"
+    caddie cli:check "Claude permission mode set to: $value"
+    return 0
+}
+
+function caddie_claude_permission_mode_get() {
+    local value="${CADDIE_CLAUDE_PERMISSION_MODE:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Claude permission mode: $value"
+    else
+        caddie cli:yellow "No Claude permission mode is set"
+        caddie cli:thought "Use 'caddie claude:permission:mode:set <mode>' to set one"
+    fi
+    return 0
+}
+
+function caddie_claude_permission_mode_unset() {
+    if [ -n "${CADDIE_CLAUDE_PERMISSION_MODE:-}" ]; then
+        unset CADDIE_CLAUDE_PERMISSION_MODE
+        caddie cli:check "Claude permission mode unset"
+    else
+        caddie cli:yellow "No Claude permission mode was set"
+    fi
+    return 0
+}
+
+function caddie_claude_info() {
+    local cli_path=""
+    local cli_version=""
+
+    caddie cli:title "Claude Code Info"
+
+    if command -v claude >/dev/null 2>&1; then
+        cli_path="$(command -v claude)"
+        caddie cli:indent "cli: $cli_path"
+        cli_version="$(claude --version 2>/dev/null | head -n1)"
+        if [ -n "$cli_version" ]; then
+            caddie cli:indent "version: $cli_version"
+        fi
+    else
+        caddie cli:indent "cli: not found"
+    fi
+
+    if [ -d "$HOME/.claude" ]; then
+        caddie cli:indent "global config: $HOME/.claude"
+    else
+        caddie cli:indent "global config: not found"
+    fi
+
+    if [ -d ".claude" ]; then
+        caddie cli:indent "project config: $(pwd)/.claude"
+    else
+        caddie cli:indent "project config: not found"
+    fi
+
+    if [ -n "${CADDIE_CLAUDE_MODEL:-}" ]; then
+        caddie cli:indent "default model: $CADDIE_CLAUDE_MODEL"
+    else
+        caddie cli:indent "default model: cli default"
+    fi
+
+    if [ -n "${CADDIE_CLAUDE_PERMISSION_MODE:-}" ]; then
+        caddie cli:indent "default permission mode: $CADDIE_CLAUDE_PERMISSION_MODE"
+    else
+        caddie cli:indent "default permission mode: cli default"
+    fi
+
+    return 0
+}
+
+function caddie_claude_run() {
+    local prompt="${1:-}"
+    local -a command=("claude")
+
+    caddie_claude_require_cli || return 1
+
+    if [ -n "${CADDIE_CLAUDE_MODEL:-}" ]; then
+        command+=("--model" "$CADDIE_CLAUDE_MODEL")
+    fi
+    if [ -n "${CADDIE_CLAUDE_PERMISSION_MODE:-}" ]; then
+        command+=("--permission-mode" "$CADDIE_CLAUDE_PERMISSION_MODE")
+    fi
+    if [ -n "$prompt" ]; then
+        command+=("$prompt")
+    fi
+
+    "${command[@]}"
+    return $?
+}
+
+function caddie_claude_print() {
+    local prompt="$1"
+    shift || true
+
+    if [ -z "$prompt" ]; then
+        caddie cli:red "Error: Please provide a prompt"
+        caddie cli:usage "caddie claude:print <prompt> [claude-print-options...]"
+        return 1
+    fi
+
+    caddie_claude_require_cli || return 1
+
+    local -a command=("claude" "-p")
+    if [ -n "${CADDIE_CLAUDE_MODEL:-}" ]; then
+        command+=("--model" "$CADDIE_CLAUDE_MODEL")
+    fi
+    if [ -n "${CADDIE_CLAUDE_PERMISSION_MODE:-}" ]; then
+        command+=("--permission-mode" "$CADDIE_CLAUDE_PERMISSION_MODE")
+    fi
+    if [ $# -gt 0 ]; then
+        command+=("$@")
+    fi
+    command+=("$prompt")
+
+    "${command[@]}"
+    return $?
+}
+
+function caddie_claude_continue() {
+    caddie_claude_require_cli || return 1
+
+    local -a command=("claude" "--continue")
+    if [ -n "${CADDIE_CLAUDE_MODEL:-}" ]; then
+        command+=("--model" "$CADDIE_CLAUDE_MODEL")
+    fi
+    if [ -n "${CADDIE_CLAUDE_PERMISSION_MODE:-}" ]; then
+        command+=("--permission-mode" "$CADDIE_CLAUDE_PERMISSION_MODE")
+    fi
+
+    "${command[@]}"
+    return $?
+}
+
+function caddie_claude_resume() {
+    local session_id="${1:-}"
+
+    caddie_claude_require_cli || return 1
+
+    local -a command=("claude" "--resume")
+    if [ -n "${CADDIE_CLAUDE_MODEL:-}" ]; then
+        command+=("--model" "$CADDIE_CLAUDE_MODEL")
+    fi
+    if [ -n "${CADDIE_CLAUDE_PERMISSION_MODE:-}" ]; then
+        command+=("--permission-mode" "$CADDIE_CLAUDE_PERMISSION_MODE")
+    fi
+    if [ -n "$session_id" ]; then
+        command+=("$session_id")
+    fi
+
+    "${command[@]}"
+    return $?
+}
+
+function caddie_claude_auth_login() {
+    caddie_claude_require_cli || return 1
+    claude login
+    return $?
+}
+
+function caddie_claude_auth_logout() {
+    caddie_claude_require_cli || return 1
+    claude logout
+    return $?
+}
+
+function caddie_claude_update() {
+    caddie_claude_require_cli || return 1
+    claude update
+    return $?
+}
+
+function caddie_claude_doctor() {
+    caddie_claude_require_cli || return 1
+    claude doctor
+    return $?
+}
+
+function caddie_claude_mcp() {
+    caddie_claude_require_cli || return 1
+    claude mcp "$@"
+    return $?
+}
+
+function caddie_claude_agents() {
+    caddie_claude_require_cli || return 1
+    claude agents "$@"
+    return $?
+}
+
+function caddie_claude_init() {
+    local target_dir="${1:-.}"
+    local claude_dir=""
+    local commands_dir=""
+    local claude_md=""
+    local review_command_md=""
+
+    if [ ! -d "$target_dir" ]; then
+        caddie cli:red "Error: Directory does not exist: $target_dir"
+        caddie cli:usage "caddie claude:init [dir]"
+        return 1
+    fi
+
+    claude_dir="${target_dir}/.claude"
+    commands_dir="${claude_dir}/commands"
+    claude_md="${target_dir}/CLAUDE.md"
+    review_command_md="${commands_dir}/review.md"
+
+    mkdir -p "$commands_dir"
+    if [ ! -d "$commands_dir" ]; then
+        caddie cli:red "Error: Unable to create Claude directory structure"
+        return 1
+    fi
+
+    if [ ! -f "$claude_md" ]; then
+        cat > "$claude_md" <<'EOF_CLAUDE_MD'
+# CLAUDE.md
+
+## Project Context
+Describe the product, architecture, and the most important goals.
+
+## Development Rules
+List coding standards, test requirements, and review expectations.
+
+## Commands
+- Build: <command>
+- Test: <command>
+- Lint: <command>
+
+## Definition of Done
+Document what must pass before merging changes.
+EOF_CLAUDE_MD
+        caddie cli:check "Created: $claude_md"
+    else
+        caddie cli:indent "Already exists: $claude_md"
+    fi
+
+    if [ ! -f "$review_command_md" ]; then
+        cat > "$review_command_md" <<'EOF_REVIEW_MD'
+Review the current branch for bugs and regressions.
+Prioritize high-severity findings.
+Call out missing tests and concrete follow-up actions.
+EOF_REVIEW_MD
+        caddie cli:check "Created: $review_command_md"
+    else
+        caddie cli:indent "Already exists: $review_command_md"
+    fi
+
+    caddie cli:check "Claude Code project scaffold is ready"
+    caddie cli:thought "Next: run 'caddie claude:auth:login' and then 'caddie claude:run'"
+    return 0
+}
+
+function caddie_claude_help() {
+    caddie cli:title "Claude Code Commands"
+    caddie cli:usage "caddie claude:<command>"
+    caddie cli:blank
+    caddie cli:indent "info                              Show Claude CLI and config status"
+    caddie cli:indent "init [dir]                        Create CLAUDE.md and .claude/commands scaffold"
+    caddie cli:indent "run [prompt]                      Start Claude (or run one prompt)"
+    caddie cli:indent "print <prompt> [opts...]          Run non-interactive prompt mode"
+    caddie cli:indent "continue                          Continue the most recent session"
+    caddie cli:indent "resume [session-id]               Resume a specific prior session"
+    caddie cli:indent "auth:login                        Log in to Claude Code"
+    caddie cli:indent "auth:logout                       Log out from Claude Code"
+    caddie cli:indent "doctor                            Run Claude diagnostics"
+    caddie cli:indent "update                            Update Claude Code"
+    caddie cli:indent "mcp [args...]                     Forward args to 'claude mcp'"
+    caddie cli:indent "agents [args...]                  Forward args to 'claude agents'"
+    caddie cli:blank
+    caddie cli:title "Defaults"
+    caddie cli:indent "model:set|get|unset               Configure default --model"
+    caddie cli:indent "permission:mode:set|get|unset     Configure default --permission-mode"
+    caddie cli:blank
+    caddie cli:title "Examples"
+    caddie cli:indent "caddie claude:init ."
+    caddie cli:indent "caddie claude:auth:login"
+    caddie cli:indent "caddie claude:run"
+    caddie cli:indent "caddie claude:print 'Summarize this repo' --output-format text"
+    caddie cli:indent "caddie claude:model:set claude-opus-4-1"
+    caddie cli:indent "caddie claude:permission:mode:set acceptEdits"
+    return 0
+}
+
+function caddie_claude_description() {
+    printf '%s\n' 'Claude Code onboarding and CLI helpers'
+    return 0
+}
+
+function caddie_claude_commands() {
+    printf '%s\n' "claude:info claude:init claude:run claude:print claude:continue claude:resume claude:auth:login claude:auth:logout claude:doctor claude:update claude:mcp claude:agents claude:model:set claude:model:get claude:model:unset claude:permission:mode:set claude:permission:mode:get claude:permission:mode:unset"
+    return 0
+}
+
+export -f caddie_claude_require_cli
+export -f caddie_claude_model_set
+export -f caddie_claude_model_get
+export -f caddie_claude_model_unset
+export -f caddie_claude_permission_mode_set
+export -f caddie_claude_permission_mode_get
+export -f caddie_claude_permission_mode_unset
+export -f caddie_claude_info
+export -f caddie_claude_run
+export -f caddie_claude_print
+export -f caddie_claude_continue
+export -f caddie_claude_resume
+export -f caddie_claude_auth_login
+export -f caddie_claude_auth_logout
+export -f caddie_claude_update
+export -f caddie_claude_doctor
+export -f caddie_claude_mcp
+export -f caddie_claude_agents
+export -f caddie_claude_init
+export -f caddie_claude_help
+export -f caddie_claude_description
+export -f caddie_claude_commands

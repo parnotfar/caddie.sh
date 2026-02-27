@@ -134,18 +134,22 @@ function caddie_doc_prefer_unset() {
 # Detect which backends are available
 function caddie_doc_has_mdview() {
     command -v mdview >/dev/null 2>&1
+    return $?
 }
 
 function caddie_doc_has_glow() {
     command -v glow >/dev/null 2>&1
+    return $?
 }
 
 function caddie_doc_has_mdcat() {
     command -v mdcat >/dev/null 2>&1
+    return $?
 }
 
 function caddie_doc_has_pandoc() {
     command -v pandoc >/dev/null 2>&1
+    return $?
 }
 
 # Resolve which backend to use (prefer setting or fallback order)

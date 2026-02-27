@@ -46,7 +46,7 @@ function caddie_codex_review_command_get() {
         caddie cli:green "Codex review command: $value"
     else
         caddie cli:yellow "No Codex review command is set"
-        caddie cli:thought "Default: codex review -"
+        caddie cli:thought "Default: codex exec --full-auto __PROMPT__"
         caddie cli:thought "Set one with: caddie codex:review:command:set <command>"
     fi
     return 0
@@ -59,6 +59,258 @@ function caddie_codex_review_command_unset() {
     else
         caddie cli:yellow "No Codex review command was set"
     fi
+    return 0
+}
+
+function caddie_codex_require_cli() {
+    if command -v codex >/dev/null 2>&1; then
+        return 0
+    fi
+
+    caddie cli:red "Error: codex CLI is not installed"
+    caddie cli:thought "Install with: npm install -g @openai/codex"
+    return 1
+}
+
+function caddie_codex_model_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a model"
+        caddie cli:usage "caddie codex:model:set <model>"
+        return 1
+    fi
+
+    export CADDIE_CODEX_MODEL="$value"
+    caddie cli:check "Codex model set to: $value"
+    return 0
+}
+
+function caddie_codex_model_get() {
+    local value="${CADDIE_CODEX_MODEL:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Codex model: $value"
+    else
+        caddie cli:yellow "No Codex model is set"
+        caddie cli:thought "Use 'caddie codex:model:set <model>' to set one"
+    fi
+    return 0
+}
+
+function caddie_codex_model_unset() {
+    if [ -n "${CADDIE_CODEX_MODEL:-}" ]; then
+        unset CADDIE_CODEX_MODEL
+        caddie cli:check "Codex model unset"
+    else
+        caddie cli:yellow "No Codex model was set"
+    fi
+    return 0
+}
+
+function caddie_codex_approval_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide an approval mode"
+        caddie cli:usage "caddie codex:approval:set <untrusted|on-failure|on-request|never>"
+        return 1
+    fi
+
+    case "$value" in
+      untrusted|on-failure|on-request|never)
+        ;;
+      *)
+        caddie cli:red "Error: Invalid approval mode: $value"
+        caddie cli:thought "Allowed: untrusted, on-failure, on-request, never"
+        return 1
+        ;;
+    esac
+
+    export CADDIE_CODEX_APPROVAL_MODE="$value"
+    caddie cli:check "Codex approval mode set to: $value"
+    return 0
+}
+
+function caddie_codex_approval_get() {
+    local value="${CADDIE_CODEX_APPROVAL_MODE:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Codex approval mode: $value"
+    else
+        caddie cli:yellow "No Codex approval mode is set"
+        caddie cli:thought "Use 'caddie codex:approval:set <mode>' to set one"
+    fi
+    return 0
+}
+
+function caddie_codex_approval_unset() {
+    if [ -n "${CADDIE_CODEX_APPROVAL_MODE:-}" ]; then
+        unset CADDIE_CODEX_APPROVAL_MODE
+        caddie cli:check "Codex approval mode unset"
+    else
+        caddie cli:yellow "No Codex approval mode was set"
+    fi
+    return 0
+}
+
+function caddie_codex_sandbox_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a sandbox mode"
+        caddie cli:usage "caddie codex:sandbox:set <read-only|workspace-write|danger-full-access>"
+        return 1
+    fi
+
+    case "$value" in
+      read-only|workspace-write|danger-full-access)
+        ;;
+      *)
+        caddie cli:red "Error: Invalid sandbox mode: $value"
+        caddie cli:thought "Allowed: read-only, workspace-write, danger-full-access"
+        return 1
+        ;;
+    esac
+
+    export CADDIE_CODEX_SANDBOX_MODE="$value"
+    caddie cli:check "Codex sandbox mode set to: $value"
+    return 0
+}
+
+function caddie_codex_sandbox_get() {
+    local value="${CADDIE_CODEX_SANDBOX_MODE:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Codex sandbox mode: $value"
+    else
+        caddie cli:yellow "No Codex sandbox mode is set"
+        caddie cli:thought "Use 'caddie codex:sandbox:set <mode>' to set one"
+    fi
+    return 0
+}
+
+function caddie_codex_sandbox_unset() {
+    if [ -n "${CADDIE_CODEX_SANDBOX_MODE:-}" ]; then
+        unset CADDIE_CODEX_SANDBOX_MODE
+        caddie cli:check "Codex sandbox mode unset"
+    else
+        caddie cli:yellow "No Codex sandbox mode was set"
+    fi
+    return 0
+}
+
+function caddie_codex_run() {
+    local prompt="${1:-}"
+    local -a command=("codex")
+
+    caddie_codex_require_cli || return 1
+
+    if [ -n "${CADDIE_CODEX_MODEL:-}" ]; then
+        command+=("--model" "$CADDIE_CODEX_MODEL")
+    fi
+    if [ -n "${CADDIE_CODEX_APPROVAL_MODE:-}" ]; then
+        command+=("--ask-for-approval" "$CADDIE_CODEX_APPROVAL_MODE")
+    fi
+    if [ -n "${CADDIE_CODEX_SANDBOX_MODE:-}" ]; then
+        command+=("--sandbox" "$CADDIE_CODEX_SANDBOX_MODE")
+    fi
+    if [ -n "$prompt" ]; then
+        command+=("$prompt")
+    fi
+
+    "${command[@]}"
+    return $?
+}
+
+function caddie_codex_exec() {
+    local prompt="$1"
+    shift || true
+
+    if [ -z "$prompt" ]; then
+        caddie cli:red "Error: Please provide a prompt"
+        caddie cli:usage "caddie codex:exec <prompt> [exec-options...]"
+        return 1
+    fi
+
+    caddie_codex_require_cli || return 1
+
+    local -a command=("codex" "exec")
+    if [ -n "${CADDIE_CODEX_MODEL:-}" ]; then
+        command+=("--model" "$CADDIE_CODEX_MODEL")
+    fi
+    if [ -n "${CADDIE_CODEX_APPROVAL_MODE:-}" ]; then
+        command+=("--ask-for-approval" "$CADDIE_CODEX_APPROVAL_MODE")
+    fi
+    if [ -n "${CADDIE_CODEX_SANDBOX_MODE:-}" ]; then
+        command+=("--sandbox" "$CADDIE_CODEX_SANDBOX_MODE")
+    fi
+    if [ $# -gt 0 ]; then
+        command+=("$@")
+    fi
+    command+=("$prompt")
+
+    "${command[@]}"
+    return $?
+}
+
+function caddie_codex_resume() {
+    caddie_codex_require_cli || return 1
+    codex resume "$@"
+    return $?
+}
+
+function caddie_codex_status() {
+    caddie_codex_require_cli || return 1
+    codex status
+    return $?
+}
+
+function caddie_codex_auth_login() {
+    caddie_codex_require_cli || return 1
+    codex login
+    return $?
+}
+
+function caddie_codex_auth_logout() {
+    caddie_codex_require_cli || return 1
+    codex logout
+    return $?
+}
+
+function caddie_codex_mcp() {
+    caddie_codex_require_cli || return 1
+    codex mcp "$@"
+    return $?
+}
+
+function caddie_codex_cloud() {
+    caddie_codex_require_cli || return 1
+    codex cloud "$@"
+    return $?
+}
+
+function caddie_codex_completion() {
+    local shell_name="${1:-bash}"
+    caddie_codex_require_cli || return 1
+    codex completion "$shell_name"
+    return $?
+}
+
+function caddie_codex_default_review_command() {
+    local command="codex exec --full-auto"
+    local escaped_value=""
+
+    if [ -n "${CADDIE_CODEX_MODEL:-}" ]; then
+        printf -v escaped_value '%q' "$CADDIE_CODEX_MODEL"
+        command="${command} --model ${escaped_value}"
+    fi
+
+    if [ -n "${CADDIE_CODEX_APPROVAL_MODE:-}" ]; then
+        printf -v escaped_value '%q' "$CADDIE_CODEX_APPROVAL_MODE"
+        command="${command} --ask-for-approval ${escaped_value}"
+    fi
+
+    if [ -n "${CADDIE_CODEX_SANDBOX_MODE:-}" ]; then
+        printf -v escaped_value '%q' "$CADDIE_CODEX_SANDBOX_MODE"
+        command="${command} --sandbox ${escaped_value}"
+    fi
+
+    printf '%s' "${command} __PROMPT__"
     return 0
 }
 
@@ -335,13 +587,13 @@ function caddie_codex_review_execute() {
 
     if [ -z "$command" ]; then
         if command -v codex >/dev/null 2>&1; then
-            command="codex review -"
+            command="$(caddie_codex_default_review_command)"
         fi
     fi
 
     if [ -z "$command" ]; then
         caddie cli:red "Error: No Codex review command configured"
-        caddie cli:thought "Defaults to: codex review -"
+        caddie cli:thought "Defaults to: codex exec --full-auto __PROMPT__"
         caddie cli:thought "Override with: caddie codex:review:command:set <command>"
         return 1
     fi
@@ -357,7 +609,7 @@ function caddie_codex_review_execute() {
         remainder="${command#codex}"
         remainder="$(printf '%s' "$remainder" | tr -d ' ')"
         if [ -z "$remainder" ]; then
-            command="codex review -"
+            command="$(caddie_codex_default_review_command)"
         fi
     fi
 
@@ -366,12 +618,22 @@ function caddie_codex_review_execute() {
     fi
 
     local output_status=0
+    local prompt_escaped=""
+    printf -v prompt_escaped '%q' "$prompt"
+
     (
         cd "$repo_root" 2>/dev/null || exit 1
-        printf '%s\n' "$prompt" | eval "$command" | while IFS= read -r line; do
-            caddie cli:indent "$line"
-        done
-        output_status=${PIPESTATUS[1]}
+        if [[ "$command" == *"__PROMPT__"* ]]; then
+            eval "${command//__PROMPT__/$prompt_escaped}" | while IFS= read -r line; do
+                caddie cli:indent "$line"
+            done
+            output_status=${PIPESTATUS[0]}
+        else
+            printf '%s\n' "$prompt" | eval "$command" | while IFS= read -r line; do
+                caddie cli:indent "$line"
+            done
+            output_status=${PIPESTATUS[1]}
+        fi
         exit $output_status
     )
     output_status=$?
@@ -1142,6 +1404,8 @@ function caddie_codex_review_watch_status() {
 }
 
 function caddie_codex_info() {
+    local cli_path=""
+    local cli_version=""
     local state_dir=""
     local review_command="${CADDIE_CODEX_REVIEW_COMMAND:-}"
     local repo_root=""
@@ -1152,10 +1416,39 @@ function caddie_codex_info() {
     state_dir="$(caddie_codex_state_dir)"
     caddie cli:indent "state dir: $state_dir"
 
+    if command -v codex >/dev/null 2>&1; then
+        cli_path="$(command -v codex)"
+        caddie cli:indent "cli: $cli_path"
+        cli_version="$(codex --version 2>/dev/null | head -n1)"
+        if [ -n "$cli_version" ]; then
+            caddie cli:indent "version: $cli_version"
+        fi
+    else
+        caddie cli:indent "cli: not found"
+    fi
+
+    if [ -n "${CADDIE_CODEX_MODEL:-}" ]; then
+        caddie cli:indent "model: $CADDIE_CODEX_MODEL"
+    else
+        caddie cli:indent "model: default"
+    fi
+
+    if [ -n "${CADDIE_CODEX_APPROVAL_MODE:-}" ]; then
+        caddie cli:indent "approval mode: $CADDIE_CODEX_APPROVAL_MODE"
+    else
+        caddie cli:indent "approval mode: default"
+    fi
+
+    if [ -n "${CADDIE_CODEX_SANDBOX_MODE:-}" ]; then
+        caddie cli:indent "sandbox mode: $CADDIE_CODEX_SANDBOX_MODE"
+    else
+        caddie cli:indent "sandbox mode: default"
+    fi
+
     if [ -n "$review_command" ]; then
         caddie cli:indent "review command: $review_command"
     else
-        caddie cli:indent "review command: default (codex review -)"
+        caddie cli:indent "review command: default (codex exec --full-auto __PROMPT__)"
     fi
 
     repo_root="$(git rev-parse --show-toplevel 2>/dev/null)"
@@ -1171,41 +1464,58 @@ function caddie_codex_info() {
 }
 
 function caddie_codex_help() {
-    caddie cli:title "Codex Review Commands"
+    caddie cli:title "Codex Commands"
     caddie cli:usage "caddie codex:<command>"
     caddie cli:blank
-    caddie cli:indent "info                        Show review configuration info"
-    caddie cli:indent "review [dir]                 Review the latest commit"
-    caddie cli:indent "review:watch <dir>           Run reviews on every commit"
-    caddie cli:indent "review:watch:stop <dir>      Disable commit reviews"
-    caddie cli:indent "review:watch:status <dir>    Check watch status"
-    caddie cli:indent "review:tail <dir>            Tail review output"
-    caddie cli:indent "review:terminal:debug        Debug Terminal window/tab creation"
-    caddie cli:indent "review:terminal:script <dir> Generate Terminal scripts"
-    caddie cli:indent "review:terminal:open <dir>   Open Terminal hub + review tabs"
+    caddie cli:title "CLI Commands"
+    caddie cli:indent "info                           Show Codex CLI and review config"
+    caddie cli:indent "run [prompt]                   Start Codex (or run one prompt)"
+    caddie cli:indent "exec <prompt> [opts...]        Run non-interactive Codex task"
+    caddie cli:indent "resume [session-id]            Resume a prior Codex session"
+    caddie cli:indent "status                         Show login/account status"
+    caddie cli:indent "auth:login                     Log in to Codex"
+    caddie cli:indent "auth:logout                    Log out from Codex"
+    caddie cli:indent "mcp [args...]                  Forward args to 'codex mcp'"
+    caddie cli:indent "cloud [args...]                Forward args to 'codex cloud'"
+    caddie cli:indent "completion [shell]             Print shell completion script"
     caddie cli:blank
-    caddie cli:title "Review Command Configuration"
-    caddie cli:indent "review:command:set <cmd>     Set Codex review command"
-    caddie cli:indent "review:command:append <args> Append args to review command"
-    caddie cli:indent "review:command:get           Show Codex review command"
-    caddie cli:indent "review:command:unset         Clear Codex review command"
+    caddie cli:title "Defaults"
+    caddie cli:indent "model:set|get|unset            Configure default --model"
+    caddie cli:indent "approval:set|get|unset         Configure --ask-for-approval"
+    caddie cli:indent "sandbox:set|get|unset          Configure --sandbox"
+    caddie cli:blank
+    caddie cli:title "Review Automation"
+    caddie cli:indent "review [dir]                    Review the latest commit"
+    caddie cli:indent "review:watch <dir>              Run reviews on every commit"
+    caddie cli:indent "review:watch:stop <dir>         Disable commit reviews"
+    caddie cli:indent "review:watch:status <dir>       Check watch status"
+    caddie cli:indent "review:tail <dir>               Tail review output"
+    caddie cli:indent "review:terminal:debug           Debug Terminal window/tab creation"
+    caddie cli:indent "review:terminal:script <dir>    Generate Terminal scripts"
+    caddie cli:indent "review:terminal:open <dir>      Open Terminal hub + review tabs"
+    caddie cli:indent "review:command:set <cmd>        Set review command"
+    caddie cli:indent "review:command:append <args>    Append args to review command"
+    caddie cli:indent "review:command:get              Show review command"
+    caddie cli:indent "review:command:unset            Clear review command"
     caddie cli:blank
     caddie cli:title "Examples"
+    caddie cli:indent "caddie codex:run"
+    caddie cli:indent "caddie codex:exec 'summarize this repo'"
+    caddie cli:indent "caddie codex:model:set gpt-5.3-codex"
+    caddie cli:indent "caddie codex:approval:set on-request"
     caddie cli:indent "caddie codex:review ."
     caddie cli:indent "caddie codex:review:watch ."
-    caddie cli:indent "caddie codex:review:terminal:debug"
-    caddie cli:indent "caddie codex:review:terminal:open ."
-    caddie cli:indent "caddie codex:review:command:set 'codex review -'"
+    caddie cli:indent "caddie codex:review:command:set 'codex exec --full-auto __PROMPT__'"
     return 0
 }
 
 function caddie_codex_description() {
-    printf '%s\n' 'Codex-powered code review helpers'
+    printf '%s\n' 'Codex CLI helpers and automated code review workflows'
     return 0
 }
 
 function caddie_codex_commands() {
-    printf '%s\n' "codex:info codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:terminal:debug codex:review:terminal:script codex:review:terminal:open codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
+    printf '%s\n' "codex:info codex:run codex:exec codex:resume codex:status codex:auth:login codex:auth:logout codex:mcp codex:cloud codex:completion codex:model:set codex:model:get codex:model:unset codex:approval:set codex:approval:get codex:approval:unset codex:sandbox:set codex:sandbox:get codex:sandbox:unset codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:terminal:debug codex:review:terminal:script codex:review:terminal:open codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
     return 0
 }
 
@@ -1214,6 +1524,26 @@ export -f caddie_codex_review_command_set
 export -f caddie_codex_review_command_append
 export -f caddie_codex_review_command_get
 export -f caddie_codex_review_command_unset
+export -f caddie_codex_require_cli
+export -f caddie_codex_model_set
+export -f caddie_codex_model_get
+export -f caddie_codex_model_unset
+export -f caddie_codex_approval_set
+export -f caddie_codex_approval_get
+export -f caddie_codex_approval_unset
+export -f caddie_codex_sandbox_set
+export -f caddie_codex_sandbox_get
+export -f caddie_codex_sandbox_unset
+export -f caddie_codex_run
+export -f caddie_codex_exec
+export -f caddie_codex_resume
+export -f caddie_codex_status
+export -f caddie_codex_auth_login
+export -f caddie_codex_auth_logout
+export -f caddie_codex_mcp
+export -f caddie_codex_cloud
+export -f caddie_codex_completion
+export -f caddie_codex_default_review_command
 export -f caddie_codex_repo_id
 export -f caddie_codex_review_log_path
 export -f caddie_codex_review_prompt

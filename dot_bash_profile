@@ -1,4 +1,4 @@
-source $HOME/.bashrc
+source "$HOME/.bashrc"
 
 # Due to catalina switching to zsh
 export BASH_SILENCE_DEPRECATION_WARNING=1
@@ -6,4 +6,9 @@ export BASH_SILENCE_DEPRECATION_WARNING=1
 # Set basic prompt
 export EDITOR=vim
 
-source $HOME/.caddie.sh
+if [ -d "$HOME/.local/bin" ]; then
+    PATH="$HOME/.local/bin:$PATH"
+    export PATH
+fi
+
+source "$HOME/.caddie.sh"
