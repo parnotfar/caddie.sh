@@ -1,0 +1,4162 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Ledger Module
+# Local-first Agentic Ledger with checkpoint capsules.
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_ledger_description() {
+    printf '%s\n' 'Agentic ledger checkpoint capsules for local-first provenance'
+    return 0
+}
+
+function caddie_ledger_timestamp_utc() {
+    date -u +"%Y-%m-%dT%H:%M:%SZ"
+    return 0
+}
+
+function caddie_ledger_json_escape() {
+    local value="$1"
+    value="${value//\\/\\\\}"
+    value="${value//\"/\\\"}"
+    value="${value//$'\n'/\\n}"
+    value="${value//$'\r'/\\r}"
+    value="${value//$'\t'/\\t}"
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_hash_file() {
+    local path="$1"
+    local hash=""
+
+    if [ -z "$path" ] || [ ! -f "$path" ]; then
+        return 1
+    fi
+
+    if command -v shasum >/dev/null 2>&1; then
+        hash="$(shasum -a 256 "$path" 2>/dev/null | awk '{print $1}')"
+    elif command -v sha256sum >/dev/null 2>&1; then
+        hash="$(sha256sum "$path" 2>/dev/null | awk '{print $1}')"
+    elif command -v openssl >/dev/null 2>&1; then
+        hash="$(openssl dgst -sha256 "$path" 2>/dev/null | awk '{print $NF}')"
+    fi
+
+    if [ -z "$hash" ]; then
+        return 1
+    fi
+
+    printf '%s' "$hash"
+    return 0
+}
+
+function caddie_ledger_repo_root() {
+    local repo_root=""
+    repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [ -z "$repo_root" ]; then
+        repo_root="$(pwd)"
+    fi
+    printf '%s' "$repo_root"
+    return 0
+}
+
+function caddie_ledger_dir() {
+    local repo_root="$1"
+    if [ -z "$repo_root" ]; then
+        repo_root="$(caddie_ledger_repo_root)"
+    fi
+    printf '%s' "$repo_root/.caddie/ledger"
+    return 0
+}
+
+function caddie_ledger_project_file() {
+    local repo_root="$1"
+    printf '%s' "$(caddie_ledger_dir "$repo_root")/project.json"
+    return 0
+}
+
+function caddie_ledger_sessions_dir() {
+    local repo_root="$1"
+    printf '%s' "$(caddie_ledger_dir "$repo_root")/sessions"
+    return 0
+}
+
+function caddie_ledger_current_session_file() {
+    local repo_root="$1"
+    printf '%s' "$(caddie_ledger_dir "$repo_root")/current_session"
+    return 0
+}
+
+function caddie_ledger_current_checkpoint_file() {
+    local repo_root="$1"
+    printf '%s' "$(caddie_ledger_dir "$repo_root")/current_checkpoint"
+    return 0
+}
+
+function caddie_ledger_state_dir() {
+    printf '%s' "$HOME/.caddie_state/ledger"
+    return 0
+}
+
+function caddie_ledger_config_file() {
+    printf '%s' "$(caddie_ledger_state_dir)/config.json"
+    return 0
+}
+
+function caddie_ledger_config_ensure_state_dir() {
+    local state_dir=""
+    state_dir="$(caddie_ledger_state_dir)"
+
+    if ! mkdir -p "$state_dir"; then
+        caddie cli:red "Error: Unable to create ledger state directory at $state_dir"
+        return 1
+    fi
+
+    chmod 700 "$(caddie_ledger_state_dir)" >/dev/null 2>&1 || true
+    return 0
+}
+
+function caddie_ledger_config_read_value() {
+    local key="$1"
+    local config_file=""
+    local value=""
+
+    config_file="$(caddie_ledger_config_file)"
+    if [ ! -f "$config_file" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        value="$(jq -r --arg key "$key" '.[$key] // ""' "$config_file" 2>/dev/null)"
+    else
+        value="$(sed -n "s/^[[:space:]]*\"${key}\"[[:space:]]*:[[:space:]]*\"\\(.*\\)\"[[:space:]]*,\\{0,1\\}[[:space:]]*$/\\1/p" "$config_file" | head -n 1)"
+    fi
+
+    if [ "$value" = "null" ]; then
+        value=""
+    fi
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_config_bucket_value() {
+    local key="$1"
+    local default_value="$2"
+    local value=""
+
+    value="$(caddie_ledger_config_read_value "$key")"
+    if [ -z "$value" ]; then
+        value="$default_value"
+    fi
+
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_config_write_json() {
+    local supabase_url="$1"
+    local supabase_anon_key="$2"
+    local project_id="$3"
+    local snapshots_bucket="$4"
+    local transcripts_bucket="$5"
+    local artifacts_bucket="$6"
+    local config_file=""
+    local escaped_url=""
+    local escaped_key=""
+    local escaped_project_id=""
+    local escaped_snapshots_bucket=""
+    local escaped_transcripts_bucket=""
+    local escaped_artifacts_bucket=""
+
+    config_file="$(caddie_ledger_config_file)"
+    escaped_url="$(caddie_ledger_json_escape "$supabase_url")"
+    escaped_key="$(caddie_ledger_json_escape "$supabase_anon_key")"
+    escaped_project_id="$(caddie_ledger_json_escape "$project_id")"
+    escaped_snapshots_bucket="$(caddie_ledger_json_escape "$snapshots_bucket")"
+    escaped_transcripts_bucket="$(caddie_ledger_json_escape "$transcripts_bucket")"
+    escaped_artifacts_bucket="$(caddie_ledger_json_escape "$artifacts_bucket")"
+
+    cat > "$config_file" <<EOF
+{
+  "supabase_url": "${escaped_url}",
+  "supabase_anon_key": "${escaped_key}",
+  "project_id": "${escaped_project_id}",
+  "snapshots_bucket": "${escaped_snapshots_bucket}",
+  "transcripts_bucket": "${escaped_transcripts_bucket}",
+  "artifacts_bucket": "${escaped_artifacts_bucket}"
+}
+EOF
+    chmod 600 "$config_file" >/dev/null 2>&1 || true
+    return $?
+}
+
+function caddie_ledger_schema_db_url_file() {
+    printf '%s' "$(caddie_ledger_state_dir)/db_url"
+    return 0
+}
+
+function caddie_ledger_schema_db_host_file() {
+    printf '%s' "$(caddie_ledger_state_dir)/db_host"
+    return 0
+}
+
+function caddie_ledger_schema_db_user_file() {
+    printf '%s' "$(caddie_ledger_state_dir)/db_user"
+    return 0
+}
+
+function caddie_ledger_schema_db_port_file() {
+    printf '%s' "$(caddie_ledger_state_dir)/db_port"
+    return 0
+}
+
+function caddie_ledger_schema_db_name_file() {
+    printf '%s' "$(caddie_ledger_state_dir)/db_name"
+    return 0
+}
+
+function caddie_ledger_schema_db_file_read() {
+    local file_path="$1"
+    local value=""
+
+    if [ ! -f "$file_path" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    value="$(cat "$file_path" 2>/dev/null || true)"
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_schema_db_file_write() {
+    local file_path="$1"
+    local value="$2"
+    local label="$3"
+
+    if ! caddie_ledger_config_ensure_state_dir; then
+        return 1
+    fi
+
+    if ! printf '%s\n' "$value" > "$file_path"; then
+        caddie cli:red "Error: Unable to save schema DB $label"
+        return 1
+    fi
+
+    chmod 600 "$file_path" >/dev/null 2>&1 || true
+    return 0
+}
+
+function caddie_ledger_schema_db_file_clear() {
+    local file_path="$1"
+    local label="$2"
+
+    if [ ! -f "$file_path" ]; then
+        caddie cli:yellow "No ledger schema DB $label was set"
+        return 0
+    fi
+
+    if ! rm -f "$file_path"; then
+        caddie cli:red "Error: Unable to clear schema DB $label"
+        return 1
+    fi
+
+    caddie cli:check "Ledger schema DB $label cleared"
+    return 0
+}
+
+function caddie_ledger_schema_db_value_is_url() {
+    local value="$1"
+
+    if [ -n "$(printf '%s' "$value" | sed -nE 's#^postgres(ql)?://.+#ok#p')" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_ledger_schema_db_url_extract_host() {
+    local value="$1"
+    local host=""
+
+    host="$(printf '%s' "$value" | sed -nE 's#^[a-zA-Z0-9+.-]+://([^/@]+@)?([^/:?]+).*$#\2#p' | head -n 1)"
+    printf '%s' "$host"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_extract_user() {
+    local value="$1"
+    local user=""
+
+    user="$(printf '%s' "$value" | sed -nE 's#^[a-zA-Z0-9+.-]+://([^:/@]+)(:[^@]*)?@.*$#\1#p' | head -n 1)"
+    printf '%s' "$user"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_extract_port() {
+    local value="$1"
+    local port=""
+
+    port="$(printf '%s' "$value" | sed -nE 's#^[a-zA-Z0-9+.-]+://([^/@]+@)?[^/:?]+:([0-9]+)(/.*)?$#\2#p' | head -n 1)"
+    printf '%s' "$port"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_extract_name() {
+    local value="$1"
+    local name=""
+
+    name="$(printf '%s' "$value" | sed -nE 's#^[a-zA-Z0-9+.-]+://([^/@]+@)?[^/?]+/([^?]+).*$#\2#p' | head -n 1)"
+    printf '%s' "$name"
+    return 0
+}
+
+function caddie_ledger_schema_db_host_normalize() {
+    local value="$1"
+    local host="$value"
+
+    if caddie_ledger_schema_db_value_is_url "$value"; then
+        host="$(caddie_ledger_schema_db_url_extract_host "$value")"
+        printf '%s' "$host"
+        return 0
+    fi
+
+    host="${host#*://}"
+    if [ "${host#*@}" != "$host" ]; then
+        host="${host#*@}"
+    fi
+    host="${host%%/*}"
+    if [ "${host%%:*}" != "$host" ]; then
+        host="${host%%:*}"
+    fi
+
+    printf '%s' "$host"
+    return 0
+}
+
+function caddie_ledger_schema_db_non_url_port_extract() {
+    local value="$1"
+    local segment="$value"
+    local port=""
+
+    segment="${segment#*://}"
+    if [ "${segment#*@}" != "$segment" ]; then
+        segment="${segment#*@}"
+    fi
+    segment="${segment%%/*}"
+    if [ "${segment%%:*}" != "$segment" ]; then
+        port="${segment##*:}"
+    fi
+
+    printf '%s' "$port"
+    return 0
+}
+
+function caddie_ledger_schema_db_host_is_valid() {
+    local host="$1"
+    if [ -n "$(printf '%s' "$host" | sed -nE 's#^[A-Za-z0-9.-]+$#ok#p')" ]; then
+        return 0
+    fi
+    return 1
+}
+
+function caddie_ledger_schema_db_port_is_valid() {
+    local port="$1"
+    if [ -n "$(printf '%s' "$port" | sed -nE 's#^[0-9]+$#ok#p')" ]; then
+        return 0
+    fi
+    return 1
+}
+
+function caddie_ledger_schema_db_user_is_valid() {
+    local user="$1"
+    if [ -n "$(printf '%s' "$user" | sed -nE 's#^[A-Za-z0-9_.-]+$#ok#p')" ]; then
+        return 0
+    fi
+    return 1
+}
+
+function caddie_ledger_schema_db_name_is_valid() {
+    local name="$1"
+    if [ -n "$(printf '%s' "$name" | sed -nE 's#^[A-Za-z0-9_.-]+$#ok#p')" ]; then
+        return 0
+    fi
+    return 1
+}
+
+function caddie_ledger_schema_db_host_get_value() {
+    local value=""
+    local legacy_value=""
+
+    value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_host_file)")"
+    if [ -n "$value" ]; then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    legacy_value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_url_file)")"
+    if [ -z "$legacy_value" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    value="$(caddie_ledger_schema_db_host_normalize "$legacy_value")"
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_schema_db_user_get_value() {
+    local value=""
+    local legacy_value=""
+
+    value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_user_file)")"
+    if [ -n "$value" ]; then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    legacy_value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_url_file)")"
+    if caddie_ledger_schema_db_value_is_url "$legacy_value"; then
+        value="$(caddie_ledger_schema_db_url_extract_user "$legacy_value")"
+        if [ -n "$value" ]; then
+            printf '%s' "$value"
+            return 0
+        fi
+    fi
+
+    printf '%s' "postgres"
+    return 0
+}
+
+function caddie_ledger_schema_db_port_get_value() {
+    local value=""
+    local legacy_value=""
+
+    value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_port_file)")"
+    if [ -n "$value" ]; then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    legacy_value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_url_file)")"
+    if caddie_ledger_schema_db_value_is_url "$legacy_value"; then
+        value="$(caddie_ledger_schema_db_url_extract_port "$legacy_value")"
+        if [ -n "$value" ]; then
+            printf '%s' "$value"
+            return 0
+        fi
+    fi
+
+    printf '%s' "5432"
+    return 0
+}
+
+function caddie_ledger_schema_db_name_get_value() {
+    local value=""
+    local legacy_value=""
+
+    value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_name_file)")"
+    if [ -n "$value" ]; then
+        printf '%s' "$value"
+        return 0
+    fi
+
+    legacy_value="$(caddie_ledger_schema_db_file_read "$(caddie_ledger_schema_db_url_file)")"
+    if caddie_ledger_schema_db_value_is_url "$legacy_value"; then
+        value="$(caddie_ledger_schema_db_url_extract_name "$legacy_value")"
+        if [ -n "$value" ]; then
+            printf '%s' "$value"
+            return 0
+        fi
+    fi
+
+    printf '%s' "postgres"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_compose() {
+    local host="$1"
+    local user="$2"
+    local port="$3"
+    local name="$4"
+
+    if [ -z "$host" ] || [ -z "$user" ] || [ -z "$port" ] || [ -z "$name" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    printf '%s' "postgresql://${user}@${host}:${port}/${name}"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_get_value() {
+    local host=""
+    local user=""
+    local port=""
+    local name=""
+
+    host="$(caddie_ledger_schema_db_host_get_value)"
+    if [ -z "$host" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    user="$(caddie_ledger_schema_db_user_get_value)"
+    port="$(caddie_ledger_schema_db_port_get_value)"
+    name="$(caddie_ledger_schema_db_name_get_value)"
+    caddie_ledger_schema_db_url_compose "$host" "$user" "$port" "$name"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_is_valid() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        return 1
+    fi
+
+    if [ -n "$(printf '%s' "$value" | sed -nE 's#^postgres(ql)?://.+#ok#p')" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_ledger_schema_db_url_set() {
+    local value="$1"
+    local host=""
+    local user=""
+    local port=""
+    local name=""
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a DB host or Postgres connection URL"
+        caddie cli:usage "caddie ledger:schema:db:url:set <db_host|postgres_url>"
+        return 1
+    fi
+
+    if ! caddie_ledger_config_ensure_state_dir; then
+        return 1
+    fi
+
+    if caddie_ledger_schema_db_value_is_url "$value"; then
+        host="$(caddie_ledger_schema_db_url_extract_host "$value")"
+        user="$(caddie_ledger_schema_db_url_extract_user "$value")"
+        port="$(caddie_ledger_schema_db_url_extract_port "$value")"
+        name="$(caddie_ledger_schema_db_url_extract_name "$value")"
+        if caddie_ledger_schema_db_url_has_inline_password "$value"; then
+            caddie cli:yellow "Password segment detected in URL; password will not be stored"
+            caddie cli:thought "Use 'caddie ledger:schema:db:password:set [password]' for secure password storage"
+        fi
+    else
+        host="$(caddie_ledger_schema_db_host_normalize "$value")"
+        port="$(caddie_ledger_schema_db_non_url_port_extract "$value")"
+    fi
+
+    if ! caddie_ledger_schema_db_host_is_valid "$host"; then
+        caddie cli:red "Error: Invalid DB host: $host"
+        caddie cli:indent "expected host like: db.<project>.supabase.co"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_host_file)" "$host" "host"; then
+        return 1
+    fi
+    caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_url_file)" "$host" "url base" >/dev/null 2>&1 || true
+
+    if [ -n "$user" ] && caddie_ledger_schema_db_user_is_valid "$user"; then
+        caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_user_file)" "$user" "user" >/dev/null 2>&1 || true
+    fi
+    if [ -n "$port" ] && caddie_ledger_schema_db_port_is_valid "$port"; then
+        caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_port_file)" "$port" "port" >/dev/null 2>&1 || true
+    fi
+    if [ -n "$name" ] && caddie_ledger_schema_db_name_is_valid "$name"; then
+        caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_name_file)" "$name" "name" >/dev/null 2>&1 || true
+    fi
+
+    caddie cli:check "Ledger schema DB base set"
+    caddie cli:indent "host: $host"
+    caddie cli:indent "effective url: $(caddie_ledger_schema_db_url_get_value)"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_get() {
+    local host=""
+    local user=""
+    local port=""
+    local name=""
+    local url=""
+
+    host="$(caddie_ledger_schema_db_host_get_value)"
+    if [ -z "$host" ]; then
+        caddie cli:yellow "No ledger schema DB host is set"
+        caddie cli:thought "Use 'caddie ledger:schema:db:url:set <db_host|postgres_url>' to set it"
+        return 0
+    fi
+
+    user="$(caddie_ledger_schema_db_user_get_value)"
+    port="$(caddie_ledger_schema_db_port_get_value)"
+    name="$(caddie_ledger_schema_db_name_get_value)"
+    url="$(caddie_ledger_schema_db_url_get_value)"
+
+    caddie cli:green "Ledger schema DB host: $host"
+    caddie cli:indent "user: $user"
+    caddie cli:indent "port: $port"
+    caddie cli:indent "name: $name"
+    caddie cli:indent "effective url: $url"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_unset() {
+    if ! caddie_ledger_schema_db_file_clear "$(caddie_ledger_schema_db_host_file)" "host"; then
+        return 1
+    fi
+    rm -f "$(caddie_ledger_schema_db_url_file)" >/dev/null 2>&1 || true
+    return 0
+}
+
+function caddie_ledger_schema_db_user_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a DB user"
+        caddie cli:usage "caddie ledger:schema:db:user:set <user>"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_user_is_valid "$value"; then
+        caddie cli:red "Error: Invalid DB user"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_user_file)" "$value" "user"; then
+        return 1
+    fi
+
+    caddie cli:check "Ledger schema DB user set"
+    caddie cli:indent "user: $value"
+    return 0
+}
+
+function caddie_ledger_schema_db_user_get() {
+    caddie cli:green "Ledger schema DB user: $(caddie_ledger_schema_db_user_get_value)"
+    return 0
+}
+
+function caddie_ledger_schema_db_user_unset() {
+    if ! caddie_ledger_schema_db_file_clear "$(caddie_ledger_schema_db_user_file)" "user override"; then
+        return 1
+    fi
+    caddie cli:indent "default user: postgres"
+    return 0
+}
+
+function caddie_ledger_schema_db_port_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a DB port"
+        caddie cli:usage "caddie ledger:schema:db:port:set <port>"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_port_is_valid "$value"; then
+        caddie cli:red "Error: Invalid DB port"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_port_file)" "$value" "port"; then
+        return 1
+    fi
+
+    caddie cli:check "Ledger schema DB port set"
+    caddie cli:indent "port: $value"
+    return 0
+}
+
+function caddie_ledger_schema_db_port_get() {
+    caddie cli:green "Ledger schema DB port: $(caddie_ledger_schema_db_port_get_value)"
+    return 0
+}
+
+function caddie_ledger_schema_db_port_unset() {
+    if ! caddie_ledger_schema_db_file_clear "$(caddie_ledger_schema_db_port_file)" "port override"; then
+        return 1
+    fi
+    caddie cli:indent "default port: 5432"
+    return 0
+}
+
+function caddie_ledger_schema_db_name_set() {
+    local value="$1"
+
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a DB name"
+        caddie cli:usage "caddie ledger:schema:db:name:set <database_name>"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_name_is_valid "$value"; then
+        caddie cli:red "Error: Invalid DB name"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_file_write "$(caddie_ledger_schema_db_name_file)" "$value" "name"; then
+        return 1
+    fi
+
+    caddie cli:check "Ledger schema DB name set"
+    caddie cli:indent "name: $value"
+    return 0
+}
+
+function caddie_ledger_schema_db_name_get() {
+    caddie cli:green "Ledger schema DB name: $(caddie_ledger_schema_db_name_get_value)"
+    return 0
+}
+
+function caddie_ledger_schema_db_name_unset() {
+    if ! caddie_ledger_schema_db_file_clear "$(caddie_ledger_schema_db_name_file)" "name override"; then
+        return 1
+    fi
+    caddie cli:indent "default name: postgres"
+    return 0
+}
+
+function caddie_ledger_schema_keychain_service() {
+    printf '%s' "caddie.ledger.schema.db.password"
+    return 0
+}
+
+function caddie_ledger_schema_keychain_account() {
+    local project_id=""
+    local host=""
+
+    host="$(caddie_ledger_schema_db_host_get_value)"
+    if [ -n "$host" ]; then
+        printf '%s' "$host"
+        return 0
+    fi
+
+    project_id="$(caddie_ledger_config_read_value "project_id")"
+    if [ -n "$project_id" ]; then
+        printf '%s' "$project_id"
+        return 0
+    fi
+
+    printf '%s' "default"
+    return 0
+}
+
+function caddie_ledger_schema_db_password_read() {
+    local account=""
+    local service=""
+    local password=""
+
+    if ! command -v security >/dev/null 2>&1; then
+        return 1
+    fi
+
+    account="$(caddie_ledger_schema_keychain_account)"
+    service="$(caddie_ledger_schema_keychain_service)"
+    password="$(security find-generic-password -a "$account" -s "$service" -w 2>/dev/null || true)"
+
+    if [ -z "$password" ]; then
+        return 1
+    fi
+
+    printf '%s' "$password"
+    return 0
+}
+
+function caddie_ledger_schema_db_password_set() {
+    local password="$1"
+    local account=""
+    local service=""
+
+    if [ -z "$password" ]; then
+        if [ ! -t 0 ]; then
+            caddie cli:red "Error: No database password provided and stdin is not interactive"
+            caddie cli:usage "caddie ledger:schema:db:password:set [password]"
+            return 1
+        fi
+
+        caddie cli:indent "Enter database password (input hidden):"
+        if ! IFS= read -r -s password; then
+            printf '\n'
+            caddie cli:red "Error: Failed to read database password"
+            return 1
+        fi
+        printf '\n'
+    fi
+
+    if [ -z "$password" ]; then
+        caddie cli:red "Error: Database password cannot be empty"
+        return 1
+    fi
+
+    if ! command -v security >/dev/null 2>&1; then
+        caddie cli:red "Error: security command not available"
+        return 1
+    fi
+
+    account="$(caddie_ledger_schema_keychain_account)"
+    service="$(caddie_ledger_schema_keychain_service)"
+
+    if security add-generic-password -a "$account" -s "$service" -w "$password" -U >/dev/null 2>&1; then
+        caddie cli:check "Ledger schema DB password stored in keychain"
+        caddie cli:indent "service: $service"
+        caddie cli:indent "account: $account"
+        return 0
+    fi
+
+    caddie cli:red "Error: Failed to store keychain password"
+    return 1
+}
+
+function caddie_ledger_schema_db_password_get() {
+    local account=""
+    local service=""
+
+    if ! command -v security >/dev/null 2>&1; then
+        caddie cli:red "Error: security command not available"
+        return 1
+    fi
+
+    account="$(caddie_ledger_schema_keychain_account)"
+    service="$(caddie_ledger_schema_keychain_service)"
+
+    if caddie_ledger_schema_db_password_read >/dev/null 2>&1; then
+        caddie cli:green "Ledger schema DB password: <set>"
+        caddie cli:indent "service: $service"
+        caddie cli:indent "account: $account"
+        return 0
+    fi
+
+    caddie cli:yellow "Ledger schema DB password: <not set>"
+    caddie cli:thought "Use 'caddie ledger:schema:db:password:set [password]'"
+    return 0
+}
+
+function caddie_ledger_schema_db_password_unset() {
+    local account=""
+    local service=""
+
+    if ! command -v security >/dev/null 2>&1; then
+        caddie cli:red "Error: security command not available"
+        return 1
+    fi
+
+    account="$(caddie_ledger_schema_keychain_account)"
+    service="$(caddie_ledger_schema_keychain_service)"
+
+    if security delete-generic-password -a "$account" -s "$service" >/dev/null 2>&1; then
+        caddie cli:check "Ledger schema DB password removed from keychain"
+        caddie cli:indent "service: $service"
+        caddie cli:indent "account: $account"
+        return 0
+    fi
+
+    caddie cli:yellow "Ledger schema DB password not found in keychain"
+    return 0
+}
+
+function caddie_ledger_schema_db_url_has_inline_password() {
+    local db_url="$1"
+
+    if [ -n "$(printf '%s' "$db_url" | sed -nE 's#^[a-zA-Z0-9+.-]+://[^/@]+:[^@]*@.*$#yes#p')" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_ledger_schema_db_url_resolve_from_input() {
+    local input="$1"
+    local host=""
+    local user=""
+    local port=""
+    local name=""
+
+    if [ -z "$input" ]; then
+        caddie_ledger_schema_db_url_get_value
+        return 0
+    fi
+
+    if caddie_ledger_schema_db_value_is_url "$input"; then
+        printf '%s' "$input"
+        return 0
+    fi
+
+    host="$(caddie_ledger_schema_db_host_normalize "$input")"
+    if ! caddie_ledger_schema_db_host_is_valid "$host"; then
+        printf '%s' ""
+        return 0
+    fi
+    user="$(caddie_ledger_schema_db_user_get_value)"
+    port="$(caddie_ledger_schema_db_port_get_value)"
+    name="$(caddie_ledger_schema_db_name_get_value)"
+    caddie_ledger_schema_db_url_compose "$host" "$user" "$port" "$name"
+    return 0
+}
+
+function caddie_ledger_schema_sql() {
+    cat <<'EOF'
+-- Caddie Ledger Schema Bootstrap
+-- Applies core ledger tables, storage buckets, grants, and baseline RLS policies.
+
+create table if not exists public.projects (
+  id text primary key,
+  name text not null,
+  repo_root text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.sessions (
+  id text primary key,
+  project_id text not null references public.projects(id) on delete cascade,
+  agent text not null,
+  started_at timestamptz not null default now(),
+  ended_at timestamptz null,
+  labels jsonb not null default '{}'::jsonb
+);
+
+create table if not exists public.checkpoints (
+  id text primary key,
+  session_id text not null references public.sessions(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  message text not null default '',
+  snapshot_object text not null,
+  provenance jsonb not null default '{}'::jsonb,
+  verification jsonb not null default '{}'::jsonb,
+  fingerprint text not null
+);
+
+create table if not exists public.artifacts (
+  id text primary key,
+  checkpoint_id text not null references public.checkpoints(id) on delete cascade,
+  kind text not null,
+  object_key text not null,
+  meta jsonb not null default '{}'::jsonb
+);
+
+create table if not exists public.events (
+  id bigint generated by default as identity primary key,
+  session_id text not null references public.sessions(id) on delete cascade,
+  ts timestamptz not null default now(),
+  type text not null,
+  payload jsonb not null default '{}'::jsonb
+);
+
+create index if not exists idx_sessions_project_id on public.sessions(project_id);
+create index if not exists idx_checkpoints_session_id on public.checkpoints(session_id);
+create index if not exists idx_artifacts_checkpoint_id on public.artifacts(checkpoint_id);
+create index if not exists idx_events_session_id on public.events(session_id);
+
+insert into storage.buckets (id, name, public)
+values
+  ('snapshots', 'snapshots', false),
+  ('transcripts', 'transcripts', false),
+  ('artifacts', 'artifacts', false)
+on conflict (id) do nothing;
+
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on table public.projects to anon, authenticated;
+grant select, insert, update, delete on table public.sessions to anon, authenticated;
+grant select, insert, update, delete on table public.checkpoints to anon, authenticated;
+grant select, insert, update, delete on table public.artifacts to anon, authenticated;
+grant select, insert, update, delete on table public.events to anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
+
+alter table public.projects enable row level security;
+alter table public.sessions enable row level security;
+alter table public.checkpoints enable row level security;
+alter table public.artifacts enable row level security;
+alter table public.events enable row level security;
+
+drop policy if exists projects_anon_all on public.projects;
+create policy projects_anon_all on public.projects for all to anon using (true) with check (true);
+
+drop policy if exists projects_authenticated_all on public.projects;
+create policy projects_authenticated_all on public.projects for all to authenticated using (true) with check (true);
+
+drop policy if exists sessions_anon_all on public.sessions;
+create policy sessions_anon_all on public.sessions for all to anon using (true) with check (true);
+
+drop policy if exists sessions_authenticated_all on public.sessions;
+create policy sessions_authenticated_all on public.sessions for all to authenticated using (true) with check (true);
+
+drop policy if exists checkpoints_anon_all on public.checkpoints;
+create policy checkpoints_anon_all on public.checkpoints for all to anon using (true) with check (true);
+
+drop policy if exists checkpoints_authenticated_all on public.checkpoints;
+create policy checkpoints_authenticated_all on public.checkpoints for all to authenticated using (true) with check (true);
+
+drop policy if exists artifacts_anon_all on public.artifacts;
+create policy artifacts_anon_all on public.artifacts for all to anon using (true) with check (true);
+
+drop policy if exists artifacts_authenticated_all on public.artifacts;
+create policy artifacts_authenticated_all on public.artifacts for all to authenticated using (true) with check (true);
+
+drop policy if exists events_anon_all on public.events;
+create policy events_anon_all on public.events for all to anon using (true) with check (true);
+
+drop policy if exists events_authenticated_all on public.events;
+create policy events_authenticated_all on public.events for all to authenticated using (true) with check (true);
+
+drop policy if exists storage_objects_anon_snapshots on storage.objects;
+create policy storage_objects_anon_snapshots
+on storage.objects for all to anon
+using (bucket_id = 'snapshots') with check (bucket_id = 'snapshots');
+
+drop policy if exists storage_objects_anon_transcripts on storage.objects;
+create policy storage_objects_anon_transcripts
+on storage.objects for all to anon
+using (bucket_id = 'transcripts') with check (bucket_id = 'transcripts');
+
+drop policy if exists storage_objects_anon_artifacts on storage.objects;
+create policy storage_objects_anon_artifacts
+on storage.objects for all to anon
+using (bucket_id = 'artifacts') with check (bucket_id = 'artifacts');
+
+drop policy if exists storage_objects_authenticated_snapshots on storage.objects;
+create policy storage_objects_authenticated_snapshots
+on storage.objects for all to authenticated
+using (bucket_id = 'snapshots') with check (bucket_id = 'snapshots');
+
+drop policy if exists storage_objects_authenticated_transcripts on storage.objects;
+create policy storage_objects_authenticated_transcripts
+on storage.objects for all to authenticated
+using (bucket_id = 'transcripts') with check (bucket_id = 'transcripts');
+
+drop policy if exists storage_objects_authenticated_artifacts on storage.objects;
+create policy storage_objects_authenticated_artifacts
+on storage.objects for all to authenticated
+using (bucket_id = 'artifacts') with check (bucket_id = 'artifacts');
+EOF
+    return 0
+}
+
+function caddie_ledger_schema_init_run() {
+    local mode="$1"
+    local db_url_arg="$2"
+    local db_url=""
+    local db_password=""
+    local use_pgpassword="false"
+    local sql_file=""
+    local apply_log=""
+    local masked_db_url=""
+    local psql_status=0
+
+    if [ "$mode" = "dry" ]; then
+        caddie cli:title "Ledger Schema SQL (Dry Run)"
+        caddie_ledger_schema_sql
+        return 0
+    fi
+
+    db_url="$(caddie_ledger_schema_db_url_resolve_from_input "$db_url_arg")"
+
+    if [ -z "$db_url" ]; then
+        caddie cli:red "Error: No schema DB host/URL provided"
+        caddie cli:usage "caddie ledger:schema:init [db_host|postgres_url]"
+        caddie cli:thought "Or set one: caddie ledger:schema:db:url:set <db_host|postgres_url>"
+        return 1
+    fi
+
+    if ! caddie_ledger_schema_db_url_is_valid "$db_url"; then
+        caddie cli:red "Error: Invalid schema DB URL: $db_url"
+        caddie cli:indent "expected: postgresql://postgres@db.<project>.supabase.co:5432/postgres"
+        caddie cli:thought "Set it with: caddie ledger:schema:db:url:set <db_host|postgres_url>"
+        return 1
+    fi
+
+    if ! command -v psql >/dev/null 2>&1; then
+        caddie cli:red "Error: 'psql' is required for schema initialization"
+        caddie cli:thought "This command applies schema to your remote Supabase Postgres via client connection"
+        caddie cli:thought "Install PostgreSQL client tools and try again"
+        return 1
+    fi
+
+    sql_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-schema.XXXXXX.sql")"
+    apply_log="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-schema.XXXXXX.log")"
+    caddie_ledger_schema_sql > "$sql_file"
+
+    masked_db_url="$(printf '%s' "$db_url" | sed -E 's#(://[^:/@]+):[^@]+@#\1:***@#')"
+    if ! caddie_ledger_schema_db_url_has_inline_password "$db_url"; then
+        db_password="$(caddie_ledger_schema_db_password_read 2>/dev/null || true)"
+        if [ -n "$db_password" ]; then
+            use_pgpassword="true"
+        fi
+    fi
+
+    caddie cli:title "Ledger Schema Init"
+    caddie cli:indent "target: $masked_db_url"
+    caddie cli:indent "sql: $sql_file"
+    if [ "$use_pgpassword" = "true" ]; then
+        caddie cli:indent "auth: keychain password"
+    else
+        caddie cli:indent "auth: URL/env only"
+    fi
+
+    if [ "$use_pgpassword" = "true" ]; then
+        env PGPASSWORD="$db_password" psql "$db_url" -v ON_ERROR_STOP=1 -f "$sql_file" > "$apply_log" 2>&1
+    else
+        psql "$db_url" -v ON_ERROR_STOP=1 -f "$sql_file" > "$apply_log" 2>&1
+    fi
+    psql_status=$?
+
+    if [ "$psql_status" -eq 0 ]; then
+        db_password=""
+        caddie cli:check "Ledger schema applied successfully"
+        rm -f "$sql_file" "$apply_log"
+        return 0
+    fi
+
+    db_password=""
+    caddie cli:red "Error: Ledger schema apply failed"
+    caddie cli:indent "log: $apply_log"
+    caddie cli:indent "tail:"
+    tail -n 20 "$apply_log" | while IFS= read -r line; do
+        caddie cli:indent "$line"
+    done
+    rm -f "$sql_file"
+    return 1
+}
+
+function caddie_ledger_schema_init() {
+    local db_url="$1"
+    caddie_ledger_schema_init_run "apply" "$db_url"
+    return $?
+}
+
+function caddie_ledger_schema_init_dry_run() {
+    caddie_ledger_schema_init_run "dry" ""
+    return $?
+}
+
+function caddie_ledger_json_query() {
+    local file_path="$1"
+    local query="$2"
+    local value=""
+
+    if [ ! -f "$file_path" ] || [ -z "$query" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        value="$(jq -r "${query} // \"\"" "$file_path" 2>/dev/null)"
+        if [ "$value" = "null" ]; then
+            value=""
+        fi
+        printf '%s' "$value"
+        return 0
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        value="$(python3 - "$file_path" "$query" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+query = sys.argv[2].strip()
+
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+except Exception:
+    print("")
+    raise SystemExit(0)
+
+if not query.startswith("."):
+    print("")
+    raise SystemExit(0)
+
+node = data
+parts = [p for p in query[1:].split(".") if p]
+for part in parts:
+    if isinstance(node, dict):
+        node = node.get(part, "")
+    else:
+        node = ""
+    if node == "":
+        break
+
+if isinstance(node, (dict, list)):
+    print(json.dumps(node, separators=(",", ":")))
+elif node is None:
+    print("")
+else:
+    print(str(node))
+PY
+)"
+        printf '%s' "$value"
+        return 0
+    fi
+
+    printf '%s' ""
+    return 0
+}
+
+function caddie_ledger_json_array_length() {
+    local file_path="$1"
+
+    if [ ! -f "$file_path" ]; then
+        printf '%s' "0"
+        return 0
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        jq 'length' "$file_path" 2>/dev/null || printf '%s' "0"
+        return 0
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$file_path" <<'PY'
+import json
+import sys
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        data = json.load(f)
+    print(len(data) if isinstance(data, list) else 0)
+except Exception:
+    print(0)
+PY
+        return 0
+    fi
+
+    printf '%s' "0"
+    return 0
+}
+
+function caddie_ledger_json_array_first_field() {
+    local file_path="$1"
+    local field="$2"
+    local value=""
+
+    if [ ! -f "$file_path" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        value="$(jq -r ".[0].${field} // \"\"" "$file_path" 2>/dev/null)"
+        if [ "$value" = "null" ]; then
+            value=""
+        fi
+        printf '%s' "$value"
+        return 0
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        value="$(python3 - "$file_path" "$field" <<'PY'
+import json
+import sys
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        data = json.load(f)
+except Exception:
+    print("")
+    raise SystemExit(0)
+
+field = sys.argv[2]
+if not isinstance(data, list) or len(data) == 0:
+    print("")
+    raise SystemExit(0)
+
+node = data[0]
+for part in [p for p in field.split(".") if p]:
+    if isinstance(node, dict):
+        node = node.get(part, "")
+    else:
+        node = ""
+        break
+
+if isinstance(node, (dict, list)):
+    print(json.dumps(node, separators=(",", ":")))
+elif node is None:
+    print("")
+else:
+    print(str(node))
+PY
+)"
+        printf '%s' "$value"
+        return 0
+    fi
+
+    printf '%s' ""
+    return 0
+}
+
+function caddie_ledger_json_array_field_lines() {
+    local file_path="$1"
+    local field="$2"
+
+    if [ ! -f "$file_path" ] || [ -z "$field" ]; then
+        return 0
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
+        jq -r ".[] | .${field} // empty" "$file_path" 2>/dev/null || true
+        return 0
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$file_path" "$field" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        data = json.load(f)
+except Exception:
+    raise SystemExit(0)
+
+field = sys.argv[2]
+parts = [p for p in field.split(".") if p]
+
+if not isinstance(data, list):
+    raise SystemExit(0)
+
+for item in data:
+    node = item
+    for part in parts:
+        if isinstance(node, dict):
+            node = node.get(part, "")
+        else:
+            node = ""
+            break
+    if node is None:
+        node = ""
+    if isinstance(node, (dict, list)):
+        print(json.dumps(node, separators=(",", ":")))
+    elif node != "":
+        print(str(node))
+PY
+    fi
+    return 0
+}
+
+function caddie_ledger_url_encode() {
+    local raw_value="$1"
+    local encoded=""
+
+    if command -v python3 >/dev/null 2>&1; then
+        encoded="$(python3 - "$raw_value" <<'PY'
+import sys
+import urllib.parse
+print(urllib.parse.quote(sys.argv[1], safe="/"))
+PY
+)"
+        printf '%s' "$encoded"
+        return 0
+    fi
+
+    printf '%s' "$raw_value"
+    return 0
+}
+
+function caddie_ledger_supabase_config_resolve() {
+    local supabase_url=""
+    local supabase_anon_key=""
+    local project_id=""
+    local snapshots_bucket=""
+    local transcripts_bucket=""
+    local artifacts_bucket=""
+
+    supabase_url="$(caddie_ledger_config_read_value "supabase_url")"
+    supabase_anon_key="$(caddie_ledger_config_read_value "supabase_anon_key")"
+    project_id="$(caddie_ledger_config_read_value "project_id")"
+    snapshots_bucket="$(caddie_ledger_config_bucket_value "snapshots_bucket" "snapshots")"
+    transcripts_bucket="$(caddie_ledger_config_bucket_value "transcripts_bucket" "transcripts")"
+    artifacts_bucket="$(caddie_ledger_config_bucket_value "artifacts_bucket" "artifacts")"
+
+    if [ -z "$supabase_url" ] || [ -z "$supabase_anon_key" ] || [ -z "$project_id" ]; then
+        caddie cli:red "Error: Ledger Supabase config is incomplete"
+        caddie cli:usage "caddie ledger:auth:set <supabase_url> <supabase_anon_key> <project_id> [snapshots_bucket] [transcripts_bucket] [artifacts_bucket]"
+        return 1
+    fi
+
+    printf '%s|%s|%s|%s|%s|%s' \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "$project_id" \
+        "$snapshots_bucket" \
+        "$transcripts_bucket" \
+        "$artifacts_bucket"
+    return 0
+}
+
+function caddie_ledger_supabase_json_request() {
+    local supabase_url="$1"
+    local supabase_anon_key="$2"
+    local method="$3"
+    local path="$4"
+    local payload="$5"
+    local prefer_header="$6"
+    local response_file="$7"
+    local http_code=""
+    local body_preview=""
+
+    if [ -z "$method" ] || [ -z "$path" ] || [ -z "$response_file" ]; then
+        return 1
+    fi
+
+    if [ -n "$payload" ]; then
+        if [ -n "$prefer_header" ]; then
+            http_code="$(curl -sS -X "$method" \
+                "${supabase_url}${path}" \
+                -H "apikey: ${supabase_anon_key}" \
+                -H "Authorization: Bearer ${supabase_anon_key}" \
+                -H "Content-Type: application/json" \
+                -H "Prefer: ${prefer_header}" \
+                --data "$payload" \
+                -o "$response_file" \
+                -w "%{http_code}")"
+        else
+            http_code="$(curl -sS -X "$method" \
+                "${supabase_url}${path}" \
+                -H "apikey: ${supabase_anon_key}" \
+                -H "Authorization: Bearer ${supabase_anon_key}" \
+                -H "Content-Type: application/json" \
+                --data "$payload" \
+                -o "$response_file" \
+                -w "%{http_code}")"
+        fi
+    else
+        if [ -n "$prefer_header" ]; then
+            http_code="$(curl -sS -X "$method" \
+                "${supabase_url}${path}" \
+                -H "apikey: ${supabase_anon_key}" \
+                -H "Authorization: Bearer ${supabase_anon_key}" \
+                -H "Prefer: ${prefer_header}" \
+                -o "$response_file" \
+                -w "%{http_code}")"
+        else
+            http_code="$(curl -sS -X "$method" \
+                "${supabase_url}${path}" \
+                -H "apikey: ${supabase_anon_key}" \
+                -H "Authorization: Bearer ${supabase_anon_key}" \
+                -o "$response_file" \
+                -w "%{http_code}")"
+        fi
+    fi
+
+    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+        return 0
+    fi
+
+    body_preview="$(head -c 280 "$response_file" 2>/dev/null | tr '\n' ' ')"
+    caddie cli:red "Error: Supabase request failed (${method} ${path}) [HTTP ${http_code}]"
+    if [ -n "$body_preview" ]; then
+        caddie cli:indent "$body_preview"
+    fi
+    return 1
+}
+
+function caddie_ledger_supabase_storage_upload() {
+    local supabase_url="$1"
+    local supabase_anon_key="$2"
+    local bucket="$3"
+    local object_key="$4"
+    local source_file="$5"
+    local response_file="$6"
+    local encoded_object_key=""
+    local http_code=""
+    local body_preview=""
+
+    encoded_object_key="$(caddie_ledger_url_encode "$object_key")"
+    http_code="$(curl -sS -X POST \
+        "${supabase_url}/storage/v1/object/${bucket}/${encoded_object_key}" \
+        -H "apikey: ${supabase_anon_key}" \
+        -H "Authorization: Bearer ${supabase_anon_key}" \
+        -H "x-upsert: true" \
+        -H "Content-Type: application/octet-stream" \
+        --data-binary "@${source_file}" \
+        -o "$response_file" \
+        -w "%{http_code}")"
+
+    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+        return 0
+    fi
+
+    body_preview="$(head -c 280 "$response_file" 2>/dev/null | tr '\n' ' ')"
+    caddie cli:red "Error: Supabase storage upload failed (${bucket}/${object_key}) [HTTP ${http_code}]"
+    if [ -n "$body_preview" ]; then
+        caddie cli:indent "$body_preview"
+    fi
+    return 1
+}
+
+function caddie_ledger_supabase_storage_download() {
+    local supabase_url="$1"
+    local supabase_anon_key="$2"
+    local bucket="$3"
+    local object_key="$4"
+    local destination_file="$5"
+    local encoded_object_key=""
+    local http_code=""
+    local body_preview=""
+
+    encoded_object_key="$(caddie_ledger_url_encode "$object_key")"
+    http_code="$(curl -sS -X GET \
+        "${supabase_url}/storage/v1/object/${bucket}/${encoded_object_key}" \
+        -H "apikey: ${supabase_anon_key}" \
+        -H "Authorization: Bearer ${supabase_anon_key}" \
+        -o "$destination_file" \
+        -w "%{http_code}")"
+
+    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+        return 0
+    fi
+
+    body_preview="$(head -c 280 "$destination_file" 2>/dev/null | tr '\n' ' ')"
+    rm -f "$destination_file"
+    caddie cli:red "Error: Supabase storage download failed (${bucket}/${object_key}) [HTTP ${http_code}]"
+    if [ -n "$body_preview" ]; then
+        caddie cli:indent "$body_preview"
+    fi
+    return 1
+}
+
+function caddie_ledger_supabase_storage_delete() {
+    local supabase_url="$1"
+    local supabase_anon_key="$2"
+    local bucket="$3"
+    local object_key="$4"
+    local response_file="$5"
+    local encoded_object_key=""
+    local http_code=""
+    local body_preview=""
+
+    encoded_object_key="$(caddie_ledger_url_encode "$object_key")"
+    http_code="$(curl -sS -X DELETE \
+        "${supabase_url}/storage/v1/object/${bucket}/${encoded_object_key}" \
+        -H "apikey: ${supabase_anon_key}" \
+        -H "Authorization: Bearer ${supabase_anon_key}" \
+        -o "$response_file" \
+        -w "%{http_code}")"
+
+    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+        return 0
+    fi
+
+    body_preview="$(head -c 280 "$response_file" 2>/dev/null | tr '\n' ' ')"
+    caddie cli:red "Error: Supabase storage delete failed (${bucket}/${object_key}) [HTTP ${http_code}]"
+    if [ -n "$body_preview" ]; then
+        caddie cli:indent "$body_preview"
+    fi
+    return 1
+}
+
+function caddie_ledger_git_branch() {
+    local repo_root="$1"
+    local branch=""
+    branch="$(git -C "$repo_root" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+    printf '%s' "$branch"
+    return 0
+}
+
+function caddie_ledger_git_sha() {
+    local repo_root="$1"
+    local sha=""
+    sha="$(git -C "$repo_root" rev-parse HEAD 2>/dev/null || true)"
+    printf '%s' "$sha"
+    return 0
+}
+
+function caddie_ledger_ensure_layout() {
+    local repo_root="$1"
+    local ledger_dir=""
+    local sessions_dir=""
+
+    ledger_dir="$(caddie_ledger_dir "$repo_root")"
+    sessions_dir="$(caddie_ledger_sessions_dir "$repo_root")"
+
+    if ! mkdir -p "$sessions_dir"; then
+        caddie cli:red "Error: Unable to create ledger directory at $ledger_dir"
+        return 1
+    fi
+
+    return 0
+}
+
+function caddie_ledger_json_read_string() {
+    local file_path="$1"
+    local key="$2"
+    local value=""
+
+    if [ ! -f "$file_path" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    value="$(sed -n "s/^[[:space:]]*\"${key}\":[[:space:]]*\"\\(.*\\)\"[[:space:]]*,\\{0,1\\}[[:space:]]*$/\\1/p" "$file_path" | head -n 1)"
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_json_read_number() {
+    local file_path="$1"
+    local key="$2"
+    local value=""
+
+    if [ ! -f "$file_path" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    value="$(sed -n "s/^[[:space:]]*\"${key}\":[[:space:]]*\\([0-9][0-9]*\\)[[:space:]]*,\\{0,1\\}[[:space:]]*$/\\1/p" "$file_path" | head -n 1)"
+    printf '%s' "$value"
+    return 0
+}
+
+function caddie_ledger_write_project_json() {
+    local project_file="$1"
+    local repo_root="$2"
+    local project_name="$3"
+    local created_at="$4"
+    local escaped_repo_root=""
+    local escaped_project_name=""
+
+    escaped_repo_root="$(caddie_ledger_json_escape "$repo_root")"
+    escaped_project_name="$(caddie_ledger_json_escape "$project_name")"
+
+    cat > "$project_file" <<EOF
+{
+  "schema_version": 1,
+  "name": "${escaped_project_name}",
+  "repo_root": "${escaped_repo_root}",
+  "created_at": "${created_at}"
+}
+EOF
+    return $?
+}
+
+function caddie_ledger_write_session_json() {
+    local session_file="$1"
+    local session_id="$2"
+    local agent="$3"
+    local started_at="$4"
+    local checkpoint_count="$5"
+    local last_checkpoint_id="$6"
+    local ended_at="$7"
+    local escaped_agent=""
+    local escaped_ended_at=""
+
+    escaped_agent="$(caddie_ledger_json_escape "$agent")"
+    escaped_ended_at="$(caddie_ledger_json_escape "$ended_at")"
+
+    cat > "$session_file" <<EOF
+{
+  "schema_version": 1,
+  "id": "${session_id}",
+  "agent": "${escaped_agent}",
+  "started_at": "${started_at}",
+  "ended_at": "${escaped_ended_at}",
+  "checkpoint_count": ${checkpoint_count},
+  "last_checkpoint_id": "${last_checkpoint_id}"
+}
+EOF
+    return $?
+}
+
+function caddie_ledger_new_session_id() {
+    local sessions_dir="$1"
+    local base_id=""
+    local session_id=""
+    local suffix=1
+
+    base_id="session-$(date -u +"%Y%m%dT%H%M%SZ")"
+    session_id="$base_id"
+
+    while [ -d "$sessions_dir/$session_id" ]; do
+        suffix=$((suffix + 1))
+        session_id="${base_id}-${suffix}"
+    done
+
+    printf '%s' "$session_id"
+    return 0
+}
+
+function caddie_ledger_new_checkpoint_id() {
+    local checkpoints_dir="$1"
+    local base_id=""
+    local checkpoint_id=""
+    local suffix=1
+
+    base_id="checkpoint-$(date -u +"%Y%m%dT%H%M%SZ")"
+    checkpoint_id="$base_id"
+
+    while [ -d "$checkpoints_dir/$checkpoint_id" ]; do
+        suffix=$((suffix + 1))
+        checkpoint_id="${base_id}-${suffix}"
+    done
+
+    printf '%s' "$checkpoint_id"
+    return 0
+}
+
+function caddie_ledger_active_session_id() {
+    local repo_root="$1"
+    local file_path=""
+    local session_id=""
+
+    file_path="$(caddie_ledger_current_session_file "$repo_root")"
+    if [ ! -f "$file_path" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    session_id="$(cat "$file_path" 2>/dev/null || true)"
+    printf '%s' "$session_id"
+    return 0
+}
+
+function caddie_ledger_active_checkpoint_id() {
+    local repo_root="$1"
+    local file_path=""
+    local checkpoint_id=""
+
+    file_path="$(caddie_ledger_current_checkpoint_file "$repo_root")"
+    if [ ! -f "$file_path" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    checkpoint_id="$(cat "$file_path" 2>/dev/null || true)"
+    printf '%s' "$checkpoint_id"
+    return 0
+}
+
+function caddie_ledger_find_checkpoint_dir() {
+    local repo_root="$1"
+    local checkpoint_id="$2"
+    local sessions_dir=""
+    local checkpoint_dir=""
+
+    sessions_dir="$(caddie_ledger_sessions_dir "$repo_root")"
+    if [ ! -d "$sessions_dir" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    checkpoint_dir="$(find "$sessions_dir" -type d -path "*/checkpoints/${checkpoint_id}" 2>/dev/null | head -n 1)"
+    printf '%s' "$checkpoint_dir"
+    return 0
+}
+
+function caddie_ledger_verification_command_resolve() {
+    if [ -n "${CADDIE_LEDGER_VERIFY_COMMAND:-}" ]; then
+        printf '%s' "${CADDIE_LEDGER_VERIFY_COMMAND}"
+        return 0
+    fi
+
+    if command -v caddie_verify >/dev/null 2>&1; then
+        printf '%s' "caddie verify"
+        return 0
+    fi
+
+    printf '%s' "caddie core:lint"
+    return 0
+}
+
+function caddie_ledger_collect_repo_files() {
+    local repo_root="$1"
+    local list_file="$2"
+
+    if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        (cd "$repo_root" && git ls-files --cached --others --exclude-standard -z) > "$list_file"
+    else
+        (cd "$repo_root" && find . -type f ! -path "./.git/*" ! -path "./.caddie/ledger/*" -print0) > "$list_file"
+    fi
+
+    return $?
+}
+
+function caddie_ledger_snapshot_build() {
+    local repo_root="$1"
+    local checkpoint_dir="$2"
+    local file_hashes_path="$3"
+    local list_file=""
+    local stage_dir=""
+    local snapshot_zip=""
+    local rel_path=""
+    local src_path=""
+    local dst_path=""
+    local dst_dir=""
+    local file_hash=""
+    local file_size=0
+    local file_count=0
+    local total_bytes=0
+    local snapshot_hash=""
+    local tree_hash="none"
+    local summary=""
+    local snapshot_error=0
+
+    if ! command -v zip >/dev/null 2>&1; then
+        caddie cli:red "Error: 'zip' command is required for ledger checkpoints"
+        return 1
+    fi
+
+    list_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-files.XXXXXX")"
+    stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/caddie-ledger-stage.XXXXXX")"
+    snapshot_zip="${checkpoint_dir}/snapshot.zip"
+
+    : > "$file_hashes_path"
+
+    if ! caddie_ledger_collect_repo_files "$repo_root" "$list_file"; then
+        rm -f "$list_file"
+        rm -rf "$stage_dir"
+        caddie cli:red "Error: Unable to collect repository files for snapshot"
+        return 1
+    fi
+
+    while IFS= read -r -d '' rel_path; do
+        rel_path="${rel_path#./}"
+        if [ -z "$rel_path" ]; then
+            continue
+        fi
+        if [[ "$rel_path" == .caddie/ledger/* ]] || [[ "$rel_path" == .git/* ]]; then
+            continue
+        fi
+
+        src_path="${repo_root}/${rel_path}"
+        if [ ! -f "$src_path" ]; then
+            continue
+        fi
+
+        dst_path="${stage_dir}/${rel_path}"
+        dst_dir="$(dirname "$dst_path")"
+        if ! mkdir -p "$dst_dir"; then
+            caddie cli:red "Error: Unable to prepare snapshot staging directory"
+            snapshot_error=1
+            break
+        fi
+
+        if ! cp -p "$src_path" "$dst_path"; then
+            caddie cli:red "Error: Unable to copy '$rel_path' into snapshot staging area"
+            snapshot_error=1
+            break
+        fi
+
+        file_hash="$(caddie_ledger_hash_file "$src_path")"
+        if [ -z "$file_hash" ]; then
+            caddie cli:red "Error: Unable to hash '$rel_path'"
+            snapshot_error=1
+            break
+        fi
+        printf '%s  %s\n' "$file_hash" "$rel_path" >> "$file_hashes_path"
+
+        file_size="$(wc -c < "$src_path" | tr -d '[:space:]')"
+        if [ -z "$file_size" ]; then
+            file_size=0
+        fi
+        file_count=$((file_count + 1))
+        total_bytes=$((total_bytes + file_size))
+    done < "$list_file"
+
+    if [ "$snapshot_error" -ne 0 ]; then
+        rm -f "$list_file"
+        rm -rf "$stage_dir"
+        return 1
+    fi
+
+    if [ "$file_count" -eq 0 ]; then
+        if command -v python3 >/dev/null 2>&1; then
+            if ! python3 - "$snapshot_zip" <<'PY'
+import sys
+import zipfile
+zipfile.ZipFile(sys.argv[1], mode="w").close()
+PY
+            then
+                rm -f "$list_file"
+                rm -rf "$stage_dir"
+                caddie cli:red "Error: Unable to create empty snapshot archive"
+                return 1
+            fi
+        else
+            : > "${stage_dir}/.ledger-empty"
+            if ! (cd "$stage_dir" && zip -q -r "$snapshot_zip" ".ledger-empty"); then
+                rm -f "$list_file"
+                rm -rf "$stage_dir"
+                caddie cli:red "Error: Unable to create snapshot archive"
+                return 1
+            fi
+        fi
+    else
+        if ! (cd "$stage_dir" && zip -q -r "$snapshot_zip" .); then
+            rm -f "$list_file"
+            rm -rf "$stage_dir"
+            caddie cli:red "Error: Unable to create snapshot archive"
+            return 1
+        fi
+    fi
+
+    snapshot_hash="$(caddie_ledger_hash_file "$snapshot_zip")"
+    if [ -z "$snapshot_hash" ]; then
+        rm -f "$list_file"
+        rm -rf "$stage_dir"
+        caddie cli:red "Error: Unable to hash snapshot archive"
+        return 1
+    fi
+
+    if [ -s "$file_hashes_path" ]; then
+        tree_hash="$(caddie_ledger_hash_file "$file_hashes_path")"
+        if [ -z "$tree_hash" ]; then
+            tree_hash="none"
+        fi
+    fi
+
+    rm -f "$list_file"
+    rm -rf "$stage_dir"
+
+    summary="${file_count}|${total_bytes}|${tree_hash}|${snapshot_hash}"
+    printf '%s' "$summary"
+    return 0
+}
+
+function caddie_ledger_write_manifest() {
+    local manifest_path="$1"
+    local repo_root="$2"
+    local session_id="$3"
+    local checkpoint_id="$4"
+    local created_at="$5"
+    local message="$6"
+    local branch="$7"
+    local git_sha="$8"
+    local file_count="$9"
+    local total_bytes="${10}"
+    local tree_hash="${11}"
+    local snapshot_hash="${12}"
+    local verify_command="${13}"
+    local verify_exit="${14}"
+    local verify_status="${15}"
+    local artifact_count="${16}"
+    local escaped_repo_root=""
+    local escaped_message=""
+    local escaped_branch=""
+    local escaped_git_sha=""
+    local escaped_verify=""
+
+    escaped_repo_root="$(caddie_ledger_json_escape "$repo_root")"
+    escaped_message="$(caddie_ledger_json_escape "$message")"
+    escaped_branch="$(caddie_ledger_json_escape "$branch")"
+    escaped_git_sha="$(caddie_ledger_json_escape "$git_sha")"
+    escaped_verify="$(caddie_ledger_json_escape "$verify_command")"
+
+    cat > "$manifest_path" <<EOF
+{
+  "schema_version": 1,
+  "session_id": "${session_id}",
+  "checkpoint_id": "${checkpoint_id}",
+  "created_at": "${created_at}",
+  "message": "${escaped_message}",
+  "repo": {
+    "root": "${escaped_repo_root}",
+    "branch": "${escaped_branch}",
+    "git_sha": "${escaped_git_sha}"
+  },
+  "snapshot": {
+    "path": "snapshot.zip",
+    "sha256": "${snapshot_hash}",
+    "file_count": ${file_count},
+    "total_bytes": ${total_bytes},
+    "tree_sha256": "${tree_hash}",
+    "respects_gitignore": true
+  },
+  "verification": {
+    "command": "${escaped_verify}",
+    "status": "${verify_status}",
+    "exit_code": ${verify_exit},
+    "log_path": "verification/verify.log"
+  },
+  "artifacts": {
+    "artifact_count": ${artifact_count},
+    "index_path": "artifacts/index.jsonl"
+  }
+}
+EOF
+    return $?
+}
+
+function caddie_ledger_manifest_update_artifact_count() {
+    local manifest_path="$1"
+    local artifact_count="$2"
+    local temp_file=""
+
+    if [ ! -f "$manifest_path" ]; then
+        return 1
+    fi
+
+    temp_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-manifest.XXXXXX")"
+    if ! awk -v count="$artifact_count" '
+        {
+            if ($0 ~ /"artifact_count":/) {
+                sub(/"artifact_count":[[:space:]]*[0-9]+/, "\"artifact_count\": " count)
+            }
+            print
+        }
+    ' "$manifest_path" > "$temp_file"; then
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    if ! mv "$temp_file" "$manifest_path"; then
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    return 0
+}
+
+function caddie_ledger_require_project() {
+    local repo_root="$1"
+    local project_file=""
+
+    project_file="$(caddie_ledger_project_file "$repo_root")"
+    if [ ! -f "$project_file" ]; then
+        caddie cli:red "Error: Ledger project is not initialized"
+        caddie cli:usage "caddie ledger:project:init"
+        return 1
+    fi
+    return 0
+}
+
+function caddie_ledger_project_init() {
+    local repo_root=""
+    local ledger_dir=""
+    local project_file=""
+    local project_name=""
+    local created_at=""
+
+    repo_root="$(caddie_ledger_repo_root)"
+    ledger_dir="$(caddie_ledger_dir "$repo_root")"
+    project_file="$(caddie_ledger_project_file "$repo_root")"
+    project_name="$(basename "$repo_root")"
+    created_at="$(caddie_ledger_timestamp_utc)"
+
+    if ! caddie_ledger_ensure_layout "$repo_root"; then
+        return 1
+    fi
+
+    if [ -f "$project_file" ]; then
+        caddie cli:yellow "Ledger project already initialized"
+        caddie cli:indent "project file: $project_file"
+        return 0
+    fi
+
+    if ! caddie_ledger_write_project_json "$project_file" "$repo_root" "$project_name" "$created_at"; then
+        caddie cli:red "Error: Unable to write ledger project file"
+        return 1
+    fi
+
+    caddie cli:check "Ledger project initialized"
+    caddie cli:indent "repo root: $repo_root"
+    caddie cli:indent "ledger dir: $ledger_dir"
+    return 0
+}
+
+function caddie_ledger_session_start() {
+    local normalized_agents=""
+    local agent_item=""
+    local agent_summary=""
+    local watch_agents=""
+    local repo_root=""
+    local sessions_dir=""
+    local session_id=""
+    local session_dir=""
+    local session_file=""
+    local started_at=""
+    local current_session_file=""
+    local current_checkpoint_file=""
+    local watch_status="configured"
+
+    for agent_item in "$@"; do
+        agent_item="$(printf '%s' "$agent_item" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+        if [ -z "$agent_item" ]; then
+            continue
+        fi
+        if printf ' %s ' "$normalized_agents" | grep -Fq " ${agent_item} "; then
+            continue
+        fi
+        if [ -z "$normalized_agents" ]; then
+            normalized_agents="$agent_item"
+        else
+            normalized_agents="${normalized_agents} ${agent_item}"
+        fi
+    done
+
+    if [ -z "$normalized_agents" ]; then
+        normalized_agents="unknown"
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    sessions_dir="$(caddie_ledger_sessions_dir "$repo_root")"
+    if ! mkdir -p "$sessions_dir"; then
+        caddie cli:red "Error: Unable to create sessions directory"
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_new_session_id "$sessions_dir")"
+    session_dir="${sessions_dir}/${session_id}"
+    session_file="${session_dir}/session.json"
+    started_at="$(caddie_ledger_timestamp_utc)"
+    current_session_file="$(caddie_ledger_current_session_file "$repo_root")"
+    current_checkpoint_file="$(caddie_ledger_current_checkpoint_file "$repo_root")"
+    agent_summary="$(printf '%s' "$normalized_agents" | tr ' ' ',')"
+    watch_agents="$normalized_agents"
+
+    if ! mkdir -p "$session_dir/checkpoints"; then
+        caddie cli:red "Error: Unable to create session directory"
+        return 1
+    fi
+
+    if ! caddie_ledger_write_session_json "$session_file" "$session_id" "$agent_summary" "$started_at" "0" "" ""; then
+        caddie cli:red "Error: Unable to write session metadata"
+        return 1
+    fi
+
+    printf '%s\n' "$session_id" > "$current_session_file"
+    rm -f "$current_checkpoint_file"
+    if ! caddie_ledger_agent_watch $watch_agents >/dev/null 2>&1; then
+        watch_status="failed"
+    fi
+
+    caddie cli:check "Ledger session started"
+    caddie cli:indent "session: $session_id"
+    caddie cli:indent "agents: $agent_summary"
+    caddie cli:indent "watch: $watch_status"
+    if [ "$watch_status" = "failed" ]; then
+        caddie cli:yellow "Could not configure watched agents automatically"
+        caddie cli:thought "Run: caddie ledger:agent:watch ${agent_summary//,/ }"
+    fi
+    return 0
+}
+
+function caddie_ledger_session_watch_file() {
+    local repo_root="$1"
+    local session_id="$2"
+    printf '%s' "$(caddie_ledger_sessions_dir "$repo_root")/${session_id}/watch_agents"
+    return 0
+}
+
+function caddie_ledger_collect_source_info() {
+    local agent="$1"
+    local source_path=""
+    local state="unsupported"
+
+    case "$agent" in
+        codex)
+            source_path="$HOME/.codex/history.jsonl"
+            if [ -f "$source_path" ]; then
+                state="ready"
+            else
+                state="missing"
+            fi
+            ;;
+        caddie)
+            source_path="$HOME/.caddie_history"
+            if [ -f "$source_path" ]; then
+                state="ready"
+            else
+                state="missing"
+            fi
+            ;;
+        cursor)
+            source_path="$HOME/Library/Application Support/Cursor/User/workspaceStorage"
+            if [ -d "$source_path" ]; then
+                state="ready"
+            else
+                state="missing"
+            fi
+            ;;
+        claude)
+            source_path=""
+            state="unsupported"
+            ;;
+        *)
+            source_path=""
+            state="unsupported"
+            ;;
+    esac
+
+    printf '%s|%s' "$state" "$source_path"
+    return 0
+}
+
+function caddie_ledger_agent_watch() {
+    local repo_root=""
+    local session_id=""
+    local watch_file=""
+    local temp_file=""
+    local agent=""
+    local normalized=""
+    local has_any=0
+
+    if [ "$#" -eq 0 ]; then
+        caddie cli:red "Error: Please provide one or more agent names"
+        caddie cli:usage "caddie ledger:agent:watch <agents...>"
+        return 1
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_active_session_id "$repo_root")"
+    if [ -z "$session_id" ]; then
+        caddie cli:red "Error: No active ledger session"
+        caddie cli:usage "caddie ledger:session:start [agents...]"
+        return 1
+    fi
+
+    watch_file="$(caddie_ledger_session_watch_file "$repo_root" "$session_id")"
+    temp_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-watch.XXXXXX")"
+    : > "$temp_file"
+
+    for agent in "$@"; do
+        normalized="$(printf '%s' "$agent" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+        if [ -z "$normalized" ]; then
+            continue
+        fi
+        if ! grep -Fxq "$normalized" "$temp_file" >/dev/null 2>&1; then
+            printf '%s\n' "$normalized" >> "$temp_file"
+            has_any=1
+        fi
+    done
+
+    if [ "$has_any" -eq 0 ]; then
+        rm -f "$temp_file"
+        caddie cli:red "Error: No valid agent names were provided"
+        return 1
+    fi
+
+    if ! mv "$temp_file" "$watch_file"; then
+        rm -f "$temp_file"
+        caddie cli:red "Error: Unable to save watched agents"
+        return 1
+    fi
+
+    caddie cli:check "Ledger watched agents updated"
+    caddie cli:indent "session: $session_id"
+    while IFS= read -r normalized; do
+        if [ -n "$normalized" ]; then
+            caddie cli:indent "watch: $normalized"
+        fi
+    done < "$watch_file"
+    return 0
+}
+
+function caddie_ledger_agent_watch_list() {
+    local repo_root=""
+    local session_id=""
+    local watch_file=""
+    local agent=""
+    local source_info=""
+    local source_state=""
+    local source_path=""
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_active_session_id "$repo_root")"
+    if [ -z "$session_id" ]; then
+        caddie cli:red "Error: No active ledger session"
+        caddie cli:usage "caddie ledger:session:start [agents...]"
+        return 1
+    fi
+
+    watch_file="$(caddie_ledger_session_watch_file "$repo_root" "$session_id")"
+
+    caddie cli:title "Ledger Watched Agents"
+    caddie cli:indent "session: $session_id"
+    if [ ! -f "$watch_file" ] || [ ! -s "$watch_file" ]; then
+        caddie cli:yellow "No watched agents configured"
+        caddie cli:thought "Use: caddie ledger:agent:watch codex cursor"
+        return 0
+    fi
+
+    while IFS= read -r agent; do
+        if [ -z "$agent" ]; then
+            continue
+        fi
+        source_info="$(caddie_ledger_collect_source_info "$agent")"
+        source_state="$(printf '%s' "$source_info" | cut -d'|' -f1)"
+        source_path="$(printf '%s' "$source_info" | cut -d'|' -f2-)"
+        if [ -n "$source_path" ]; then
+            caddie cli:indent "$agent: $source_state ($source_path)"
+        else
+            caddie cli:indent "$agent: $source_state"
+        fi
+    done < "$watch_file"
+    return 0
+}
+
+function caddie_ledger_agent_watch_clear() {
+    local repo_root=""
+    local session_id=""
+    local watch_file=""
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_active_session_id "$repo_root")"
+    if [ -z "$session_id" ]; then
+        caddie cli:red "Error: No active ledger session"
+        caddie cli:usage "caddie ledger:session:start [agents...]"
+        return 1
+    fi
+
+    watch_file="$(caddie_ledger_session_watch_file "$repo_root" "$session_id")"
+    if [ ! -f "$watch_file" ]; then
+        caddie cli:yellow "No watched agents were set"
+        return 0
+    fi
+
+    if ! rm -f "$watch_file"; then
+        caddie cli:red "Error: Unable to clear watched agents"
+        return 1
+    fi
+
+    caddie cli:check "Ledger watched agents cleared"
+    caddie cli:indent "session: $session_id"
+    return 0
+}
+
+function caddie_ledger_collect() {
+    local repo_root=""
+    local session_id=""
+    local checkpoint_id=""
+    local checkpoint_dir=""
+    local transcript_path=""
+    local watch_file=""
+    local watch_agent=""
+    local lines_to_collect="${CADDIE_LEDGER_COLLECT_LINES:-200}"
+    local collect_started_at=""
+    local source_info=""
+    local source_state=""
+    local source_path=""
+    local collected_count=0
+    local skipped_count=0
+    local block_language=""
+
+    if [ -z "$(printf '%s' "$lines_to_collect" | sed -nE 's#^[0-9]+$#ok#p')" ]; then
+        lines_to_collect="200"
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_active_session_id "$repo_root")"
+    if [ -z "$session_id" ]; then
+        caddie cli:red "Error: No active ledger session"
+        caddie cli:usage "caddie ledger:session:start [agents...]"
+        return 1
+    fi
+
+    checkpoint_id="$(caddie_ledger_active_checkpoint_id "$repo_root")"
+    if [ -z "$checkpoint_id" ]; then
+        caddie cli:red "Error: No active checkpoint"
+        caddie cli:thought "Create one with: caddie ledger:checkpoint [message]"
+        return 1
+    fi
+
+    checkpoint_dir="$(caddie_ledger_find_checkpoint_dir "$repo_root" "$checkpoint_id")"
+    if [ -z "$checkpoint_dir" ] || [ ! -d "$checkpoint_dir" ]; then
+        caddie cli:red "Error: Active checkpoint directory not found"
+        return 1
+    fi
+
+    transcript_path="${checkpoint_dir}/transcripts/checkpoint.md"
+    watch_file="$(caddie_ledger_session_watch_file "$repo_root" "$session_id")"
+
+    if [ ! -f "$watch_file" ] || [ ! -s "$watch_file" ]; then
+        caddie cli:red "Error: No watched agents configured for this session"
+        caddie cli:thought "Use: caddie ledger:agent:watch codex cursor"
+        return 1
+    fi
+
+    if [ ! -f "$transcript_path" ]; then
+        cat > "$transcript_path" <<EOF
+# Checkpoint Transcript
+
+- checkpoint_id: ${checkpoint_id}
+- session_id: ${session_id}
+EOF
+    fi
+
+    collect_started_at="$(caddie_ledger_timestamp_utc)"
+    {
+        printf '\n## Collected Sources (%s)\n\n' "$collect_started_at"
+    } >> "$transcript_path"
+
+    while IFS= read -r watch_agent; do
+        if [ -z "$watch_agent" ]; then
+            continue
+        fi
+
+        source_info="$(caddie_ledger_collect_source_info "$watch_agent")"
+        source_state="$(printf '%s' "$source_info" | cut -d'|' -f1)"
+        source_path="$(printf '%s' "$source_info" | cut -d'|' -f2-)"
+
+        {
+            printf '### %s\n\n' "$watch_agent"
+        } >> "$transcript_path"
+
+        if [ "$source_state" != "ready" ]; then
+            if [ -n "$source_path" ]; then
+                printf 'source: %s\n\n' "$source_path" >> "$transcript_path"
+            fi
+            printf 'status: %s\n\n' "$source_state" >> "$transcript_path"
+            skipped_count=$((skipped_count + 1))
+            continue
+        fi
+
+        case "$watch_agent" in
+            codex|caddie)
+                if [ "$watch_agent" = "codex" ]; then
+                    block_language="jsonl"
+                else
+                    block_language="text"
+                fi
+                printf 'source: %s\n\n' "$source_path" >> "$transcript_path"
+                printf 'status: collected (%s lines)\n\n' "$lines_to_collect" >> "$transcript_path"
+                printf '```%s\n' "$block_language" >> "$transcript_path"
+                tail -n "$lines_to_collect" "$source_path" >> "$transcript_path"
+                printf '\n```\n\n' >> "$transcript_path"
+                collected_count=$((collected_count + 1))
+                ;;
+            cursor)
+                printf 'source: %s\n\n' "$source_path" >> "$transcript_path"
+                printf 'status: detected, collector not yet implemented\n\n' >> "$transcript_path"
+                skipped_count=$((skipped_count + 1))
+                ;;
+            *)
+                printf 'status: unsupported\n\n' >> "$transcript_path"
+                skipped_count=$((skipped_count + 1))
+                ;;
+        esac
+    done < "$watch_file"
+
+    caddie cli:check "Ledger collect completed"
+    caddie cli:indent "checkpoint: $checkpoint_id"
+    caddie cli:indent "transcript: $transcript_path"
+    caddie cli:indent "collected: $collected_count"
+    caddie cli:indent "skipped: $skipped_count"
+    return 0
+}
+
+function caddie_ledger_session_end() {
+    local repo_root=""
+    local session_id=""
+    local session_dir=""
+    local session_file=""
+    local ended_at=""
+    local session_agent=""
+    local session_started_at=""
+    local checkpoint_count=""
+    local last_checkpoint_id=""
+    local current_session_file=""
+    local current_checkpoint_file=""
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_active_session_id "$repo_root")"
+    if [ -z "$session_id" ]; then
+        caddie cli:red "Error: No active ledger session"
+        caddie cli:usage "caddie ledger:session:start [agents...]"
+        return 1
+    fi
+
+    session_dir="$(caddie_ledger_sessions_dir "$repo_root")/${session_id}"
+    session_file="${session_dir}/session.json"
+    if [ ! -f "$session_file" ]; then
+        caddie cli:red "Error: Active session metadata was not found"
+        return 1
+    fi
+
+    session_agent="$(caddie_ledger_json_read_string "$session_file" "agent")"
+    session_started_at="$(caddie_ledger_json_read_string "$session_file" "started_at")"
+    checkpoint_count="$(caddie_ledger_json_read_number "$session_file" "checkpoint_count")"
+    last_checkpoint_id="$(caddie_ledger_json_read_string "$session_file" "last_checkpoint_id")"
+    ended_at="$(caddie_ledger_timestamp_utc)"
+
+    if [ -z "$session_agent" ]; then
+        session_agent="unknown"
+    fi
+    if [ -z "$session_started_at" ]; then
+        session_started_at="$ended_at"
+    fi
+    if [ -z "$checkpoint_count" ]; then
+        checkpoint_count="0"
+    fi
+
+    if ! caddie_ledger_write_session_json \
+        "$session_file" \
+        "$session_id" \
+        "$session_agent" \
+        "$session_started_at" \
+        "$checkpoint_count" \
+        "$last_checkpoint_id" \
+        "$ended_at"; then
+        caddie cli:red "Error: Unable to finalize session metadata"
+        return 1
+    fi
+
+    current_session_file="$(caddie_ledger_current_session_file "$repo_root")"
+    current_checkpoint_file="$(caddie_ledger_current_checkpoint_file "$repo_root")"
+    rm -f "$current_session_file" "$current_checkpoint_file"
+
+    caddie cli:check "Ledger session ended"
+    caddie cli:indent "session: $session_id"
+    caddie cli:indent "ended_at: $ended_at"
+    return 0
+}
+
+function caddie_ledger_checkpoint() {
+    local message="$1"
+    local repo_root=""
+    local session_id=""
+    local session_dir=""
+    local session_file=""
+    local checkpoints_dir=""
+    local checkpoint_id=""
+    local checkpoint_dir=""
+    local transcripts_dir=""
+    local artifacts_dir=""
+    local verification_dir=""
+    local manifest_path=""
+    local verify_log_path=""
+    local files_hashes_path=""
+    local transcript_path=""
+    local timestamp=""
+    local branch=""
+    local git_sha=""
+    local snapshot_summary=""
+    local file_count=0
+    local total_bytes=0
+    local tree_hash="none"
+    local snapshot_hash=""
+    local verify_command=""
+    local verify_exit=0
+    local verify_status="passed"
+    local artifact_count=0
+    local checkpoint_count=0
+    local session_agent=""
+    local session_started_at=""
+    local session_ended_at=""
+    local current_checkpoint_file=""
+    local collect_status="skipped"
+
+    if [ -z "$message" ]; then
+        message="checkpoint"
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    session_id="$(caddie_ledger_active_session_id "$repo_root")"
+    if [ -z "$session_id" ]; then
+        caddie cli:red "Error: No active ledger session"
+        caddie cli:usage "caddie ledger:session:start [agents...]"
+        return 1
+    fi
+
+    session_dir="$(caddie_ledger_sessions_dir "$repo_root")/${session_id}"
+    session_file="${session_dir}/session.json"
+    checkpoints_dir="${session_dir}/checkpoints"
+    if [ ! -d "$checkpoints_dir" ]; then
+        caddie cli:red "Error: Active session is missing checkpoints directory"
+        return 1
+    fi
+
+    checkpoint_id="$(caddie_ledger_new_checkpoint_id "$checkpoints_dir")"
+    checkpoint_dir="${checkpoints_dir}/${checkpoint_id}"
+    transcripts_dir="${checkpoint_dir}/transcripts"
+    artifacts_dir="${checkpoint_dir}/artifacts"
+    verification_dir="${checkpoint_dir}/verification"
+    manifest_path="${checkpoint_dir}/manifest.json"
+    verify_log_path="${verification_dir}/verify.log"
+    files_hashes_path="${verification_dir}/files.sha256"
+    transcript_path="${transcripts_dir}/checkpoint.md"
+    timestamp="$(caddie_ledger_timestamp_utc)"
+    branch="$(caddie_ledger_git_branch "$repo_root")"
+    git_sha="$(caddie_ledger_git_sha "$repo_root")"
+    current_checkpoint_file="$(caddie_ledger_current_checkpoint_file "$repo_root")"
+
+    if ! mkdir -p "$transcripts_dir" "$artifacts_dir" "$verification_dir"; then
+        caddie cli:red "Error: Unable to create checkpoint directory structure"
+        return 1
+    fi
+    : > "${artifacts_dir}/index.jsonl"
+
+    snapshot_summary="$(caddie_ledger_snapshot_build "$repo_root" "$checkpoint_dir" "$files_hashes_path")" || return 1
+    file_count="$(printf '%s' "$snapshot_summary" | cut -d'|' -f1)"
+    total_bytes="$(printf '%s' "$snapshot_summary" | cut -d'|' -f2)"
+    tree_hash="$(printf '%s' "$snapshot_summary" | cut -d'|' -f3)"
+    snapshot_hash="$(printf '%s' "$snapshot_summary" | cut -d'|' -f4)"
+
+    cat > "$transcript_path" <<EOF
+# Checkpoint Transcript
+
+- checkpoint_id: ${checkpoint_id}
+- session_id: ${session_id}
+- created_at: ${timestamp}
+- message: ${message}
+EOF
+
+    verify_command="$(caddie_ledger_verification_command_resolve)"
+    if (cd "$repo_root" && eval "$verify_command") > "$verify_log_path" 2>&1; then
+        verify_exit=0
+        verify_status="passed"
+    else
+        verify_exit=$?
+        verify_status="failed"
+    fi
+
+    if ! caddie_ledger_write_manifest \
+        "$manifest_path" \
+        "$repo_root" \
+        "$session_id" \
+        "$checkpoint_id" \
+        "$timestamp" \
+        "$message" \
+        "$branch" \
+        "$git_sha" \
+        "$file_count" \
+        "$total_bytes" \
+        "$tree_hash" \
+        "$snapshot_hash" \
+        "$verify_command" \
+        "$verify_exit" \
+        "$verify_status" \
+        "$artifact_count"; then
+        caddie cli:red "Error: Unable to write checkpoint manifest"
+        return 1
+    fi
+
+    printf '%s\n' "$checkpoint_id" > "$current_checkpoint_file"
+    if caddie_ledger_collect >/dev/null 2>&1; then
+        collect_status="collected"
+    fi
+
+    checkpoint_count="$(find "$checkpoints_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d '[:space:]')"
+    if [ -z "$checkpoint_count" ]; then
+        checkpoint_count=0
+    fi
+    session_agent="$(caddie_ledger_json_read_string "$session_file" "agent")"
+    session_started_at="$(caddie_ledger_json_read_string "$session_file" "started_at")"
+    session_ended_at="$(caddie_ledger_json_read_string "$session_file" "ended_at")"
+    if [ -z "$session_agent" ]; then
+        session_agent="unknown"
+    fi
+    if [ -z "$session_started_at" ]; then
+        session_started_at="$timestamp"
+    fi
+    caddie_ledger_write_session_json "$session_file" "$session_id" "$session_agent" "$session_started_at" "$checkpoint_count" "$checkpoint_id" "$session_ended_at" >/dev/null 2>&1 || true
+
+    caddie cli:check "Ledger checkpoint created"
+    caddie cli:indent "checkpoint: $checkpoint_id"
+    caddie cli:indent "snapshot: ${checkpoint_dir}/snapshot.zip"
+    caddie cli:indent "verification: ${verify_status} (${verify_command})"
+    caddie cli:indent "collect: ${collect_status}"
+    caddie cli:indent "manifest: $manifest_path"
+    if [ "$collect_status" != "collected" ]; then
+        caddie cli:yellow "Automatic collect skipped for this checkpoint"
+        caddie cli:thought "Run: caddie ledger:collect"
+    fi
+
+    if [ "$verify_exit" -ne 0 ]; then
+        caddie cli:yellow "Verification failed for this checkpoint (see verify.log)"
+    fi
+    return 0
+}
+
+function caddie_ledger_artifact() {
+    local artifact_path="$1"
+    local repo_root=""
+    local checkpoint_id=""
+    local checkpoint_dir=""
+    local artifacts_dir=""
+    local index_file=""
+    local manifest_path=""
+    local source_path=""
+    local source_name=""
+    local dest_path=""
+    local dest_name=""
+    local timestamp=""
+    local escaped_source=""
+    local escaped_dest=""
+    local artifact_count=0
+
+    if [ -z "$artifact_path" ]; then
+        caddie cli:red "Error: Please provide a file or directory path"
+        caddie cli:usage "caddie ledger:artifact <path>"
+        return 1
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    checkpoint_id="$(caddie_ledger_active_checkpoint_id "$repo_root")"
+    if [ -z "$checkpoint_id" ]; then
+        caddie cli:red "Error: No active checkpoint"
+        caddie cli:thought "Create one with: caddie ledger:checkpoint [message]"
+        return 1
+    fi
+
+    checkpoint_dir="$(caddie_ledger_find_checkpoint_dir "$repo_root" "$checkpoint_id")"
+    if [ -z "$checkpoint_dir" ] || [ ! -d "$checkpoint_dir" ]; then
+        caddie cli:red "Error: Active checkpoint directory not found"
+        return 1
+    fi
+
+    artifacts_dir="${checkpoint_dir}/artifacts"
+    index_file="${artifacts_dir}/index.jsonl"
+    manifest_path="${checkpoint_dir}/manifest.json"
+
+    if [ ! -e "$artifact_path" ]; then
+        caddie cli:red "Error: Artifact path does not exist: $artifact_path"
+        return 1
+    fi
+
+    source_path="$(cd "$(dirname "$artifact_path")" && pwd)/$(basename "$artifact_path")"
+    source_name="$(basename "$source_path")"
+    dest_name="$source_name"
+    dest_path="${artifacts_dir}/${dest_name}"
+    timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
+
+    if [ -e "$dest_path" ]; then
+        dest_name="${source_name}-${timestamp}"
+        dest_path="${artifacts_dir}/${dest_name}"
+    fi
+
+    if [ -d "$source_path" ]; then
+        if ! cp -R "$source_path" "$dest_path"; then
+            caddie cli:red "Error: Unable to copy artifact directory"
+            return 1
+        fi
+    else
+        if ! cp -p "$source_path" "$dest_path"; then
+            caddie cli:red "Error: Unable to copy artifact file"
+            return 1
+        fi
+    fi
+
+    escaped_source="$(caddie_ledger_json_escape "$source_path")"
+    escaped_dest="$(caddie_ledger_json_escape "artifacts/${dest_name}")"
+    printf '{"added_at":"%s","source_path":"%s","stored_path":"%s"}\n' \
+        "$(caddie_ledger_timestamp_utc)" \
+        "$escaped_source" \
+        "$escaped_dest" >> "$index_file"
+
+    artifact_count="$(wc -l < "$index_file" | tr -d '[:space:]')"
+    if [ -z "$artifact_count" ]; then
+        artifact_count=0
+    fi
+
+    if ! caddie_ledger_manifest_update_artifact_count "$manifest_path" "$artifact_count"; then
+        caddie cli:yellow "Artifact copied, but manifest artifact count could not be updated"
+    fi
+
+    caddie cli:check "Artifact attached to checkpoint $checkpoint_id"
+    caddie cli:indent "stored as: artifacts/${dest_name}"
+    return 0
+}
+
+function caddie_ledger_list() {
+    local repo_root=""
+    local ledger_dir=""
+    local sessions_dir=""
+    local project_file=""
+    local active_session=""
+    local active_checkpoint=""
+    local manifest=""
+    local found_any=0
+    local session_id=""
+    local checkpoint_id=""
+    local created_at=""
+    local message=""
+    local verification_status=""
+
+    repo_root="$(caddie_ledger_repo_root)"
+    ledger_dir="$(caddie_ledger_dir "$repo_root")"
+    sessions_dir="$(caddie_ledger_sessions_dir "$repo_root")"
+    project_file="$(caddie_ledger_project_file "$repo_root")"
+
+    if [ ! -f "$project_file" ]; then
+        caddie cli:red "Error: Ledger project is not initialized"
+        caddie cli:usage "caddie ledger:project:init"
+        return 1
+    fi
+
+    active_session="$(caddie_ledger_active_session_id "$repo_root")"
+    active_checkpoint="$(caddie_ledger_active_checkpoint_id "$repo_root")"
+
+    caddie cli:title "Ledger Checkpoints"
+    caddie cli:indent "repo root: $repo_root"
+    caddie cli:indent "ledger dir: $ledger_dir"
+    if [ -n "$active_session" ]; then
+        caddie cli:indent "active session: $active_session"
+    else
+        caddie cli:indent "active session: none"
+    fi
+    if [ -n "$active_checkpoint" ]; then
+        caddie cli:indent "active checkpoint: $active_checkpoint"
+    else
+        caddie cli:indent "active checkpoint: none"
+    fi
+    caddie cli:blank
+
+    if [ ! -d "$sessions_dir" ]; then
+        caddie cli:yellow "No sessions found"
+        return 0
+    fi
+
+    while IFS= read -r manifest; do
+        found_any=1
+        session_id="$(caddie_ledger_json_read_string "$manifest" "session_id")"
+        checkpoint_id="$(caddie_ledger_json_read_string "$manifest" "checkpoint_id")"
+        created_at="$(caddie_ledger_json_read_string "$manifest" "created_at")"
+        message="$(caddie_ledger_json_read_string "$manifest" "message")"
+        verification_status="$(caddie_ledger_json_read_string "$manifest" "status")"
+
+        if [ -z "$message" ]; then
+            message="(no message)"
+        fi
+        if [ -z "$verification_status" ]; then
+            verification_status="unknown"
+        fi
+
+        caddie cli:indent "${created_at}  ${session_id}  ${checkpoint_id}  [${verification_status}]  ${message}"
+    done < <(find "$sessions_dir" -type f -name manifest.json 2>/dev/null | sort)
+
+    if [ "$found_any" -eq 0 ]; then
+        caddie cli:yellow "No checkpoints found"
+    fi
+    return 0
+}
+
+function caddie_ledger_restore() {
+    local checkpoint_id="$1"
+    local target_dir="$2"
+    local repo_root=""
+    local checkpoint_dir=""
+    local snapshot_path=""
+    local restore_root=""
+    local timestamp=""
+    local non_empty_marker=""
+
+    if [ -z "$checkpoint_id" ]; then
+        caddie cli:red "Error: Please provide a checkpoint id"
+        caddie cli:usage "caddie ledger:restore <checkpoint_id> [target_dir]"
+        return 1
+    fi
+
+    if ! command -v unzip >/dev/null 2>&1; then
+        caddie cli:red "Error: 'unzip' command is required for ledger restore"
+        return 1
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    checkpoint_dir="$(caddie_ledger_find_checkpoint_dir "$repo_root" "$checkpoint_id")"
+    if [ -z "$checkpoint_dir" ]; then
+        caddie cli:red "Error: Checkpoint not found: $checkpoint_id"
+        return 1
+    fi
+
+    snapshot_path="${checkpoint_dir}/snapshot.zip"
+    if [ ! -f "$snapshot_path" ]; then
+        caddie cli:red "Error: Snapshot archive is missing for checkpoint $checkpoint_id"
+        return 1
+    fi
+
+    if [ -z "$target_dir" ]; then
+        restore_root="$(caddie_ledger_dir "$repo_root")/restores"
+        timestamp="$(date -u +"%Y%m%dT%H%M%SZ")"
+        target_dir="${restore_root}/${checkpoint_id}-${timestamp}"
+    fi
+
+    if [ -e "$target_dir" ]; then
+        non_empty_marker="$(find "$target_dir" -mindepth 1 -print -quit 2>/dev/null || true)"
+        if [ -n "$non_empty_marker" ]; then
+            caddie cli:red "Error: Restore target exists and is not empty: $target_dir"
+            caddie cli:thought "Use a new directory or pass an empty directory"
+            return 1
+        fi
+    else
+        if ! mkdir -p "$target_dir"; then
+            caddie cli:red "Error: Unable to create restore target directory"
+            return 1
+        fi
+    fi
+
+    if ! unzip -q "$snapshot_path" -d "$target_dir"; then
+        caddie cli:red "Error: Unable to restore snapshot archive"
+        return 1
+    fi
+
+    caddie cli:check "Checkpoint restored"
+    caddie cli:indent "checkpoint: $checkpoint_id"
+    caddie cli:indent "restored to: $target_dir"
+    return 0
+}
+
+function caddie_ledger_auth_set() {
+    local supabase_url="$1"
+    local supabase_anon_key="$2"
+    local project_id="$3"
+    local snapshots_bucket="$4"
+    local transcripts_bucket="$5"
+    local artifacts_bucket="$6"
+
+    if [ -z "$supabase_url" ] || [ -z "$supabase_anon_key" ] || [ -z "$project_id" ]; then
+        caddie cli:red "Error: Missing Supabase auth values"
+        caddie cli:usage "caddie ledger:auth:set <supabase_url> <supabase_anon_key> <project_id> [snapshots_bucket] [transcripts_bucket] [artifacts_bucket]"
+        return 1
+    fi
+
+    snapshots_bucket="${snapshots_bucket:-snapshots}"
+    transcripts_bucket="${transcripts_bucket:-transcripts}"
+    artifacts_bucket="${artifacts_bucket:-artifacts}"
+
+    if ! caddie_ledger_config_ensure_state_dir; then
+        return 1
+    fi
+
+    if ! caddie_ledger_config_write_json \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "$project_id" \
+        "$snapshots_bucket" \
+        "$transcripts_bucket" \
+        "$artifacts_bucket"; then
+        caddie cli:red "Error: Unable to write ledger Supabase config"
+        return 1
+    fi
+
+    caddie cli:check "Ledger Supabase auth configured"
+    caddie cli:indent "config: $(caddie_ledger_config_file)"
+    caddie cli:indent "project_id: $project_id"
+    caddie cli:indent "buckets: snapshots=$snapshots_bucket transcripts=$transcripts_bucket artifacts=$artifacts_bucket"
+    return 0
+}
+
+function caddie_ledger_auth_get() {
+    local config_file=""
+    local supabase_url=""
+    local supabase_anon_key=""
+    local project_id=""
+    local snapshots_bucket=""
+    local transcripts_bucket=""
+    local artifacts_bucket=""
+    local masked_key=""
+
+    config_file="$(caddie_ledger_config_file)"
+    if [ ! -f "$config_file" ]; then
+        caddie cli:yellow "No ledger Supabase config found"
+        caddie cli:thought "Set one with: caddie ledger:auth:set <supabase_url> <supabase_anon_key> <project_id>"
+        return 0
+    fi
+
+    supabase_url="$(caddie_ledger_config_read_value "supabase_url")"
+    supabase_anon_key="$(caddie_ledger_config_read_value "supabase_anon_key")"
+    project_id="$(caddie_ledger_config_read_value "project_id")"
+    snapshots_bucket="$(caddie_ledger_config_bucket_value "snapshots_bucket" "snapshots")"
+    transcripts_bucket="$(caddie_ledger_config_bucket_value "transcripts_bucket" "transcripts")"
+    artifacts_bucket="$(caddie_ledger_config_bucket_value "artifacts_bucket" "artifacts")"
+
+    if [ -n "$supabase_anon_key" ]; then
+        masked_key="${supabase_anon_key:0:8}...(${#supabase_anon_key} chars)"
+    else
+        masked_key="(not set)"
+    fi
+
+    caddie cli:title "Ledger Supabase Auth"
+    caddie cli:indent "config: $config_file"
+    caddie cli:indent "supabase_url: ${supabase_url:-<empty>}"
+    caddie cli:indent "supabase_anon_key: $masked_key"
+    caddie cli:indent "project_id: ${project_id:-<empty>}"
+    caddie cli:indent "snapshots_bucket: $snapshots_bucket"
+    caddie cli:indent "transcripts_bucket: $transcripts_bucket"
+    caddie cli:indent "artifacts_bucket: $artifacts_bucket"
+    return 0
+}
+
+function caddie_ledger_auth_unset() {
+    local config_file=""
+
+    config_file="$(caddie_ledger_config_file)"
+    if [ ! -f "$config_file" ]; then
+        caddie cli:yellow "No ledger Supabase config was set"
+        return 0
+    fi
+
+    if ! rm -f "$config_file"; then
+        caddie cli:red "Error: Unable to remove ledger Supabase config"
+        return 1
+    fi
+
+    caddie cli:check "Ledger Supabase auth config removed"
+    return 0
+}
+
+function caddie_ledger_checkpoint_id_latest() {
+    local repo_root="$1"
+    local active_checkpoint=""
+    local latest_manifest=""
+    local checkpoint_id=""
+
+    active_checkpoint="$(caddie_ledger_active_checkpoint_id "$repo_root")"
+    if [ -n "$active_checkpoint" ]; then
+        printf '%s' "$active_checkpoint"
+        return 0
+    fi
+
+    latest_manifest="$(find "$(caddie_ledger_sessions_dir "$repo_root")" -type f -name manifest.json 2>/dev/null | sort | tail -n 1)"
+    if [ -z "$latest_manifest" ]; then
+        printf '%s' ""
+        return 0
+    fi
+
+    checkpoint_id="$(caddie_ledger_json_read_string "$latest_manifest" "checkpoint_id")"
+    printf '%s' "$checkpoint_id"
+    return 0
+}
+
+function caddie_ledger_sync_resolve_targets() {
+    local repo_root="$1"
+    local target="$2"
+    local checkpoint_id=""
+    local checkpoint_dir=""
+
+    if [ -z "$target" ] || [ "$target" = "latest" ]; then
+        checkpoint_id="$(caddie_ledger_checkpoint_id_latest "$repo_root")"
+        if [ -n "$checkpoint_id" ]; then
+            printf '%s\n' "$checkpoint_id"
+        fi
+        return 0
+    fi
+
+    if [ "$target" = "all" ]; then
+        find "$(caddie_ledger_sessions_dir "$repo_root")" -type f -name manifest.json 2>/dev/null \
+            | sort \
+            | while IFS= read -r manifest_path; do
+                caddie_ledger_json_read_string "$manifest_path" "checkpoint_id"
+                printf '\n'
+            done \
+            | sed '/^[[:space:]]*$/d'
+        return 0
+    fi
+
+    checkpoint_dir="$(caddie_ledger_find_checkpoint_dir "$repo_root" "$target")"
+    if [ -n "$checkpoint_dir" ]; then
+        printf '%s\n' "$target"
+        return 0
+    fi
+
+    caddie cli:red "Error: Checkpoint not found: $target"
+    return 1
+}
+
+function caddie_ledger_sync_push_one() {
+    local repo_root="$1"
+    local checkpoint_id="$2"
+    local supabase_url="$3"
+    local supabase_anon_key="$4"
+    local project_id="$5"
+    local snapshots_bucket="$6"
+    local transcripts_bucket="$7"
+    local artifacts_bucket="$8"
+    local checkpoint_dir=""
+    local manifest_path=""
+    local snapshot_path=""
+    local transcripts_path=""
+    local artifacts_dir=""
+    local response_file=""
+    local project_name=""
+    local created_at=""
+    local message=""
+    local session_id=""
+    local branch=""
+    local git_sha=""
+    local snapshot_sha=""
+    local verification_json=""
+    local provenance_json=""
+    local snapshot_object=""
+    local transcript_object=""
+    local escaped_project_id=""
+    local escaped_project_name=""
+    local escaped_repo_root=""
+    local escaped_message=""
+    local escaped_session_id=""
+    local escaped_checkpoint_id=""
+    local escaped_snapshot_object=""
+    local escaped_transcript_object=""
+    local escaped_branch=""
+    local escaped_git_sha=""
+    local escaped_fingerprint=""
+    local payload=""
+    local artifact_path=""
+    local artifact_name=""
+    local artifact_object=""
+    local artifact_kind=""
+    local artifact_index=0
+    local artifact_tmp_zip=""
+    local artifact_upload_source=""
+
+    checkpoint_dir="$(caddie_ledger_find_checkpoint_dir "$repo_root" "$checkpoint_id")"
+    if [ -z "$checkpoint_dir" ]; then
+        caddie cli:red "Error: Unable to locate checkpoint directory for $checkpoint_id"
+        return 1
+    fi
+
+    manifest_path="${checkpoint_dir}/manifest.json"
+    snapshot_path="${checkpoint_dir}/snapshot.zip"
+    transcripts_path="${checkpoint_dir}/transcripts/checkpoint.md"
+    artifacts_dir="${checkpoint_dir}/artifacts"
+    response_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync.XXXXXX")"
+
+    if [ ! -f "$manifest_path" ] || [ ! -f "$snapshot_path" ]; then
+        rm -f "$response_file"
+        caddie cli:red "Error: Checkpoint capsule is incomplete for $checkpoint_id"
+        return 1
+    fi
+
+    project_name="$(basename "$repo_root")"
+    created_at="$(caddie_ledger_json_query "$manifest_path" ".created_at")"
+    message="$(caddie_ledger_json_query "$manifest_path" ".message")"
+    session_id="$(caddie_ledger_json_query "$manifest_path" ".session_id")"
+    branch="$(caddie_ledger_json_query "$manifest_path" ".repo.branch")"
+    git_sha="$(caddie_ledger_json_query "$manifest_path" ".repo.git_sha")"
+    snapshot_sha="$(caddie_ledger_json_query "$manifest_path" ".snapshot.sha256")"
+    verification_json="$(caddie_ledger_json_query "$manifest_path" ".verification")"
+    if [ -z "$verification_json" ]; then
+        verification_json="{}"
+    fi
+
+    provenance_json="$(cat <<EOF
+{"repo_root":"$(caddie_ledger_json_escape "$repo_root")","branch":"$(caddie_ledger_json_escape "$branch")","git_sha":"$(caddie_ledger_json_escape "$git_sha")","local_checkpoint":"$(caddie_ledger_json_escape "$checkpoint_id")"}
+EOF
+)"
+
+    snapshot_object="${project_id}/${session_id}/${checkpoint_id}/snapshot.zip"
+    transcript_object="${project_id}/${session_id}/${checkpoint_id}/checkpoint.md"
+
+    if ! caddie_ledger_supabase_storage_upload \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "$snapshots_bucket" \
+        "$snapshot_object" \
+        "$snapshot_path" \
+        "$response_file"; then
+        rm -f "$response_file"
+        return 1
+    fi
+
+    if [ -f "$transcripts_path" ]; then
+        caddie_ledger_supabase_storage_upload \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "$transcripts_bucket" \
+            "$transcript_object" \
+            "$transcripts_path" \
+            "$response_file" >/dev/null 2>&1 || true
+    fi
+
+    escaped_project_id="$(caddie_ledger_json_escape "$project_id")"
+    escaped_project_name="$(caddie_ledger_json_escape "$project_name")"
+    escaped_repo_root="$(caddie_ledger_json_escape "$repo_root")"
+    escaped_message="$(caddie_ledger_json_escape "$message")"
+    escaped_session_id="$(caddie_ledger_json_escape "$session_id")"
+    escaped_checkpoint_id="$(caddie_ledger_json_escape "$checkpoint_id")"
+    escaped_snapshot_object="$(caddie_ledger_json_escape "$snapshot_object")"
+    escaped_transcript_object="$(caddie_ledger_json_escape "$transcript_object")"
+    escaped_branch="$(caddie_ledger_json_escape "$branch")"
+    escaped_git_sha="$(caddie_ledger_json_escape "$git_sha")"
+    escaped_fingerprint="$(caddie_ledger_json_escape "${snapshot_sha:-$checkpoint_id}")"
+
+    payload="$(cat <<EOF
+[{"id":"${escaped_project_id}","name":"${escaped_project_name}","repo_root":"${escaped_repo_root}","created_at":"${created_at}"}]
+EOF
+)"
+    if ! caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/projects?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        rm -f "$response_file"
+        return 1
+    fi
+
+    payload="$(cat <<EOF
+[{"id":"${escaped_session_id}","project_id":"${escaped_project_id}","agent":"ledger","started_at":"${created_at}","labels":{}}]
+EOF
+)"
+    if ! caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/sessions?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        rm -f "$response_file"
+        return 1
+    fi
+
+    payload="$(cat <<EOF
+[{"id":"${escaped_checkpoint_id}","session_id":"${escaped_session_id}","created_at":"${created_at}","message":"${escaped_message}","snapshot_object":"${escaped_snapshot_object}","provenance":${provenance_json},"verification":${verification_json},"fingerprint":"${escaped_fingerprint}"}]
+EOF
+)"
+    if ! caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/checkpoints?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        rm -f "$response_file"
+        return 1
+    fi
+
+    if [ -d "$artifacts_dir" ]; then
+        for artifact_path in "$artifacts_dir"/*; do
+            if [ ! -e "$artifact_path" ]; then
+                continue
+            fi
+
+            artifact_name="$(basename "$artifact_path")"
+            if [ "$artifact_name" = "index.jsonl" ]; then
+                continue
+            fi
+
+            artifact_upload_source="$artifact_path"
+            artifact_kind="file"
+            artifact_tmp_zip=""
+
+            if [ -d "$artifact_path" ]; then
+                artifact_tmp_zip="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-artifact.XXXXXX.zip")"
+                if ! (cd "$artifacts_dir" && zip -q -r "$artifact_tmp_zip" "$artifact_name"); then
+                    rm -f "$artifact_tmp_zip"
+                    continue
+                fi
+                artifact_upload_source="$artifact_tmp_zip"
+                artifact_kind="directory_zip"
+                artifact_name="${artifact_name}.zip"
+            fi
+
+            artifact_object="${project_id}/${session_id}/${checkpoint_id}/${artifact_name}"
+            if caddie_ledger_supabase_storage_upload \
+                "$supabase_url" \
+                "$supabase_anon_key" \
+                "$artifacts_bucket" \
+                "$artifact_object" \
+                "$artifact_upload_source" \
+                "$response_file"; then
+                artifact_index=$((artifact_index + 1))
+                payload="$(cat <<EOF
+[{"id":"${escaped_checkpoint_id}-artifact-${artifact_index}","checkpoint_id":"${escaped_checkpoint_id}","kind":"${artifact_kind}","object_key":"$(caddie_ledger_json_escape "$artifact_object")","meta":{"source":"$(caddie_ledger_json_escape "$artifact_name")"}}]
+EOF
+)"
+                caddie_ledger_supabase_json_request \
+                    "$supabase_url" \
+                    "$supabase_anon_key" \
+                    "POST" \
+                    "/rest/v1/artifacts?on_conflict=id" \
+                    "$payload" \
+                    "resolution=merge-duplicates,return=minimal" \
+                    "$response_file" >/dev/null 2>&1 || true
+            fi
+
+            if [ -n "$artifact_tmp_zip" ]; then
+                rm -f "$artifact_tmp_zip"
+            fi
+        done
+    fi
+
+    payload="$(cat <<EOF
+[{"session_id":"${escaped_session_id}","ts":"$(caddie_ledger_timestamp_utc)","type":"sync_push","payload":{"checkpoint_id":"${escaped_checkpoint_id}","snapshot_object":"${escaped_snapshot_object}","transcript_object":"${escaped_transcript_object}","branch":"${escaped_branch}","git_sha":"${escaped_git_sha}"}}]
+EOF
+)"
+    caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/events" \
+        "$payload" \
+        "return=minimal" \
+        "$response_file" >/dev/null 2>&1 || true
+
+    rm -f "$response_file"
+    return 0
+}
+
+function caddie_ledger_sync_push() {
+    local target="$1"
+    local repo_root=""
+    local config=""
+    local supabase_url=""
+    local supabase_anon_key=""
+    local project_id=""
+    local snapshots_bucket=""
+    local transcripts_bucket=""
+    local artifacts_bucket=""
+    local checkpoint_id=""
+    local targets=""
+    local pushed_count=0
+    local failed_count=0
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    if ! command -v curl >/dev/null 2>&1; then
+        caddie cli:red "Error: 'curl' is required for ledger sync"
+        return 1
+    fi
+
+    config="$(caddie_ledger_supabase_config_resolve)" || return 1
+    supabase_url="$(printf '%s' "$config" | cut -d'|' -f1)"
+    supabase_anon_key="$(printf '%s' "$config" | cut -d'|' -f2)"
+    project_id="$(printf '%s' "$config" | cut -d'|' -f3)"
+    snapshots_bucket="$(printf '%s' "$config" | cut -d'|' -f4)"
+    transcripts_bucket="$(printf '%s' "$config" | cut -d'|' -f5)"
+    artifacts_bucket="$(printf '%s' "$config" | cut -d'|' -f6)"
+
+    targets="$(caddie_ledger_sync_resolve_targets "$repo_root" "$target")" || return 1
+
+    while IFS= read -r checkpoint_id; do
+        if [ -z "$checkpoint_id" ]; then
+            continue
+        fi
+
+        caddie cli:indent "sync:push -> $checkpoint_id"
+        if caddie_ledger_sync_push_one \
+            "$repo_root" \
+            "$checkpoint_id" \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "$project_id" \
+            "$snapshots_bucket" \
+            "$transcripts_bucket" \
+            "$artifacts_bucket"; then
+            pushed_count=$((pushed_count + 1))
+        else
+            failed_count=$((failed_count + 1))
+        fi
+    done <<< "$targets"
+
+    if [ "$pushed_count" -eq 0 ] && [ "$failed_count" -eq 0 ]; then
+        caddie cli:yellow "No checkpoints to push"
+        return 0
+    fi
+
+    if [ "$failed_count" -gt 0 ]; then
+        caddie cli:red "Ledger sync push completed with failures"
+        caddie cli:indent "pushed: $pushed_count"
+        caddie cli:indent "failed: $failed_count"
+        return 1
+    fi
+
+    caddie cli:check "Ledger sync push completed"
+    caddie cli:indent "pushed: $pushed_count"
+    return 0
+}
+
+function caddie_ledger_sync_pull() {
+    local checkpoint_id="$1"
+    local repo_root=""
+    local config=""
+    local supabase_url=""
+    local supabase_anon_key=""
+    local project_id=""
+    local snapshots_bucket=""
+    local transcripts_bucket=""
+    local artifacts_bucket=""
+    local response_file=""
+    local artifact_response_file=""
+    local encoded_checkpoint_id=""
+    local remote_count=0
+    local remote_session_id=""
+    local remote_created_at=""
+    local remote_message=""
+    local remote_snapshot_object=""
+    local remote_verification=""
+    local remote_provenance=""
+    local local_session_id=""
+    local local_checkpoint_id=""
+    local session_dir=""
+    local checkpoint_dir=""
+    local snapshot_path=""
+    local transcript_path=""
+    local manifests_dir=""
+    local restore_dir=""
+    local checkpoint_count=0
+    local session_file=""
+    local now_ts=""
+    local artifact_object=""
+    local artifact_name=""
+    local artifact_local_path=""
+    local artifact_counter=0
+
+    if [ -z "$checkpoint_id" ]; then
+        caddie cli:red "Error: Please provide a checkpoint id"
+        caddie cli:usage "caddie ledger:sync:pull <checkpoint_id>"
+        return 1
+    fi
+
+    if ! command -v curl >/dev/null 2>&1; then
+        caddie cli:red "Error: 'curl' is required for ledger sync"
+        return 1
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    if [ ! -f "$(caddie_ledger_project_file "$repo_root")" ]; then
+        caddie_ledger_project_init >/dev/null 2>&1 || true
+    fi
+    if ! caddie_ledger_require_project "$repo_root"; then
+        return 1
+    fi
+
+    config="$(caddie_ledger_supabase_config_resolve)" || return 1
+    supabase_url="$(printf '%s' "$config" | cut -d'|' -f1)"
+    supabase_anon_key="$(printf '%s' "$config" | cut -d'|' -f2)"
+    project_id="$(printf '%s' "$config" | cut -d'|' -f3)"
+    snapshots_bucket="$(printf '%s' "$config" | cut -d'|' -f4)"
+    transcripts_bucket="$(printf '%s' "$config" | cut -d'|' -f5)"
+    artifacts_bucket="$(printf '%s' "$config" | cut -d'|' -f6)"
+    response_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync-pull.XXXXXX")"
+
+    encoded_checkpoint_id="$(caddie_ledger_url_encode "$checkpoint_id")"
+    if ! caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "GET" \
+        "/rest/v1/checkpoints?id=eq.${encoded_checkpoint_id}&select=id,session_id,created_at,message,snapshot_object,verification,provenance,fingerprint" \
+        "" \
+        "" \
+        "$response_file"; then
+        rm -f "$response_file"
+        return 1
+    fi
+
+    remote_count="$(caddie_ledger_json_array_length "$response_file")"
+    if [ "$remote_count" = "0" ]; then
+        rm -f "$response_file"
+        caddie cli:red "Error: Remote checkpoint not found: $checkpoint_id"
+        return 1
+    fi
+
+    remote_session_id="$(caddie_ledger_json_array_first_field "$response_file" "session_id")"
+    remote_created_at="$(caddie_ledger_json_array_first_field "$response_file" "created_at")"
+    remote_message="$(caddie_ledger_json_array_first_field "$response_file" "message")"
+    remote_snapshot_object="$(caddie_ledger_json_array_first_field "$response_file" "snapshot_object")"
+    remote_verification="$(caddie_ledger_json_array_first_field "$response_file" "verification")"
+    remote_provenance="$(caddie_ledger_json_array_first_field "$response_file" "provenance")"
+    rm -f "$response_file"
+
+    if [ -z "$remote_snapshot_object" ]; then
+        caddie cli:red "Error: Remote checkpoint has no snapshot_object"
+        return 1
+    fi
+
+    local_session_id="sync-${remote_session_id}"
+    local_session_id="$(printf '%s' "$local_session_id" | sed 's/[^a-zA-Z0-9._-]/-/g')"
+    if [ -z "$local_session_id" ]; then
+        local_session_id="sync-session"
+    fi
+
+    local_checkpoint_id="$checkpoint_id"
+    checkpoint_dir="$(caddie_ledger_sessions_dir "$repo_root")/${local_session_id}/checkpoints/${local_checkpoint_id}"
+    if [ -d "$checkpoint_dir" ]; then
+        now_ts="$(date -u +"%Y%m%dT%H%M%SZ")"
+        local_checkpoint_id="${local_checkpoint_id}-pull-${now_ts}"
+    fi
+
+    session_dir="$(caddie_ledger_sessions_dir "$repo_root")/${local_session_id}"
+    checkpoint_dir="${session_dir}/checkpoints/${local_checkpoint_id}"
+    manifests_dir="${checkpoint_dir}"
+    snapshot_path="${checkpoint_dir}/snapshot.zip"
+    transcript_path="${checkpoint_dir}/transcripts/checkpoint.md"
+    session_file="${session_dir}/session.json"
+
+    if ! mkdir -p "${checkpoint_dir}/transcripts" "${checkpoint_dir}/artifacts" "${checkpoint_dir}/verification"; then
+        caddie cli:red "Error: Unable to prepare local checkpoint directory"
+        return 1
+    fi
+    : > "${checkpoint_dir}/artifacts/index.jsonl"
+    : > "${checkpoint_dir}/verification/verify.log"
+    : > "${checkpoint_dir}/verification/files.sha256"
+
+    if ! caddie_ledger_supabase_storage_download \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "$snapshots_bucket" \
+        "$remote_snapshot_object" \
+        "$snapshot_path"; then
+        return 1
+    fi
+
+    caddie_ledger_supabase_storage_download \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "$transcripts_bucket" \
+        "${project_id}/${remote_session_id}/${checkpoint_id}/checkpoint.md" \
+        "$transcript_path" >/dev/null 2>&1 || true
+    if [ ! -f "$transcript_path" ]; then
+        cat > "$transcript_path" <<EOF
+# Pulled Checkpoint Transcript
+
+- checkpoint_id: ${checkpoint_id}
+- remote_session_id: ${remote_session_id}
+- message: ${remote_message}
+EOF
+    fi
+
+    artifact_response_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync-pull-artifacts.XXXXXX")"
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "GET" \
+        "/rest/v1/artifacts?checkpoint_id=eq.${encoded_checkpoint_id}&select=object_key" \
+        "" \
+        "" \
+        "$artifact_response_file"; then
+        while IFS= read -r artifact_object; do
+            if [ -z "$artifact_object" ]; then
+                continue
+            fi
+
+            artifact_counter=$((artifact_counter + 1))
+            artifact_name="$(basename "$artifact_object")"
+            if [ -z "$artifact_name" ]; then
+                artifact_name="artifact-${artifact_counter}"
+            fi
+
+            artifact_local_path="${checkpoint_dir}/artifacts/${artifact_name}"
+            if [ -e "$artifact_local_path" ]; then
+                artifact_local_path="${checkpoint_dir}/artifacts/${artifact_counter}-${artifact_name}"
+            fi
+
+            if caddie_ledger_supabase_storage_download \
+                "$supabase_url" \
+                "$supabase_anon_key" \
+                "$artifacts_bucket" \
+                "$artifact_object" \
+                "$artifact_local_path"; then
+                printf '{"added_at":"%s","source_path":"%s","stored_path":"%s"}\n' \
+                    "$(caddie_ledger_timestamp_utc)" \
+                    "$(caddie_ledger_json_escape "$artifact_object")" \
+                    "$(caddie_ledger_json_escape "artifacts/$(basename "$artifact_local_path")")" >> "${checkpoint_dir}/artifacts/index.jsonl"
+            fi
+        done < <(caddie_ledger_json_array_field_lines "$artifact_response_file" "object_key")
+    fi
+    rm -f "$artifact_response_file"
+
+    if [ -z "$remote_created_at" ]; then
+        remote_created_at="$(caddie_ledger_timestamp_utc)"
+    fi
+    if [ -z "$remote_message" ]; then
+        remote_message="pulled checkpoint ${checkpoint_id}"
+    fi
+    if [ -z "$remote_verification" ]; then
+        remote_verification='{"status":"unknown","exit_code":0,"log_path":"verification/verify.log"}'
+    fi
+    if [ -z "$remote_provenance" ]; then
+        remote_provenance="{}"
+    fi
+
+    if ! caddie_ledger_write_manifest \
+        "${manifests_dir}/manifest.json" \
+        "$repo_root" \
+        "$local_session_id" \
+        "$local_checkpoint_id" \
+        "$remote_created_at" \
+        "$remote_message" \
+        "$(printf '%s' "$remote_provenance" | sed -n 's/.*"branch":"\([^"]*\)".*/\1/p')" \
+        "$(printf '%s' "$remote_provenance" | sed -n 's/.*"git_sha":"\([^"]*\)".*/\1/p')" \
+        "0" \
+        "0" \
+        "none" \
+        "$(caddie_ledger_hash_file "$snapshot_path")" \
+        "supabase pull" \
+        "0" \
+        "pulled" \
+        "$artifact_counter"; then
+        caddie cli:red "Error: Unable to write pulled checkpoint manifest"
+        return 1
+    fi
+
+    checkpoint_count="$(find "${session_dir}/checkpoints" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d '[:space:]')"
+    if [ -z "$checkpoint_count" ]; then
+        checkpoint_count=1
+    fi
+    caddie_ledger_write_session_json \
+        "$session_file" \
+        "$local_session_id" \
+        "supabase" \
+        "$remote_created_at" \
+        "$checkpoint_count" \
+        "$local_checkpoint_id" \
+        "" >/dev/null 2>&1 || true
+
+    printf '%s\n' "$local_session_id" > "$(caddie_ledger_current_session_file "$repo_root")"
+    printf '%s\n' "$local_checkpoint_id" > "$(caddie_ledger_current_checkpoint_file "$repo_root")"
+
+    restore_dir="$(caddie_ledger_dir "$repo_root")/restores/${local_checkpoint_id}-pull-$(date -u +"%Y%m%dT%H%M%SZ")"
+    caddie_ledger_restore "$local_checkpoint_id" "$restore_dir" >/dev/null 2>&1 || true
+
+    caddie cli:check "Ledger sync pull completed"
+    caddie cli:indent "remote checkpoint: $checkpoint_id"
+    caddie cli:indent "local checkpoint: $local_checkpoint_id"
+    caddie cli:indent "snapshot object: $remote_snapshot_object"
+    caddie cli:indent "restored to: $restore_dir"
+    caddie cli:indent "artifacts pulled: $artifact_counter"
+    return 0
+}
+
+function caddie_ledger_sync_check() {
+    local repo_root=""
+    local config=""
+    local supabase_url=""
+    local supabase_anon_key=""
+    local project_id=""
+    local snapshots_bucket=""
+    local transcripts_bucket=""
+    local artifacts_bucket=""
+    local response_file=""
+    local storage_response_file=""
+    local bucket_list=""
+    local bucket_name=""
+    local table_name=""
+    local checks_total=0
+    local checks_failed=0
+    local probe_stamp=""
+    local probe_project_name=""
+    local probe_created_at=""
+    local probe_session_id=""
+    local probe_checkpoint_id=""
+    local probe_artifact_id=""
+    local probe_event_type="sync_check"
+    local probe_object_key=""
+    local probe_file=""
+    local payload=""
+    local created_session=0
+    local created_checkpoint=0
+    local created_artifact=0
+    local created_event=0
+    local cleanup_response_file=""
+    local enc_session_id=""
+    local enc_checkpoint_id=""
+    local enc_artifact_id=""
+
+    if ! command -v curl >/dev/null 2>&1; then
+        caddie cli:red "Error: 'curl' is required for ledger sync checks"
+        return 1
+    fi
+
+    repo_root="$(caddie_ledger_repo_root)"
+    config="$(caddie_ledger_supabase_config_resolve)" || return 1
+    supabase_url="$(printf '%s' "$config" | cut -d'|' -f1)"
+    supabase_anon_key="$(printf '%s' "$config" | cut -d'|' -f2)"
+    project_id="$(printf '%s' "$config" | cut -d'|' -f3)"
+    snapshots_bucket="$(printf '%s' "$config" | cut -d'|' -f4)"
+    transcripts_bucket="$(printf '%s' "$config" | cut -d'|' -f5)"
+    artifacts_bucket="$(printf '%s' "$config" | cut -d'|' -f6)"
+
+    response_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync-check.XXXXXX")"
+    storage_response_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync-check-storage.XXXXXX")"
+    cleanup_response_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync-check-cleanup.XXXXXX")"
+    probe_file="$(mktemp "${TMPDIR:-/tmp}/caddie-ledger-sync-check-probe.XXXXXX")"
+    printf '%s\n' "ledger sync check probe" > "$probe_file"
+
+    caddie cli:title "Ledger Sync Check"
+    caddie cli:indent "project_id: $project_id"
+    caddie cli:indent "supabase_url: $supabase_url"
+    caddie cli:indent "buckets: snapshots=$snapshots_bucket transcripts=$transcripts_bucket artifacts=$artifacts_bucket"
+
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "GET" \
+        "/auth/v1/health" \
+        "" \
+        "" \
+        "$response_file"; then
+        caddie cli:check "Supabase endpoint reachable"
+    else
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "GET" \
+        "/storage/v1/bucket" \
+        "" \
+        "" \
+        "$response_file"; then
+        bucket_list="$(caddie_ledger_json_array_field_lines "$response_file" "name")"
+        caddie cli:check "Storage bucket listing is accessible"
+    else
+        checks_failed=$((checks_failed + 1))
+        bucket_list=""
+    fi
+
+    for bucket_name in "$snapshots_bucket" "$transcripts_bucket" "$artifacts_bucket"; do
+        checks_total=$((checks_total + 1))
+        if printf '%s\n' "$bucket_list" | grep -Fxq "$bucket_name"; then
+            caddie cli:check "Bucket exists: $bucket_name"
+        else
+            caddie cli:red "Bucket missing or not visible: $bucket_name"
+            checks_failed=$((checks_failed + 1))
+        fi
+    done
+
+    for table_name in projects sessions checkpoints artifacts events; do
+        checks_total=$((checks_total + 1))
+        if caddie_ledger_supabase_json_request \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "GET" \
+            "/rest/v1/${table_name}?select=*&limit=1" \
+            "" \
+            "" \
+            "$response_file"; then
+            caddie cli:check "Table select ok: $table_name"
+        else
+            caddie cli:red "Table select failed: $table_name"
+            checks_failed=$((checks_failed + 1))
+        fi
+    done
+
+    probe_stamp="$(date -u +"%Y%m%dT%H%M%SZ")-$$"
+    probe_project_name="$(basename "$repo_root")"
+    probe_created_at="$(caddie_ledger_timestamp_utc)"
+    probe_session_id="$(printf '%s' "sync-check-session-${probe_stamp}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
+    probe_checkpoint_id="$(printf '%s' "sync-check-checkpoint-${probe_stamp}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
+    probe_artifact_id="$(printf '%s' "sync-check-artifact-${probe_stamp}" | sed 's/[^a-zA-Z0-9._-]/-/g')"
+    probe_object_key="${project_id}/sync-check/${probe_stamp}.txt"
+
+    payload="$(cat <<EOF
+[{"id":"$(caddie_ledger_json_escape "$project_id")","name":"$(caddie_ledger_json_escape "$probe_project_name")","repo_root":"$(caddie_ledger_json_escape "$repo_root")","created_at":"$probe_created_at"}]
+EOF
+)"
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/projects?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        caddie cli:check "Table write ok: projects (upsert)"
+    else
+        caddie cli:red "Table write failed: projects (upsert)"
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    payload="$(cat <<EOF
+[{"id":"$(caddie_ledger_json_escape "$probe_session_id")","project_id":"$(caddie_ledger_json_escape "$project_id")","agent":"ledger-sync-check","started_at":"$probe_created_at","labels":{"sync_check":true}}]
+EOF
+)"
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/sessions?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        created_session=1
+        caddie cli:check "Table write ok: sessions (upsert)"
+    else
+        caddie cli:red "Table write failed: sessions (upsert)"
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    payload="$(cat <<EOF
+[{"id":"$(caddie_ledger_json_escape "$probe_checkpoint_id")","session_id":"$(caddie_ledger_json_escape "$probe_session_id")","created_at":"$probe_created_at","message":"sync check probe","snapshot_object":"$(caddie_ledger_json_escape "$probe_object_key")","provenance":{},"verification":{},"fingerprint":"$(caddie_ledger_json_escape "$probe_checkpoint_id")"}]
+EOF
+)"
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/checkpoints?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        created_checkpoint=1
+        caddie cli:check "Table write ok: checkpoints (upsert)"
+    else
+        caddie cli:red "Table write failed: checkpoints (upsert)"
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    payload="$(cat <<EOF
+[{"id":"$(caddie_ledger_json_escape "$probe_artifact_id")","checkpoint_id":"$(caddie_ledger_json_escape "$probe_checkpoint_id")","kind":"sync_check","object_key":"$(caddie_ledger_json_escape "$probe_object_key")","meta":{"probe":true}}]
+EOF
+)"
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/artifacts?on_conflict=id" \
+        "$payload" \
+        "resolution=merge-duplicates,return=minimal" \
+        "$response_file"; then
+        created_artifact=1
+        caddie cli:check "Table write ok: artifacts (upsert)"
+    else
+        caddie cli:red "Table write failed: artifacts (upsert)"
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    payload="$(cat <<EOF
+[{"session_id":"$(caddie_ledger_json_escape "$probe_session_id")","ts":"$probe_created_at","type":"$probe_event_type","payload":{"checkpoint_id":"$(caddie_ledger_json_escape "$probe_checkpoint_id")","probe":true}}]
+EOF
+)"
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_json_request \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "POST" \
+        "/rest/v1/events" \
+        "$payload" \
+        "return=minimal" \
+        "$response_file"; then
+        created_event=1
+        caddie cli:check "Table write ok: events (insert)"
+    else
+        caddie cli:red "Table write failed: events (insert)"
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    checks_total=$((checks_total + 1))
+    if caddie_ledger_supabase_storage_upload \
+        "$supabase_url" \
+        "$supabase_anon_key" \
+        "$snapshots_bucket" \
+        "$probe_object_key" \
+        "$probe_file" \
+        "$storage_response_file"; then
+        caddie cli:check "Storage write ok: ${snapshots_bucket}/${probe_object_key}"
+
+        checks_total=$((checks_total + 1))
+        if caddie_ledger_supabase_storage_delete \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "$snapshots_bucket" \
+            "$probe_object_key" \
+            "$storage_response_file"; then
+            caddie cli:check "Storage delete ok: ${snapshots_bucket}/${probe_object_key}"
+        else
+            caddie cli:red "Storage delete failed for probe object"
+            checks_failed=$((checks_failed + 1))
+        fi
+    else
+        caddie cli:red "Storage write failed for probe object"
+        checks_failed=$((checks_failed + 1))
+    fi
+
+    enc_session_id="$(caddie_ledger_url_encode "$probe_session_id")"
+    enc_checkpoint_id="$(caddie_ledger_url_encode "$probe_checkpoint_id")"
+    enc_artifact_id="$(caddie_ledger_url_encode "$probe_artifact_id")"
+
+    if [ "$created_event" -eq 1 ]; then
+        caddie_ledger_supabase_json_request \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "DELETE" \
+            "/rest/v1/events?session_id=eq.${enc_session_id}&type=eq.${probe_event_type}" \
+            "" \
+            "return=minimal" \
+            "$cleanup_response_file" >/dev/null 2>&1 || true
+    fi
+
+    if [ "$created_artifact" -eq 1 ]; then
+        caddie_ledger_supabase_json_request \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "DELETE" \
+            "/rest/v1/artifacts?id=eq.${enc_artifact_id}" \
+            "" \
+            "return=minimal" \
+            "$cleanup_response_file" >/dev/null 2>&1 || true
+    fi
+
+    if [ "$created_checkpoint" -eq 1 ]; then
+        caddie_ledger_supabase_json_request \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "DELETE" \
+            "/rest/v1/checkpoints?id=eq.${enc_checkpoint_id}" \
+            "" \
+            "return=minimal" \
+            "$cleanup_response_file" >/dev/null 2>&1 || true
+    fi
+
+    if [ "$created_session" -eq 1 ]; then
+        caddie_ledger_supabase_json_request \
+            "$supabase_url" \
+            "$supabase_anon_key" \
+            "DELETE" \
+            "/rest/v1/sessions?id=eq.${enc_session_id}" \
+            "" \
+            "return=minimal" \
+            "$cleanup_response_file" >/dev/null 2>&1 || true
+    fi
+
+    rm -f "$response_file" "$storage_response_file" "$cleanup_response_file" "$probe_file"
+
+    caddie cli:blank
+    if [ "$checks_failed" -eq 0 ]; then
+        caddie cli:check "Ledger sync check passed (${checks_total}/${checks_total})"
+        return 0
+    fi
+
+    caddie cli:red "Ledger sync check failed (${checks_failed}/${checks_total} checks failed)"
+    return 1
+}
+
+function caddie_ledger_verify_command_set() {
+    local value="$1"
+    if [ -z "$value" ]; then
+        caddie cli:red "Error: Please provide a command"
+        caddie cli:usage "caddie ledger:verify:command:set <command>"
+        return 1
+    fi
+
+    export CADDIE_LEDGER_VERIFY_COMMAND="$value"
+    caddie cli:check "Ledger verification command set"
+    caddie cli:indent "command: $value"
+    return 0
+}
+
+function caddie_ledger_verify_command_get() {
+    local value="${CADDIE_LEDGER_VERIFY_COMMAND:-}"
+    if [ -n "$value" ]; then
+        caddie cli:green "Ledger verification command: $value"
+    else
+        caddie cli:yellow "No ledger verification command is set"
+        caddie cli:thought "Default order: caddie verify (if available), then caddie core:lint"
+        caddie cli:thought "Set one with: caddie ledger:verify:command:set <command>"
+    fi
+    return 0
+}
+
+function caddie_ledger_verify_command_unset() {
+    if [ -n "${CADDIE_LEDGER_VERIFY_COMMAND:-}" ]; then
+        unset CADDIE_LEDGER_VERIFY_COMMAND
+        caddie cli:check "Ledger verification command unset"
+    else
+        caddie cli:yellow "No ledger verification command was set"
+    fi
+    return 0
+}
+
+function caddie_ledger_info() {
+    local repo_root=""
+    local ledger_dir=""
+    local project_file=""
+    local active_session=""
+    local active_checkpoint=""
+    local verify_command=""
+    local config_file=""
+    local auth_state="not configured"
+    local schema_db_host_state="not set"
+    local schema_db_password_state="not set"
+    local schema_db_user=""
+    local schema_db_port=""
+    local schema_db_name=""
+
+    repo_root="$(caddie_ledger_repo_root)"
+    ledger_dir="$(caddie_ledger_dir "$repo_root")"
+    project_file="$(caddie_ledger_project_file "$repo_root")"
+    active_session="$(caddie_ledger_active_session_id "$repo_root")"
+    active_checkpoint="$(caddie_ledger_active_checkpoint_id "$repo_root")"
+    verify_command="$(caddie_ledger_verification_command_resolve)"
+    config_file="$(caddie_ledger_config_file)"
+    if [ -f "$config_file" ]; then
+        auth_state="configured"
+    fi
+    if [ -n "$(caddie_ledger_schema_db_host_get_value)" ]; then
+        schema_db_host_state="set"
+    fi
+    schema_db_user="$(caddie_ledger_schema_db_user_get_value)"
+    schema_db_port="$(caddie_ledger_schema_db_port_get_value)"
+    schema_db_name="$(caddie_ledger_schema_db_name_get_value)"
+    if caddie_ledger_schema_db_password_read >/dev/null 2>&1; then
+        schema_db_password_state="set"
+    fi
+
+    caddie cli:title "Ledger Info"
+    caddie cli:indent "repo root: $repo_root"
+    caddie cli:indent "ledger dir: $ledger_dir"
+    if [ -f "$project_file" ]; then
+        caddie cli:indent "project: initialized"
+    else
+        caddie cli:indent "project: not initialized"
+    fi
+    caddie cli:indent "active session: ${active_session:-none}"
+    caddie cli:indent "active checkpoint: ${active_checkpoint:-none}"
+    caddie cli:indent "verification command: $verify_command"
+    caddie cli:indent "supabase auth: $auth_state"
+    caddie cli:indent "supabase config: $config_file"
+    caddie cli:indent "schema db host: $schema_db_host_state"
+    caddie cli:indent "schema db user: $schema_db_user"
+    caddie cli:indent "schema db port: $schema_db_port"
+    caddie cli:indent "schema db name: $schema_db_name"
+    caddie cli:indent "schema db password: $schema_db_password_state"
+    return 0
+}
+
+function caddie_ledger_help() {
+    caddie cli:title "Ledger Commands"
+    caddie cli:usage "caddie ledger:<command>"
+    caddie cli:blank
+    caddie cli:indent "ledger:info                             Show ledger state and resolved verify command"
+    caddie cli:indent "ledger:project:init                     Initialize .caddie/ledger project metadata"
+    caddie cli:indent "ledger:session:start [agents...]        Start a new ledger session and auto-configure watch"
+    caddie cli:indent "ledger:session:end                      End the active ledger session"
+    caddie cli:indent "ledger:agent:watch <agents...>          Set watched agents for transcript collection"
+    caddie cli:indent "ledger:agent:watch:list                 List watched agents and source status"
+    caddie cli:indent "ledger:agent:watch:clear                Clear watched agents for active session"
+    caddie cli:indent "ledger:collect                          Collect watched-agent transcript snippets"
+    caddie cli:indent "ledger:checkpoint [message]             Create a checkpoint capsule and auto-collect"
+    caddie cli:indent "ledger:artifact <path>                  Attach artifact to active checkpoint"
+    caddie cli:indent "ledger:list                             List checkpoints in this repo"
+    caddie cli:indent "ledger:restore <checkpoint_id> [dir]    Restore snapshot into a new directory by default"
+    caddie cli:blank
+    caddie cli:indent "ledger:schema:sql                       Print schema bootstrap SQL"
+    caddie cli:indent "ledger:schema:init [db_host|postgres_url] Apply schema SQL with psql"
+    caddie cli:indent "ledger:schema:init:dry:run              Show schema SQL without applying"
+    caddie cli:indent "ledger:schema:db:url:set <db_host|postgres_url> Set default schema DB base"
+    caddie cli:indent "ledger:schema:db:url:get                Show schema DB base + effective URL"
+    caddie cli:indent "ledger:schema:db:url:unset              Clear default schema DB host"
+    caddie cli:indent "ledger:schema:db:user:set <user>        Set schema DB user override (default postgres)"
+    caddie cli:indent "ledger:schema:db:user:get               Show schema DB user"
+    caddie cli:indent "ledger:schema:db:user:unset             Clear schema DB user override"
+    caddie cli:indent "ledger:schema:db:port:set <port>        Set schema DB port override (default 5432)"
+    caddie cli:indent "ledger:schema:db:port:get               Show schema DB port"
+    caddie cli:indent "ledger:schema:db:port:unset             Clear schema DB port override"
+    caddie cli:indent "ledger:schema:db:name:set <name>        Set schema DB name override (default postgres)"
+    caddie cli:indent "ledger:schema:db:name:get               Show schema DB name"
+    caddie cli:indent "ledger:schema:db:name:unset             Clear schema DB name override"
+    caddie cli:indent "ledger:schema:db:password:set [password] Store schema DB password in keychain (prompts if omitted)"
+    caddie cli:indent "ledger:schema:db:password:get           Show schema DB password keychain status"
+    caddie cli:indent "ledger:schema:db:password:unset         Remove schema DB password from keychain"
+    caddie cli:blank
+    caddie cli:indent "ledger:auth:set <url> <key> <id> [buckets...]  Configure Supabase sync auth"
+    caddie cli:indent "ledger:auth:get                         Show Supabase sync config"
+    caddie cli:indent "ledger:auth:unset                       Remove Supabase sync config"
+    caddie cli:indent "ledger:sync:check                       Validate Supabase buckets/tables/policies"
+    caddie cli:indent "ledger:sync:push [checkpoint_id|latest|all]     Push checkpoints to Supabase"
+    caddie cli:indent "ledger:sync:pull <checkpoint_id>        Pull checkpoint snapshot from Supabase"
+    caddie cli:blank
+    caddie cli:indent "ledger:verify:command:set <command>     Configure verification command"
+    caddie cli:indent "ledger:verify:command:get               Show configured verification command"
+    caddie cli:indent "ledger:verify:command:unset             Clear configured verification command"
+    caddie cli:blank
+    caddie cli:title "Examples"
+    caddie cli:indent "caddie ledger:project:init"
+    caddie cli:indent "caddie ledger:session:start codex cursor"
+    caddie cli:indent "caddie ledger:checkpoint \"phase-1 MVP\""
+    caddie cli:indent "caddie ledger:artifact ./tmp/verify.log"
+    caddie cli:indent "caddie ledger:session:end"
+    caddie cli:indent "caddie ledger:list"
+    caddie cli:indent "caddie ledger:restore checkpoint-20260218T120000Z"
+    caddie cli:indent "caddie ledger:schema:db:url:set db.<project>.supabase.co"
+    caddie cli:indent "caddie ledger:schema:db:password:set"
+    caddie cli:indent "caddie ledger:schema:init"
+    caddie cli:indent "caddie ledger:auth:set https://<project>.supabase.co <anon_key> <project_id>"
+    caddie cli:indent "caddie ledger:sync:check"
+    caddie cli:indent "caddie ledger:sync:push latest"
+    caddie cli:indent "caddie ledger:sync:pull checkpoint-20260218T120000Z"
+    return 0
+}
+
+function caddie_ledger_commands() {
+    printf '%s\n' "ledger:info ledger:help ledger:project:init ledger:session:start ledger:session:end ledger:agent:watch ledger:agent:watch:list ledger:agent:watch:clear ledger:collect ledger:checkpoint ledger:artifact ledger:list ledger:restore ledger:schema:sql ledger:schema:init ledger:schema:init:dry:run ledger:schema:db:url:set ledger:schema:db:url:get ledger:schema:db:url:unset ledger:schema:db:user:set ledger:schema:db:user:get ledger:schema:db:user:unset ledger:schema:db:port:set ledger:schema:db:port:get ledger:schema:db:port:unset ledger:schema:db:name:set ledger:schema:db:name:get ledger:schema:db:name:unset ledger:schema:db:password:set ledger:schema:db:password:get ledger:schema:db:password:unset ledger:auth:set ledger:auth:get ledger:auth:unset ledger:sync:check ledger:sync:push ledger:sync:pull ledger:verify:command:set ledger:verify:command:get ledger:verify:command:unset"
+    return 0
+}
+
+export -f caddie_ledger_description
+export -f caddie_ledger_info
+export -f caddie_ledger_schema_db_url_set
+export -f caddie_ledger_schema_db_url_get
+export -f caddie_ledger_schema_db_url_unset
+export -f caddie_ledger_schema_db_user_set
+export -f caddie_ledger_schema_db_user_get
+export -f caddie_ledger_schema_db_user_unset
+export -f caddie_ledger_schema_db_port_set
+export -f caddie_ledger_schema_db_port_get
+export -f caddie_ledger_schema_db_port_unset
+export -f caddie_ledger_schema_db_name_set
+export -f caddie_ledger_schema_db_name_get
+export -f caddie_ledger_schema_db_name_unset
+export -f caddie_ledger_schema_db_password_set
+export -f caddie_ledger_schema_db_password_get
+export -f caddie_ledger_schema_db_password_unset
+export -f caddie_ledger_schema_sql
+export -f caddie_ledger_schema_init
+export -f caddie_ledger_schema_init_dry_run
+export -f caddie_ledger_project_init
+export -f caddie_ledger_session_start
+export -f caddie_ledger_session_end
+export -f caddie_ledger_agent_watch
+export -f caddie_ledger_agent_watch_list
+export -f caddie_ledger_agent_watch_clear
+export -f caddie_ledger_collect
+export -f caddie_ledger_checkpoint
+export -f caddie_ledger_artifact
+export -f caddie_ledger_list
+export -f caddie_ledger_restore
+export -f caddie_ledger_auth_set
+export -f caddie_ledger_auth_get
+export -f caddie_ledger_auth_unset
+export -f caddie_ledger_sync_check
+export -f caddie_ledger_sync_push
+export -f caddie_ledger_sync_pull
+export -f caddie_ledger_verify_command_set
+export -f caddie_ledger_verify_command_get
+export -f caddie_ledger_verify_command_unset
+export -f caddie_ledger_help
+export -f caddie_ledger_commands

@@ -21,6 +21,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[MCP Module](mcp.md)** - MCP server shortcuts and deployment helpers
 - **[Cursor Module](cursor.md)** - IDE integration and AI-powered development
 - **[Codex Module](codex.md)** - Codex-powered review and automation helpers
+- **[Ledger Module](ledger.md)** - Agentic checkpoint capsules and local provenance
 - **[Debug Module](debug.md)** - Debug control and output helpers
 - **[Git Module](git.md)** - Enhanced git workflows and GitHub integration
 - **[GitHub Module](github.md)** - GitHub account and repository management

@@ -27,6 +27,7 @@ make your coding experience smooth and efficient.
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **macOS Utilities**: Screenshot archiving and cleanup helpers
+- **Agentic Ledger**: Local checkpoint capsules with manifests, snapshots, verification logs, and optional Supabase sync
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
@@ -69,18 +70,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-8.3.0 (update this for each release)
+caddie  # prompt shows as caddie-9.0.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-8.3.0 rust  # prompt switches to caddie[rust]-8.3.0
-caddie[rust]-8.3.0 back  # exits scope (also accepts `up` or `..`)
+caddie-9.0.0 rust  # prompt switches to caddie[rust]-9.0.0
+caddie[rust]-9.0.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-8.3.0 `ls -la`
-caddie-8.3.0 shell git status  # one-off shell command
+caddie-9.0.0 `ls -la`
+caddie-9.0.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-8.3.0 rust build
+caddie-9.0.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 
@@ -109,6 +110,7 @@ caddie-8.3.0 rust build
 - **[macOS Module](docs/modules/mac.md)** - macOS workflow helpers and utilities
 - **[Cursor Module](docs/modules/cursor.md)** - IDE integration and AI tools
 - **[Codex Module](docs/modules/codex.md)** - Codex-powered review and automation helpers
+- **[Ledger Module](docs/modules/ledger.md)** - Agentic checkpoint capsules and sync helpers
 - **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
@@ -154,6 +156,7 @@ caddie.sh/
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_mac      # macOS utilities
 │   ├── dot_caddie_cursor   # IDE integration
+│   ├── dot_caddie_ledger   # Agentic ledger and sync
 │   └── dot_caddie_git      # Git enhancements
 ├── docs/                   # Documentation
 ├── Makefile                # Build system
@@ -258,6 +261,30 @@ caddie codex:review:terminal:open ~/work/my-repo
 
 # Debug Terminal automation (opens a test hub + tab)
 caddie codex:review:terminal:debug
+```
+
+### Ledger Workflow
+
+```bash
+# Initialize local ledger metadata
+caddie ledger:project:init
+
+# Start a session and create a checkpoint capsule
+caddie ledger:session:start codex cursor
+caddie ledger:checkpoint "checkpoint message"
+
+# Attach an artifact and inspect checkpoints
+caddie ledger:artifact ./tmp/verify.log
+caddie ledger:list
+caddie ledger:session:end
+
+# Optional Supabase sync
+caddie ledger:schema:db:url:set db.<project>.supabase.co
+caddie ledger:schema:db:password:set
+caddie ledger:schema:init
+caddie ledger:auth:set https://<project>.supabase.co <anon_key> <project_id>
+caddie ledger:sync:check
+caddie ledger:sync:push latest
 ```
 
 ### Code Quality

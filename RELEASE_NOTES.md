@@ -1,5 +1,48 @@
 # Caddie.sh Release Notes
 
+## Version 9.0.0 - Agentic Ledger
+
+**Release Date:** Feb 18, 2026
+
+### 🚀 Major New Features
+
+#### **Ledger Module (Checkpoint Capsules)**
+- **New Module**: Added `ledger` for local-first checkpoint capsules
+- **Project + Session Flow**: `ledger:project:init` and `ledger:session:start [agent]`
+- **Checkpoint Capsules**: `ledger:checkpoint [message]` writes `snapshot.zip`, `manifest.json`, transcripts, artifacts, and verification logs
+- **Artifact Capture**: `ledger:artifact <path>` attaches files/directories to the active checkpoint
+- **Safe Restore**: `ledger:restore <checkpoint_id>` restores into a new folder by default
+- **Checkpoint Listing**: `ledger:list` summarizes checkpoint history in the current repository
+
+#### **Supabase Sync (Opt-In)**
+- **Schema Bootstrap**: `ledger:schema:init` applies tables, buckets, grants, and baseline RLS policies via `psql`
+- **Schema Preview**: `ledger:schema:sql` and `ledger:schema:init:dry:run` expose the exact SQL before applying
+- **Schema DB Base Management**: `ledger:schema:db:url:set|get|unset` stores DB host base outside the repo; `schema:init` composes URL using defaults (`postgres`, `5432`, `postgres`)
+- **Schema DB Overrides**: `ledger:schema:db:user|port|name:set|get|unset` allows optional override of default connection parts
+- **Schema DB Password Management**: `ledger:schema:db:password:set|get|unset` stores schema DB password in macOS Keychain (not in the repo)
+- **Auth Config**: `ledger:auth:set|get|unset` manages sync configuration in `~/.caddie_state/ledger/config.json`
+- **Push/Pull**: `ledger:sync:push [checkpoint_id|latest|all]` and `ledger:sync:pull <checkpoint_id>`
+- **Backend Targets**: Syncs metadata to `projects`, `sessions`, `checkpoints`, `artifacts`, and `events`
+- **Storage Targets**: Syncs checkpoint payloads through `snapshots`, `transcripts`, and `artifacts` buckets
+
+#### **Environment Validation**
+- **New Command**: `ledger:sync:check` validates Supabase endpoint reachability, buckets, table read/write access, and storage write/delete behavior before push
+
+### 📝 Usage Examples
+
+```bash
+caddie ledger:project:init
+caddie ledger:session:start codex
+caddie ledger:checkpoint "phase-1 local MVP"
+caddie ledger:artifact ./tmp/verify.log
+caddie ledger:schema:db:url:set db.<project>.supabase.co
+caddie ledger:schema:db:password:set
+caddie ledger:schema:init
+caddie ledger:auth:set https://<project>.supabase.co <anon_key> <project_id>
+caddie ledger:sync:check
+caddie ledger:sync:push latest
+```
+
 ## Version 8.7.0 - Structured Command Cleanup
 
 **Release Date:** Feb 6, 2026

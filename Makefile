@@ -33,7 +33,8 @@ help: ## Show this help message
 	echo "$(YELLOW)Usage:$(NC)"
 	echo "  make install        - Full installation (recommended)"
 	echo "  make install-dot    - Install only dot files (with backup)"
-	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, Ruby deps, GitHub CLI)"
+	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, Ruby deps, PostgreSQL client, GitHub CLI)"
+	echo "  make setup-psql     - Setup PostgreSQL client tools (psql)"
 	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
 	echo "  make restore-backup - Restore from backup files"
@@ -138,6 +139,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_swift"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_codex" "$(DEST_MODULES_DIR)/.caddie_codex"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_codex"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_ledger" "$(DEST_MODULES_DIR)/.caddie_ledger"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ledger"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_cli" "$(DEST_MODULES_DIR)/.caddie_cli"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
@@ -154,7 +157,7 @@ install-dot: backup-existing ## Install dot files to home directory
 	
 	echo "$(GREEN)✓$(NC) All dot files installed successfully"
 
-setup-dev: setup-homebrew setup-python setup-rust setup-ruby-deps setup-github ## Setup development environment (Homebrew, Python, Rust, Ruby build deps, GitHub CLI)
+setup-dev: setup-homebrew setup-python setup-rust setup-ruby-deps setup-psql setup-github ## Setup development environment (Homebrew, Python, Rust, Ruby build deps, PostgreSQL client, GitHub CLI)
 	echo "$(GREEN)✓$(NC) Development environment setup completed"
 
 setup-homebrew: ## Install and update Homebrew
@@ -256,6 +259,29 @@ setup-ruby-deps: setup-homebrew ## Install Ruby build dependencies (OpenSSL, rea
 	echo "$(GREEN)✓$(NC) Ruby build dependencies installed"
 	echo "$(CYAN)  💡$(NC) These packages are required for compiling Ruby from source"
 	echo "$(CYAN)  💡$(NC) To setup Ruby: $(YELLOW)caddie ruby:setup$(NC)"
+
+setup-psql: setup-homebrew ## Setup PostgreSQL client tools (psql)
+	echo "$(BLUE)🐘$(NC) Setting up PostgreSQL client tools..."
+	if ! command -v psql >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) psql not found, installing libpq via Homebrew..."; \
+		brew install libpq; \
+	else \
+		echo "$(GREEN)  ✓$(NC) psql already installed"; \
+	fi
+	if ! command -v psql >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) Linking libpq so psql is available in PATH..."; \
+		brew link --force libpq >/dev/null 2>&1 || true; \
+	fi
+	if command -v psql >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) Checking psql version..."; \
+		psql --version; \
+		echo "$(GREEN)✓$(NC) PostgreSQL client setup completed"; \
+	else \
+		echo "$(YELLOW)  →$(NC) psql still not on PATH after install/link"; \
+		echo "$(CYAN)  💡$(NC) Add to PATH: $(YELLOW)export PATH=\"$$(brew --prefix libpq)/bin:$$PATH\"$(NC)"; \
+		echo "$(RED)✗$(NC) PostgreSQL client setup incomplete"; \
+		exit 1; \
+	fi
 
 setup-github: setup-homebrew ## Setup GitHub CLI for pull request management
 	echo "$(BLUE)🐙$(NC) Setting up GitHub CLI..."
@@ -480,6 +506,11 @@ status: ## Check installation status
 		echo "$(GREEN)  ✓$(NC) CocoaPods"; \
 	else \
 		echo "$(RED)  ✗$(NC) CocoaPods"; \
+	fi
+	if command -v psql >/dev/null 2>&1; then \
+		echo "$(GREEN)  ✓$(NC) PostgreSQL client (psql)"; \
+	else \
+		echo "$(RED)  ✗$(NC) PostgreSQL client (psql)"; \
 	fi
 
 clean: ## Clean up any temporary files (currently none)

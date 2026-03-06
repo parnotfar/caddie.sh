@@ -28,6 +28,7 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [iOS Module](modules/ios.md) - App Store and TestFlight distribution tools
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
+  - [Ledger Module](modules/ledger.md) - Agentic checkpoint capsules and sync helpers
   - [Git Module](modules/git.md) - Enhanced git workflows
   - Optional ecosystem modules (e.g. [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
 
