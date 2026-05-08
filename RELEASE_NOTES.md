@@ -1,5 +1,25 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.0 - Faster Shell Startup
+
+**Release Date:** May 5, 2026
+
+### Shell startup performance
+
+- **Single core load**: `dot_caddie` already sources `.caddie_core` before the module discovery loop. The loader now registers `core` in the module list without sourcing that file again, avoiding duplicate parse and export work.
+- **Idempotent CLI module**: `.caddie_cli` sets `CADDIE_CLI_LOADED` after the first successful load and returns immediately when sourced again. Nested module sources no longer re-run the full CLI parser or repeated `tput` initialization for colors.
+
+### Git module
+
+- **No prompt work at module load**: `dot_caddie_git` no longer sources `~/.caddie_prompt.sh` or calls `set_caddie_prompt` during load (those remain driven once from `dot_caddie` / `PROMPT_COMMAND`). This avoids double-loading the prompt and avoids an extra full prompt rebuild during startup.
+- **`git:custom:source`**: Optional snippets (`~/.bash_profile-caddie-custom`, `~/.bashrc-caddie-custom`) are no longer sourced automatically when the git module loads. Run `caddie git:custom:source` when you want that behavior (for example from `~/.bash_profile` after caddie loads).
+
+### Roadmap (9.4 spike)
+
+- Lazy or staged module loading, static completion manifests, and optional prompt optimizations (for example cheaper behavior outside a git repo) will be explored as follow-up work after measuring real-world gains from 9.3.0.
+
+---
+
 ## Version 9.2.0 - Codex & Claude Code Support
 
 **Release Date:** February 27, 2026

@@ -73,15 +73,15 @@ caddie help
 caddie  # prompt shows as caddie-9.1.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-9.2.0 rust  # prompt switches to caddie[rust]-9.2.0
-caddie[rust]-9.2.0 back  # exits scope (also accepts `up` or `..`)
+caddie-9.3.0 rust  # prompt switches to caddie[rust]-9.3.0
+caddie[rust]-9.3.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-9.2.0 `ls -la`
-caddie-9.2.0 shell git status  # one-off shell command
+caddie-9.3.0 `ls -la`
+caddie-9.3.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-9.2.0 rust build
+caddie-9.3.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 

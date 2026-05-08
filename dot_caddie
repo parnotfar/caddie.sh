@@ -1199,8 +1199,13 @@ function _caddie_load_modules() {
                 completion_registered=0
                 completion_fn=""
                 completion_output=""
-                source "$file"
-                module_name="$(caddie_extract_module_name "$file")"
+                if [ "$(basename "$file")" = ".caddie_core" ]; then
+                    # Core is already sourced at the top of dot_caddie; register list metadata only.
+                    module_name="core"
+                else
+                    source "$file"
+                    module_name="$(caddie_extract_module_name "$file")"
+                fi
                 caddie_modules_append "$module_name"
                 prompt_fn="caddie_${module_name}_prompt_segment"
                 if declare -F "$prompt_fn" >/dev/null 2>&1; then
@@ -1253,7 +1258,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "cross:info cross:template:create cross:template:list cross:deploy:docker cross:deploy:local cross:deploy:railway"
                         ;;
                       git)
-                        caddie_completion_register "$module_name" "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:main:merge:branch git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+                        caddie_completion_register "$module_name" "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:main:merge:branch git:clone git:custom:source git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
                         ;;
                       github)
                         caddie_completion_register "$module_name" "github:info github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
