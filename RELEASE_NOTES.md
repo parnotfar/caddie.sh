@@ -1,5 +1,15 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.1 - Prompt GitHub account display
+
+**Release Date:** May 5, 2026
+
+### Bug fixes
+
+- **PS1 GitHub label**: When `CADDIE_GITHUB_ACCOUNT` is set (`caddie github:account:set`), the prompt `[gh:…]` segment now shows that configured account instead of always mirroring `gh auth status`. This keeps the prompt aligned with Caddie’s clone and repo URL behavior when the stored org or user differs from the GitHub CLI login.
+
+---
+
 ## Version 9.3.0 - Faster Shell Startup
 
 **Release Date:** May 5, 2026
