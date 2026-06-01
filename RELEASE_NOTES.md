@@ -1,5 +1,26 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.2 - Custom profile PATH helpers
+
+**Release Date:** May 5, 2026
+
+### New features
+
+- **`profile` module**: Append idempotent lines to caddie-managed Bash profile snippets without hand-editing shell files.
+- **`caddie path:add <path> [--profile caddie-custom]`**: Writes `export PATH="<path>:$PATH"` to `~/.bash_profile-caddie-custom` by default. Skips duplicates when the path is already present.
+- **`caddie path:add:bashrc` / `caddie path:add:profile`**: Target `~/.bashrc-caddie-custom` or an explicit profile name (`bash-profile` only when requested).
+- **`caddie profile:add-line`**: Lower-level idempotent append for arbitrary export lines.
+- **Next steps**: After adding, caddie prints `caddie git:custom:source` or open a new terminal.
+
+### Usage example (Postgres)
+
+```bash
+caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
+caddie git:custom:source
+```
+
+---
+
 ## Version 9.3.1 - Prompt GitHub account display
 
 **Release Date:** May 5, 2026

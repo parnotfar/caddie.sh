@@ -1,0 +1,276 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Custom Bash profile management
+# Append idempotent lines to caddie-managed profile snippets (not ~/.zshrc).
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_profile_description() {
+    # caddie:lint:disable
+    printf '%s\n' 'Custom Bash profile snippets for project setup'
+    # caddie:lint:enable
+    return 0
+}
+
+function _caddie_profile_resolve_file() {
+    local profile="$1"
+    local profile_file=""
+
+    case "$profile" in
+        caddie-custom|bash-profile-caddie-custom)
+            profile_file="$HOME/.bash_profile-caddie-custom"
+            ;;
+        bashrc-caddie-custom)
+            profile_file="$HOME/.bashrc-caddie-custom"
+            ;;
+        bash-profile)
+            profile_file="$HOME/.bash_profile"
+            ;;
+        *)
+            caddie cli:red "Error: Unknown profile '$profile'"
+            caddie cli:usage "Supported profiles: caddie-custom, bashrc-caddie-custom, bash-profile"
+            return 1
+            ;;
+    esac
+
+    printf '%s\n' "$profile_file"
+    return 0
+}
+
+function _caddie_profile_print_next_steps() {
+    caddie cli:blank
+    caddie cli:title "Next steps:"
+    caddie cli:indent "caddie git:custom:source"
+    caddie cli:thought "Or open a new terminal"
+    return 0
+}
+
+function _caddie_profile_append_line() {
+    local profile="$1"
+    local line="$2"
+    local path_hint="${3:-}"
+    local profile_file=""
+    local created=0
+
+    profile_file="$(_caddie_profile_resolve_file "$profile")" || return 1
+
+    if [ ! -f "$profile_file" ]; then
+        {
+            printf '%s\n' '# Caddie custom profile (managed by caddie path:add / caddie profile:add-line)'
+            printf '%s\n' ''
+        } > "$profile_file"
+        created=1
+    fi
+
+    if [ -n "$path_hint" ]; then
+        if grep -Fq "$path_hint" "$profile_file" 2>/dev/null; then
+            caddie cli:yellow "Path already present in $profile_file"
+            caddie cli:indent "$path_hint"
+            return 0
+        fi
+    elif grep -Fx "$line" "$profile_file" 2>/dev/null; then
+        caddie cli:yellow "Line already present in $profile_file"
+        caddie cli:indent "$line"
+        return 0
+    fi
+
+    printf '%s\n' "$line" >> "$profile_file"
+
+    if [ "$created" = "1" ]; then
+        caddie cli:check "Created $profile_file"
+    fi
+    caddie cli:check "Added to $profile_file"
+    caddie cli:indent "$line"
+    _caddie_profile_print_next_steps
+    return 0
+}
+
+function caddie_path_add() {
+    local profile="caddie-custom"
+    local path=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --profile)
+                if [ -z "${2:-}" ]; then
+                    caddie cli:red "Error: --profile requires a value"
+                    caddie cli:usage "caddie path:add <path> [--profile caddie-custom]"
+                    return 1
+                fi
+                profile="$2"
+                shift 2
+                ;;
+            --profile=*)
+                profile="${1#--profile=}"
+                shift
+                ;;
+            *)
+                if [ -n "$path" ]; then
+                    caddie cli:red "Error: Unexpected argument '$1'"
+                    caddie cli:usage "caddie path:add <path> [--profile caddie-custom]"
+                    return 1
+                fi
+                path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    if [ -z "$path" ]; then
+        caddie cli:red "Error: Please provide a path"
+        caddie cli:usage "caddie path:add <path> [--profile caddie-custom]"
+        caddie cli:indent "Example: caddie path:add \"\$(brew --prefix postgresql@16)/bin\" --profile caddie-custom"
+        return 1
+    fi
+
+    local line="export PATH=\"${path}:\$PATH\""
+    _caddie_profile_append_line "$profile" "$line" "$path"
+    return $?
+}
+
+function caddie_path_add_bashrc() {
+    local path="$1"
+
+    if [ -z "$path" ]; then
+        caddie cli:red "Error: Please provide a path"
+        caddie cli:usage "caddie path:add:bashrc <path>"
+        return 1
+    fi
+
+    local line="export PATH=\"${path}:\$PATH\""
+    _caddie_profile_append_line "bashrc-caddie-custom" "$line" "$path"
+    return $?
+}
+
+function caddie_path_add_profile() {
+    local profile="$1"
+    local path="$2"
+
+    if [ -z "$profile" ] || [ -z "$path" ]; then
+        caddie cli:red "Error: Profile name and path are required"
+        caddie cli:usage "caddie path:add:profile <profile> <path>"
+        caddie cli:indent "Profiles: caddie-custom, bashrc-caddie-custom, bash-profile"
+        return 1
+    fi
+
+    local line="export PATH=\"${path}:\$PATH\""
+    _caddie_profile_append_line "$profile" "$line" "$path"
+    return $?
+}
+
+function caddie_profile_add_line() {
+    local profile="caddie-custom"
+    local line=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --profile)
+                if [ -z "${2:-}" ]; then
+                    caddie cli:red "Error: --profile requires a value"
+                    caddie cli:usage "caddie profile:add-line <line> [--profile caddie-custom]"
+                    return 1
+                fi
+                profile="$2"
+                shift 2
+                ;;
+            --profile=*)
+                profile="${1#--profile=}"
+                shift
+                ;;
+            *)
+                if [ -n "$line" ]; then
+                    caddie cli:red "Error: Unexpected argument '$1'"
+                    caddie cli:usage "caddie profile:add-line <line> [--profile caddie-custom]"
+                    return 1
+                fi
+                line="$1"
+                shift
+                ;;
+        esac
+    done
+
+    if [ -z "$line" ]; then
+        caddie cli:red "Error: Please provide a line to append"
+        caddie cli:usage "caddie profile:add-line <line> [--profile caddie-custom]"
+        return 1
+    fi
+
+    _caddie_profile_append_line "$profile" "$line" ""
+    return $?
+}
+
+function caddie_profile_add_line_bashrc() {
+    local line="$1"
+
+    if [ -z "$line" ]; then
+        caddie cli:red "Error: Please provide a line to append"
+        caddie cli:usage "caddie profile:add-line:bashrc <line>"
+        return 1
+    fi
+
+    _caddie_profile_append_line "bashrc-caddie-custom" "$line" ""
+    return $?
+}
+
+function caddie_profile_info() {
+    caddie cli:title "Profile Targets"
+    caddie cli:blank
+    caddie cli:indent "caddie-custom (default): ~/.bash_profile-caddie-custom"
+    caddie cli:indent "bashrc-caddie-custom:    ~/.bashrc-caddie-custom"
+    caddie cli:indent "bash-profile:            ~/.bash_profile (explicit only)"
+    caddie cli:blank
+    caddie cli:thought "Load custom snippets: caddie git:custom:source"
+    return 0
+}
+
+function caddie_profile_commands() {
+    printf '%s\n' 'profile:add-line profile:add-line:bashrc profile:info profile:help path:add path:add:bashrc path:add:profile'
+    return 0
+}
+
+function caddie_profile_help() {
+    caddie cli:title "Profile Commands"
+    caddie cli:blank
+    caddie cli:usage "caddie path:add <path> [--profile caddie-custom]"
+    caddie cli:usage "caddie profile:add-line <line> [--profile caddie-custom]"
+    caddie cli:blank
+    caddie cli:title "PATH management:"
+    caddie cli:indent "path:add <path> [--profile name]  Append export PATH=\"<path>:\$PATH\" (default: caddie-custom)"
+    caddie cli:indent "path:add:bashrc <path>            Same for ~/.bashrc-caddie-custom"
+    caddie cli:indent "path:add:profile <name> <path>    Append PATH entry to a named profile"
+    caddie cli:blank
+    caddie cli:title "Generic lines:"
+    caddie cli:indent "add-line <line> [--profile name]  Append any line idempotently (default: caddie-custom)"
+    caddie cli:indent "add-line:bashrc <line>            Append to ~/.bashrc-caddie-custom"
+    caddie cli:blank
+    caddie cli:title "Profiles:"
+    caddie cli:indent "caddie-custom            ~/.bash_profile-caddie-custom (default)"
+    caddie cli:indent "bashrc-caddie-custom     ~/.bashrc-caddie-custom"
+    caddie cli:indent "bash-profile             ~/.bash_profile (explicit only; not modified by default)"
+    caddie cli:blank
+    caddie cli:title "Information:"
+    caddie cli:indent "info                     Show profile target paths"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie path:add \"\$(brew --prefix postgresql@16)/bin\" --profile caddie-custom"
+    caddie cli:indent "caddie path:add:bashrc /opt/local/bin"
+    caddie cli:indent "caddie profile:add-line 'export EDITOR=vim'"
+    caddie cli:indent "caddie git:custom:source"
+    caddie cli:blank
+    return 0
+}
+
+export -f caddie_profile_description
+export -f caddie_path_add
+export -f caddie_path_add_bashrc
+export -f caddie_path_add_profile
+export -f caddie_profile_add_line
+export -f caddie_profile_add_line_bashrc
+export -f caddie_profile_info
+export -f caddie_profile_commands
+export -f caddie_profile_help
+
+# path:add is implemented here; register path completions alongside profile.
+if declare -F caddie_completion_register >/dev/null 2>&1; then
+    caddie_completion_register "path" "path:add path:add:bashrc path:add:profile"
+fi

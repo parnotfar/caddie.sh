@@ -220,6 +220,26 @@ The installer creates a `~/.bash_profile` that sources Caddie.sh. You can custom
 nano ~/.bash_profile
 ```
 
+#### Caddie-managed custom snippets (recommended)
+
+For project setup and shared exports, prefer caddie's custom profile files instead of editing `~/.bash_profile` directly:
+
+| File | Purpose |
+|------|---------|
+| `~/.bash_profile-caddie-custom` | Login-shell additions (default for `path:add`) |
+| `~/.bashrc-caddie-custom` | Interactive bashrc additions |
+
+```bash
+# Append PATH idempotently (Postgres example)
+caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
+caddie git:custom:source
+
+# Append any export line
+caddie profile:add-line 'export EDITOR=vim'
+```
+
+See **[Profile Module](modules/profile.md)** for full command reference.
+
 #### Adding Custom Aliases
 ```bash
 # Add to ~/.bash_profile

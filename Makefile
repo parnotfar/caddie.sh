@@ -146,6 +146,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_debug"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_profile" "$(DEST_MODULES_DIR)/.caddie_profile"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_profile"
 	echo "$(YELLOW)  →$(NC) Installing caddie binary scripts..."
 	mkdir -p "$(DEST_MODULES_DIR)/bin"
 	if [ -d "$(CADDIE_DIR)/bin" ]; then \

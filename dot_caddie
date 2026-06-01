@@ -1269,6 +1269,10 @@ function _caddie_load_modules() {
                       debug)
                         caddie_completion_register "$module_name" "debug:info debug:on debug:off debug:status debug:help"
                         ;;
+                      profile)
+                        caddie_completion_register "$module_name" "profile:add-line profile:add-line:bashrc profile:info profile:help"
+                        caddie_completion_register "path" "path:add path:add:bashrc path:add:profile"
+                        ;;
                       doc)
                         caddie_completion_register "$module_name" "doc:info doc:help doc:setup doc:setup:mdview doc:setup:glow doc:setup:mdcat doc:setup:pandoc doc:install:mdview doc:install:glow doc:install:mdcat doc:install:pandoc doc:preview doc:preview:mdview doc:preview:glow doc:preview:mdcat doc:preview:pdf doc:preview:clean doc:prefer:set doc:prefer:get doc:prefer:unset doc:rendered:dir:set doc:rendered:dir:get doc:rendered:dir:unset"
                         ;;

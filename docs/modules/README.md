@@ -25,6 +25,7 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[Debug Module](debug.md)** - Debug control and output helpers
 - **[Git Module](git.md)** - Enhanced git workflows and GitHub integration
 - **[GitHub Module](github.md)** - GitHub account and repository management
+- **[Profile Module](profile.md)** - Custom Bash profile snippets (PATH, exports)
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
 
 ### Optional Ecosystem Modules
