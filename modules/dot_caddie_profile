@@ -7,8 +7,67 @@ source "$HOME/.caddie_modules/.caddie_cli"
 
 function caddie_profile_description() {
     # caddie:lint:disable
-    printf '%s\n' 'Custom Bash profile snippets for project setup'
+    printf '%s\n' 'Bash profile sourcing and caddie-managed snippets'
     # caddie:lint:enable
+    return 0
+}
+
+function caddie_profile_source() {
+    local sourced=0
+
+    if [ -f "$HOME/.bash_profile" ]; then
+        # shellcheck disable=SC1090
+        source "$HOME/.bash_profile"
+        caddie cli:check "Sourced ~/.bash_profile"
+        sourced=1
+    else
+        caddie cli:yellow "~/.bash_profile not found (skipped)"
+    fi
+
+    if [ -f "$HOME/.bashrc" ]; then
+        # shellcheck disable=SC1090
+        source "$HOME/.bashrc"
+        caddie cli:check "Sourced ~/.bashrc"
+        sourced=1
+    else
+        caddie cli:yellow "~/.bashrc not found (skipped)"
+    fi
+
+    if [ "$sourced" != "1" ]; then
+        caddie cli:red "Error: No standard profile files found to source"
+        return 1
+    fi
+
+    return 0
+}
+
+function caddie_profile_custom_source() {
+    local sourced=0
+
+    if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
+        # shellcheck disable=SC1090
+        source "$HOME/.bash_profile-caddie-custom"
+        caddie cli:check "Sourced ~/.bash_profile-caddie-custom"
+        sourced=1
+    else
+        caddie cli:yellow "~/.bash_profile-caddie-custom not found (skipped)"
+    fi
+
+    if [ -f "$HOME/.bashrc-caddie-custom" ]; then
+        # shellcheck disable=SC1090
+        source "$HOME/.bashrc-caddie-custom"
+        caddie cli:check "Sourced ~/.bashrc-caddie-custom"
+        sourced=1
+    else
+        caddie cli:yellow "~/.bashrc-caddie-custom not found (skipped)"
+    fi
+
+    if [ "$sourced" != "1" ]; then
+        caddie cli:red "Error: No caddie custom profile files found to source"
+        caddie cli:thought "Add snippets with caddie path:add or caddie profile:add-line"
+        return 1
+    fi
+
     return 0
 }
 
@@ -40,7 +99,7 @@ function _caddie_profile_resolve_file() {
 function _caddie_profile_print_next_steps() {
     caddie cli:blank
     caddie cli:title "Next steps:"
-    caddie cli:indent "caddie git:custom:source"
+    caddie cli:indent "caddie profile:custom:source"
     caddie cli:thought "Or open a new terminal"
     return 0
 }
@@ -219,20 +278,27 @@ function caddie_profile_info() {
     caddie cli:indent "bashrc-caddie-custom:    ~/.bashrc-caddie-custom"
     caddie cli:indent "bash-profile:            ~/.bash_profile (explicit only)"
     caddie cli:blank
-    caddie cli:thought "Load custom snippets: caddie git:custom:source"
+    caddie cli:thought "Load standard profiles: caddie profile:source"
+    caddie cli:thought "Load caddie snippets: caddie profile:custom:source"
     return 0
 }
 
 function caddie_profile_commands() {
-    printf '%s\n' 'profile:add-line profile:add-line:bashrc profile:info profile:help path:add path:add:bashrc path:add:profile'
+    printf '%s\n' 'profile:source profile:custom:source profile:add-line profile:add-line:bashrc profile:info profile:help path:add path:add:bashrc path:add:profile'
     return 0
 }
 
 function caddie_profile_help() {
     caddie cli:title "Profile Commands"
     caddie cli:blank
+    caddie cli:usage "caddie profile:source"
+    caddie cli:usage "caddie profile:custom:source"
     caddie cli:usage "caddie path:add <path> [--profile caddie-custom]"
     caddie cli:usage "caddie profile:add-line <line> [--profile caddie-custom]"
+    caddie cli:blank
+    caddie cli:title "Load profiles:"
+    caddie cli:indent "source                   Source ~/.bash_profile and ~/.bashrc (if present)"
+    caddie cli:indent "custom:source            Source ~/.bash_profile-caddie-custom and ~/.bashrc-caddie-custom"
     caddie cli:blank
     caddie cli:title "PATH management:"
     caddie cli:indent "path:add <path> [--profile name]  Append export PATH=\"<path>:\$PATH\" (default: caddie-custom)"
@@ -255,12 +321,14 @@ function caddie_profile_help() {
     caddie cli:indent "caddie path:add \"\$(brew --prefix postgresql@16)/bin\" --profile caddie-custom"
     caddie cli:indent "caddie path:add:bashrc /opt/local/bin"
     caddie cli:indent "caddie profile:add-line 'export EDITOR=vim'"
-    caddie cli:indent "caddie git:custom:source"
+    caddie cli:indent "caddie profile:custom:source"
     caddie cli:blank
     return 0
 }
 
 export -f caddie_profile_description
+export -f caddie_profile_source
+export -f caddie_profile_custom_source
 export -f caddie_path_add
 export -f caddie_path_add_bashrc
 export -f caddie_path_add_profile

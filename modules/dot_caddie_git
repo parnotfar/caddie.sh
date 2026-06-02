@@ -1,30 +1,9 @@
 #!/usr/bin/env bash
 
-# Caddie.sh - Git workflows and optional custom profile snippets
+# Caddie.sh - Git workflows
 # Prompt setup lives in ~/.caddie_prompt.sh (sourced from dot_caddie once).
 
 source "$HOME/.caddie_modules/.caddie_cli"
-
-# Function to source custom files
-function caddie_source_custom_files() {
-    # Source custom bash profile additions
-    if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
-        source "$HOME/.bash_profile-caddie-custom"
-    fi
-    
-    # Source custom bashrc additions
-    if [ -f "$HOME/.bashrc-caddie-custom" ]; then
-        source "$HOME/.bashrc-caddie-custom"
-    fi
-
-    return 0
-}
-
-# Explicit entry point (previously auto-run at module load — see 9.3.0 release notes)
-function caddie_git_custom_source() {
-    caddie_source_custom_files
-    return 0
-}
 
 # Set product name
 export PRODUCT_NAME="Caddie"
@@ -1642,7 +1621,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:main:merge:branch git:clone git:custom:source git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1653,10 +1632,6 @@ function caddie_git_help() {
     caddie cli:usage "caddie git:<command>"
     caddie cli:blank
 
-    caddie cli:title "Profile integration:"
-    caddie cli:indent "custom:source         Load ~/.bash_profile-caddie-custom and ~/.bashrc-caddie-custom (if present)"
-    caddie cli:blank
-    
     caddie cli:title "Basics:"
     caddie cli:indent "status                 Show git status"
     caddie cli:indent "info                   Show repository summary"
@@ -1760,7 +1735,6 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
     caddie cli:indent "caddie git:worktree:add:new ../repo-worktree feature/analytics"
     caddie cli:indent "caddie git:worktree:list"
-    caddie cli:indent "caddie git:custom:source"
     caddie cli:blank
     caddie cli:title "Setup GitHub Integration:"
     caddie cli:indent "caddie github:account:set <account>  Set GitHub account"
@@ -1777,8 +1751,6 @@ function caddie_git_description() {
 }
 
 # Export functions for external use
-export -f caddie_source_custom_files
-export -f caddie_git_custom_source
 export -f caddie_git_status
 export -f caddie_git_branch
 export -f caddie_git_branch_candidates

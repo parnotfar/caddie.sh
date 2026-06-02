@@ -1,17 +1,45 @@
 # Profile Module
 
-The Profile module appends idempotent lines to caddie-managed Bash profile snippets so project setup docs can configure the shell without telling users to hand-edit `~/.bash_profile`.
+The Profile module sources Bash profile files and appends idempotent lines to caddie-managed snippets so project setup docs can configure the shell without hand-editing `~/.bash_profile`.
 
 ## Overview
 
-Caddie loads optional custom snippets via `caddie git:custom:source`:
+| Command | Loads |
+|---------|--------|
+| `caddie profile:source` | `~/.bash_profile` and `~/.bashrc` (standard login/interactive files) |
+| `caddie profile:custom:source` | `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` (caddie-managed snippets) |
 
-- `~/.bash_profile-caddie-custom` — default target for login-shell additions
-- `~/.bashrc-caddie-custom` — interactive bashrc additions
-
-The Profile module (`caddie profile:<command>` and `caddie path:<command>`) writes to those files safely. It does **not** modify `~/.zshrc` or `~/.bash_profile` unless you explicitly choose the `bash-profile` target.
+Use `path:add` and `profile:add-line` to write to the custom files, then `profile:custom:source` to apply them in the current shell.
 
 ## Commands
+
+### Load profiles
+
+#### `caddie profile:source`
+
+Source the standard Bash profile files when they exist:
+
+- `~/.bash_profile`
+- `~/.bashrc`
+
+```bash
+caddie profile:source
+```
+
+Missing files are skipped with a warning. If neither file exists, the command fails.
+
+#### `caddie profile:custom:source`
+
+Source caddie-managed custom snippets when they exist:
+
+- `~/.bash_profile-caddie-custom`
+- `~/.bashrc-caddie-custom`
+
+```bash
+caddie profile:custom:source
+```
+
+Use this after `path:add` or `profile:add-line` to pick up new exports without opening a new terminal.
 
 ### PATH management
 
@@ -21,7 +49,7 @@ Append a PATH export to the chosen profile file. Default profile: `caddie-custom
 
 ```bash
 caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
-caddie git:custom:source
+caddie profile:custom:source
 ```
 
 Writes:
@@ -36,34 +64,19 @@ If the path string is already present in the target file, caddie skips the dupli
 
 Same as `path:add`, but targets `~/.bashrc-caddie-custom`.
 
-```bash
-caddie path:add:bashrc /opt/local/bin
-```
-
 #### `caddie path:add:profile <profile> <path>`
 
-Append a PATH export to a named profile:
-
-| Profile name | File |
-|--------------|------|
-| `caddie-custom` | `~/.bash_profile-caddie-custom` |
-| `bashrc-caddie-custom` | `~/.bashrc-caddie-custom` |
-| `bash-profile` | `~/.bash_profile` (explicit only) |
-
-```bash
-caddie path:add:profile caddie-custom "$(brew --prefix postgresql@16)/bin"
-```
+Append a PATH export to a named profile (`caddie-custom`, `bashrc-caddie-custom`, or `bash-profile` for `~/.bash_profile`).
 
 ### Generic line append
 
 #### `caddie profile:add-line <line> [--profile caddie-custom]`
 
-Append any shell line idempotently (exact line match). Useful for exports beyond PATH.
+Append any shell line idempotently (exact line match).
 
-```bash
-caddie profile:add-line 'export EDITOR=vim'
-caddie profile:add-line:bashrc 'export EDITOR=vim'
-```
+#### `caddie profile:add-line:bashrc <line>`
+
+Append to `~/.bashrc-caddie-custom`.
 
 ### Information
 
@@ -75,15 +88,18 @@ Show supported profile targets and file paths.
 
 Show command reference and examples.
 
-## After adding lines
-
-Apply changes in the current shell:
+## Typical workflow
 
 ```bash
-caddie git:custom:source
-```
+# 1. Add PATH for Postgres (writes ~/.bash_profile-caddie-custom)
+caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
 
-Or open a new terminal.
+# 2. Apply custom snippets in this shell
+caddie profile:custom:source
+
+# Or reload standard profiles (includes your main ~/.bash_profile setup)
+caddie profile:source
+```
 
 ## Project setup documentation pattern
 
@@ -97,15 +113,12 @@ Use:
 
 ```bash
 caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
-caddie git:custom:source
+caddie profile:custom:source
 ```
-
-## Related commands
-
-- **`caddie git:custom:source`** — Sources `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` when present.
 
 ## Error handling
 
 - Missing path or line → usage message and non-zero exit
 - Unknown profile name → error listing supported profiles
 - Duplicate path or line → yellow notice, no file change
+- `profile:source` / `profile:custom:source` with no files found → error

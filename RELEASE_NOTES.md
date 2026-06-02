@@ -1,5 +1,44 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.4 - Agent skill install and audit
+
+**Release Date:** May 5, 2026
+
+### New features
+
+- **`skill` module**: Install and audit the caddie agent skill for Cursor and Codex.
+- **Canonical + symlinks**: Skill tree at `~/.caddie_modules/skills/caddie`; installs link there for one-step updates.
+- **Version model**: Skill version matches `CADDIE_SH_VERSION` (update both on every release).
+- **Commands**: `skill:install` (project `.cursor/skills/caddie`), `skill:install:cursor`, `skill:install:codex`, `skill:install:all`, `skill:update`, `skill:audit`, `skill:info`.
+- **Registry**: `~/.caddie_data/skill-installs.registry` tracks install paths for audit.
+- **Shipped package**: Repo `skills/caddie/` installed by `make install-dot`.
+
+### Usage
+
+```bash
+make install-dot
+caddie reload
+caddie skill:install:all
+caddie skill:audit
+```
+
+---
+
+## Version 9.3.3 - Profile source commands
+
+**Release Date:** May 5, 2026
+
+### New features
+
+- **`caddie profile:source`**: Sources `~/.bash_profile` and `~/.bashrc` when present.
+- **`caddie profile:custom:source`**: Sources `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` when present.
+
+### Breaking changes
+
+- **Removed `caddie git:custom:source`**: Profile loading is no longer under the git module. Use `caddie profile:custom:source` instead.
+
+---
+
 ## Version 9.3.2 - Custom profile PATH helpers
 
 **Release Date:** May 5, 2026
@@ -10,13 +49,13 @@
 - **`caddie path:add <path> [--profile caddie-custom]`**: Writes `export PATH="<path>:$PATH"` to `~/.bash_profile-caddie-custom` by default. Skips duplicates when the path is already present.
 - **`caddie path:add:bashrc` / `caddie path:add:profile`**: Target `~/.bashrc-caddie-custom` or an explicit profile name (`bash-profile` only when requested).
 - **`caddie profile:add-line`**: Lower-level idempotent append for arbitrary export lines.
-- **Next steps**: After adding, caddie prints `caddie git:custom:source` or open a new terminal.
+- **Next steps**: After adding, caddie prints `caddie profile:custom:source` or open a new terminal.
 
 ### Usage example (Postgres)
 
 ```bash
 caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
-caddie git:custom:source
+caddie profile:custom:source
 ```
 
 ---
@@ -43,7 +82,7 @@ caddie git:custom:source
 ### Git module
 
 - **No prompt work at module load**: `dot_caddie_git` no longer sources `~/.caddie_prompt.sh` or calls `set_caddie_prompt` during load (those remain driven once from `dot_caddie` / `PROMPT_COMMAND`). This avoids double-loading the prompt and avoids an extra full prompt rebuild during startup.
-- **`git:custom:source`**: Optional snippets (`~/.bash_profile-caddie-custom`, `~/.bashrc-caddie-custom`) are no longer sourced automatically when the git module loads. Run `caddie git:custom:source` when you want that behavior (for example from `~/.bash_profile` after caddie loads).
+- **Custom profile snippets**: Optional files (`~/.bash_profile-caddie-custom`, `~/.bashrc-caddie-custom`) are no longer sourced automatically at module load. Use `caddie profile:custom:source` (as of 9.3.3; previously `git:custom:source` in 9.3.0–9.3.2).
 
 ### Roadmap (9.4 spike)
 

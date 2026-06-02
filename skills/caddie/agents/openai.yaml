@@ -1,0 +1,4 @@
+interface:
+  display_name: "Caddie"
+  short_description: "Work safely in caddie.sh repos"
+  default_prompt: "Use $caddie to add or update caddie.sh code and follow the repository workflow."

@@ -1258,7 +1258,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "cross:info cross:template:create cross:template:list cross:deploy:docker cross:deploy:local cross:deploy:railway"
                         ;;
                       git)
-                        caddie_completion_register "$module_name" "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:main:merge:branch git:clone git:custom:source git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+                        caddie_completion_register "$module_name" "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:commit git:gacp git:auth:login git:pr:create git:pr:approve git:push git:push:set:upstream git:pull git:merge:main git:main:merge:branch git:clone git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
                         ;;
                       github)
                         caddie_completion_register "$module_name" "github:info github:account:set github:account:get github:account:unset github:auth:check github:repo:create github:repo:url"
@@ -1270,8 +1270,11 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "debug:info debug:on debug:off debug:status debug:help"
                         ;;
                       profile)
-                        caddie_completion_register "$module_name" "profile:add-line profile:add-line:bashrc profile:info profile:help"
+                        caddie_completion_register "$module_name" "profile:source profile:custom:source profile:add-line profile:add-line:bashrc profile:info profile:help"
                         caddie_completion_register "path" "path:add path:add:bashrc path:add:profile"
+                        ;;
+                      skill)
+                        caddie_completion_register "$module_name" "skill:install skill:install:project skill:install:cursor skill:install:codex skill:install:all skill:update skill:audit skill:info skill:help"
                         ;;
                       doc)
                         caddie_completion_register "$module_name" "doc:info doc:help doc:setup doc:setup:mdview doc:setup:glow doc:setup:mdcat doc:setup:pandoc doc:install:mdview doc:install:glow doc:install:mdcat doc:install:pandoc doc:preview doc:preview:mdview doc:preview:glow doc:preview:mdcat doc:preview:pdf doc:preview:clean doc:prefer:set doc:prefer:get doc:prefer:unset doc:rendered:dir:set doc:rendered:dir:get doc:rendered:dir:unset"

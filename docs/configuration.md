@@ -232,7 +232,10 @@ For project setup and shared exports, prefer caddie's custom profile files inste
 ```bash
 # Append PATH idempotently (Postgres example)
 caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
-caddie git:custom:source
+caddie profile:custom:source
+
+# Reload standard ~/.bash_profile and ~/.bashrc in the current shell
+caddie profile:source
 
 # Append any export line
 caddie profile:add-line 'export EDITOR=vim'
