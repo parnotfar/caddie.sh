@@ -231,8 +231,9 @@ For project setup and shared exports, prefer caddie's custom profile files inste
 
 ```bash
 # Append PATH idempotently (Postgres example)
-caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
-caddie profile:custom:source
+caddie path:add "$(brew --prefix postgresql@16)/bin"
+# New login shells load ~/.bash_profile-caddie-custom automatically (caddie-installed ~/.bash_profile)
+caddie profile:custom:source   # optional: apply in the current shell now
 
 # Reload standard ~/.bash_profile and ~/.bashrc in the current shell
 caddie profile:source

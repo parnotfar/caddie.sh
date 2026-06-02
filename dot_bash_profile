@@ -11,4 +11,10 @@ if [ -d "$HOME/.local/bin" ]; then
     export PATH
 fi
 
+# Caddie-managed login snippets (caddie path:add / caddie profile:add-line)
+if [ -f "$HOME/.bash_profile-caddie-custom" ]; then
+    # shellcheck disable=SC1090
+    . "$HOME/.bash_profile-caddie-custom"
+fi
+
 source "$HOME/.caddie.sh"

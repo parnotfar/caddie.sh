@@ -1,8 +1,8 @@
 # Caddie.sh CLI Color Module
 # This provides reliable color definitions and CLI utilities for the prompt system
 
-# Idempotent load: every module sources this file; re-sourcing re-parses the file
-# and re-runs many tput calls. Skip after the first successful load.
+# Idempotent load: every module sources this file during one shell init; skip
+# re-parse and repeated tput calls. caddie reload unsets CADDIE_CLI_LOADED first.
 if [[ -n "${CADDIE_CLI_LOADED:-}" ]]; then
   return 0
 fi

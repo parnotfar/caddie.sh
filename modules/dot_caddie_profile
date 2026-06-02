@@ -16,6 +16,7 @@ function caddie_profile_source() {
     local sourced=0
 
     if [ -f "$HOME/.bash_profile" ]; then
+        unset CADDIE_CLI_LOADED
         # shellcheck disable=SC1090
         source "$HOME/.bash_profile"
         caddie cli:check "Sourced ~/.bash_profile"
@@ -99,8 +100,8 @@ function _caddie_profile_resolve_file() {
 function _caddie_profile_print_next_steps() {
     caddie cli:blank
     caddie cli:title "Next steps:"
-    caddie cli:indent "caddie profile:custom:source"
-    caddie cli:thought "Or open a new terminal"
+    caddie cli:indent "Open a new terminal (custom snippets load from ~/.bash_profile)"
+    caddie cli:thought "Apply now in this shell: caddie profile:custom:source"
     return 0
 }
 

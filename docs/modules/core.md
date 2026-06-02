@@ -200,6 +200,7 @@ caddie reload
 
 **What it does:**
 - Sources `~/.bash_profile` to reload all configurations
+- Re-sources `~/.caddie_modules/.caddie_cli` (clears `CADDIE_CLI_LOADED` so CLI helpers and colors refresh in the current shell)
 - Refreshes environment variables and module loading
 - Provides instant recovery from configuration changes
 - Essential for developers making changes to caddie modules

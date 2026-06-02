@@ -13,6 +13,11 @@
 - **Registry**: `~/.caddie_data/skill-installs.registry` tracks install paths for audit.
 - **Shipped package**: Repo `skills/caddie/` installed by `make install-dot`.
 
+### Bug fixes
+
+- **Custom profile persistence**: Installed `~/.bash_profile` and `~/.bashrc` again source `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` at shell startup (before `~/.caddie.sh`). `path:add` / `profile:add-line` changes apply in new terminals without running `caddie profile:custom:source` each time. Re-run `make install-dot` to refresh an existing `~/.bash_profile`.
+- **`caddie reload` refreshes CLI module**: `caddie reload` (and `caddie profile:source` when it sources `~/.bash_profile`) now unsets `CADDIE_CLI_LOADED` so an updated `~/.caddie_modules/.caddie_cli` is re-sourced in the current shell. Nested module sources during the same init still skip redundant CLI parsing.
+
 ### Usage
 
 ```bash
@@ -82,7 +87,7 @@ caddie profile:custom:source
 ### Git module
 
 - **No prompt work at module load**: `dot_caddie_git` no longer sources `~/.caddie_prompt.sh` or calls `set_caddie_prompt` during load (those remain driven once from `dot_caddie` / `PROMPT_COMMAND`). This avoids double-loading the prompt and avoids an extra full prompt rebuild during startup.
-- **Custom profile snippets**: Optional files (`~/.bash_profile-caddie-custom`, `~/.bashrc-caddie-custom`) are no longer sourced automatically at module load. Use `caddie profile:custom:source` (as of 9.3.3; previously `git:custom:source` in 9.3.0–9.3.2).
+- **Custom profile snippets**: No longer sourced at git module load (startup performance). As of 9.3.4, caddie-installed `~/.bash_profile` / `~/.bashrc` source the custom snippet files at shell startup; use `caddie profile:custom:source` for the current shell only.
 
 ### Roadmap (9.4 spike)
 

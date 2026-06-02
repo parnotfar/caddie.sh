@@ -9,7 +9,7 @@ The Profile module sources Bash profile files and appends idempotent lines to ca
 | `caddie profile:source` | `~/.bash_profile` and `~/.bashrc` (standard login/interactive files) |
 | `caddie profile:custom:source` | `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` (caddie-managed snippets) |
 
-Use `path:add` and `profile:add-line` to write to the custom files, then `profile:custom:source` to apply them in the current shell.
+Use `path:add` and `profile:add-line` to write to the custom files. A caddie-installed `~/.bash_profile` sources `~/.bash_profile-caddie-custom` on each new login shell; `~/.bashrc` sources `~/.bashrc-caddie-custom` for non-login shells. Use `profile:custom:source` to apply changes in the **current** shell without reopening the terminal.
 
 ## Commands
 
@@ -39,7 +39,7 @@ Source caddie-managed custom snippets when they exist:
 caddie profile:custom:source
 ```
 
-Use this after `path:add` or `profile:add-line` to pick up new exports without opening a new terminal.
+Use this after `path:add` or `profile:add-line` to pick up new exports in the **current** shell. New terminals load the custom files automatically when `~/.bash_profile` / `~/.bashrc` were installed from caddie (`make install` / `make install-dot`).
 
 ### PATH management
 
