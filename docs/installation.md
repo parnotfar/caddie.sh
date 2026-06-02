@@ -127,6 +127,25 @@ caddie help
 caddie python:create test-env
 ```
 
+### Step 5: Install the Agent Skill (Recommended)
+
+Caddie ships an agent skill for Cursor and Codex. Install user-level symlinks after `make install-dot`:
+
+```bash
+caddie reload
+caddie skill:install:all
+caddie skill:audit
+```
+
+For a single repository (project-local Cursor skill):
+
+```bash
+cd /path/to/your/project
+caddie skill:install
+```
+
+See **[Skill Module](modules/skill.md)** for details. Skill version matches `caddie --version`; run `caddie skill:update` after upgrading caddie.
+
 ## Post-Installation Setup
 
 ### First-Time Configuration
@@ -165,6 +184,21 @@ caddie python:create test-env
    
    # Check for build artifacts in git
    caddie rust:git:status
+   ```
+
+6. **Custom Bash profile snippets** (Optional):
+   ```bash
+   # Add PATH for a tool without editing ~/.bash_profile by hand
+   caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
+   caddie profile:custom:source
+   ```
+
+7. **Refresh agent skill after caddie upgrades**:
+   ```bash
+   make install-dot
+   caddie reload
+   caddie skill:update
+   caddie skill:audit
    ```
 
 ### Environment Variables

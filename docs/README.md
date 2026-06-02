@@ -29,6 +29,9 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
+  - [GitHub Module](modules/github.md) - GitHub account and repository management
+  - [Profile Module](modules/profile.md) - Bash profile sourcing and custom PATH snippets
+  - [Skill Module](modules/skill.md) - Agent skill install, update, and audit
   - Optional ecosystem modules (e.g. [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
 
 ### Shared Executables
@@ -54,6 +57,10 @@ caddie core:set:home ~/projects
 
 # Navigate to caddie home
 caddie go:home
+
+# Install agent skill (Cursor / Codex)
+caddie skill:install:all
+caddie skill:audit
 ```
 
 ### Module Help
@@ -62,6 +69,8 @@ caddie go:home
 # Get help for specific module
 caddie python:help
 caddie rust:help
+caddie profile:help
+caddie skill:help
 caddie core:help
 ```
 
