@@ -31,7 +31,7 @@ This guide covers installation on macOS (primary) and Linux (best effort).
    - Enter: `/opt/homebrew/bin/bash --login`
    - **Do NOT check "Run inside shell"**
 
-![Terminal Profile Configuration](terminal-profile-config.png)
+*(Terminal profile screenshot: configure “Run command” as `/opt/homebrew/bin/bash --login` without “Run inside shell”.)*
 
 This ensures you're using the latest Bash version with full `mapfile` support, which is required for Caddie.sh's tab completion functionality.
 
@@ -129,7 +129,7 @@ caddie python:create test-env
 
 ### Step 5: Install the Agent Skill (Recommended)
 
-Caddie ships an agent skill for Cursor and Codex. Install user-level symlinks after `make install-dot`:
+Caddie ships an agent skill for Cursor and Codex. After installation (`make install` or `make install-dot`), install user-level symlinks:
 
 ```bash
 caddie reload
@@ -189,7 +189,7 @@ See **[Skill Module](modules/skill.md)** for details. Skill version matches `cad
 6. **Custom Bash profile snippets** (Optional):
    ```bash
    # Add PATH for a tool without editing ~/.bash_profile by hand
-   caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
+   caddie path:add "$(brew --prefix postgresql@16)/bin"
    caddie profile:custom:source
    ```
 

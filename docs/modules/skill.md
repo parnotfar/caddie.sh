@@ -16,6 +16,8 @@ The skill version **matches `CADDIE_SH_VERSION`**. When you release caddie, upda
 | `.cursor/skills/caddie` | Project install in current directory (symlink) |
 | `~/.caddie_data/skill-installs.registry` | Install audit registry |
 
+Each install is one `install|…` line. User installs use fixed ids (`cursor-user`, `codex-user`). Project installs use a per-path id (`cursor-project-<hash>`) so multiple repositories stay registered. `skill:update` refreshes the registry header and rewrites every install line’s `recorded_version` to match caddie.
+
 ## Commands
 
 ### Install
@@ -47,7 +49,7 @@ User-level Cursor + Codex installs.
 
 #### `caddie skill:update`
 
-Copy the packaged skill from `~/.caddie_modules/skills/caddie` (refreshed by `make install-dot`) into the canonical directory and update the registry version.
+Copy the packaged skill from `~/.caddie_modules/skills/caddie` (refreshed by `make install-dot`) into the canonical directory, update the registry header version, and sync `recorded_version` on all registered install lines.
 
 ```bash
 make install-dot
@@ -57,7 +59,9 @@ caddie skill:update
 
 #### `caddie skill:audit`
 
-Verify canonical `SKILL.md` exists, registry version matches caddie, each registered install is a symlink to canonical, and list unregistered symlinks that still point at canonical.
+Verify canonical `SKILL.md` exists, registry version matches caddie, each registered install is a symlink to canonical, check `~/.cursor/skills/caddie` and `~/.codex/skills/caddie` (including directory copies that are not yet symlinked), and list unregistered symlinks that still point at canonical.
+
+If `~/.codex/skills/caddie` (or Cursor’s user path) is a copied directory from an older setup, `caddie skill:install:codex` backs it up and replaces it with a symlink to canonical.
 
 #### `caddie skill:info`
 

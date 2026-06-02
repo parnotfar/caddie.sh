@@ -13,7 +13,7 @@ Short git aliases in `dot_bashrc` have been removed; use `caddie git:*` commands
 Git workflow commands do not load custom Bash profile files. For optional snippets in `~/.bash_profile-caddie-custom` or `~/.bashrc-caddie-custom`, use the **[Profile module](profile.md)**:
 
 ```bash
-caddie path:add "$(brew --prefix some-tool)/bin" --profile caddie-custom
+caddie path:add "$(brew --prefix some-tool)/bin"
 caddie profile:custom:source
 ```
 

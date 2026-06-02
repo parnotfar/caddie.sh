@@ -655,7 +655,7 @@ caddie profile:custom:source
 
 ```bash
 # Append PATH to ~/.bash_profile-caddie-custom (default)
-caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
+caddie path:add "$(brew --prefix postgresql@16)/bin"
 caddie profile:custom:source
 
 # Append any line idempotently

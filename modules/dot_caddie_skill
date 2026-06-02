@@ -75,6 +75,49 @@ function _caddie_skill_registry_ensure_dir() {
     return 0
 }
 
+function _caddie_skill_normalize_install_path() {
+    local install_path="$1"
+    local parent=""
+    local base=""
+    local resolved_parent=""
+
+    parent="$(dirname "$install_path")"
+    base="$(basename "$install_path")"
+    resolved_parent="$(cd "$parent" 2>/dev/null && pwd -P)"
+
+    if [ -n "$resolved_parent" ]; then
+        printf '%s/%s' "$resolved_parent" "$base"
+        return 0
+    fi
+
+    printf '%s\n' "$install_path"
+    return 0
+}
+
+function _caddie_skill_install_id() {
+    local install_path="$1"
+    local agent="$2"
+    local scope="$3"
+    local normalized_path=""
+    local path_hash=""
+
+    if [ "$scope" != "project" ]; then
+        printf '%s\n' "${agent}-${scope}"
+        return 0
+    fi
+
+    normalized_path="$(_caddie_skill_normalize_install_path "$install_path")"
+    if command -v shasum >/dev/null 2>&1; then
+        path_hash="$(printf '%s' "$normalized_path" | shasum -a 256 2>/dev/null | awk '{print $1}' | cut -c1-12)"
+    fi
+    if [ -z "$path_hash" ]; then
+        path_hash="$(printf '%s' "$normalized_path" | cksum 2>/dev/null | awk '{print $1}')"
+    fi
+
+    printf '%s\n' "${agent}-project-${path_hash}"
+    return 0
+}
+
 function _caddie_skill_registry_write_header() {
     local canonical="$1"
     local version="$2"
@@ -110,6 +153,54 @@ function _caddie_skill_registry_write_header() {
     return 0
 }
 
+function _caddie_skill_registry_sync_install_versions() {
+    local version="$1"
+    local synced_at="$2"
+    local tmp_file=""
+    local line=""
+    local existing_id=""
+    local existing_path=""
+    local existing_agent=""
+    local existing_scope=""
+    local existing_installed_at=""
+
+    if [ ! -f "$CADDIE_SKILL_REGISTRY_FILE" ]; then
+        return 0
+    fi
+
+    tmp_file="$(mktemp "${CADDIE_SKILL_REGISTRY_FILE}.XXXXXX")"
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            install\|* )
+                existing_id=""
+                existing_path=""
+                existing_agent=""
+                existing_scope=""
+                existing_installed_at=""
+                IFS='|' read -r _prefix existing_id existing_path existing_agent existing_scope _old_version existing_installed_at <<< "$line"
+                printf '%s\n' "install|${existing_id}|${existing_path}|${existing_agent}|${existing_scope}|${version}|${synced_at}" >> "$tmp_file"
+                ;;
+            * )
+                printf '%s\n' "$line" >> "$tmp_file"
+                ;;
+        esac
+    done < "$CADDIE_SKILL_REGISTRY_FILE"
+
+    mv "$tmp_file" "$CADDIE_SKILL_REGISTRY_FILE"
+    return 0
+}
+
+function _caddie_skill_registry_write_header_and_sync() {
+    local canonical="$1"
+    local version="$2"
+    local updated_at="$3"
+
+    _caddie_skill_registry_write_header "$canonical" "$version" "$updated_at" || return 1
+    _caddie_skill_registry_sync_install_versions "$version" "$updated_at" || return 1
+    return 0
+}
+
 function _caddie_skill_registry_upsert_install() {
     local install_id="$1"
     local install_path="$2"
@@ -120,27 +211,54 @@ function _caddie_skill_registry_upsert_install() {
     local canonical=""
     local registry_version=""
     local updated_at=""
+    local normalized_path=""
     local tmp_file=""
     local line=""
     local found=0
+    local existing_id=""
+    local existing_path=""
+    local existing_agent=""
+    local existing_scope=""
+    local existing_version=""
+    local existing_installed_at=""
+    local existing_normalized=""
 
     canonical="$(_caddie_skill_canonical_dir)"
     registry_version="$(_caddie_skill_version)"
     updated_at="$(_caddie_skill_timestamp)"
+    normalized_path="$(_caddie_skill_normalize_install_path "$install_path")"
+    install_path="$normalized_path"
 
     _caddie_skill_registry_ensure_dir || return 1
 
     if [ ! -f "$CADDIE_SKILL_REGISTRY_FILE" ]; then
-        _caddie_skill_registry_write_header "$canonical" "$registry_version" "$updated_at" || return 1
+        _caddie_skill_registry_write_header_and_sync "$canonical" "$registry_version" "$updated_at" || return 1
     fi
 
     tmp_file="$(mktemp "${CADDIE_SKILL_REGISTRY_FILE}.XXXXXX")"
 
     while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
-            install\|${install_id}\|* )
-                found=1
-                printf '%s\n' "install|${install_id}|${install_path}|${agent}|${scope}|${version}|${installed_at}" >> "$tmp_file"
+            install\|* )
+                existing_id=""
+                existing_path=""
+                existing_agent=""
+                existing_scope=""
+                existing_version=""
+                existing_installed_at=""
+                IFS='|' read -r _prefix existing_id existing_path existing_agent existing_scope existing_version existing_installed_at <<< "$line"
+                existing_normalized="$(_caddie_skill_normalize_install_path "$existing_path")"
+
+                if [ "$existing_normalized" = "$normalized_path" ]; then
+                    if [ "$found" = "1" ]; then
+                        continue
+                    fi
+                    found=1
+                    printf '%s\n' "install|${install_id}|${install_path}|${agent}|${scope}|${version}|${installed_at}" >> "$tmp_file"
+                    continue
+                fi
+
+                printf '%s\n' "$line" >> "$tmp_file"
                 ;;
             * )
                 printf '%s\n' "$line" >> "$tmp_file"
@@ -189,7 +307,7 @@ function _caddie_skill_refresh_canonical() {
     canonical_resolved="$(_caddie_skill_resolve_path "$canonical" 2>/dev/null || true)"
 
     if [ -n "$canonical_resolved" ] && [ "$package_resolved" = "$canonical_resolved" ] && [ -f "${canonical}/SKILL.md" ]; then
-        _caddie_skill_registry_write_header "$canonical" "$version" "$updated_at" || return 1
+        _caddie_skill_registry_write_header_and_sync "$canonical" "$version" "$updated_at" || return 1
         caddie cli:check "Canonical skill already installed (${version})"
         caddie cli:indent "$canonical"
         return 0
@@ -204,9 +322,66 @@ function _caddie_skill_refresh_canonical() {
         return 1
     fi
 
-    _caddie_skill_registry_write_header "$canonical" "$version" "$updated_at" || return 1
+    _caddie_skill_registry_write_header_and_sync "$canonical" "$version" "$updated_at" || return 1
     caddie cli:check "Canonical skill updated (${version})"
     caddie cli:indent "$canonical"
+    return 0
+}
+
+function _caddie_skill_is_skill_directory() {
+    local path="$1"
+
+    if [ -d "$path" ] && [ ! -L "$path" ] && [ -f "${path}/SKILL.md" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function _caddie_skill_registry_has_install_path() {
+    local install_path="$1"
+    local normalized_path=""
+    local line=""
+    local existing_path=""
+    local existing_normalized=""
+
+    if [ ! -f "$CADDIE_SKILL_REGISTRY_FILE" ]; then
+        return 1
+    fi
+
+    normalized_path="$(_caddie_skill_normalize_install_path "$install_path")"
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            install\|* )
+                existing_path=""
+                IFS='|' read -r _prefix _install_id existing_path _agent _scope _version _installed_at <<< "$line"
+                existing_normalized="$(_caddie_skill_normalize_install_path "$existing_path")"
+                if [ "$existing_normalized" = "$normalized_path" ]; then
+                    return 0
+                fi
+                ;;
+        esac
+    done < "$CADDIE_SKILL_REGISTRY_FILE"
+
+    return 1
+}
+
+function _caddie_skill_backup_directory_install() {
+    local install_path="$1"
+    local backup_path=""
+    local backup_suffix=""
+
+    backup_suffix="$(date +%Y%m%d%H%M%S 2>/dev/null || date '+%Y%m%d%H%M%S')"
+    backup_path="${install_path}.pre-caddie-link.${backup_suffix}"
+
+    if ! mv "$install_path" "$backup_path"; then
+        caddie cli:red "Error: Could not move ${install_path} to ${backup_path}"
+        return 1
+    fi
+
+    caddie cli:yellow "Backed up directory install"
+    caddie cli:indent "${backup_path}"
     return 0
 }
 
@@ -228,10 +403,10 @@ function _caddie_skill_resolve_path() {
 }
 
 function _caddie_skill_install_link() {
-    local install_id="$1"
-    local link_path="$2"
-    local agent="$3"
-    local scope="$4"
+    local link_path="$1"
+    local agent="$2"
+    local scope="$3"
+    local install_id=""
     local canonical=""
     local version=""
     local installed_at=""
@@ -239,6 +414,7 @@ function _caddie_skill_install_link() {
     local existing_target=""
     local canonical_resolved=""
 
+    install_id="$(_caddie_skill_install_id "$link_path" "$agent" "$scope")"
     canonical="$(_caddie_skill_canonical_dir)"
     version="$(_caddie_skill_version)"
     installed_at="$(_caddie_skill_timestamp)"
@@ -252,9 +428,15 @@ function _caddie_skill_install_link() {
     mkdir -p "$parent"
 
     if [ -e "$link_path" ] && [ ! -L "$link_path" ]; then
-        caddie cli:red "Error: ${link_path} exists and is not a symlink"
-        caddie cli:thought "Move it aside manually or remove it, then retry"
-        return 1
+        if _caddie_skill_is_skill_directory "$link_path"; then
+            if ! _caddie_skill_backup_directory_install "$link_path"; then
+                return 1
+            fi
+        else
+            caddie cli:red "Error: ${link_path} exists and is not a symlink"
+            caddie cli:thought "Move it aside manually or remove it, then retry"
+            return 1
+        fi
     fi
 
     canonical_resolved="$(_caddie_skill_resolve_path "$canonical")"
@@ -302,7 +484,7 @@ function caddie_skill_install_project() {
     fi
 
     link_path="$(pwd)/.cursor/skills/${CADDIE_SKILL_NAME}"
-    _caddie_skill_install_link "cursor-project" "$link_path" "cursor" "project"
+    _caddie_skill_install_link "$link_path" "cursor" "project"
     status=$?
 
     if [ "$status" -eq 0 ]; then
@@ -320,7 +502,7 @@ function caddie_skill_install_cursor() {
         return 1
     fi
 
-    _caddie_skill_install_link "cursor-user" "$link_path" "cursor" "user"
+    _caddie_skill_install_link "$link_path" "cursor" "user"
     return $?
 }
 
@@ -331,7 +513,7 @@ function caddie_skill_install_codex() {
         return 1
     fi
 
-    _caddie_skill_install_link "codex-user" "$link_path" "codex" "user"
+    _caddie_skill_install_link "$link_path" "codex" "user"
     return $?
 }
 
@@ -360,6 +542,7 @@ function caddie_skill_install_all() {
 
 function _caddie_skill_audit_install_line() {
     local line="$1"
+    local registry_version="$2"
     local current_version=""
     local canonical=""
     local canonical_resolved=""
@@ -370,6 +553,7 @@ function _caddie_skill_audit_install_line() {
     local recorded_version=""
     local installed_at=""
     local link_target=""
+    local symlink_ok=0
     local issues=0
 
     current_version="$(_caddie_skill_version)"
@@ -398,11 +582,14 @@ function _caddie_skill_audit_install_line() {
             issues=1
         else
             caddie cli:check "  Symlink OK"
+            symlink_ok=1
         fi
     fi
 
-    if [ "$recorded_version" != "$current_version" ]; then
-        caddie cli:yellow "  Version: registry ${recorded_version} ≠ caddie ${current_version} (run caddie skill:update)"
+    if [ "$symlink_ok" = "1" ] && [ -n "$registry_version" ] && [ "$registry_version" = "$current_version" ]; then
+        caddie cli:indent "  Version: ${current_version} (canonical registry)"
+    elif [ "$recorded_version" != "$current_version" ]; then
+        caddie cli:yellow "  Version: install ${recorded_version} ≠ caddie ${current_version} (run caddie skill:update)"
         issues=1
     else
         caddie cli:indent "  Version: ${current_version}"
@@ -412,9 +599,67 @@ function _caddie_skill_audit_install_line() {
     return "$issues"
 }
 
+function _caddie_skill_audit_expected_user_path() {
+    local install_path="$1"
+    local agent="$2"
+    local scope="$3"
+    local install_command="$4"
+    local canonical_resolved="$5"
+    local registry_version="$6"
+    local current_version=""
+    local link_target=""
+    local issues=0
+    local symlink_ok=0
+
+    current_version="$(_caddie_skill_version)"
+
+    if [ ! -e "$install_path" ]; then
+        return 0
+    fi
+
+    caddie cli:title "${agent} user (${install_path})"
+
+    if _caddie_skill_is_skill_directory "$install_path"; then
+        caddie cli:yellow "  Directory copy (not a symlink to canonical)"
+        caddie cli:thought "Run: ${install_command} (backs up the directory, then links to canonical)"
+        issues=1
+    elif [ ! -L "$install_path" ]; then
+        caddie cli:red "  Exists but is not a directory or symlink"
+        issues=1
+    else
+        link_target="$(_caddie_skill_resolve_path "$install_path")"
+        if [ -z "$link_target" ]; then
+            caddie cli:red "  Symlink could not be resolved"
+            issues=1
+        elif [ "$link_target" != "$canonical_resolved" ]; then
+            caddie cli:yellow "  Symlink target: ${link_target}"
+            caddie cli:yellow "  Expected:       ${canonical_resolved}"
+            issues=1
+        else
+            caddie cli:check "  Symlink OK"
+            symlink_ok=1
+        fi
+    fi
+
+    if [ "$symlink_ok" = "1" ]; then
+        if ! _caddie_skill_registry_has_install_path "$install_path"; then
+            caddie cli:yellow "  Not in registry (run ${install_command} to register)"
+            issues=1
+        elif [ -n "$registry_version" ] && [ "$registry_version" = "$current_version" ]; then
+            caddie cli:indent "  Version: ${current_version} (canonical registry)"
+        else
+            caddie cli:indent "  Version: ${current_version}"
+        fi
+    fi
+
+    caddie cli:blank
+    return "$issues"
+}
+
 function caddie_skill_audit() {
     local current_version=""
     local canonical=""
+    local canonical_resolved=""
     local registry_version=""
     local line=""
     local issues=0
@@ -438,7 +683,7 @@ function caddie_skill_audit() {
 
     registry_version="$(_caddie_skill_registry_get_field version 2>/dev/null || true)"
     if [ -n "$registry_version" ] && [ "$registry_version" != "$current_version" ]; then
-        caddie cli:yellow "Registry version ${registry_version} ≠ caddie ${current_version}"
+        caddie cli:yellow "Registry version ${registry_version} ≠ caddie ${current_version} (run caddie skill:update)"
         issues=1
     fi
 
@@ -452,7 +697,7 @@ function caddie_skill_audit() {
         while IFS= read -r line || [ -n "$line" ]; do
             case "$line" in
                 install\|* )
-                    _caddie_skill_audit_install_line "$line"
+                    _caddie_skill_audit_install_line "$line" "$registry_version"
                     install_issues=$?
                     if [ "$install_issues" -ne 0 ]; then
                         issues=1
@@ -462,13 +707,25 @@ function caddie_skill_audit() {
         done < "$CADDIE_SKILL_REGISTRY_FILE"
     fi
 
+    canonical_resolved="$(_caddie_skill_resolve_path "$canonical" 2>/dev/null || printf '%s' "$canonical")"
+
+    caddie cli:title "User skill paths"
+    _caddie_skill_audit_expected_user_path "$HOME/.cursor/skills/${CADDIE_SKILL_NAME}" "cursor" "user" "caddie skill:install:cursor" "$canonical_resolved" "$registry_version"
+    install_issues=$?
+    if [ "$install_issues" -ne 0 ]; then
+        issues=1
+    fi
+
+    _caddie_skill_audit_expected_user_path "$HOME/.codex/skills/${CADDIE_SKILL_NAME}" "codex" "user" "caddie skill:install:codex" "$canonical_resolved" "$registry_version"
+    install_issues=$?
+    if [ "$install_issues" -ne 0 ]; then
+        issues=1
+    fi
+
     caddie cli:title "Discovered symlinks (not in registry)"
     local discovered=0
     local search_dir=""
     local link_path=""
-    local canonical_resolved=""
-
-    canonical_resolved="$(_caddie_skill_resolve_path "$canonical" 2>/dev/null || printf '%s' "$canonical")"
 
     for search_dir in "$HOME/.cursor/skills" "$HOME/.codex/skills"; do
         if [ ! -d "$search_dir" ]; then
@@ -479,7 +736,7 @@ function caddie_skill_audit() {
                 local target=""
                 target="$(_caddie_skill_resolve_path "$link_path")"
                 if [ "$target" = "$canonical_resolved" ]; then
-                    if [ ! -f "$CADDIE_SKILL_REGISTRY_FILE" ] || ! grep -Fq "$link_path" "$CADDIE_SKILL_REGISTRY_FILE" 2>/dev/null; then
+                    if ! _caddie_skill_registry_has_install_path "$link_path"; then
                         caddie cli:indent "$link_path → canonical (unregistered)"
                         discovered=1
                     fi
@@ -546,7 +803,7 @@ function caddie_skill_help() {
     caddie cli:indent "install                  Link .cursor/skills/caddie in current directory (default)"
     caddie cli:indent "install:project          Same as install"
     caddie cli:indent "install:cursor           Link ~/.cursor/skills/caddie"
-    caddie cli:indent "install:codex            Link ~/.codex/skills/caddie"
+    caddie cli:indent "install:codex            Link ~/.codex/skills/caddie (backs up an existing skill directory)"
     caddie cli:indent "install:all              User cursor + codex installs"
     caddie cli:blank
     caddie cli:title "Maintenance:"
