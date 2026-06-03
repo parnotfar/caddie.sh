@@ -866,6 +866,75 @@ function caddie_core_lint_limit() {
     fi
     
     caddie_core_lint "$target" "$limit"
+    return $?
+}
+
+function caddie_core_module_commands() {
+    local module="$1"
+    local commands_fn=""
+    local output=""
+    local cmd=""
+
+    if [ -z "$module" ]; then
+        caddie cli:red "Error: module name required"
+        caddie cli:usage "caddie core:module:commands <module>"
+        caddie cli:thought "Example: caddie core:module:commands js"
+        return 1
+    fi
+
+    commands_fn="caddie_${module}_commands"
+    if declare -F "$commands_fn" >/dev/null 2>&1; then
+        output="$($commands_fn)"
+    else
+        caddie cli:red "Error: No command list for module '${module}'"
+        caddie cli:thought "Try: caddie ${module}:help"
+        return 1
+    fi
+
+    if [ -z "$output" ]; then
+        caddie cli:yellow "No commands registered for module '${module}'"
+        return 1
+    fi
+
+    for cmd in $output; do
+        printf '%s\n' "$cmd"
+    done
+    return 0
+}
+
+function caddie_core_agent_exec() {
+    local agent_exec=""
+    local status=0
+
+    if [ "$#" -eq 0 ]; then
+        caddie cli:red "Error: provide a caddie command"
+        caddie cli:usage "caddie agent:exec <module:command> [args...]"
+        caddie cli:usage "caddie core:agent:exec <module:command> [args...]"
+        caddie cli:thought "Example: caddie agent:exec js:project:test"
+        return 1
+    fi
+
+    agent_exec="${HOME}/.caddie_modules/bin/caddie-agent-exec"
+    if [ ! -x "$agent_exec" ]; then
+        caddie cli:red "Error: caddie agent bootstrap not found (run make install-dot)"
+        return 1
+    fi
+
+    "$agent_exec" "$@"
+    status=$?
+    return "$status"
+}
+
+function caddie_agent_exec() {
+    caddie_core_agent_exec "$@"
+    return $?
+}
+
+function caddie_core_commands() {
+    # caddie:lint:disable
+    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:agent:exec'
+    # caddie:lint:enable
+    return 0
 }
 
 # Function to show core caddie help
@@ -898,6 +967,10 @@ function caddie_core_help() {
     caddie cli:indent "alias:npm            Show npm-related aliases"
     caddie cli:indent "alias:nav            Show navigation aliases"
     caddie cli:blank
+    caddie cli:title "Agent / automation:"
+    caddie cli:indent "module:commands <mod> Machine-readable command list (one per line)"
+    caddie cli:indent "agent:exec <cmd>    Run caddie in a clean Bash subprocess (alias: caddie agent:exec)"
+    caddie cli:blank
     caddie cli:thought "Examples:"
     caddie cli:indent "caddie core:set:home ~/projects/myproject"
     caddie cli:indent "caddie core:get:home"
@@ -910,6 +983,9 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:lint"
     caddie cli:indent "caddie core:lint modules/"
     caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
+    caddie cli:indent "caddie core:module:commands js"
+    caddie cli:indent "caddie agent:exec js:project:test"
+    return 0
 }
 
 function caddie_core_description() {
@@ -942,3 +1018,7 @@ export -f caddie_core_alias_npm
 export -f caddie_core_alias_nav
 export -f caddie_core_lint
 export -f caddie_core_lint_limit
+export -f caddie_core_module_commands
+export -f caddie_core_agent_exec
+export -f caddie_agent_exec
+export -f caddie_core_commands

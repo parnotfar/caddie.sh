@@ -1,6 +1,6 @@
-# Caddie Repo Guide
+# Caddie Repo Guide (contributors only)
 
-Use this reference when working inside the `caddie.sh` repository.
+Use this reference when working **inside the `caddie.sh` repository**. It is **not** shipped with the agent skill install — end-user agents get `skills/caddie/SKILL.md`, which covers **using** caddie, not developing it.
 
 ## Repository map
 
@@ -49,7 +49,7 @@ Avoid:
 4. Add the command functions.
 5. Export public functions.
 6. Update `Makefile` install targets so the module is copied into `~/.caddie_modules`.
-7. Add `skills/caddie/` updates when agent-facing workflow changes (same version as `dot_caddie_version`).
+7. Update `skills/caddie/` when **user-facing command usage** for agents changes (same version as `dot_caddie_version`). Do not put caddie development rules in the shipped skill.
 8. Expose completion with `caddie_<module>_commands()` or `caddie_completion_register`.
 9. Add or update docs in `docs/modules/`.
 10. Validate with lint, install, reload, help, and targeted command checks.

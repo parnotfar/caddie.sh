@@ -1,5 +1,51 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.5 - Agent execution (`caddie agent:exec`)
+
+**Release Date:** June 2, 2026
+
+### New features
+
+- **`caddie agent:exec`**: Public entry point (via `~/bin/caddie`) to run **any** `caddie <module>:<command>` in a clean Bash 4+ subprocess. Module-agnostic — works for `js`, `python`, `rust`, `ruby`, `git`, `github`, `core`, and every other installed module. Intended for Codex, Cursor agents, and CI shells with inherited function noise or incomplete PATH.
+- **`caddie core:module:commands <module>`**: Machine-readable command list (one per line) for agent discovery.
+- **`~/bin/caddie`**: Installed by `make install-dot`; intercepts `agent:exec` before loading caddie in the parent shell.
+- **`caddie_js_commands()`**: Authoritative JS command list; replaces stale hardcoded `js:build` / `js:dev` completion entries.
+- **Agent skill (usage-only)**: Shipped skill teaches `caddie agent:exec` and command discovery; caddie.sh development rules stay in `AGENTS.md` / `docs/caddie-repo-agent-guide.md`.
+
+### Agent / automation usage
+
+```bash
+# Discover commands (any module)
+caddie agent:exec core:module:commands js
+caddie agent:exec core:module:commands rust
+caddie agent:exec core:module:commands python
+
+# Run workflows
+caddie agent:exec js:project:test
+caddie agent:exec rust:test:unit
+caddie agent:exec git:status
+caddie agent:exec core:lint modules/dot_caddie_js
+```
+
+When the parent shell loads caddie normally, use `caddie <module>:<command>` directly. `caddie core:agent:exec` is an alias for `caddie agent:exec`.
+
+### Bug fixes
+
+- **Custom profile persistence**: Installed `~/.bash_profile` / `~/.bashrc` source caddie custom snippet files at shell startup.
+- **`caddie reload` refreshes CLI module**: Unsets `CADDIE_CLI_LOADED` before re-sourcing so `.caddie_cli` updates apply in the current shell.
+- **Skill registry**: Per-path project install IDs; `skill:update` syncs install line versions; audit covers Codex/Cursor user paths and directory-copy migration.
+
+### Usage
+
+```bash
+make install-dot
+caddie reload
+caddie skill:update
+caddie agent:exec core:module:commands js
+```
+
+---
+
 ## Version 9.3.4 - Agent skill install and audit
 
 **Release Date:** May 5, 2026
@@ -12,11 +58,6 @@
 - **Commands**: `skill:install` (project `.cursor/skills/caddie`), `skill:install:cursor`, `skill:install:codex`, `skill:install:all`, `skill:update`, `skill:audit`, `skill:info`.
 - **Registry**: `~/.caddie_data/skill-installs.registry` tracks install paths for audit.
 - **Shipped package**: Repo `skills/caddie/` installed by `make install-dot`.
-
-### Bug fixes
-
-- **Custom profile persistence**: Installed `~/.bash_profile` and `~/.bashrc` again source `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` at shell startup (before `~/.caddie.sh`). `path:add` / `profile:add-line` changes apply in new terminals without running `caddie profile:custom:source` each time. Re-run `make install-dot` to refresh an existing `~/.bash_profile`.
-- **`caddie reload` refreshes CLI module**: `caddie reload` (and `caddie profile:source` when it sources `~/.bash_profile`) now unsets `CADDIE_CLI_LOADED` so an updated `~/.caddie_modules/.caddie_cli` is re-sourced in the current shell. Nested module sources during the same init still skip redundant CLI parsing.
 
 ### Usage
 

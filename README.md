@@ -30,6 +30,7 @@ make your coding experience smooth and efficient.
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
 - **Profile Snippets**: Source standard or caddie custom Bash profiles (`caddie profile:source`, `caddie profile:custom:source`); idempotent PATH and export lines (`caddie path:add`, `caddie profile:add-line`)
 - **Agent Skill**: Install and update the caddie Cursor/Codex skill (`caddie skill:install:all`, `caddie skill:update`, `caddie skill:audit`)
+- **Agent execution**: Run any module command from Codex/automation shells via `caddie agent:exec` (pairs with `caddie core:module:commands` for discovery)
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Claude Code Integration**: Onboarding and CLI workflows for Claude Code teams
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
@@ -72,15 +73,15 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-9.3.4 (update this for each release)
+caddie  # prompt shows as caddie-9.3.5 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-9.3.4 rust  # prompt switches to caddie[rust]-9.3.4
-caddie[rust]-9.3.4 back  # exits scope (also accepts `up` or `..`)
+caddie-9.3.5 rust  # prompt switches to caddie[rust]-9.3.5
+caddie[rust]-9.3.5 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-9.3.4 `ls -la`
-caddie-9.3.4 shell git status  # one-off shell command
+caddie-9.3.5 `ls -la`
+caddie-9.3.5 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
 caddie-9.3.4 rust build

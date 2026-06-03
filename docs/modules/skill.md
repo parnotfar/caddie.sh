@@ -6,6 +6,29 @@ The Skill module installs and audits the **caddie** agent skill for Cursor and C
 
 The skill version **matches `CADDIE_SH_VERSION`**. When you release caddie, update `dot_caddie_version`, `skills/caddie/SKILL.md` frontmatter (`caddie-version`), and `RELEASE_NOTES.md` together. Users run `make install-dot`, `caddie reload`, and `caddie skill:update`.
 
+## What the skill covers
+
+The shipped skill teaches agents **how to use caddie** — discover modules, run `caddie <module>:<command>`, prefer caddie wrappers for workspace consistency, and fall back to direct tools when needed. It does **not** include caddie.sh development guidelines (those live in repo `AGENTS.md` and `docs/caddie-repo-agent-guide.md` for contributors only).
+
+Agents discover subcommands with `caddie <module>:help` or `caddie agent:exec core:module:commands <module>` (not nested forms like `js:project:help`).
+
+### Using caddie from agents (Cursor / Codex)
+
+The skill teaches agents to run **`caddie agent:exec`** — a **module-agnostic** wrapper that works for any installed module (`js`, `python`, `rust`, `git`, `core`, …):
+
+```bash
+# Discover commands
+caddie agent:exec core:module:commands js
+caddie agent:exec core:module:commands rust
+
+# Run workflows
+caddie agent:exec js:project:test
+caddie agent:exec rust:test:unit
+caddie agent:exec git:status
+```
+
+See **[Core Module — Agent and automation](core.md#agent-and-automation)** for details. The skill does not include caddie.sh development rules.
+
 ## Overview
 
 | Path | Role |
@@ -95,7 +118,7 @@ caddie skill:install
 skills/caddie/
 ├── SKILL.md
 ├── agents/openai.yaml
-└── references/repo-guide.md
+└── references/using-caddie.md
 ```
 
 Do not install into `~/.cursor/skills-cursor/` (reserved for Cursor built-ins).

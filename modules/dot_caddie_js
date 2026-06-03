@@ -688,6 +688,13 @@ function caddie_js_help() {
     return 0
 }
 
+function caddie_js_commands() {
+    # caddie:lint:disable
+    printf '%s\n' 'js:info js:setup js:install js:use js:list js:version js:help js:project:init js:project:install js:project:update js:project:test js:project:build js:project:serve js:package:install js:package:uninstall js:package:list js:package:update js:package:outdated js:package:audit js:package:run js:package:publish js:framework:create js:framework:serve js:framework:build'
+    # caddie:lint:enable
+    return 0
+}
+
 # Export JavaScript functions
 export -f caddie_js_description
 export -f caddie_js_setup
@@ -714,3 +721,4 @@ export -f caddie_js_framework_create
 export -f caddie_js_framework_serve
 export -f caddie_js_framework_build
 export -f caddie_js_version
+export -f caddie_js_commands

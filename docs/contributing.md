@@ -93,7 +93,7 @@ Release-visible changes should keep the shipped skill in sync with caddie:
 
 1. Bump `dot_caddie_version` and `RELEASE_NOTES.md`.
 2. Set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value as `CADDIE_SH_VERSION`.
-3. Update `skills/caddie/references/repo-guide.md` when workflow or layout changes.
+3. Update `skills/caddie/SKILL.md` and `skills/caddie/references/using-caddie.md` when **user-facing command usage** for agents changes (not caddie development rules — see `AGENTS.md` and `docs/caddie-repo-agent-guide.md`).
 4. Run `make install-dot`, `caddie reload`, and `caddie skill:update`.
 
 The canonical install path is `~/.caddie_modules/skills/caddie`. User installs are symlinks via `caddie skill:install:*`. See **[Skill Module](modules/skill.md)** and root **`AGENTS.md`**.

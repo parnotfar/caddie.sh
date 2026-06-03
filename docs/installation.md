@@ -146,6 +146,8 @@ caddie skill:install
 
 See **[Skill Module](modules/skill.md)** for details. Skill version matches `caddie --version`; run `caddie skill:update` after upgrading caddie.
 
+**Codex / agent shells:** `~/bin/caddie` supports **`caddie agent:exec`** for any module (JavaScript, Rust, Python, git, …) when the parent shell cannot load caddie normally. See **[Core Module — Agent and automation](modules/core.md#agent-and-automation)**.
+
 ## Post-Installation Setup
 
 ### First-Time Configuration

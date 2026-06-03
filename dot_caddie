@@ -64,6 +64,7 @@ function caddie_help() {
     caddie cli:indent "help                     Show this overview"
     caddie cli:indent "version                  Show caddie version"
     caddie cli:indent "reload                   Reload caddie"
+    caddie cli:indent "agent:exec <cmd>         Run a command in a clean Bash subprocess (agent/Codex shells)"
     caddie cli:indent "(no args)                Launch interactive caddie prompt"
     caddie cli:blank
     caddie cli:title "Productivity:"
@@ -1233,7 +1234,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "ruby:info ruby:setup ruby:install ruby:use ruby:list ruby:current ruby:version ruby:pin:set ruby:pin:get ruby:pin:unset ruby:gemset:create ruby:gemset:use ruby:gemset:list ruby:gemset:delete ruby:gem:install ruby:gem:uninstall ruby:gem:list ruby:gem:update ruby:gem:outdated ruby:project:init ruby:project:test ruby:project:build ruby:project:serve ruby:bundler:install ruby:bundler:update ruby:bundler:exec ruby:rails:new ruby:rails:server ruby:rails:console ruby:rails:generate ruby:rails:migrate ruby:rails:routes"
                         ;;
                       js)
-                        caddie_completion_register "$module_name" "js:info js:init js:install js:add js:update js:build js:dev js:start js:test js:lint js:format js:audit"
+                        caddie_completion_register "$module_name" "js:info js:setup js:install js:use js:list js:version js:help js:project:init js:project:install js:project:update js:project:test js:project:build js:project:serve js:package:install js:package:uninstall js:package:list js:package:update js:package:outdated js:package:audit js:package:run js:package:publish js:framework:create js:framework:serve js:framework:build"
                         ;;
                       rust)
                         caddie_completion_register "$module_name" "rust:info rust:init rust:new rust:build rust:run rust:run:example rust:example:run rust:test rust:test:unit rust:test:integration rust:test:all rust:test:property rust:test:bench rust:test:watch rust:test:coverage rust:add rust:remove rust:fmt rust:fmt:check rust:format rust:format:check rust:clippy rust:check rust:fix rust:fix:all rust:clean rust:update rust:search rust:outdated rust:audit rust:toolchain rust:target rust:component rust:git:status rust:gitignore rust:git:clean"
@@ -1251,7 +1252,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "claude:info claude:init claude:run claude:print claude:continue claude:resume claude:auth:login claude:auth:logout claude:doctor claude:update claude:mcp claude:agents claude:model:set claude:model:get claude:model:unset claude:permission:mode:set claude:permission:mode:get claude:permission:mode:unset"
                         ;;
                       core)
-                        caddie_completion_register "$module_name" "core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit"
+                        caddie_completion_register "$module_name" "core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:agent:exec"
                         ;;
                       cursor)
                         caddie_completion_register "$module_name" "cursor:info cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"

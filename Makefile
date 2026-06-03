@@ -159,7 +159,14 @@ install-dot: backup-existing ## Install dot files to home directory
 	mkdir -p "$(DEST_MODULES_DIR)/bin"
 	if [ -d "$(CADDIE_DIR)/bin" ]; then \
 		cp "$(CADDIE_DIR)/bin"/* "$(DEST_MODULES_DIR)/bin/" 2>/dev/null || true; \
+		chmod +x "$(DEST_MODULES_DIR)/bin/"* 2>/dev/null || true; \
 		echo "$(GREEN)    ✓$(NC) Successfully installed scripts to $(DEST_MODULES_DIR)/bin"; \
+	fi
+	mkdir -p "$(HOME_DIR)/bin"
+	if [ -f "$(CADDIE_DIR)/bin/caddie" ]; then \
+		cp "$(CADDIE_DIR)/bin/caddie" "$(HOME_DIR)/bin/caddie"; \
+		chmod +x "$(HOME_DIR)/bin/caddie"; \
+		echo "$(GREEN)    ✓$(NC) Successfully installed ~/bin/caddie"; \
 	fi
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"

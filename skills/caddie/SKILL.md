@@ -1,53 +1,54 @@
 ---
 name: caddie
-description: Guide for working in the Par Not Far caddie.sh repository. Use when modifying or reviewing caddie modules, adding a new module, updating caddie-specific Bash workflows, touching Makefile installation logic, adjusting command completion, or validating repo conventions such as `caddie cli:*` output, linting, reload, and release-note/version requirements.
-caddie-version: "9.3.4"
+description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist.
+caddie-version: "9.3.5"
 ---
 
-# Caddie
+# Caddie — command workspace
 
-Treat this repository as a modular Bash system with project-specific conventions. Start by reading the local `AGENTS.md`, then inspect only the relevant module files, docs, and Makefile sections before editing.
+**This skill is not the command list.** It tells you *how* to use caddie. The CLI is authoritative — always query it before running module commands.
 
-## Core workflow
+```bash
+caddie <module>:<command> [args]
+```
 
-1. Identify the affected module or root file.
-2. Read the local guidance in `AGENTS.md` plus the specific module docs or implementation files you need.
-3. Make the smallest coherent change that fits existing naming and output conventions.
-4. Validate with repo-native commands before stopping.
+## Agent rules (read first)
 
-## Implementation rules
+1. **Skill ≠ CLI** — Do not infer commands from the skill text, completion metadata, or memory. Query the installed CLI.
+2. **Discover commands** — `caddie agent:exec core:module:commands js` or `caddie js:help` (when the shell already loads caddie).
+3. **No nested `:help`** — `js:project:help` does not exist. Use `caddie js:help`.
+4. **No invented shortcuts** — `js:build`, `js:dev`, `js:start` are **wrong**. Use `js:project:build`, `js:project:serve`, `js:package:run <script>`.
+5. **Prefer caddie** when a listed command matches the task; **fall back explicitly** to native tools when caddie cannot load.
+6. **Agent shells** — Use **`caddie agent:exec`** for any module (JS, Rust, Python, git, …). Do not use internal install paths.
 
-- Keep module files in `modules/dot_caddie_<module>`. Do not create module files at repo root.
-- Keep function names in `caddie_<module>_<command>` form and export public functions with `export -f`.
-- Source the CLI formatter in module files and use `caddie cli:*` helpers for user-facing output. Avoid raw `echo` or `printf` except for description functions or machine-readable output.
-- Prefer descriptive subcommands over flags for user-facing behaviors.
-- When a module depends on environment variables for configuration, provide `get` / `set` / `unset` commands instead of relying on direct environment-variable usage in help text.
-- For new modules, update the Makefile install flow and expose completion with `caddie_<module>_commands()` or `caddie_completion_register`. Do not edit `_caddie_completion` directly. Do not modify `dot_caddie_modules` manually.
-- If the work introduces release-visible functionality, update the version and `RELEASE_NOTES.md`. The agent skill version matches `CADDIE_SH_VERSION` — bump both together.
+## Agent / Codex shells (all modules)
 
-## Validation
+`caddie agent:exec` is **not JavaScript-only**. Pass any valid caddie command:
 
-Run the repo workflow whenever feasible:
+```bash
+caddie agent:exec core:module:commands rust
+caddie agent:exec rust:test:unit
+caddie agent:exec python:test
+caddie agent:exec git:status
+caddie agent:exec js:project:build
+```
 
-- `caddie core:lint` on changed files or the repo
-- `make install-dot`
-- `caddie reload`
-- `caddie <module>:help`
-- Targeted command checks for the changed behavior
+If `caddie agent:exec` fails, use native project commands (`npm test`, etc.) and state that caddie was unavailable.
 
-If a command cannot run in the current environment, say so explicitly and note what remains unverified.
+## JavaScript mapping (common mistakes)
 
-## Agent skill installs
+| Wrong | Right |
+|-------|-------|
+| `js:build` | `js:project:build` |
+| `js:test` | `js:project:test` |
+| `js:dev` / `js:start` | `js:project:serve` or `js:package:run <script>` |
+| `js:init` | `js:project:init` |
+| `js:add` | `js:package:install` |
 
-Users install this skill via caddie (canonical copy + symlinks):
+## Reference
 
-- `caddie skill:install` — project `.cursor/skills/caddie` in the current directory
-- `caddie skill:install:cursor` / `:codex` / `:all` — user-level agent paths
-- `caddie skill:update` — refresh canonical skill after `make install-dot`
-- `caddie skill:audit` — verify symlinks and version match installed caddie
+**`references/using-caddie.md`** — full usage guide and fallback policy.
 
-## References
+## Skill updates
 
-- Read `references/repo-guide.md` for the repo map, checklists, and high-signal rules.
-- For Codex-specific automation or review behavior, inspect the local `docs/modules/codex.md` and `modules/dot_caddie_codex`.
-- For profile and PATH setup, see `docs/modules/profile.md` and `modules/dot_caddie_profile`.
+After the user upgrades caddie: `caddie skill:update`.

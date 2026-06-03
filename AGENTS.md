@@ -123,7 +123,7 @@ echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_<m
 
 4. **Expose tab completion**: Implement `caddie_<module>_commands()` to print a space-separated list of `<module>:command` entries (or call `caddie_completion_register "<module>" "<module>:command1 …"` inside the module). Caddie will invoke these during module discovery—no manual edits to `_caddie_completion` are required.
 
-5. **Agent skill** (when release-visible behavior changes): Bump `dot_caddie_version` and set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value. Users run `make install-dot`, `caddie reload`, and `caddie skill:update`.
+5. **Agent skill** (when release-visible **usage** changes for agents): Bump `dot_caddie_version` and set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value. Update `skills/caddie/references/using-caddie.md` when command discovery or module usage guidance changes — keep development rules out of the shipped skill (see `AGENTS.md`). Users run `make install-dot`, `caddie reload`, and `caddie skill:update`.
 
 6. **Test installation**:
 ```sh

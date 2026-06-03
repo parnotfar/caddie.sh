@@ -666,7 +666,7 @@ See **[Profile Module](modules/profile.md)** for all targets and subcommands.
 
 ### Agent Skill (Cursor / Codex)
 
-Install the caddie skill so agents follow repository conventions (`AGENTS.md`, modules, lint, release workflow). Skill version matches `caddie --version`.
+Install the caddie skill so agents use **`caddie <module>:<command>`** consistently across projects. Skill version matches `caddie --version`.
 
 ```bash
 # User-level (Cursor + Codex)
@@ -683,7 +683,16 @@ caddie reload
 caddie skill:update
 ```
 
-See **[Skill Module](modules/skill.md)** for canonical paths and troubleshooting.
+**Agent / Codex shells:** When the parent shell cannot load caddie, use **`caddie agent:exec`** for any module — not JavaScript-only:
+
+```bash
+caddie agent:exec core:module:commands python
+caddie agent:exec rust:test:unit
+caddie agent:exec js:project:build
+caddie agent:exec git:gacp "message"
+```
+
+See **[Skill Module](modules/skill.md)** and **[Core Module — Agent and automation](modules/core.md#agent-and-automation)**.
 
 ### CLI Utilities
 
