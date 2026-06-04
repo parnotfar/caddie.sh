@@ -957,6 +957,7 @@ function caddie() {
 
     if command -v "$function_name" >/dev/null 2>&1; then
         eval "$function_name \"\$@\""
+        return $?
     else
         caddie cli:red "Error: Unknown command '$command'"
         caddie_help

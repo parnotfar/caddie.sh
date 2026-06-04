@@ -70,7 +70,7 @@ caddie core:debug status
 3. **Reinstall if missing:**
    ```bash
    cd /path/to/caddie.sh
-   make install-dot
+   make install
    source ~/.bash_profile
    ```
 
@@ -103,7 +103,7 @@ caddie core:debug status
 3. **Reinstall debug system:**
    ```bash
    cd /path/to/caddie.sh
-   make install-dot
+   make install
    source ~/.bash_profile
    ```
 
@@ -138,7 +138,7 @@ caddie core:debug status
    ```bash
    make check-prerequisites
    make backup-existing
-   make install-dot
+   make install
    make setup-dev
    ```
 
@@ -205,7 +205,7 @@ caddie core:debug status
 4. **Reinstall modules:**
    ```bash
    cd /path/to/caddie.sh
-   make install-dot
+   make install
    source ~/.bash_profile
    ```
 

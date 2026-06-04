@@ -51,6 +51,10 @@ exec "$bash_bin" --noprofile --norc -c '
         . "${NVM_DIR}/nvm.sh"
     fi
 
+    if [ -f .nvmrc ] && command -v nvm >/dev/null 2>&1; then
+        nvm use >/dev/null 2>&1 || true
+    fi
+
     if [ -f "${HOME}/.bash_profile-caddie-custom" ]; then
         # shellcheck disable=SC1090
         . "${HOME}/.bash_profile-caddie-custom"

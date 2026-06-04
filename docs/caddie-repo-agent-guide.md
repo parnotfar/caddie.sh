@@ -73,7 +73,8 @@ Use the caddie-native flow:
 caddie core:lint
 caddie core:lint modules/dot_caddie_<module>
 caddie core:lint:limit 5 modules/dot_caddie_<module>
-make install-dot
+make install          # users and releases
+make install-dot      # caddie development only (fast module reinstall)
 caddie reload
 caddie <module>:help
 ```
@@ -89,7 +90,7 @@ If the change is release-visible:
 3. Add the matching section in `RELEASE_NOTES.md`.
 4. Ask the user which release type to use if major/minor/bugfix is not clear.
 
-After release, users run `make install-dot`, `caddie reload`, and `caddie skill:update`.
+After release, users run **`make install`**, `caddie reload`, and `caddie skill:update`. Use `make install-dot` only when developing caddie itself.
 
 ## Useful local references
 

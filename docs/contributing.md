@@ -69,9 +69,9 @@ This structure makes it easy to:
    make setup-dev
    ```
 
-4. **Install Caddie.sh locally**:
+4. **Install Caddie.sh locally** (contributors hacking on caddie may use `make install-dot` for faster iteration; **`make install`** is recommended for first setup):
    ```bash
-   make install-dot
+   make install
    source ~/.bash_profile
    ```
 
@@ -94,7 +94,7 @@ Release-visible changes should keep the shipped skill in sync with caddie:
 1. Bump `dot_caddie_version` and `RELEASE_NOTES.md`.
 2. Set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value as `CADDIE_SH_VERSION`.
 3. Update `skills/caddie/SKILL.md` and `skills/caddie/references/using-caddie.md` when **user-facing command usage** for agents changes (not caddie development rules — see `AGENTS.md` and `docs/caddie-repo-agent-guide.md`).
-4. Run `make install-dot`, `caddie reload`, and `caddie skill:update`.
+4. Run **`make install`**, `caddie reload`, and `caddie skill:update` before release. Use `make install-dot` only for quick local module iteration while developing caddie.
 
 The canonical install path is `~/.caddie_modules/skills/caddie`. User installs are symlinks via `caddie skill:install:*`. See **[Skill Module](modules/skill.md)** and root **`AGENTS.md`**.
 
@@ -528,7 +528,7 @@ function caddie_module_command() {
 
 ### Manual Testing
 
-1. **Install your changes**:
+1. **Install your changes** (use `make install-dot` for fast iteration while developing caddie; **`make install`** before release):
    ```bash
    make install-dot
    source ~/.bash_profile

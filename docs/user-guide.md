@@ -677,8 +677,8 @@ caddie skill:audit
 cd ~/work/my-project
 caddie skill:install
 
-# After upgrading caddie
-make install-dot
+# After upgrading caddie (from caddie.sh repo)
+make install
 caddie reload
 caddie skill:update
 ```
@@ -847,7 +847,7 @@ Use Caddie.sh in your CI/CD pipelines:
   run: |
     git clone https://github.com/parnotfar/caddie.sh.git
     cd caddie.sh
-    make install-dot
+    make install
     source ~/.bash_profile
     caddie python:create ci-env
     caddie python:activate ci-env

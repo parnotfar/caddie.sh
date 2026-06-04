@@ -4,7 +4,7 @@ The Skill module installs and audits the **caddie** agent skill for Cursor and C
 
 ## Version model
 
-The skill version **matches `CADDIE_SH_VERSION`**. When you release caddie, update `dot_caddie_version`, `skills/caddie/SKILL.md` frontmatter (`caddie-version`), and `RELEASE_NOTES.md` together. Users run `make install-dot`, `caddie reload`, and `caddie skill:update`.
+The skill version **matches `CADDIE_SH_VERSION`**. When you release caddie, update `dot_caddie_version`, `skills/caddie/SKILL.md` frontmatter (`caddie-version`), and `RELEASE_NOTES.md` together. Users upgrade with **`make install`**, then `caddie reload` and `caddie skill:update`.
 
 ## What the skill covers
 
@@ -72,10 +72,10 @@ User-level Cursor + Codex installs.
 
 #### `caddie skill:update`
 
-Copy the packaged skill from `~/.caddie_modules/skills/caddie` (refreshed by `make install-dot`) into the canonical directory, update the registry header version, and sync `recorded_version` on all registered install lines.
+Copy the packaged skill from `~/.caddie_modules/skills/caddie` (refreshed by **`make install`**) into the canonical directory, update the registry header version, and sync `recorded_version` on all registered install lines.
 
 ```bash
-make install-dot
+make install
 caddie reload
 caddie skill:update
 ```
@@ -93,8 +93,8 @@ Show caddie version, canonical path, registry path, and install count.
 ## Typical workflow
 
 ```bash
-# From caddie.sh repo after clone
-make install-dot
+# First install or upgrade from caddie.sh repo
+make install
 caddie reload
 
 # User-wide agent skills
@@ -109,7 +109,7 @@ caddie skill:install
 ## Error handling
 
 - **Target path exists but is not a symlink** — install fails; move the directory aside manually, then retry.
-- **Canonical missing** — run `caddie skill:update` or `make install-dot`.
+- **Canonical missing** — run `caddie skill:update` or **`make install`** from the caddie.sh repo.
 - **Version mismatch in audit** — run `caddie skill:update` after upgrading caddie.
 
 ## Skill package layout

@@ -1,5 +1,57 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.7 - JS agent execution fixes
+
+**Release Date:** June 2, 2026
+
+### Bug fixes
+
+- **`js:package:run` exit codes**: npm script failures now propagate non-zero exit status (previously always returned 0).
+- **`js:project:*` / `js:framework:*`**: test, build, serve, audit, and related npm invocations now return the underlying command exit code.
+- **`js:package:run` arguments**: Extra args after `--` are forwarded to npm (e.g. `caddie agent:exec js:package:run typecheck -- --incremental false`).
+- **`~/bin/caddie`**: Non-agent commands now exit with the caddie command status.
+- **`caddie()` dispatch**: Module command return codes propagate correctly.
+
+### Agent / JS environment
+
+- **`caddie-agent-exec` / `js` module**: Automatically run `nvm use` when `.nvmrc` is present (each `agent:exec` is a fresh subprocess — `js:use` in a prior invocation does not carry over).
+- **Agent skill**: Documents exit-code checking, `.nvmrc` for Node version, npm arg forwarding, and explicit ban on internal wrapper paths.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+```
+
+---
+
+## Version 9.3.6 - Install workflow and documentation
+
+**Release Date:** June 2, 2026
+
+### New features
+
+- **`make install` pulls on `main`**: When run from the caddie.sh repo on branch **`main`**, `make install` runs `git pull --ff-only origin main` before reinstalling dot files, modules, and toolchains. Skipped on other branches, outside a git repo, or when pull cannot fast-forward.
+
+### Documentation
+
+- **`make install` vs `make install-dot`**: User-facing docs now recommend **`make install`** for first install and routine upgrades (includes Homebrew and toolchain updates). **`make install-dot`** is documented as **caddie development only** — fast module/dot reinstall without full toolchain setup.
+- **Agent skill**: Usage-only skill content; upgrade flow documented as `make install`, `caddie reload`, `caddie skill:update`.
+- **`caddie agent:exec`**: Documented as module-agnostic (all installed modules, not JavaScript-only).
+
+### Usage
+
+```bash
+cd caddie.sh   # on main: make install pulls origin/main first
+make install
+caddie reload
+caddie skill:update
+```
+
+---
+
 ## Version 9.3.5 - Agent execution (`caddie agent:exec`)
 
 **Release Date:** June 2, 2026
@@ -8,7 +60,7 @@
 
 - **`caddie agent:exec`**: Public entry point (via `~/bin/caddie`) to run **any** `caddie <module>:<command>` in a clean Bash 4+ subprocess. Module-agnostic — works for `js`, `python`, `rust`, `ruby`, `git`, `github`, `core`, and every other installed module. Intended for Codex, Cursor agents, and CI shells with inherited function noise or incomplete PATH.
 - **`caddie core:module:commands <module>`**: Machine-readable command list (one per line) for agent discovery.
-- **`~/bin/caddie`**: Installed by `make install-dot`; intercepts `agent:exec` before loading caddie in the parent shell.
+- **`~/bin/caddie`**: Installed by **`make install`**; intercepts `agent:exec` before loading caddie in the parent shell.
 - **`caddie_js_commands()`**: Authoritative JS command list; replaces stale hardcoded `js:build` / `js:dev` completion entries.
 - **Agent skill (usage-only)**: Shipped skill teaches `caddie agent:exec` and command discovery; caddie.sh development rules stay in `AGENTS.md` / `docs/caddie-repo-agent-guide.md`.
 
@@ -38,7 +90,7 @@ When the parent shell loads caddie normally, use `caddie <module>:<command>` dir
 ### Usage
 
 ```bash
-make install-dot
+make install
 caddie reload
 caddie skill:update
 caddie agent:exec core:module:commands js
@@ -57,12 +109,12 @@ caddie agent:exec core:module:commands js
 - **Version model**: Skill version matches `CADDIE_SH_VERSION` (update both on every release).
 - **Commands**: `skill:install` (project `.cursor/skills/caddie`), `skill:install:cursor`, `skill:install:codex`, `skill:install:all`, `skill:update`, `skill:audit`, `skill:info`.
 - **Registry**: `~/.caddie_data/skill-installs.registry` tracks install paths for audit.
-- **Shipped package**: Repo `skills/caddie/` installed by `make install-dot`.
+- **Shipped package**: Repo `skills/caddie/` installed by **`make install`**.
 
 ### Usage
 
 ```bash
-make install-dot
+make install
 caddie reload
 caddie skill:install:all
 caddie skill:audit

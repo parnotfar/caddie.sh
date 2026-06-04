@@ -13,7 +13,7 @@ WHITE := \033[0;37m
 NC := \033[0m # No Color
 
 # Default target
-.PHONY: all install help
+.PHONY: all install help pull-if-main
 .DEFAULT_GOAL := help
 .SILENT:
 
@@ -32,7 +32,7 @@ help: ## Show this help message
 	echo ""
 	echo "$(YELLOW)Usage:$(NC)"
 	echo "  make install        - Full installation (recommended)"
-	echo "  make install-dot    - Install only dot files (with backup)"
+	echo "  make install-dot    - Dot files/modules only (caddie development)"
 	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, Ruby deps, GitHub CLI)"
 	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
@@ -51,7 +51,22 @@ help: ## Show this help message
 
 all: install ## Alias for install
 
-install: check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
+pull-if-main: ## Pull origin/main when the current branch is main
+	echo "$(BLUE)🔄$(NC) Checking for caddie.sh updates..."
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) Not a git repository; skipping git pull"; \
+	elif [ "$$(git branch --show-current 2>/dev/null)" != "main" ]; then \
+		echo "$(YELLOW)  →$(NC) Not on main (current: $$(git branch --show-current 2>/dev/null || echo unknown)); skipping git pull"; \
+	else \
+		echo "$(YELLOW)  →$(NC) On main; pulling latest from origin..."; \
+		if git pull --ff-only origin main; then \
+			echo "$(GREEN)    ✓$(NC) Repository updated"; \
+		else \
+			echo "$(YELLOW)    →$(NC) git pull skipped (local changes or non-fast-forward); installing from current tree"; \
+		fi; \
+	fi
+
+install: pull-if-main check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
 	@echo "$(GREEN)✓$(NC) Installation complete! Run 'source ~/.bash_profile' to activate."
 
 check-prerequisites: ## Check system prerequisites

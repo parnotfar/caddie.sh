@@ -7,7 +7,7 @@ _caddie_run_agent_exec() {
     local status=0
 
     if [ ! -x "$agent_exec" ]; then
-        printf '%s\n' "Error: caddie agent bootstrap not found (run make install-dot)" >&2
+        printf '%s\n' "Error: caddie agent bootstrap not found (run make install)" >&2
         return 1
     fi
 
@@ -28,10 +28,11 @@ fi
 
 caddie_main="${HOME}/.caddie.sh"
 if [ ! -f "$caddie_main" ]; then
-    printf '%s\n' "Error: Caddie not found at ${caddie_main} (run make install-dot)" >&2
+    printf '%s\n' "Error: Caddie not found at ${caddie_main} (run make install)" >&2
     exit 1
 fi
 
 # shellcheck disable=SC1090
 source "$caddie_main"
 caddie "$@"
+exit $?

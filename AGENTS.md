@@ -123,11 +123,11 @@ echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_<m
 
 4. **Expose tab completion**: Implement `caddie_<module>_commands()` to print a space-separated list of `<module>:command` entries (or call `caddie_completion_register "<module>" "<module>:command1 …"` inside the module). Caddie will invoke these during module discovery—no manual edits to `_caddie_completion` are required.
 
-5. **Agent skill** (when release-visible **usage** changes for agents): Bump `dot_caddie_version` and set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value. Update `skills/caddie/references/using-caddie.md` when command discovery or module usage guidance changes — keep development rules out of the shipped skill (see `AGENTS.md`). Users run `make install-dot`, `caddie reload`, and `caddie skill:update`.
+5. **Agent skill** (when release-visible **usage** changes for agents): Bump `dot_caddie_version` and set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value. Update `skills/caddie/references/using-caddie.md` when command discovery or module usage guidance changes — keep development rules out of the shipped skill (see `AGENTS.md`). Users upgrade with **`make install`**, then `caddie reload` and `caddie skill:update`.
 
-6. **Test installation**:
+6. **Test installation** (caddie developers may use `make install-dot` for speed; **`make install`** for full verification):
 ```sh
-make install-dot
+make install
 caddie reload
 caddie <module>:help
 caddie <module>:command1 test
@@ -243,9 +243,13 @@ The linter is now universal - it can lint any shell script, not just caddie modu
    caddie help
    ```
 
-**For subsequent updates** (when caddie is already installed):
+**For subsequent updates:**
+
+- **Users (recommended):** `make install` then `caddie reload` — refreshes modules, Homebrew, and toolchains.
+- **Caddie development only:** `make install-dot` then `caddie reload` — fast module/dot-file reinstall without full toolchain setup.
+
 ```bash
-make install-dot
+make install
 caddie reload
 ```
 
@@ -366,7 +370,8 @@ function caddie_<module>_<config>_unset() {
 * Always prefer `caddie <module>:<command>` instead of raw language-specific commands
 * Use `caddie reload` after making changes to reload the environment
 * Test with `caddie <module>:help` to verify module integration
-* Use `make install-dot` followed by `caddie reload` to reinstall after changes
+* Use **`make install`** for routine upgrades after pulling caddie.sh
+* Use `make install-dot` followed by `caddie reload` **only when developing caddie modules** in this repository
 
 ### When Adding New Modules
 

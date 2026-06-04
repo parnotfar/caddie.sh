@@ -916,7 +916,7 @@ function caddie_core_agent_exec() {
 
     agent_exec="${HOME}/.caddie_modules/bin/caddie-agent-exec"
     if [ ! -x "$agent_exec" ]; then
-        caddie cli:red "Error: caddie agent bootstrap not found (run make install-dot)"
+        caddie cli:red "Error: caddie agent bootstrap not found (run make install)"
         return 1
     fi
 

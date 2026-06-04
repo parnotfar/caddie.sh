@@ -264,7 +264,7 @@ caddie agent:exec core:module:commands git
 - Running any module command when `caddie` fails to load in the parent shell
 
 **Requirements:**
-- `make install-dot` (installs `~/bin/caddie`)
+- `make install` (installs `~/bin/caddie` and refreshes modules)
 - Bash 4+ in the subprocess (Homebrew bash on macOS)
 
 ## Linting

@@ -4,7 +4,7 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
 
 ## Getting Started
 
-- **[Installation Guide](installation.md)** - Complete setup instructions
+- **[Installation Guide](installation.md)** - Complete setup instructions (`make install` for installs and upgrades; `make install-dot` is for caddie development only)
 - **[User Guide](user-guide.md)** - How to use Caddie.sh effectively
 
 ## 🚀 Launch & Community

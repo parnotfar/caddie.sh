@@ -66,7 +66,7 @@ function _caddie_skill_package_dir() {
     fi
 
     caddie cli:red "Error: Caddie skill package not found"
-    caddie cli:thought "Run make install-dot from the caddie.sh repository"
+    caddie cli:thought "Run make install from the caddie.sh repository"
     return 1
 }
 
@@ -818,7 +818,7 @@ function caddie_skill_help() {
     caddie cli:title "Examples:"
     caddie cli:indent "caddie skill:install"
     caddie cli:indent "caddie skill:install:all"
-    caddie cli:indent "make install-dot && caddie reload && caddie skill:update"
+    caddie cli:indent "make install && caddie reload && caddie skill:update"
     caddie cli:indent "caddie skill:audit"
     caddie cli:blank
     return 0

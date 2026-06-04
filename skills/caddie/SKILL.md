@@ -1,7 +1,7 @@
 ---
 name: caddie
 description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist.
-caddie-version: "9.3.5"
+caddie-version: "9.3.7"
 ---
 
 # Caddie — command workspace
@@ -19,7 +19,9 @@ caddie <module>:<command> [args]
 3. **No nested `:help`** — `js:project:help` does not exist. Use `caddie js:help`.
 4. **No invented shortcuts** — `js:build`, `js:dev`, `js:start` are **wrong**. Use `js:project:build`, `js:project:serve`, `js:package:run <script>`.
 5. **Prefer caddie** when a listed command matches the task; **fall back explicitly** to native tools when caddie cannot load.
-6. **Agent shells** — Use **`caddie agent:exec`** for any module (JS, Rust, Python, git, …). Do not use internal install paths.
+6. **Agent shells** — Use **`caddie agent:exec`** for any module (JS, Rust, Python, git, …). Never use `~/.caddie_modules/bin/caddie-agent-exec` or other internal install paths.
+7. **Exit codes** — Treat non-zero exit from `caddie agent:exec` as command failure; do not assume success from output alone.
+8. **Node version** — Each `agent:exec` starts a fresh subprocess. Pin Node with a project **`.nvmrc`** (honored automatically), not a prior `js:use` in another invocation.
 
 ## Agent / Codex shells (all modules)
 
@@ -51,4 +53,4 @@ If `caddie agent:exec` fails, use native project commands (`npm test`, etc.) and
 
 ## Skill updates
 
-After the user upgrades caddie: `caddie skill:update`.
+After the user upgrades caddie from the caddie.sh repo: **`make install`**, `caddie reload`, then `caddie skill:update`.

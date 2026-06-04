@@ -59,7 +59,10 @@ caddie agent:exec js:project:test
 caddie agent:exec js:project:build
 caddie agent:exec js:project:serve
 caddie agent:exec js:package:run <script>
+caddie agent:exec js:package:run typecheck -- --incremental false
 ```
+
+Pass npm script arguments after `--`. Each `agent:exec` is a new subprocess — use **`.nvmrc`** for Node version (not a separate `js:use` call). Check the exit code; failures must not be treated as success.
 
 ## When to use caddie vs direct commands
 

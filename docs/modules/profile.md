@@ -39,7 +39,7 @@ Source caddie-managed custom snippets when they exist:
 caddie profile:custom:source
 ```
 
-Use this after `path:add` or `profile:add-line` to pick up new exports in the **current** shell. New terminals load the custom files automatically when `~/.bash_profile` / `~/.bashrc` were installed from caddie (`make install` / `make install-dot`).
+Use this after `path:add` or `profile:add-line` to pick up new exports in the **current** shell. New terminals load the custom files automatically when `~/.bash_profile` / `~/.bashrc` were installed from caddie via **`make install`**.
 
 ### PATH management
 
