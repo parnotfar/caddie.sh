@@ -200,6 +200,7 @@ caddie reload
 
 **What it does:**
 - Sources `~/.bash_profile` to reload all configurations
+- Re-sources `~/.caddie_modules/.caddie_cli` (clears `CADDIE_CLI_LOADED` so CLI helpers and colors refresh in the current shell)
 - Refreshes environment variables and module loading
 - Provides instant recovery from configuration changes
 - Essential for developers making changes to caddie modules
@@ -219,6 +220,52 @@ caddie reload
 **Requirements:**
 - Must be run from a shell that has caddie loaded
 - Requires `~/.bash_profile` to be properly configured
+
+### Agent and automation
+
+These commands support **all installed modules** (`js`, `python`, `rust`, `ruby`, `git`, `github`, `core`, …). They are not JavaScript-specific.
+
+#### `caddie agent:exec <command> [args...]`
+
+Run any caddie command in a clean Bash 4+ subprocess. Use in agent/Codex/CI shells where the parent environment has inherited function noise, missing PATH, or fails to load caddie.
+
+```bash
+# Discover commands
+caddie agent:exec core:module:commands js
+caddie agent:exec core:module:commands rust
+caddie agent:exec core:module:commands python
+
+# Run workflows
+caddie agent:exec js:project:test
+caddie agent:exec rust:test:unit
+caddie agent:exec python:test
+caddie agent:exec git:gacp "Update docs"
+caddie agent:exec core:lint modules/dot_caddie_core
+```
+
+- **`caddie core:agent:exec`** — equivalent alias when caddie is already loaded in the parent shell.
+- **`~/bin/caddie`** — public entry point; intercepts `agent:exec` before sourcing the full environment in the parent process.
+- Do **not** point agents at internal `~/.caddie_modules/bin/` install paths.
+
+When the parent shell loads caddie normally, use `caddie <module>:<command>` directly without `agent:exec`.
+
+#### `caddie core:module:commands <module>`
+
+Print the authoritative command list for a module, one command per line (machine-readable). In agent shells, run via `caddie agent:exec core:module:commands <module>`.
+
+```bash
+caddie core:module:commands js
+caddie agent:exec core:module:commands git
+```
+
+**Use cases:**
+- Codex, Cursor, or other agents with broken inherited shell state
+- Discovering authoritative commands before running a workflow (`core:module:commands`)
+- Running any module command when `caddie` fails to load in the parent shell
+
+**Requirements:**
+- `make install` (installs `~/bin/caddie` and refreshes modules)
+- Bash 4+ in the subprocess (Homebrew bash on macOS)
 
 ## Linting
 

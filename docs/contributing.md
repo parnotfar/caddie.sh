@@ -69,9 +69,9 @@ This structure makes it easy to:
    make setup-dev
    ```
 
-4. **Install Caddie.sh locally**:
+4. **Install Caddie.sh locally** (contributors hacking on caddie may use `make install-dot` for faster iteration; **`make install`** is recommended for first setup):
    ```bash
-   make install-dot
+   make install
    source ~/.bash_profile
    ```
 
@@ -80,6 +80,23 @@ This structure makes it easy to:
    caddie --version
    caddie help
    ```
+
+6. **Install the agent skill** (recommended for AI-assisted work on this repo):
+   ```bash
+   caddie skill:install:all
+   caddie skill:audit
+   ```
+
+## Agent skill package
+
+Release-visible changes should keep the shipped skill in sync with caddie:
+
+1. Bump `dot_caddie_version` and `RELEASE_NOTES.md`.
+2. Set `skills/caddie/SKILL.md` frontmatter `caddie-version` to the same value as `CADDIE_SH_VERSION`.
+3. Update `skills/caddie/SKILL.md` and `skills/caddie/references/using-caddie.md` when **user-facing command usage** for agents changes (not caddie development rules — see `AGENTS.md` and `docs/caddie-repo-agent-guide.md`).
+4. Run **`make install`**, `caddie reload`, and `caddie skill:update` before release. Use `make install-dot` only for quick local module iteration while developing caddie.
+
+The canonical install path is `~/.caddie_modules/skills/caddie`. User installs are symlinks via `caddie skill:install:*`. See **[Skill Module](modules/skill.md)** and root **`AGENTS.md`**.
 
 ## Development Workflow
 
@@ -203,7 +220,9 @@ git commit -m "style: format shell scripts with consistent indentation"
 
 ## Adding Tab Completion for New Commands
 
-Caddie.sh uses a flat command structure where all commands (like `help`, `python:lint`, `core:set:home`, `go:home`) are treated as equal options. Tab completion is handled centrally in the `_caddie_completion` function in `dot_caddie`.
+Prefer **`caddie_<module>_commands()`** in your module (or `caddie_completion_register` at module load). Caddie discovers completions during module loading—avoid editing `_caddie_completion` directly when possible.
+
+Caddie.sh uses a flat command structure where all commands (like `help`, `python:lint`, `core:set:home`, `go:home`) are treated as equal options. Tab completion is handled centrally in the `_caddie_completion` function in `dot_caddie` (with per-module fallbacks in the module loader).
 
 ### How Completion Works
 
@@ -509,7 +528,7 @@ function caddie_module_command() {
 
 ### Manual Testing
 
-1. **Install your changes**:
+1. **Install your changes** (use `make install-dot` for fast iteration while developing caddie; **`make install`** before release):
    ```bash
    make install-dot
    source ~/.bash_profile

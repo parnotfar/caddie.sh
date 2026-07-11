@@ -1,0 +1,4 @@
+interface:
+  display_name: "Caddie"
+  short_description: "Consistent dev commands via caddie modules"
+  default_prompt: "Skill is usage guidance only. Discover commands with caddie agent:exec core:module:commands <module>. Run tasks with caddie agent:exec module:command. Prefer js:project:* not js:build/js:dev. Never use internal ~/.caddie_modules paths."

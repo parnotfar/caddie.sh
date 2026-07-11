@@ -28,6 +28,9 @@ make your coding experience smooth and efficient.
 - **Cross-Platform**: Multi-language project templates and tools
 - **macOS Utilities**: Screenshot archiving and cleanup helpers
 - **Git Workflow**: Branch management, pull request creation, and GitHub integration
+- **Profile Snippets**: Source standard or caddie custom Bash profiles (`caddie profile:source`, `caddie profile:custom:source`); idempotent PATH and export lines (`caddie path:add`, `caddie profile:add-line`)
+- **Agent Skill**: Install and update the caddie Cursor/Codex skill (`caddie skill:install:all`, `caddie skill:update`, `caddie skill:audit`)
+- **Agent execution**: Run any module command from Codex/automation shells via `caddie agent:exec` (pairs with `caddie core:module:commands` for discovery)
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Claude Code Integration**: Onboarding and CLI workflows for Claude Code teams
 - **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
@@ -56,9 +59,11 @@ make your coding experience smooth and efficient.
 git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 
-# Run the installer
+# Run the full installer (includes Homebrew and toolchain updates)
 make install
 ```
+
+For routine upgrades after `git pull`, run **`make install`** again — on **`main`** it pulls from `origin/main` first (see [Installation Guide](docs/installation.md#updating)).
 
 ### First Use
 
@@ -70,18 +75,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-9.1.0 (update this for each release)
+caddie  # prompt shows as caddie-9.3.7 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-9.2.0 rust  # prompt switches to caddie[rust]-9.2.0
-caddie[rust]-9.2.0 back  # exits scope (also accepts `up` or `..`)
+caddie-9.3.7 rust  # prompt switches to caddie[rust]-9.3.6
+caddie[rust]-9.3.6 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-9.2.0 `ls -la`
-caddie-9.2.0 shell git status  # one-off shell command
+caddie-9.3.7 `ls -la`
+caddie-9.3.7 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-9.2.0 rust build
+caddie-9.3.7 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 
@@ -113,6 +118,8 @@ caddie-9.2.0 rust build
 - **[Claude Module](docs/modules/claude.md)** - Claude Code onboarding and CLI helpers
 - **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
 - **[Git Module](docs/modules/git.md)** - Enhanced git workflows
+- **[Profile Module](docs/modules/profile.md)** - Custom Bash profile snippets (PATH, exports)
+- **[Skill Module](docs/modules/skill.md)** - Agent skill install, update, and audit
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
 - External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately
 

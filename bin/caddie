@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Caddie public entry point — install to ~/bin/caddie
+# Runs agent commands in a clean subprocess without loading caddie in the parent shell.
+
+_caddie_run_agent_exec() {
+    local agent_exec="${HOME}/.caddie_modules/bin/caddie-agent-exec"
+    local status=0
+
+    if [ ! -x "$agent_exec" ]; then
+        printf '%s\n' "Error: caddie agent bootstrap not found (run make install)" >&2
+        return 1
+    fi
+
+    "$agent_exec" "$@"
+    status=$?
+    return "$status"
+}
+
+if [ "$#" -gt 0 ]; then
+    case "$1" in
+        agent:exec|core:agent:exec)
+            shift
+            _caddie_run_agent_exec "$@"
+            exit $?
+            ;;
+    esac
+fi
+
+caddie_main="${HOME}/.caddie.sh"
+if [ ! -f "$caddie_main" ]; then
+    printf '%s\n' "Error: Caddie not found at ${caddie_main} (run make install)" >&2
+    exit 1
+fi
+
+# shellcheck disable=SC1090
+source "$caddie_main"
+caddie "$@"
+exit $?

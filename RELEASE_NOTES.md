@@ -1,5 +1,193 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.7 - JS agent execution fixes
+
+**Release Date:** June 2, 2026
+
+### Bug fixes
+
+- **`js:package:run` exit codes**: npm script failures now propagate non-zero exit status (previously always returned 0).
+- **`js:project:*` / `js:framework:*`**: test, build, serve, audit, and related npm invocations now return the underlying command exit code.
+- **`js:package:run` arguments**: Extra args after `--` are forwarded to npm (e.g. `caddie agent:exec js:package:run typecheck -- --incremental false`).
+- **`~/bin/caddie`**: Non-agent commands now exit with the caddie command status.
+- **`caddie()` dispatch**: Module command return codes propagate correctly.
+
+### Agent / JS environment
+
+- **`caddie-agent-exec` / `js` module**: Automatically run `nvm use` when `.nvmrc` is present (each `agent:exec` is a fresh subprocess — `js:use` in a prior invocation does not carry over).
+- **Agent skill**: Documents exit-code checking, `.nvmrc` for Node version, npm arg forwarding, and explicit ban on internal wrapper paths.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+```
+
+---
+
+## Version 9.3.6 - Install workflow and documentation
+
+**Release Date:** June 2, 2026
+
+### New features
+
+- **`make install` pulls on `main`**: When run from the caddie.sh repo on branch **`main`**, `make install` runs `git pull --ff-only origin main` before reinstalling dot files, modules, and toolchains. Skipped on other branches, outside a git repo, or when pull cannot fast-forward.
+
+### Documentation
+
+- **`make install` vs `make install-dot`**: User-facing docs now recommend **`make install`** for first install and routine upgrades (includes Homebrew and toolchain updates). **`make install-dot`** is documented as **caddie development only** — fast module/dot reinstall without full toolchain setup.
+- **Agent skill**: Usage-only skill content; upgrade flow documented as `make install`, `caddie reload`, `caddie skill:update`.
+- **`caddie agent:exec`**: Documented as module-agnostic (all installed modules, not JavaScript-only).
+
+### Usage
+
+```bash
+cd caddie.sh   # on main: make install pulls origin/main first
+make install
+caddie reload
+caddie skill:update
+```
+
+---
+
+## Version 9.3.5 - Agent execution (`caddie agent:exec`)
+
+**Release Date:** June 2, 2026
+
+### New features
+
+- **`caddie agent:exec`**: Public entry point (via `~/bin/caddie`) to run **any** `caddie <module>:<command>` in a clean Bash 4+ subprocess. Module-agnostic — works for `js`, `python`, `rust`, `ruby`, `git`, `github`, `core`, and every other installed module. Intended for Codex, Cursor agents, and CI shells with inherited function noise or incomplete PATH.
+- **`caddie core:module:commands <module>`**: Machine-readable command list (one per line) for agent discovery.
+- **`~/bin/caddie`**: Installed by **`make install`**; intercepts `agent:exec` before loading caddie in the parent shell.
+- **`caddie_js_commands()`**: Authoritative JS command list; replaces stale hardcoded `js:build` / `js:dev` completion entries.
+- **Agent skill (usage-only)**: Shipped skill teaches `caddie agent:exec` and command discovery; caddie.sh development rules stay in `AGENTS.md` / `docs/caddie-repo-agent-guide.md`.
+
+### Agent / automation usage
+
+```bash
+# Discover commands (any module)
+caddie agent:exec core:module:commands js
+caddie agent:exec core:module:commands rust
+caddie agent:exec core:module:commands python
+
+# Run workflows
+caddie agent:exec js:project:test
+caddie agent:exec rust:test:unit
+caddie agent:exec git:status
+caddie agent:exec core:lint modules/dot_caddie_js
+```
+
+When the parent shell loads caddie normally, use `caddie <module>:<command>` directly. `caddie core:agent:exec` is an alias for `caddie agent:exec`.
+
+### Bug fixes
+
+- **Custom profile persistence**: Installed `~/.bash_profile` / `~/.bashrc` source caddie custom snippet files at shell startup.
+- **`caddie reload` refreshes CLI module**: Unsets `CADDIE_CLI_LOADED` before re-sourcing so `.caddie_cli` updates apply in the current shell.
+- **Skill registry**: Per-path project install IDs; `skill:update` syncs install line versions; audit covers Codex/Cursor user paths and directory-copy migration.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+caddie agent:exec core:module:commands js
+```
+
+---
+
+## Version 9.3.4 - Agent skill install and audit
+
+**Release Date:** May 5, 2026
+
+### New features
+
+- **`skill` module**: Install and audit the caddie agent skill for Cursor and Codex.
+- **Canonical + symlinks**: Skill tree at `~/.caddie_modules/skills/caddie`; installs link there for one-step updates.
+- **Version model**: Skill version matches `CADDIE_SH_VERSION` (update both on every release).
+- **Commands**: `skill:install` (project `.cursor/skills/caddie`), `skill:install:cursor`, `skill:install:codex`, `skill:install:all`, `skill:update`, `skill:audit`, `skill:info`.
+- **Registry**: `~/.caddie_data/skill-installs.registry` tracks install paths for audit.
+- **Shipped package**: Repo `skills/caddie/` installed by **`make install`**.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:install:all
+caddie skill:audit
+```
+
+---
+
+## Version 9.3.3 - Profile source commands
+
+**Release Date:** May 5, 2026
+
+### New features
+
+- **`caddie profile:source`**: Sources `~/.bash_profile` and `~/.bashrc` when present.
+- **`caddie profile:custom:source`**: Sources `~/.bash_profile-caddie-custom` and `~/.bashrc-caddie-custom` when present.
+
+### Breaking changes
+
+- **Removed `caddie git:custom:source`**: Profile loading is no longer under the git module. Use `caddie profile:custom:source` instead.
+
+---
+
+## Version 9.3.2 - Custom profile PATH helpers
+
+**Release Date:** May 5, 2026
+
+### New features
+
+- **`profile` module**: Append idempotent lines to caddie-managed Bash profile snippets without hand-editing shell files.
+- **`caddie path:add <path> [--profile caddie-custom]`**: Writes `export PATH="<path>:$PATH"` to `~/.bash_profile-caddie-custom` by default. Skips duplicates when the path is already present.
+- **`caddie path:add:bashrc` / `caddie path:add:profile`**: Target `~/.bashrc-caddie-custom` or an explicit profile name (`bash-profile` only when requested).
+- **`caddie profile:add-line`**: Lower-level idempotent append for arbitrary export lines.
+- **Next steps**: After adding, caddie prints `caddie profile:custom:source` or open a new terminal.
+
+### Usage example (Postgres)
+
+```bash
+caddie path:add "$(brew --prefix postgresql@16)/bin" --profile caddie-custom
+caddie profile:custom:source
+```
+
+---
+
+## Version 9.3.1 - Prompt GitHub account display
+
+**Release Date:** May 5, 2026
+
+### Bug fixes
+
+- **PS1 GitHub label**: When `CADDIE_GITHUB_ACCOUNT` is set (`caddie github:account:set`), the prompt `[gh:…]` segment now shows that configured account instead of always mirroring `gh auth status`. This keeps the prompt aligned with Caddie’s clone and repo URL behavior when the stored org or user differs from the GitHub CLI login.
+
+---
+
+## Version 9.3.0 - Faster Shell Startup
+
+**Release Date:** May 5, 2026
+
+### Shell startup performance
+
+- **Single core load**: `dot_caddie` already sources `.caddie_core` before the module discovery loop. The loader now registers `core` in the module list without sourcing that file again, avoiding duplicate parse and export work.
+- **Idempotent CLI module**: `.caddie_cli` sets `CADDIE_CLI_LOADED` after the first successful load and returns immediately when sourced again. Nested module sources no longer re-run the full CLI parser or repeated `tput` initialization for colors.
+
+### Git module
+
+- **No prompt work at module load**: `dot_caddie_git` no longer sources `~/.caddie_prompt.sh` or calls `set_caddie_prompt` during load (those remain driven once from `dot_caddie` / `PROMPT_COMMAND`). This avoids double-loading the prompt and avoids an extra full prompt rebuild during startup.
+- **Custom profile snippets**: No longer sourced at git module load (startup performance). As of 9.3.4, caddie-installed `~/.bash_profile` / `~/.bashrc` source the custom snippet files at shell startup; use `caddie profile:custom:source` for the current shell only.
+
+### Roadmap (9.4 spike)
+
+- Lazy or staged module loading, static completion manifests, and optional prompt optimizations (for example cheaper behavior outside a git repo) will be explored as follow-up work after measuring real-world gains from 9.3.0.
+
+---
+
 ## Version 9.2.0 - Codex & Claude Code Support
 
 **Release Date:** February 27, 2026

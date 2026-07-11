@@ -4,7 +4,7 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
 
 ## Getting Started
 
-- **[Installation Guide](installation.md)** - Complete setup instructions
+- **[Installation Guide](installation.md)** - Complete setup instructions (`make install` for installs and upgrades; `make install-dot` is for caddie development only)
 - **[User Guide](user-guide.md)** - How to use Caddie.sh effectively
 
 ## 🚀 Launch & Community
@@ -20,7 +20,7 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
 ## Module Reference
 
 - **[Module Documentation](modules/)** - Detailed information for each module
-  - [Core Module](modules/core.md) - Basic functions and debug system
+  - [Core Module](modules/core.md) - Basic functions, debug system, **`caddie agent:exec`**, and **`caddie core:module:commands`**
   - [Python Module](modules/python.md) - Python environment management
   - [Rust Module](modules/rust.md) - Rust development tools
   - [Ruby Module](modules/ruby.md) - Ruby environment management
@@ -29,11 +29,14 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
   - [Git Module](modules/git.md) - Enhanced git workflows
+  - [GitHub Module](modules/github.md) - GitHub account and repository management
+  - [Profile Module](modules/profile.md) - Bash profile sourcing and custom PATH snippets
+  - [Skill Module](modules/skill.md) - Agent skill install, update, and audit
   - Optional ecosystem modules (e.g. [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
 
-### Shared Executables
+### Shared executables
 
-Reusable helper scripts live in the repository `bin/` directory. The installer copies this folder to `~/.caddie_modules/bin`, giving every module a predictable place to locate shared tools. When adding a new cross-cutting utility, drop the executable into `bin/`, ensure it has a shebang plus execute permissions, and invoke it from your module or dotfile.
+The installer copies repository `bin/` to `~/.caddie_modules/bin` and installs **`~/bin/caddie`** as the public CLI entry point. The `caddie agent:exec` subcommand (handled by `~/bin/caddie`) runs any module command in a clean Bash subprocess — useful for Codex and other automation shells. See **[Core Module — Agent and automation](modules/core.md#agent-and-automation)**.
 
 ## Quick Reference
 
@@ -54,6 +57,10 @@ caddie core:set:home ~/projects
 
 # Navigate to caddie home
 caddie go:home
+
+# Install agent skill (Cursor / Codex)
+caddie skill:install:all
+caddie skill:audit
 ```
 
 ### Module Help
@@ -62,6 +69,8 @@ caddie go:home
 # Get help for specific module
 caddie python:help
 caddie rust:help
+caddie profile:help
+caddie skill:help
 caddie core:help
 ```
 

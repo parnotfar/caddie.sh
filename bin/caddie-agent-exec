@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Run caddie in a clean Bash subprocess for agent/automation shells.
+# Usage: caddie-agent-exec js:project:test
+#        caddie-agent-exec core:module:commands js
+
+set -euo pipefail
+
+if [ "$#" -eq 0 ]; then
+    printf '%s\n' "Usage: caddie-agent-exec <module:command> [args...]" >&2
+    printf '%s\n' "Example: caddie-agent-exec js:project:test" >&2
+    exit 1
+fi
+
+bash_bin=""
+for candidate in /opt/homebrew/bin/bash /usr/local/bin/bash "$(command -v bash 2>/dev/null || true)"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+        bash_bin="$candidate"
+        break
+    fi
+done
+
+if [ -z "$bash_bin" ]; then
+    printf '%s\n' "Error: bash not found" >&2
+    exit 1
+fi
+
+bash_major="$("$bash_bin" -c 'echo "${BASH_VERSINFO[0]}"')"
+if [ "${bash_major:-0}" -lt 4 ]; then
+    printf '%s\n' "Error: caddie requires Bash 4+ (found ${bash_bin})" >&2
+    exit 1
+fi
+
+home_dir="${HOME:-}"
+caddie_entry="${home_dir}/.caddie.sh"
+
+if [ -z "$home_dir" ] || [ ! -f "$caddie_entry" ]; then
+    printf '%s\n' "Error: ${caddie_entry} not found" >&2
+    exit 1
+fi
+
+exec "$bash_bin" --noprofile --norc -c '
+    export HOME="'"$home_dir"'"
+    export TERM="'"${TERM:-dumb}"'"
+    export PATH="'"${PATH:-/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin}"'"
+    export NVM_DIR="'"${NVM_DIR:-$home_dir/.nvm}"'"
+
+    unset CADDIE_CLI_LOADED
+
+    if [ -s "${NVM_DIR}/nvm.sh" ]; then
+        # shellcheck disable=SC1091
+        . "${NVM_DIR}/nvm.sh"
+    fi
+
+    if [ -f .nvmrc ] && command -v nvm >/dev/null 2>&1; then
+        nvm use >/dev/null 2>&1 || true
+    fi
+
+    if [ -f "${HOME}/.bash_profile-caddie-custom" ]; then
+        # shellcheck disable=SC1090
+        . "${HOME}/.bash_profile-caddie-custom"
+    fi
+
+    # shellcheck disable=SC1090
+    source "'"$caddie_entry"'"
+    caddie "$@"
+' _ "$@"

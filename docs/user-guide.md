@@ -49,6 +49,9 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`mac`**: macOS workflow helpers and utilities
 - **`cursor`**: IDE integration and AI-powered development
 - **`git`**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
+- **`github`**: GitHub account and repository management
+- **`profile`**: Bash profile sourcing and caddie-managed custom snippets (`path:add`, `profile:custom:source`)
+- **`skill`**: Install and audit the caddie agent skill for Cursor and Codex
 - **`cli`**: Color utilities and formatting functions
 
 ### Data Structures
@@ -634,6 +637,63 @@ caddie cursor:ext:update
 caddie cursor:ext:sync
 ```
 
+### Profile and Shell Snippets
+
+Use the profile module to source Bash files and append idempotent lines to caddie-managed custom snippets (without hand-editing `~/.bash_profile` for every project setup doc).
+
+#### Load profiles
+
+```bash
+# Standard login/interactive files
+caddie profile:source
+
+# Caddie custom snippets (~/.bash_profile-caddie-custom, ~/.bashrc-caddie-custom)
+caddie profile:custom:source
+```
+
+#### PATH and exports
+
+```bash
+# Append PATH to ~/.bash_profile-caddie-custom (default)
+caddie path:add "$(brew --prefix postgresql@16)/bin"
+caddie profile:custom:source
+
+# Append any line idempotently
+caddie profile:add-line 'export EDITOR=vim'
+```
+
+See **[Profile Module](modules/profile.md)** for all targets and subcommands.
+
+### Agent Skill (Cursor / Codex)
+
+Install the caddie skill so agents use **`caddie <module>:<command>`** consistently across projects. Skill version matches `caddie --version`.
+
+```bash
+# User-level (Cursor + Codex)
+caddie skill:install:all
+caddie skill:audit
+
+# Project-local (.cursor/skills/caddie in current directory)
+cd ~/work/my-project
+caddie skill:install
+
+# After upgrading caddie (from caddie.sh repo)
+make install
+caddie reload
+caddie skill:update
+```
+
+**Agent / Codex shells:** When the parent shell cannot load caddie, use **`caddie agent:exec`** for any module — not JavaScript-only:
+
+```bash
+caddie agent:exec core:module:commands python
+caddie agent:exec rust:test:unit
+caddie agent:exec js:project:build
+caddie agent:exec git:gacp "message"
+```
+
+See **[Skill Module](modules/skill.md)** and **[Core Module — Agent and automation](modules/core.md#agent-and-automation)**.
+
 ### CLI Utilities
 
 The CLI module provides sophisticated color output and formatting functions for creating better command-line interfaces:
@@ -734,11 +794,16 @@ source ~/.caddie_prompt.sh
 
 #### Environment Variables
 
-Set custom environment variables:
+Prefer caddie-managed custom profile files for exports and PATH (see [Profile Module](modules/profile.md)):
 
 ```bash
-# Add to your ~/.bash_profile
-export CADDIE_CUSTOM_VAR="value"
+caddie profile:add-line 'export CADDIE_CUSTOM_VAR="value"'
+caddie profile:custom:source
+```
+
+For one-off debugging in the current shell:
+
+```bash
 export CADDIE_DEBUG=1
 ```
 
@@ -782,7 +847,7 @@ Use Caddie.sh in your CI/CD pipelines:
   run: |
     git clone https://github.com/parnotfar/caddie.sh.git
     cd caddie.sh
-    make install-dot
+    make install
     source ~/.bash_profile
     caddie python:create ci-env
     caddie python:activate ci-env
@@ -938,6 +1003,8 @@ caddie help
 
 # Module help
 caddie python:help
+caddie profile:help
+caddie skill:help
 
 # Command help
 caddie core:help
@@ -951,6 +1018,8 @@ Each module exposes an `info` command for quick environment summaries.
 caddie core:info
 caddie python:info
 caddie git:info
+caddie profile:info
+caddie skill:info
 ```
 
 ### External Resources

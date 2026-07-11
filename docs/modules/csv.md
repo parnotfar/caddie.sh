@@ -942,7 +942,7 @@ caddie csv:query "SELECT * FROM df LIMIT 1"
 
 ```bash
 cd /path/to/caddie.sh
-make install-dot
+make install
 caddie reload
 ```
 

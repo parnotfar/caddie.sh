@@ -1,6 +1,12 @@
 # Caddie.sh CLI Color Module
 # This provides reliable color definitions and CLI utilities for the prompt system
 
+# Idempotent load: every module sources this file during one shell init; skip
+# re-parse and repeated tput calls. caddie reload unsets CADDIE_CLI_LOADED first.
+if [[ -n "${CADDIE_CLI_LOADED:-}" ]]; then
+  return 0
+fi
+
 # Common colors for reference
 # Note: These use plain ANSI codes (no \[ \]) for regular output, not PS1 prompts
 export BOLD="$(tput bold)"
@@ -398,3 +404,6 @@ export -f caddie_cli_red_bold caddie_cli_green_bold caddie_cli_yellow_bold caddi
 export -f caddie_cli_usage caddie_cli_installed caddie_cli_complete caddie_cli_title caddie_cli_colorlist caddie_cli_help caddie_cli_info
 export -f caddie_cli_check caddie_cli_x caddie_cli_arrow caddie_cli_folder caddie_cli_beer caddie_cli_snake caddie_cli_crab caddie_cli_trash caddie_cli_rotate caddie_cli_chart caddie_cli_magnify caddie_cli_save caddie_cli_warning caddie_cli_debug
 export -f caddie_cli_wrench caddie_cli_whale caddie_cli_package caddie_cli_git caddie_cli_rocket caddie_cli_thought caddie_cli_lightbulb caddie_cli_magnifying_glass caddie_cli_blank caddie_cli_indent
+
+CADDIE_CLI_LOADED=1
+export CADDIE_CLI_LOADED

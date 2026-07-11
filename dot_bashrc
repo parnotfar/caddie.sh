@@ -177,3 +177,9 @@ function __brew_completion() {
 }
 
 complete -F __brew_completion brew
+
+# Caddie-managed snippets for non-login shells (caddie path:add:bashrc / profile:add-line:bashrc)
+if [ -f "$HOME/.bashrc-caddie-custom" ]; then
+    # shellcheck disable=SC1090
+    . "$HOME/.bashrc-caddie-custom"
+fi

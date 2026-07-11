@@ -6,6 +6,19 @@
 # Source CLI module for formatting
 source "$HOME/.caddie_modules/.caddie_cli"
 
+# Load NVM and honor .nvmrc (each agent:exec subprocess starts fresh)
+function _caddie_js_ensure_nvm() {
+    export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+    if [ -s "${NVM_DIR}/nvm.sh" ]; then
+        # shellcheck disable=SC1091
+        . "${NVM_DIR}/nvm.sh"
+    fi
+    if [ -f ".nvmrc" ] && command -v nvm >/dev/null 2>&1; then
+        nvm use >/dev/null 2>&1 || return 0
+    fi
+    return 0
+}
+
 # Register help information
 function caddie_js_description() {
     # caddie:lint:disable
@@ -225,7 +238,8 @@ function caddie_js_project_install() {
     fi
     
     caddie cli:title "Installing project dependencies..."
-    
+    _caddie_js_ensure_nvm
+
     if [ -f "yarn.lock" ]; then
         yarn install
     elif [ -f "pnpm-lock.yaml" ]; then
@@ -251,7 +265,8 @@ function caddie_js_project_update() {
     fi
     
     caddie cli:title "Updating project dependencies..."
-    
+    _caddie_js_ensure_nvm
+
     if [ -f "yarn.lock" ]; then
         yarn upgrade
     elif [ -f "pnpm-lock.yaml" ]; then
@@ -276,17 +291,22 @@ function caddie_js_project_test() {
         return 1
     fi
     
+    local status=0
+
+    _caddie_js_ensure_nvm
     caddie cli:title "Running Node.js tests..."
-    
+
     if [ -f "package.json" ] && grep -q '"test"' package.json; then
         npm test
+        status=$?
     elif [ -d "tests" ]; then
         npx jest
+        status=$?
     else
         caddie cli:warning "No tests found. Create tests in the 'tests' directory"
         return 1
     fi
-    return 0
+    return "$status"
 }
 
 # Function to build Node.js project
@@ -296,21 +316,26 @@ function caddie_js_project_build() {
         return 1
     fi
     
+    local status=0
+
+    _caddie_js_ensure_nvm
     caddie cli:title "Building Node.js project..."
-    
-    # Install dependencies
-    caddie_js_project_install
-    
-    # Run tests
+
+    caddie_js_project_install || return $?
+
     if [ -d "tests" ]; then
-        caddie_js_project_test
+        caddie_js_project_test || return $?
     fi
-    
-    # Run linting
+
     if grep -q '"lint"' package.json; then
         npm run lint
+        status=$?
+        if [ "$status" -ne 0 ]; then
+            caddie cli:x "Lint failed"
+            return "$status"
+        fi
     fi
-    
+
     caddie cli:check "Node.js project built successfully"
     return 0
 }
@@ -322,20 +347,25 @@ function caddie_js_project_serve() {
         return 1
     fi
     
+    local status=0
+
+    _caddie_js_ensure_nvm
     caddie cli:title "Starting Node.js application..."
-    
-    # Check for start script
+
     if grep -q '"start"' package.json; then
         npm start
+        status=$?
     elif grep -q '"dev"' package.json; then
         npm run dev
+        status=$?
     elif [ -f "src/index.js" ]; then
         node src/index.js
+        status=$?
     else
         caddie cli:warning "No start script found. Add 'start' or 'dev' script to package.json"
         return 1
     fi
-    return 0
+    return "$status"
 }
 
 # Function to install npm package
@@ -418,29 +448,45 @@ function caddie_js_package_outdated() {
 
 # Function to audit package security
 function caddie_js_package_audit() {
+    local status=0
+
+    _caddie_js_ensure_nvm
     caddie cli:title "Auditing package security..."
     npm audit
-    return 0
+    status=$?
+    return "$status"
 }
 
 # Function to run npm script
 function caddie_js_package_run() {
     local script="$1"
-    
+    local status=0
+
     if [ -z "$script" ]; then
         caddie cli:red "Error: Please provide a script name"
-        caddie cli:usage "caddie js:package:run <script>"
+        caddie cli:usage "caddie js:package:run <script> [-- npm-args...]"
         return 1
     fi
-    
+
     if [ ! -f "package.json" ]; then
         caddie cli:red "Error: Not in a Node.js project directory (package.json not found)"
         return 1
     fi
-    
+
+    _caddie_js_ensure_nvm
+    shift || true
+    if [ "${1:-}" = "--" ]; then
+        shift
+    fi
+
     caddie cli:title "Running script: $script"
-    npm run "$script"
-    return 0
+    if [ "$#" -gt 0 ]; then
+        npm run "$script" -- "$@"
+    else
+        npm run "$script"
+    fi
+    status=$?
+    return "$status"
 }
 
 # Function to publish npm package
@@ -558,20 +604,25 @@ function caddie_js_framework_serve() {
         return 1
     fi
     
+    local status=0
+
+    _caddie_js_ensure_nvm
     caddie cli:title "Starting framework application..."
-    
-    # Check for common framework scripts
+
     if grep -q '"dev"' package.json; then
         npm run dev
+        status=$?
     elif grep -q '"start"' package.json; then
         npm start
+        status=$?
     elif grep -q '"serve"' package.json; then
         npm run serve
+        status=$?
     else
         caddie cli:warning "No development script found. Check package.json for available scripts"
         return 1
     fi
-    return 0
+    return "$status"
 }
 
 # Function to build framework application
@@ -581,16 +632,19 @@ function caddie_js_framework_build() {
         return 1
     fi
     
+    local status=0
+
+    _caddie_js_ensure_nvm
     caddie cli:title "Building framework application..."
-    
-    # Check for build script
+
     if grep -q '"build"' package.json; then
         npm run build
+        status=$?
     else
         caddie cli:warning "No build script found. Add 'build' script to package.json"
         return 1
     fi
-    return 0
+    return "$status"
 }
 
 function caddie_js_info() {
@@ -671,7 +725,7 @@ function caddie_js_help() {
     caddie cli:indent "package:update           - Update packages"
     caddie cli:indent "package:outdated         - Check for outdated packages"
     caddie cli:indent "package:audit            - Security audit"
-    caddie cli:indent "package:run <script>     - Run npm script"
+    caddie cli:indent "package:run <script>     - Run npm script (optional args after --)"
     caddie cli:indent "package:publish          - Publish package to npm"
     caddie cli:blank
     caddie cli:title "Framework Support:"
@@ -685,6 +739,13 @@ function caddie_js_help() {
     caddie cli:indent "caddie js:project:init my-app"
     caddie cli:indent "caddie js:framework:create react my-react-app"
     caddie cli:blank
+    return 0
+}
+
+function caddie_js_commands() {
+    # caddie:lint:disable
+    printf '%s\n' 'js:info js:setup js:install js:use js:list js:version js:help js:project:init js:project:install js:project:update js:project:test js:project:build js:project:serve js:package:install js:package:uninstall js:package:list js:package:update js:package:outdated js:package:audit js:package:run js:package:publish js:framework:create js:framework:serve js:framework:build'
+    # caddie:lint:enable
     return 0
 }
 
@@ -714,3 +775,4 @@ export -f caddie_js_framework_create
 export -f caddie_js_framework_serve
 export -f caddie_js_framework_build
 export -f caddie_js_version
+export -f caddie_js_commands

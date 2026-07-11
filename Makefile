@@ -13,7 +13,7 @@ WHITE := \033[0;37m
 NC := \033[0m # No Color
 
 # Default target
-.PHONY: all install help
+.PHONY: all install help pull-if-main
 .DEFAULT_GOAL := help
 .SILENT:
 
@@ -32,7 +32,7 @@ help: ## Show this help message
 	echo ""
 	echo "$(YELLOW)Usage:$(NC)"
 	echo "  make install        - Full installation (recommended)"
-	echo "  make install-dot    - Install only dot files (with backup)"
+	echo "  make install-dot    - Dot files/modules only (caddie development)"
 	echo "  make setup-dev      - Setup development environment (Homebrew, Python, Rust, Ruby deps, GitHub CLI)"
 	echo "  make setup-github   - Setup GitHub CLI only"
 	echo "  make backup-existing - Backup existing bash files only"
@@ -51,7 +51,22 @@ help: ## Show this help message
 
 all: install ## Alias for install
 
-install: check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
+pull-if-main: ## Pull origin/main when the current branch is main
+	echo "$(BLUE)🔄$(NC) Checking for caddie.sh updates..."
+	if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		echo "$(YELLOW)  →$(NC) Not a git repository; skipping git pull"; \
+	elif [ "$$(git branch --show-current 2>/dev/null)" != "main" ]; then \
+		echo "$(YELLOW)  →$(NC) Not on main (current: $$(git branch --show-current 2>/dev/null || echo unknown)); skipping git pull"; \
+	else \
+		echo "$(YELLOW)  →$(NC) On main; pulling latest from origin..."; \
+		if git pull --ff-only origin main; then \
+			echo "$(GREEN)    ✓$(NC) Repository updated"; \
+		else \
+			echo "$(YELLOW)    →$(NC) git pull skipped (local changes or non-fast-forward); installing from current tree"; \
+		fi; \
+	fi
+
+install: pull-if-main check-prerequisites install-dot setup-dev ## Complete installation of caddie.sh
 	@echo "$(GREEN)✓$(NC) Installation complete! Run 'source ~/.bash_profile' to activate."
 
 check-prerequisites: ## Check system prerequisites
@@ -146,11 +161,27 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_cli"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_debug" "$(DEST_MODULES_DIR)/.caddie_debug"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_debug"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_profile" "$(DEST_MODULES_DIR)/.caddie_profile"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_profile"
+	cp "$(SRC_MODULES_DIR)/dot_caddie_skill" "$(DEST_MODULES_DIR)/.caddie_skill"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_skill"
+	echo "$(YELLOW)  →$(NC) Installing caddie agent skill (canonical)..."
+	mkdir -p "$(DEST_MODULES_DIR)/skills"
+	rm -rf "$(DEST_MODULES_DIR)/skills/caddie"
+	cp -R skills/caddie "$(DEST_MODULES_DIR)/skills/caddie"
+	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/skills/caddie"
 	echo "$(YELLOW)  →$(NC) Installing caddie binary scripts..."
 	mkdir -p "$(DEST_MODULES_DIR)/bin"
 	if [ -d "$(CADDIE_DIR)/bin" ]; then \
 		cp "$(CADDIE_DIR)/bin"/* "$(DEST_MODULES_DIR)/bin/" 2>/dev/null || true; \
+		chmod +x "$(DEST_MODULES_DIR)/bin/"* 2>/dev/null || true; \
 		echo "$(GREEN)    ✓$(NC) Successfully installed scripts to $(DEST_MODULES_DIR)/bin"; \
+	fi
+	mkdir -p "$(HOME_DIR)/bin"
+	if [ -f "$(CADDIE_DIR)/bin/caddie" ]; then \
+		cp "$(CADDIE_DIR)/bin/caddie" "$(HOME_DIR)/bin/caddie"; \
+		chmod +x "$(HOME_DIR)/bin/caddie"; \
+		echo "$(GREEN)    ✓$(NC) Successfully installed ~/bin/caddie"; \
 	fi
 	echo "$(YELLOW)  →$(NC) Installing main caddie entry point as ~/.caddie.sh"
 	cp dot_caddie "$(HOME_DIR)/.caddie.sh"

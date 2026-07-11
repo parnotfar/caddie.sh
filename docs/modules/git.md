@@ -8,6 +8,17 @@ The Git module (`caddie git:<command>`) offers streamlined git operations with s
 
 Short git aliases in `dot_bashrc` have been removed; use `caddie git:*` commands for the supported workflows.
 
+### Shell profile snippets
+
+Git workflow commands do not load custom Bash profile files. For optional snippets in `~/.bash_profile-caddie-custom` or `~/.bashrc-caddie-custom`, use the **[Profile module](profile.md)**:
+
+```bash
+caddie path:add "$(brew --prefix some-tool)/bin"
+caddie profile:custom:source
+```
+
+To reload standard `~/.bash_profile` and `~/.bashrc` in the current shell, use `caddie profile:source`.
+
 ## Commands
 
 ### Basic Git Operations

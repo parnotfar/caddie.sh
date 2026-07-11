@@ -31,9 +31,18 @@ This guide covers installation on macOS (primary) and Linux (best effort).
    - Enter: `/opt/homebrew/bin/bash --login`
    - **Do NOT check "Run inside shell"**
 
-![Terminal Profile Configuration](terminal-profile-config.png)
+*(Terminal profile screenshot: configure “Run command” as `/opt/homebrew/bin/bash --login` without “Run inside shell”.)*
 
 This ensures you're using the latest Bash version with full `mapfile` support, which is required for Caddie.sh's tab completion functionality.
+
+## `make install` vs `make install-dot`
+
+| Target | Use when |
+|--------|----------|
+| **`make install`** | **Default for everyone.** Full install: dot files, caddie modules, Homebrew updates, and development toolchains (Python, Rust, Ruby deps, etc.). Use for first install and routine upgrades. |
+| **`make install-dot`** | **Caddie development only.** Copies dot files and modules without running Homebrew/toolchain setup. Faster iteration when hacking on caddie modules in this repository — not recommended for day-to-day upgrades. |
+
+User-facing docs and upgrade flows should say **`make install`** from the caddie.sh repo on **`main`** (pulls latest automatically), then `caddie reload` (and `caddie skill:update` when the agent skill changed).
 
 ## Installation Methods
 
@@ -58,16 +67,17 @@ This will:
 - Install Ruby build dependencies (OpenSSL, readline, libyaml, etc.) for compiling Ruby
 - Enable cross-platform Rust development for iOS, WatchOS, and Android
 
-### Method 2: Minimal Install
+### Method 2: Dot files only (caddie developers)
 
-If you only want the core Caddie.sh functionality without development tools:
+**Not for routine use.** Installs caddie dot files and modules only — skips Homebrew and toolchain setup. Use when developing caddie.sh and you need a fast reinstall loop:
 
 ```bash
-# Clone and install dot files only
-git clone https://github.com/parnotfar/caddie.sh.git
 cd caddie.sh
 make install-dot
+caddie reload
 ```
+
+For normal installs and upgrades, use **`make install`** (Method 1).
 
 ### Method 3: Development Tools Only
 
@@ -127,6 +137,27 @@ caddie help
 caddie python:create test-env
 ```
 
+### Step 5: Install the Agent Skill (Recommended)
+
+Caddie ships an agent skill for Cursor and Codex. After **`make install`**, install user-level symlinks:
+
+```bash
+caddie reload
+caddie skill:install:all
+caddie skill:audit
+```
+
+For a single repository (project-local Cursor skill):
+
+```bash
+cd /path/to/your/project
+caddie skill:install
+```
+
+See **[Skill Module](modules/skill.md)** for details. Skill version matches `caddie --version`; run `caddie skill:update` after upgrading caddie.
+
+**Codex / agent shells:** `~/bin/caddie` supports **`caddie agent:exec`** for any module (JavaScript, Rust, Python, git, …) when the parent shell cannot load caddie normally. See **[Core Module — Agent and automation](modules/core.md#agent-and-automation)**.
+
 ## Post-Installation Setup
 
 ### First-Time Configuration
@@ -165,6 +196,21 @@ caddie python:create test-env
    
    # Check for build artifacts in git
    caddie rust:git:status
+   ```
+
+6. **Custom Bash profile snippets** (Optional):
+   ```bash
+   # Add PATH for a tool without editing ~/.bash_profile by hand
+   caddie path:add "$(brew --prefix postgresql@16)/bin"
+   caddie profile:custom:source
+   ```
+
+7. **Refresh agent skill after caddie upgrades**:
+   ```bash
+   make install
+   caddie reload
+   caddie skill:update
+   caddie skill:audit
    ```
 
 ### Environment Variables
@@ -251,8 +297,8 @@ To remove specific components:
 
 ```bash
 # Remove only Caddie.sh (keep dev tools)
-make install-dot
-# Then manually remove ~/.caddie* files
+make uninstall
+# Or manually remove ~/.caddie* files
 
 # Remove only development tools
 # Manually uninstall Homebrew, Python, Rust
@@ -262,11 +308,16 @@ make install-dot
 
 ### Update Caddie.sh
 
+From your local `caddie.sh` clone on **`main`**, **`make install`** pulls the latest from `origin/main` (fast-forward only), then reinstalls dot files, modules, and toolchains:
+
 ```bash
 cd caddie.sh
-git pull origin main
-make install-dot
+make install
+caddie reload
+caddie skill:update   # when the agent skill package changed
 ```
+
+On a feature branch, `make install` skips `git pull` and installs from your current tree. To update manually on another branch: `git pull`, then `make install`.
 
 ### Update Development Tools
 
@@ -289,12 +340,11 @@ make install
 
 ### Module Selection
 
-To install only specific modules:
+To install only specific modules manually (advanced):
 
 ```bash
-# Install core and Python only
-make install-dot
-# Then manually copy desired module files
+# Prefer make install for a supported path; manual copy is for experimentation only
+# See docs/contributing.md for caddie module development
 ```
 
 ### Network Configuration
