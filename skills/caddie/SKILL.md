@@ -1,7 +1,7 @@
 ---
 name: caddie
-description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist.
-caddie-version: "9.3.7"
+description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist. Optional plugins use the same discovery pattern when installed.
+caddie-version: "9.3.9"
 ---
 
 # Caddie — command workspace
@@ -15,17 +15,38 @@ caddie <module>:<command> [args]
 ## Agent rules (read first)
 
 1. **Skill ≠ CLI** — Do not infer commands from the skill text, completion metadata, or memory. Query the installed CLI.
-2. **Discover commands** — `caddie agent:exec core:module:commands js` or `caddie js:help` (when the shell already loads caddie).
+2. **Discover commands** — `caddie agent:exec core:module:commands <module>` or `caddie <module>:help` (when the shell already loads caddie).
 3. **No nested `:help`** — `js:project:help` does not exist. Use `caddie js:help`.
 4. **No invented shortcuts** — `js:build`, `js:dev`, `js:start` are **wrong**. Use `js:project:build`, `js:project:serve`, `js:package:run <script>`.
-5. **Prefer caddie** when a listed command matches the task; **fall back explicitly** to native tools when caddie cannot load.
-6. **Agent shells** — Use **`caddie agent:exec`** for any module (JS, Rust, Python, git, …). Never use `~/.caddie_modules/bin/caddie-agent-exec` or other internal install paths.
+5. **Prefer caddie** when a listed command matches the task; **fall back explicitly** to native tools when caddie cannot load or the module is not installed.
+6. **Agent shells** — Use **`caddie agent:exec`** for any module (core or plugin). Never use `~/.caddie_modules/bin/caddie-agent-exec` or other internal install paths.
 7. **Exit codes** — Treat non-zero exit from `caddie agent:exec` as command failure; do not assume success from output alone.
 8. **Node version** — Each `agent:exec` starts a fresh subprocess. Pin Node with a project **`.nvmrc`** (honored automatically), not a prior `js:use` in another invocation.
+9. **Optional plugins** — Ecosystem modules may be installed separately. Never assume a plugin exists; discover it, then use it. If discovery fails, use repo-native tools and say so.
+
+## Modules and plugins (same pattern)
+
+Core modules ship with caddie. Optional plugins install into the same module directory and use the same command shape:
+
+```bash
+caddie <module>:<command>
+caddie agent:exec <module>:<command>
+```
+
+**Do not memorize plugin command lists in this skill.** For any module name (known or suspected):
+
+```bash
+caddie agent:exec core:module:commands <module>
+caddie agent:exec <module>:help
+```
+
+If the module is not installed, discovery fails — fall back to the project's native commands (Make, CLI, etc.) and state that the caddie module was unavailable.
+
+Plugin-specific agent pitfalls (when needed) belong in a **separate** thin skill shipped by that plugin — not in this core skill.
 
 ## Agent / Codex shells (all modules)
 
-`caddie agent:exec` is **not JavaScript-only**. Pass any valid caddie command:
+`caddie agent:exec` is **not JavaScript-only**. Pass any valid caddie command for an **installed** module:
 
 ```bash
 caddie agent:exec core:module:commands rust
@@ -49,7 +70,7 @@ If `caddie agent:exec` fails, use native project commands (`npm test`, etc.) and
 
 ## Reference
 
-**`references/using-caddie.md`** — full usage guide and fallback policy.
+**`references/using-caddie.md`** — full usage guide, discovery pattern, and fallback policy.
 
 ## Skill updates
 

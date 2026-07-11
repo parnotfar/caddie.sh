@@ -8,9 +8,15 @@ Use this reference when working **inside the `caddie.sh` repository**. It is **n
 - `dot_caddie_modules`, `dot_caddie_prompt`, `dot_caddie_version`, `dot_caddie_debug`: root system files
 - `modules/dot_caddie_*`: all module implementations, including `modules/dot_caddie_core`
 - `skills/caddie/`: agent skill shipped with caddie (installed to `~/.caddie_modules/skills/caddie`)
-- `docs/modules/*.md`: per-module documentation
+- `docs/modules/*.md`: per-module documentation for **core** modules
+- `docs/plugins.md`: how optional ecosystem plugins relate to core (plugins own their own command docs)
 - `Makefile`: install and development flow
 - `RELEASE_NOTES.md`: required companion for release/version changes
+
+## Core modules vs plugins
+
+- **Core modules** live in this repo under `modules/dot_caddie_*` and are installed by `make install` / `make install-dot`.
+- **Plugins** live in separate repositories. They `make install` into the same `~/.caddie_modules` directory and use the same `caddie <module>:<command>` dispatch. Do not add new plugin command docs under `docs/modules/` in this repo; document them in the plugin repo. See `docs/plugins.md`.
 
 ## High-signal rules
 

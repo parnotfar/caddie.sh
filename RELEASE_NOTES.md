@@ -1,5 +1,26 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.9 - Agent skill: plugin discovery pattern
+
+**Release Date:** July 10, 2026
+
+### Bug fixes / skill
+
+- **Core skill is pattern + discovery, not a plugin catalog**: Agents must discover installed modules (core or optional plugins) via `core:module:commands` / `module:help` instead of memorizing command lists from the skill.
+- **Optional plugins**: Same command shape as core modules; never assume a plugin is installed; fall back to repo-native tools when discovery fails.
+- **Docs boundary**: Plugin command docs and releases live in plugin repositories. Core ships [docs/plugins.md](docs/plugins.md) for architecture only (not a per-plugin command catalog). CSV remains the historical ecosystem example under `docs/modules/csv.md`.
+- Plugin-specific agent pitfalls (when needed) belong in a separate thin skill shipped by that plugin.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+```
+
+---
+
 ## Version 9.3.7 - JS agent execution fixes
 
 **Release Date:** June 2, 2026

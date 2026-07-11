@@ -30,8 +30,9 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
 
 ### Optional Ecosystem Modules
-- External modules maintained in separate repositories—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities.
-- **[CSV Module](csv.md)** - Optional CSV analytics module (requires separate install)
+- External modules maintained in separate repositories—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities. Plugin docs and versioning live in those repositories, not in core `docs/modules/`.
+- **[Plugin architecture](../plugins.md)** - How optional plugins install, load, and relate to the core skill
+- **[CSV Module](csv.md)** - Optional CSV analytics module (requires separate install; documented here as the ecosystem example)
 
 #### Prompt & Completion APIs
 - Register prompt segments with `caddie_prompt_register_segment <function>` and return the text you want appended to PS1.

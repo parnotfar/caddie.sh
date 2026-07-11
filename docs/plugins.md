@@ -1,0 +1,44 @@
+# Optional plugins (ecosystem modules)
+
+Caddie can load modules that are **not** shipped in the core [caddie.sh](https://github.com/parnotfar/caddie.sh) repository. Those live in separate repos (for example [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)).
+
+## Architecture
+
+```text
+caddie.sh
+  make install  →  ~/.caddie_modules/.caddie_<core modules>
+                   ~/.caddie_modules/skills/caddie   (core agent skill)
+
+plugin repo (separate)
+  make install  →  ~/.caddie_modules/.caddie_<plugin>
+
+caddie reload   →  sources every ~/.caddie_modules/.caddie_*
+caddie <mod>:*  →  same dispatch for core and plugins
+```
+
+| Concern | Owner |
+|---------|--------|
+| Core CLI, install, discovery protocol, core skill | caddie.sh |
+| Plugin commands, docs, version, optional thin skill | Plugin repository |
+| Application config (compose, `supabase/`, `.env.local`, …) | Application repository |
+
+## Agent skill boundary
+
+The **core** skill teaches *how* to discover and run modules. It does **not** catalog optional plugins. Agents should:
+
+1. Discover with `caddie agent:exec core:module:commands <module>` or `caddie <module>:help`
+2. Run only listed commands
+3. If the module is not installed, use repo-native tools and say so
+
+Plugin-specific agent pitfalls belong in a thin skill shipped by that plugin (when needed).
+
+## Writing a plugin
+
+Follow the same module conventions as core (`caddie_<module>_*`, `caddie cli:*`, `caddie_<module>_commands`, `export -f`), but:
+
+- Ship in a separate repo with its own `Makefile` `install` → `~/.caddie_modules/.caddie_<name>`
+- Version independently of `CADDIE_SH_VERSION`
+- Keep documentation in the plugin repo
+- Do **not** add per-plugin pages under core `docs/modules/` (CSV is the historical ecosystem example; new plugins document themselves)
+
+See [Module documentation index](modules/README.md) and [Contributing](contributing.md) for core module conventions.

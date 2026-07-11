@@ -8,16 +8,16 @@ The skill version **matches `CADDIE_SH_VERSION`**. When you release caddie, upda
 
 ## What the skill covers
 
-The shipped skill teaches agents **how to use caddie** — discover modules, run `caddie <module>:<command>`, prefer caddie wrappers for workspace consistency, and fall back to direct tools when needed. It does **not** include caddie.sh development guidelines (those live in repo `AGENTS.md` and `docs/caddie-repo-agent-guide.md` for contributors only).
+The shipped skill teaches agents **how to use caddie** — the module/plugin pattern, discovery, `caddie <module>:<command>`, prefer caddie wrappers for workspace consistency, and fall back to direct tools when needed. It does **not** catalog every module or optional plugin, and it does **not** include caddie.sh development guidelines (those live in repo `AGENTS.md` and `docs/caddie-repo-agent-guide.md` for contributors only).
 
-Agents discover subcommands with `caddie <module>:help` or `caddie agent:exec core:module:commands <module>` (not nested forms like `js:project:help`).
+Agents discover subcommands with `caddie <module>:help` or `caddie agent:exec core:module:commands <module>` (not nested forms like `js:project:help`). Optional ecosystem plugins use the same discovery pattern when installed; if a module is missing, agents should use repo-native tools and say so. Plugin-specific pitfalls belong in a thin skill shipped by that plugin, not in the core skill.
 
 ### Using caddie from agents (Cursor / Codex)
 
-The skill teaches agents to run **`caddie agent:exec`** — a **module-agnostic** wrapper that works for any installed module (`js`, `python`, `rust`, `git`, `core`, …):
+The skill teaches agents to run **`caddie agent:exec`** — a **module-agnostic** wrapper that works for any **installed** module (core or plugin):
 
 ```bash
-# Discover commands
+# Discover commands (works for core modules and installed plugins)
 caddie agent:exec core:module:commands js
 caddie agent:exec core:module:commands rust
 

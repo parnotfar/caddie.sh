@@ -40,7 +40,7 @@ make your coding experience smooth and efficient.
 - **Module Info Commands**: `caddie <module>:info` summaries for toolchain status and configuration
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
-- **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core
+- **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core. Plugin repos own their docs and releases.
 
 ## 🚀 Quick Start
 
@@ -121,7 +121,7 @@ caddie-9.3.7 rust build
 - **[Profile Module](docs/modules/profile.md)** - Custom Bash profile snippets (PATH, exports)
 - **[Skill Module](docs/modules/skill.md)** - Agent skill install, update, and audit
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
-- External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately
+- External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately. See [docs/plugins.md](docs/plugins.md) for the plugin architecture; each plugin repository owns its own command docs.
 
 ## Use Cases
 
