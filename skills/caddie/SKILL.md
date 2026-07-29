@@ -1,7 +1,7 @@
 ---
 name: caddie
 description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist. Optional plugins use the same discovery pattern when installed.
-caddie-version: "9.3.9"
+caddie-version: "9.3.10"
 ---
 
 # Caddie — command workspace

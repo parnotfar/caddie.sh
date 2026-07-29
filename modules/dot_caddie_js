@@ -750,6 +750,9 @@ function caddie_js_commands() {
 }
 
 # Export JavaScript functions
+# _caddie_js_ensure_nvm must be exported: js:project:* / js:package:* / js:framework:*
+# call it, and those public functions run in subshells that only inherit exported -f helpers.
+export -f _caddie_js_ensure_nvm
 export -f caddie_js_description
 export -f caddie_js_setup
 export -f caddie_js_install

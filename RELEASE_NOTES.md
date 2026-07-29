@@ -1,5 +1,24 @@
 # Caddie.sh Release Notes
 
+## Version 9.3.10 - Export JS NVM helper for subshells
+
+**Release Date:** July 16, 2026
+
+### Bug fixes
+
+- **`_caddie_js_ensure_nvm` not exported**: `js:project:install` (and other `js:project:*` / `js:package:*` / `js:framework:*` commands) call this helper, but it was not in `export -f`. In subshells that only inherit exported functions, that produced `_caddie_js_ensure_nvm: command not found` after “Installing project dependencies...” and skipped `.nvmrc` / NVM loading.
+- **Fix**: Export `_caddie_js_ensure_nvm` alongside the public JS module functions.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+```
+
+---
+
 ## Version 9.3.9 - Agent skill: plugin discovery pattern
 
 **Release Date:** July 10, 2026
