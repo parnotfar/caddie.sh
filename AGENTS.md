@@ -109,10 +109,8 @@ function caddie_<module>_command1() {
     return 0
 }
 
-# Export functions
-export -f caddie_<module>_description
-export -f caddie_<module>_help
-export -f caddie_<module>_command1
+# Do not export -f. Functions are available in any shell that sources this module.
+# Child shells should invoke ~/bin/caddie or caddie agent:exec (which source fresh).
 ```
 
 3. **Update Makefile**: Add module installation to `install-dot` target:
@@ -342,7 +340,7 @@ function caddie_<module>_<config>_unset() {
 ### Module Development Standards
 
 * **Function naming**: `caddie_<module>_<command>` format
-* **Export functions**: Always export functions with `export -f`
+* **Do not `export -f`**: Functions must be available via `source`, not environment inheritance (`BASH_FUNC_*`). Child shells use `~/bin/caddie` or `caddie agent:exec`.
 * **Help integration**: Provide `caddie_<module>_help()` and `caddie_<module>_description()`
 * **Error handling**: Use `caddie cli:red`, `caddie cli:usage` for consistent error messages
 
@@ -360,7 +358,7 @@ function caddie_<module>_<config>_unset() {
 4. **Tab Completion**: Provide completions via `caddie_<module>_commands()` or `caddie_completion_register`—do not edit `_caddie_completion` directly
 5. **Module Registration**: Modules are auto-discovered once installed; do not modify `dot_caddie_modules` manually
 6. **CLI Integration**: Always source CLI module and use `caddie cli:*` functions
-7. **Function Export**: Always export functions with `export -f`
+7. **No function export**: Do not use `export -f` for module functions (avoids `BASH_FUNC_*` pollution in child shells)
 8. **Error Handling**: Follow established patterns with proper validation and error messages
 9. **Release Versioning**: Every release requires a version update (bugfix/minor/major) and a matching section in `RELEASE_NOTES.md`. If the release type is unclear when new functionality is requested, ask which release type to use before updating version numbers. Versioning follows `[major].[minor].[bugfix]`.
 10. **Human-Readable Commands**: Prefer descriptive subcommands over flags for user-facing behaviors (e.g., `mac:screenshot:archive:dry:run` instead of `--dry-run`) to improve readability and tab completion. If a request suggests flags, propose the equivalent named command.

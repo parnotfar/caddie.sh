@@ -449,10 +449,7 @@ function caddie_module_bar() {
     # Implementation
 }
 
-# Export functions
-export -f caddie_module_description
-export -f caddie_module_foo
-export -f caddie_module_bar
+# Do not export -f. Source the module into the shell that needs these functions.
 ```
 
 #### Command Naming Convention

@@ -165,12 +165,3 @@ function caddie_github_description() {
     return 0
 }
 
-# Export GitHub functions
-export -f caddie_github_account_set
-export -f caddie_github_account_get
-export -f caddie_github_account_unset
-export -f caddie_github_repo_create
-export -f caddie_github_repo_url
-export -f caddie_github_info
-export -f caddie_github_help
-export -f caddie_github_description

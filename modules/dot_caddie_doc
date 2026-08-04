@@ -639,35 +639,3 @@ function caddie_doc_commands() {
     return 0
 }
 
-export -f caddie_doc_description
-export -f caddie_doc_rendered_dir_default
-export -f caddie_doc_rendered_dir_resolve
-export -f caddie_doc_rendered_dir_set
-export -f caddie_doc_rendered_dir_get
-export -f caddie_doc_rendered_dir_unset
-export -f caddie_doc_prefer_set
-export -f caddie_doc_prefer_get
-export -f caddie_doc_prefer_unset
-export -f caddie_doc_has_mdview
-export -f caddie_doc_has_glow
-export -f caddie_doc_has_mdcat
-export -f caddie_doc_has_pandoc
-export -f caddie_doc_resolve_backend
-export -f caddie_doc_preview
-export -f caddie_doc_preview_mdview
-export -f caddie_doc_preview_glow
-export -f caddie_doc_preview_mdcat
-export -f caddie_doc_preview_pdf
-export -f caddie_doc_preview_clean
-export -f caddie_doc_info
-export -f caddie_doc_setup_mdview
-export -f caddie_doc_setup_glow
-export -f caddie_doc_setup_mdcat
-export -f caddie_doc_setup_pandoc
-export -f caddie_doc_install_mdview
-export -f caddie_doc_install_glow
-export -f caddie_doc_install_mdcat
-export -f caddie_doc_install_pandoc
-export -f caddie_doc_setup
-export -f caddie_doc_help
-export -f caddie_doc_commands

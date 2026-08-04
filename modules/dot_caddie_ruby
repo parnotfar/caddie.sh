@@ -914,37 +914,3 @@ function caddie_ruby_version() {
     return 0
 }
 
-# Export Ruby functions
-export -f caddie_ruby_description
-export -f caddie_ruby_setup
-export -f caddie_ruby_install
-export -f caddie_ruby_use
-export -f caddie_ruby_list
-export -f caddie_ruby_current
-export -f caddie_ruby_gemset_create
-export -f caddie_ruby_gemset_use
-export -f caddie_ruby_gemset_list
-export -f caddie_ruby_gemset_delete
-export -f caddie_ruby_gem_install
-export -f caddie_ruby_gem_uninstall
-export -f caddie_ruby_gem_list
-export -f caddie_ruby_gem_update
-export -f caddie_ruby_gem_outdated
-export -f caddie_ruby_project_init
-export -f caddie_ruby_project_test
-export -f caddie_ruby_project_build
-export -f caddie_ruby_project_serve
-export -f caddie_ruby_bundler_install
-export -f caddie_ruby_bundler_update
-export -f caddie_ruby_bundler_exec
-export -f caddie_ruby_rails_new
-export -f caddie_ruby_rails_server
-export -f caddie_ruby_rails_console
-export -f caddie_ruby_rails_generate
-export -f caddie_ruby_rails_migrate
-export -f caddie_ruby_rails_routes
-export -f caddie_ruby_info
-export -f caddie_ruby_version
-export -f caddie_ruby_pin_set
-export -f caddie_ruby_pin_get
-export -f caddie_ruby_pin_unset

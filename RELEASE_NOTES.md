@@ -1,5 +1,36 @@
 # Caddie.sh Release Notes
 
+## Version 10.0.0 - Stop exporting module functions
+
+**Release Date:** August 4, 2026
+
+### Breaking change
+
+- **No mass `export -f`**: Module and core functions are no longer exported into the environment as `BASH_FUNC_*`. They remain available in any shell that **sources** caddie (e.g. via `~/.bash_profile` → `~/.caddie.sh`).
+- **Why**: Exporting hundreds of functions polluted every child shell (including Codex/agent shells) *before* login/rc ran, causing slow startup, malformed-function noise, and abandoned caddie usage.
+- **Migration**: Keep using `caddie <module>:<command>` in interactive shells. For nested/agent processes, use **`~/bin/caddie`** or **`caddie agent:exec`** (they source a clean caddie). Do not rely on inherited `caddie_*` functions in `bash -c` children.
+- **Lint**: `caddie core:lint` now **errors** on `export -f` in module files instead of requiring exports.
+- **Unchanged**: Small personal helpers in `dot_bashrc` (`cpwd`, `blanks`, etc.) still use `export -f` where intentional.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+```
+
+Verify a clean child env after loading caddie:
+
+```bash
+# In a shell that sourced caddie:
+env | grep -c '^BASH_FUNC_caddie_'   # expect 0
+caddie version
+caddie agent:exec version
+```
+
+---
+
 ## Version 9.3.10 - Export JS NVM helper for subshells
 
 **Release Date:** July 16, 2026
