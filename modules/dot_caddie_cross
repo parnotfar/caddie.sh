@@ -1021,35 +1021,3 @@ function caddie_cross_description() {
     return 0
 }
 
-# Export cross-language functions
-export -f caddie_cross_env_status
-export -f caddie_cross_info
-export -f caddie_cross_env_setup
-export -f caddie_cross_env_reset
-export -f caddie_cross_env_backup
-export -f caddie_cross_template_list
-export -f caddie_cross_template_create
-export -f caddie_cross_template_web
-export -f caddie_cross_template_api
-export -f caddie_cross_template_mobile
-export -f caddie_cross_template_ios_app
-export -f caddie_cross_template_ios_framework
-export -f caddie_cross_template_ios_extension
-export -f caddie_cross_template_data
-export -f caddie_cross_template_ml
-export -f caddie_cross_template_cli
-export -f caddie_cross_template_lib
-export -f caddie_cross_template_wasm
-export -f caddie_cross_build_all
-export -f caddie_cross_build_python
-export -f caddie_cross_build_rust
-export -f caddie_cross_build_ios
-export -f caddie_cross_deploy_docker
-export -f caddie_cross_deploy_local
-export -f caddie_cross_deploy_railway
-export -f caddie_cross_tools_install
-export -f caddie_cross_tools_setup
-export -f caddie_cross_tools_lint
-export -f caddie_cross_tools_format
-export -f caddie_cross_help
-export -f caddie_cross_description

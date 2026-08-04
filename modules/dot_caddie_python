@@ -509,23 +509,3 @@ function caddie_python_help() {
     return 0
 }
 
-# Export Python functions
-export -f caddie_python_description
-export -f caddie_python_create
-export -f caddie_python_activate
-export -f caddie_python_deactivate
-export -f caddie_python_list
-export -f caddie_python_remove
-export -f caddie_python_current
-export -f caddie_python_install
-export -f caddie_python_uninstall
-export -f caddie_python_freeze
-export -f caddie_python_sync
-export -f caddie_python_upgrade
-export -f caddie_python_outdated
-export -f caddie_python_init
-export -f caddie_python_test
-export -f caddie_python_lint
-export -f caddie_python_format
-export -f caddie_python_info
-export -f caddie_python_help

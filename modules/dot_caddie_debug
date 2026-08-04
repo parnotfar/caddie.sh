@@ -90,15 +90,6 @@ function caddie_debug_description() {
     return 0
 }
 
-# Export functions for external use
-export -f caddie_debug_on
-export -f caddie_debug_off
-export -f caddie_debug_status
-export -f caddie_debug_info
-export -f caddie_debug_is_enabled
-export -f caddie_debug
-export -f caddie_debug_help
-export -f caddie_debug_description
 
 # Export the debug variable
 export CADDIE_DEBUG

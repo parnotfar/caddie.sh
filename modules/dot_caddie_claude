@@ -360,25 +360,3 @@ function caddie_claude_commands() {
     return 0
 }
 
-export -f caddie_claude_require_cli
-export -f caddie_claude_model_set
-export -f caddie_claude_model_get
-export -f caddie_claude_model_unset
-export -f caddie_claude_permission_mode_set
-export -f caddie_claude_permission_mode_get
-export -f caddie_claude_permission_mode_unset
-export -f caddie_claude_info
-export -f caddie_claude_run
-export -f caddie_claude_print
-export -f caddie_claude_continue
-export -f caddie_claude_resume
-export -f caddie_claude_auth_login
-export -f caddie_claude_auth_logout
-export -f caddie_claude_update
-export -f caddie_claude_doctor
-export -f caddie_claude_mcp
-export -f caddie_claude_agents
-export -f caddie_claude_init
-export -f caddie_claude_help
-export -f caddie_claude_description
-export -f caddie_claude_commands

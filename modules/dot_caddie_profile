@@ -327,17 +327,6 @@ function caddie_profile_help() {
     return 0
 }
 
-export -f caddie_profile_description
-export -f caddie_profile_source
-export -f caddie_profile_custom_source
-export -f caddie_path_add
-export -f caddie_path_add_bashrc
-export -f caddie_path_add_profile
-export -f caddie_profile_add_line
-export -f caddie_profile_add_line_bashrc
-export -f caddie_profile_info
-export -f caddie_profile_commands
-export -f caddie_profile_help
 
 # path:add is implemented here; register path completions alongside profile.
 if declare -F caddie_completion_register >/dev/null 2>&1; then

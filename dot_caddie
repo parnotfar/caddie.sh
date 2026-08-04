@@ -1014,8 +1014,6 @@ function caddie_completion_register() {
   return 0
 }
 
-export -f caddie_completion_clear
-export -f caddie_completion_register
 
 function _caddie_completion() {
   local cur prev words cword
@@ -1171,10 +1169,6 @@ function caddie_extract_module_name() {
     basename "$filename" | sed 's/^\.caddie_//'
 }
 
-# Export the caddie function and helper functions so they're available in subshells
-export -f caddie
-export -f caddie_help
-export -f caddie_version
 
 # Source the dependent files
 source "$HOME/.caddie_version"

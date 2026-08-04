@@ -824,14 +824,3 @@ function caddie_skill_help() {
     return 0
 }
 
-export -f caddie_skill_description
-export -f caddie_skill_update
-export -f caddie_skill_install
-export -f caddie_skill_install_project
-export -f caddie_skill_install_cursor
-export -f caddie_skill_install_codex
-export -f caddie_skill_install_all
-export -f caddie_skill_audit
-export -f caddie_skill_info
-export -f caddie_skill_commands
-export -f caddie_skill_help

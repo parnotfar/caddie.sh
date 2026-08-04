@@ -36,11 +36,6 @@ function caddie_modules_reset() {
     CADDIE_MODULES=()
 }
 
-# Export functions for external use
-export -f caddie_modules_append
-export -f caddie_modules_get
-export -f caddie_modules_count
-export -f caddie_modules_reset
 
 # Export the modules array
 export CADDIE_MODULES

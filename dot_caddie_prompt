@@ -50,8 +50,6 @@ function caddie_prompt_clear_segments() {
   return 0
 }
 
-export -f caddie_prompt_register_segment
-export -f caddie_prompt_clear_segments
 
 function __caddie_version() {
   if [ -f "$HOME/.caddie_version" ]; then

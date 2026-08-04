@@ -397,13 +397,6 @@ function caddie_cli_help() {
     return 0
 }
 
-# Export all functions
-export -f caddie_cli_description
-export -f caddie_cli_red caddie_cli_green caddie_cli_yellow caddie_cli_blue caddie_cli_purple caddie_cli_cyan caddie_cli_grey caddie_cli_orange caddie_cli_white
-export -f caddie_cli_red_bold caddie_cli_green_bold caddie_cli_yellow_bold caddie_cli_blue_bold caddie_cli_purple_bold caddie_cli_cyan_bold caddie_cli_grey_bold caddie_cli_orange_bold caddie_cli_white_bold
-export -f caddie_cli_usage caddie_cli_installed caddie_cli_complete caddie_cli_title caddie_cli_colorlist caddie_cli_help caddie_cli_info
-export -f caddie_cli_check caddie_cli_x caddie_cli_arrow caddie_cli_folder caddie_cli_beer caddie_cli_snake caddie_cli_crab caddie_cli_trash caddie_cli_rotate caddie_cli_chart caddie_cli_magnify caddie_cli_save caddie_cli_warning caddie_cli_debug
-export -f caddie_cli_wrench caddie_cli_whale caddie_cli_package caddie_cli_git caddie_cli_rocket caddie_cli_thought caddie_cli_lightbulb caddie_cli_magnifying_glass caddie_cli_blank caddie_cli_indent
 
 CADDIE_CLI_LOADED=1
 export CADDIE_CLI_LOADED

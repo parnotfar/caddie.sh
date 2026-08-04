@@ -485,17 +485,18 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 6. Check for function exports
+        # 6. Disallow mass function exports (10.0+: pollute child shells via BASH_FUNC_*)
         if [ "$is_module_file" = true ]; then
-            local functions=$(grep "^function caddie_.*()" "$file" | sed 's/function //' | sed 's/()//' | grep -v '{' || true)
-            local exports=$(grep "^export -f caddie_" "$file" || true)
-
-            for func in $functions; do
-                if ! echo "$exports" | grep -q "export -f $func"; then
-                    caddie cli:red "  ✗ Function '$func' is not exported"
-                    ((file_errors++))
-                fi
-            done
+            local export_lines=""
+            export_lines=$(grep -n '^export -f ' "$file" || true)
+            if [ -n "$export_lines" ]; then
+                caddie cli:red "  ✗ Do not export functions with 'export -f' (causes BASH_FUNC_* inheritance)"
+                caddie cli:indent "Define functions via source; use ~/bin/caddie or caddie agent:exec in child shells"
+                echo "$export_lines" | while read -r line; do
+                    caddie cli:yellow "    Line $line"
+                done
+                ((file_errors++))
+            fi
         fi
         
         # 7. Check for help and description functions
@@ -830,7 +831,7 @@ function caddie_core_lint() {
         caddie cli:indent "• Note: Shebang not required for sourced modules (loaded via bash_profile)"
         caddie cli:indent "• Source CLI module: source ~/.caddie_modules/.caddie_cli"
         caddie cli:indent "• Function naming: caddie_<module>_<command>"
-        caddie cli:indent "• Export all functions: export -f caddie_<module>_<command>"
+        caddie cli:indent "• Do not export -f module functions (source into the shell that needs them)"
         caddie cli:indent "• Provide help and description functions"
         caddie cli:indent "• Use caddie cli:* functions for output"
         caddie cli:indent "• Use caddie cli:usage for usage messages"
@@ -1001,24 +1002,3 @@ if [ -f "$CADDIE_HOME_FILE" ]; then
     export CADDIE_HOME="$caddie_home"
 fi
 
-# Export core functions
-export -f caddie_core_set_home
-export -f caddie_core_get_home
-export -f caddie_core_reset_home
-export -f caddie_core_go_home
-export -f caddie_core_help
-export -f caddie_core_description
-export -f caddie_core_debug
-export -f caddie_core_info
-export -f caddie_core_aliases
-export -f caddie_core_alias_grep
-export -f caddie_core_alias_git
-export -f caddie_core_alias_docker
-export -f caddie_core_alias_npm
-export -f caddie_core_alias_nav
-export -f caddie_core_lint
-export -f caddie_core_lint_limit
-export -f caddie_core_module_commands
-export -f caddie_core_agent_exec
-export -f caddie_agent_exec
-export -f caddie_core_commands

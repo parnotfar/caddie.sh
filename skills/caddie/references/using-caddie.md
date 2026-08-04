@@ -52,6 +52,8 @@ caddie agent:exec <module:command> [args...]
 
 `~/bin/caddie` dispatches `agent:exec` to a clean subprocess before loading caddie in the parent shell. Do **not** use internal `~/.caddie_modules/bin/` paths.
 
+Caddie 10+ does **not** export module functions into the environment. Child shells must source caddie or use `caddie agent:exec` / `~/bin/caddie` — do not expect inherited `caddie_*` functions.
+
 `caddie core:agent:exec` is equivalent when caddie already works in the parent shell.
 
 ### When the parent shell already works

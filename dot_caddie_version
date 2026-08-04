@@ -4,7 +4,7 @@
 source "$HOME/.caddie_modules/.caddie_cli"
 
 # Private version variable
-CADDIE_SH_VERSION="9.3.10"
+CADDIE_SH_VERSION="10.0.0"
 
 # Function to get the current version
 function caddie_version_get() {
@@ -34,8 +34,3 @@ function caddie_version_show() {
     caddie cli:blue "Caddie.sh version: $CADDIE_SH_VERSION"
 }
 
-# Export functions for external use
-export -f caddie_version_get
-export -f caddie_version_set
-export -f caddie_version_reset
-export -f caddie_version_show
