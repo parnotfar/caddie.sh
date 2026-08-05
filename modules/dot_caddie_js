@@ -748,34 +748,3 @@ function caddie_js_commands() {
     # caddie:lint:enable
     return 0
 }
-
-# Export JavaScript functions
-# _caddie_js_ensure_nvm must be exported: js:project:* / js:package:* / js:framework:*
-# call it, and those public functions run in subshells that only inherit exported -f helpers.
-export -f _caddie_js_ensure_nvm
-export -f caddie_js_description
-export -f caddie_js_setup
-export -f caddie_js_install
-export -f caddie_js_use
-export -f caddie_js_list
-export -f caddie_js_info
-export -f caddie_js_help
-export -f caddie_js_project_init
-export -f caddie_js_project_install
-export -f caddie_js_project_update
-export -f caddie_js_project_test
-export -f caddie_js_project_build
-export -f caddie_js_project_serve
-export -f caddie_js_package_install
-export -f caddie_js_package_uninstall
-export -f caddie_js_package_list
-export -f caddie_js_package_update
-export -f caddie_js_package_outdated
-export -f caddie_js_package_audit
-export -f caddie_js_package_run
-export -f caddie_js_package_publish
-export -f caddie_js_framework_create
-export -f caddie_js_framework_serve
-export -f caddie_js_framework_build
-export -f caddie_js_version
-export -f caddie_js_commands

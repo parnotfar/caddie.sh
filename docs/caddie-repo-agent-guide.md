@@ -24,7 +24,7 @@ Use this reference when working **inside the `caddie.sh` repository**. It is **n
 - Name module files `dot_caddie_<module>`.
 - Keep commands in `<module>:<command>` form.
 - Keep functions in `caddie_<module>_<command>` form.
-- Export public functions with `export -f`.
+- Do **not** `export -f` module functions. Rely on `source` in the shell that runs commands; child shells use `~/bin/caddie` / `caddie agent:exec`.
 - Source `"$HOME/.caddie_modules/.caddie_cli"` in module files.
 - Use `caddie cli:*` for user-facing output.
 - Include explicit `return 0` / `return 1` statements.

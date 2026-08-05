@@ -190,14 +190,3 @@ function caddie_mcp_commands() {
     return 0
 }
 
-export -f caddie_mcp_info
-export -f caddie_mcp_server_set
-export -f caddie_mcp_server_get
-export -f caddie_mcp_server_unset
-export -f caddie_mcp_prompt_segment
-export -f caddie_mcp_run
-export -f caddie_mcp_test
-export -f caddie_mcp_build
-export -f caddie_mcp_help
-export -f caddie_mcp_description
-export -f caddie_mcp_commands

@@ -1,7 +1,7 @@
 ---
 name: caddie
 description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist. Optional plugins use the same discovery pattern when installed.
-caddie-version: "9.3.10"
+caddie-version: "10.0.0"
 ---
 
 # Caddie — command workspace
@@ -23,6 +23,7 @@ caddie <module>:<command> [args]
 7. **Exit codes** — Treat non-zero exit from `caddie agent:exec` as command failure; do not assume success from output alone.
 8. **Node version** — Each `agent:exec` starts a fresh subprocess. Pin Node with a project **`.nvmrc`** (honored automatically), not a prior `js:use` in another invocation.
 9. **Optional plugins** — Ecosystem modules may be installed separately. Never assume a plugin exists; discover it, then use it. If discovery fails, use repo-native tools and say so.
+10. **No inherited caddie functions** — Caddie 10+ does not export module functions into `BASH_FUNC_*`. If a child shell needs caddie, source it or use `caddie agent:exec` / `~/bin/caddie`.
 
 ## Modules and plugins (same pattern)
 
@@ -75,3 +76,10 @@ If `caddie agent:exec` fails, use native project commands (`npm test`, etc.) and
 ## Skill updates
 
 After the user upgrades caddie from the caddie.sh repo: **`make install`**, `caddie reload`, then `caddie skill:update`.
+
+After installing or updating an optional plugin in another repo (`make install`), refresh that module without leaving the shell:
+
+```bash
+caddie core:module:reload csv
+# or inside caddie|csv> type: reload
+```

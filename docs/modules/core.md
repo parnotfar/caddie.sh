@@ -221,6 +221,33 @@ caddie reload
 - Must be run from a shell that has caddie loaded
 - Requires `~/.bash_profile` to be properly configured
 
+#### `caddie core:module:reload [module]`
+
+Re-source one installed module (or all modules) **without** re-running the full bash profile. Preferred after `make install` for a plugin while you stay in the REPL.
+
+**Examples:**
+```bash
+# Reload just the csv plugin after make install in caddie-csv-tools
+caddie core:module:reload csv
+
+# Reload every module in-place (keeps session env like CADDIE_CSV_FILE)
+caddie core:module:reload
+
+# Inside a scoped prompt (caddie|csv>), bare "reload" targets the active module
+caddie
+csv
+reload
+```
+
+**What it does:**
+- Sources `~/.caddie_modules/.caddie_<module>` again
+- Refreshes that module’s tab-completion entry and prompt segment (when present)
+- With no argument, runs the full in-process module loader (`_caddie_load_modules`)
+- Does **not** replace `caddie reload` for profile / PATH / toolchain changes
+
+**Requirements:**
+- Module must already be installed under `~/.caddie_modules/`
+
 ### Agent and automation
 
 These commands support **all installed modules** (`js`, `python`, `rust`, `ruby`, `git`, `github`, `core`, …). They are not JavaScript-specific.

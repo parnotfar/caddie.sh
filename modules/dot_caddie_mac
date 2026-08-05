@@ -320,15 +320,3 @@ function caddie_mac_help() {
     return 0
 }
 
-export -f caddie_mac_description
-export -f caddie_mac_info
-export -f caddie_mac_screenshot_archive_dir_default
-export -f caddie_mac_screenshot_archive_dir_resolve
-export -f caddie_mac_screenshot_archive_dir_set
-export -f caddie_mac_screenshot_archive_dir_get
-export -f caddie_mac_screenshot_archive_dir_unset
-export -f caddie_mac_screenshot_archive_run
-export -f caddie_mac_screenshot_archive
-export -f caddie_mac_screenshot_archive_dry_run
-export -f caddie_mac_commands
-export -f caddie_mac_help

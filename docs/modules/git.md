@@ -332,7 +332,7 @@ Tip: If you previously used the `gmm` alias, use `caddie git:merge:main` instead
 ### Advanced Git Operations
 
 #### `caddie git:push:set:upstream [<remote>] [<branch>]`
-Set upstream branch for the current branch. Defaults to `origin` remote and the current branch.
+Push the branch and set upstream tracking. Defaults to `origin` and the current branch.
 
 ```bash
 # Set upstream to origin/<current-branch> (default)
@@ -341,9 +341,27 @@ caddie git:push:set:upstream
 # Set upstream to origin/master
 caddie git:push:set:upstream origin master
 
-# Set upstream to upstream/develop
-caddie git:push:set:upstream upstream develop
+# Prefer the clearer alias when fixing a mismatched upstream:
+caddie git:upstream:set
+caddie git:upstream:get
 ```
+
+#### `caddie git:upstream:set [remote]`
+Push the current branch to `origin/<same-name>` and track it. Fixes the common case where a local branch was created from `origin/main` and therefore tracks `main` instead of its own remote branch name.
+
+```bash
+caddie git:upstream:set
+```
+
+#### `caddie git:upstream:get`
+Show the current branch's upstream tracking ref, or a hint when none is set.
+
+```bash
+caddie git:upstream:get
+# Upstream: origin/release/10.0
+```
+
+`caddie git:gacp` uses the same logic automatically when push fails due to an upstream name mismatch.
 
 #### `caddie git:clone <repo-name>`
 Clone a repository using the stored GitHub account. Constructs SSH URL automatically.

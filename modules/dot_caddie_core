@@ -485,17 +485,18 @@ function caddie_core_lint() {
             ((file_warnings++))
         fi
         
-        # 6. Check for function exports
+        # 6. Disallow mass function exports (10.0+: pollute child shells via BASH_FUNC_*)
         if [ "$is_module_file" = true ]; then
-            local functions=$(grep "^function caddie_.*()" "$file" | sed 's/function //' | sed 's/()//' | grep -v '{' || true)
-            local exports=$(grep "^export -f caddie_" "$file" || true)
-
-            for func in $functions; do
-                if ! echo "$exports" | grep -q "export -f $func"; then
-                    caddie cli:red "  ✗ Function '$func' is not exported"
-                    ((file_errors++))
-                fi
-            done
+            local export_lines=""
+            export_lines=$(grep -n '^export -f ' "$file" || true)
+            if [ -n "$export_lines" ]; then
+                caddie cli:red "  ✗ Do not export functions with 'export -f' (causes BASH_FUNC_* inheritance)"
+                caddie cli:indent "Define functions via source; use ~/bin/caddie or caddie agent:exec in child shells"
+                echo "$export_lines" | while read -r line; do
+                    caddie cli:yellow "    Line $line"
+                done
+                ((file_errors++))
+            fi
         fi
         
         # 7. Check for help and description functions
@@ -830,7 +831,7 @@ function caddie_core_lint() {
         caddie cli:indent "• Note: Shebang not required for sourced modules (loaded via bash_profile)"
         caddie cli:indent "• Source CLI module: source ~/.caddie_modules/.caddie_cli"
         caddie cli:indent "• Function naming: caddie_<module>_<command>"
-        caddie cli:indent "• Export all functions: export -f caddie_<module>_<command>"
+        caddie cli:indent "• Do not export -f module functions (source into the shell that needs them)"
         caddie cli:indent "• Provide help and description functions"
         caddie cli:indent "• Use caddie cli:* functions for output"
         caddie cli:indent "• Use caddie cli:usage for usage messages"
@@ -902,6 +903,82 @@ function caddie_core_module_commands() {
     return 0
 }
 
+# Reload one installed module (or all modules) without re-sourcing the full bash profile.
+# Use after make install of a plugin (e.g. csv) while staying in the REPL.
+function caddie_core_module_reload() {
+    local module="${1:-}"
+    local modules_dir="${CADDIE_MODULES_DIR:-$HOME/.caddie_modules}"
+    local module_file=""
+    local commands_fn=""
+    local completion_output=""
+    local prompt_fn=""
+
+    if [ ! -d "$modules_dir" ]; then
+        caddie cli:red "Error: Modules directory not found: ${modules_dir}"
+        return 1
+    fi
+
+    # No module name → refresh every installed module in-place
+    if [ -z "$module" ]; then
+        caddie cli:title "Reloading all caddie modules"
+        unset CADDIE_CLI_LOADED
+        if ! declare -F _caddie_load_modules >/dev/null 2>&1; then
+            caddie cli:red "Error: Module loader unavailable; run 'caddie reload' instead"
+            return 1
+        fi
+        if ! _caddie_load_modules; then
+            caddie cli:red "Failed to reload modules"
+            return 1
+        fi
+        if [[ $- == *i* ]] && command -v complete >/dev/null 2>&1; then
+            complete -F _caddie_completion -o default -o nospace caddie
+        fi
+        caddie cli:check "All modules reloaded"
+        caddie cli:thought "Session env defaults (e.g. CADDIE_CSV_FILE) are preserved"
+        return 0
+    fi
+
+    module_file="${modules_dir}/.caddie_${module}"
+    if [ ! -f "$module_file" ]; then
+        caddie cli:red "Error: Module '${module}' not found at ${module_file}"
+        caddie cli:thought "Install the module, then try again (example: cd plugin-repo && make install)"
+        caddie cli:usage "caddie core:module:reload [module]"
+        return 1
+    fi
+
+    caddie cli:title "Reloading module: ${module}"
+
+    # CLI helpers are idempotent via CADDIE_CLI_LOADED; clear so a cli/core reload refreshes them
+    if [ "$module" = "cli" ] || [ "$module" = "core" ]; then
+        unset CADDIE_CLI_LOADED
+    fi
+
+    # shellcheck disable=SC1090
+    if ! source "$module_file"; then
+        caddie cli:red "Failed to source ${module_file}"
+        return 1
+    fi
+
+    caddie_modules_append "$module"
+
+    commands_fn="caddie_${module}_commands"
+    if declare -F "$commands_fn" >/dev/null 2>&1; then
+        completion_output="$($commands_fn)"
+        if [ -n "$completion_output" ]; then
+            caddie_completion_register "$module" "$completion_output"
+        fi
+    fi
+
+    prompt_fn="caddie_${module}_prompt_segment"
+    if declare -F "$prompt_fn" >/dev/null 2>&1; then
+        caddie_prompt_register_segment "$prompt_fn"
+    fi
+
+    caddie cli:check "Module '${module}' reloaded from ${module_file}"
+    caddie cli:thought "In a module-scoped prompt, 'reload' runs this for the active module"
+    return 0
+}
+
 function caddie_core_agent_exec() {
     local agent_exec=""
     local status=0
@@ -932,7 +1009,7 @@ function caddie_agent_exec() {
 
 function caddie_core_commands() {
     # caddie:lint:disable
-    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:agent:exec'
+    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:module:reload core:agent:exec'
     # caddie:lint:enable
     return 0
 }
@@ -969,6 +1046,7 @@ function caddie_core_help() {
     caddie cli:blank
     caddie cli:title "Agent / automation:"
     caddie cli:indent "module:commands <mod> Machine-readable command list (one per line)"
+    caddie cli:indent "module:reload [mod]  Re-source one module (or all) without full profile reload"
     caddie cli:indent "agent:exec <cmd>    Run caddie in a clean Bash subprocess (alias: caddie agent:exec)"
     caddie cli:blank
     caddie cli:thought "Examples:"
@@ -984,6 +1062,7 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:lint modules/"
     caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
     caddie cli:indent "caddie core:module:commands js"
+    caddie cli:indent "caddie core:module:reload csv"
     caddie cli:indent "caddie agent:exec js:project:test"
     return 0
 }
@@ -1001,24 +1080,3 @@ if [ -f "$CADDIE_HOME_FILE" ]; then
     export CADDIE_HOME="$caddie_home"
 fi
 
-# Export core functions
-export -f caddie_core_set_home
-export -f caddie_core_get_home
-export -f caddie_core_reset_home
-export -f caddie_core_go_home
-export -f caddie_core_help
-export -f caddie_core_description
-export -f caddie_core_debug
-export -f caddie_core_info
-export -f caddie_core_aliases
-export -f caddie_core_alias_grep
-export -f caddie_core_alias_git
-export -f caddie_core_alias_docker
-export -f caddie_core_alias_npm
-export -f caddie_core_alias_nav
-export -f caddie_core_lint
-export -f caddie_core_lint_limit
-export -f caddie_core_module_commands
-export -f caddie_core_agent_exec
-export -f caddie_agent_exec
-export -f caddie_core_commands

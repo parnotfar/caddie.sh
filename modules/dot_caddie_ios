@@ -1347,29 +1347,6 @@ function caddie_ios_description() {
     return 0
 }
 
-# Export iOS functions
-export -f caddie_ios_description
-export -f caddie_ios_archive
-export -f caddie_ios_project_info
-export -f caddie_ios_version_get
-export -f caddie_ios_version_set
-export -f caddie_ios_increment_build
-export -f caddie_ios_archive_testflight
-export -f caddie_ios_export_ipa
-export -f caddie_ios_upload_testflight
-export -f caddie_ios_testflight
-export -f caddie_ios_testflight_publish
-export -f caddie_ios_testflight_publish_increment_false
-export -f caddie_ios_info
-export -f caddie_ios_config_get
-export -f caddie_ios_config_set
-export -f caddie_ios_config_unset
-export -f caddie_ios_config_list
-export -f caddie_ios_config_load_project
-export -f caddie_ios_keychain_password_set
-export -f caddie_ios_keychain_password_get
-export -f caddie_ios_keychain_password_unset
-export -f caddie_ios_help
 
 # Auto-load configuration when module is sourced
 _caddie_ios_load_config
