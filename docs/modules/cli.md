@@ -261,11 +261,8 @@ All CLI functions follow the `caddie_cli_<command>` naming convention:
 - `caddie_cli_red_bold()` → `caddie cli:red:bold`
 - `caddie_cli_title()` → `caddie cli:title`
 
-### Export and Availability
-All functions are exported and available throughout the Caddie.sh system:
-```bash
-export -f caddie_cli_red caddie_cli_green caddie_cli_yellow # ... etc
-```
+### Availability
+CLI functions are available throughout the Caddie.sh system once the module is sourced (via `~/.bash_profile` → `~/.caddie.sh`). As of caddie 10.0, functions are **not** exported into the environment with `export -f` (that polluted child shells with `BASH_FUNC_*`). Child shells should re-source caddie or use `caddie` / `caddie agent:exec`.
 
 ## Troubleshooting
 

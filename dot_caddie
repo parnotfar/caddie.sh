@@ -63,7 +63,7 @@ function caddie_help() {
     caddie cli:title "General Commands:"
     caddie cli:indent "help                     Show this overview"
     caddie cli:indent "version                  Show caddie version"
-    caddie cli:indent "reload                   Reload caddie"
+            caddie cli:indent "reload                   Reload caddie (or active module in a scoped prompt)"
     caddie cli:indent "agent:exec <cmd>         Run a command in a clean Bash subprocess (agent/Codex shells)"
     caddie cli:indent "(no args)                Launch interactive caddie prompt"
     caddie cli:blank
@@ -507,8 +507,18 @@ function _caddie_repl_normalize() {
             fi
             return 0
             ;;
-        version|--version|-v|reload|--reload|-r|go:home)
+        version|--version|-v|go:home)
             printf '%s\n' "$line"
+            return 0
+            ;;
+        reload|--reload|-r)
+            # In a module scope, reload just that module (after plugin make install).
+            # At the root prompt, keep full environment reload via bash_profile.
+            if [ -n "$active_module" ] && [ "$active_module" != "shell" ]; then
+                printf '%s\n' "core:module:reload ${active_module}"
+            else
+                printf '%s\n' "reload"
+            fi
             return 0
             ;;
     esac
@@ -1247,7 +1257,7 @@ function _caddie_load_modules() {
                         caddie_completion_register "$module_name" "claude:info claude:init claude:run claude:print claude:continue claude:resume claude:auth:login claude:auth:logout claude:doctor claude:update claude:mcp claude:agents claude:model:set claude:model:get claude:model:unset claude:permission:mode:set claude:permission:mode:get claude:permission:mode:unset"
                         ;;
                       core)
-                        caddie_completion_register "$module_name" "core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:agent:exec"
+                        caddie_completion_register "$module_name" "core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:module:reload core:agent:exec"
                         ;;
                       cursor)
                         caddie_completion_register "$module_name" "cursor:info cursor:open cursor:new cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:ext:install cursor:ext:recommend cursor:config:restore"
