@@ -11,6 +11,9 @@
 - **Migration**: Keep using `caddie <module>:<command>` in interactive shells. For nested/agent processes, use **`~/bin/caddie`** or **`caddie agent:exec`** (they source a clean caddie). Do not rely on inherited `caddie_*` functions in `bash -c` children.
 - **Lint**: `caddie core:lint` now **errors** on `export -f` in module files instead of requiring exports.
 - **Unchanged**: Small personal helpers in `dot_bashrc` (`cpwd`, `blanks`, etc.) still use `export -f` where intentional.
+- **`git:gacp` upstream mismatch**: If a local branch tracks a differently named remote branch (e.g. `release/10.0` tracking `origin/main`), gacp now repoints upstream to `origin/<current-branch>` instead of failing with "upstream already set".
+- **`git:upstream:set` / `git:upstream:get`**: Clearer commands to push+track the matching remote branch and show current upstream (`push:set:upstream` remains as an alias).
+- **`core:module:reload [module]`**: Re-source one installed module (or all modules with no arg) without a full `bash_profile` reload. In a module-scoped REPL (`caddie|csv>`), typing **`reload`** reloads the active module so plugin `make install` picks up immediately.
 
 ### Usage
 
@@ -18,6 +21,12 @@
 make install
 caddie reload
 caddie skill:update
+```
+
+```bash
+# After installing/updating a plugin (e.g. caddie-csv-tools):
+caddie core:module:reload csv
+# Or inside caddie|csv> type: reload
 ```
 
 Verify a clean child env after loading caddie:

@@ -34,7 +34,7 @@ Plugin-specific agent pitfalls belong in a thin skill shipped by that plugin (wh
 
 ## Writing a plugin
 
-Follow the same module conventions as core (`caddie_<module>_*`, `caddie cli:*`, `caddie_<module>_commands`, `export -f`), but:
+Follow the same module conventions as core (`caddie_<module>_*`, `caddie cli:*`, `caddie_<module>_commands`). Do **not** `export -f` module functions (caddie 10.0+): they are available once the module is sourced, and child shells should use `caddie` / `caddie agent:exec`. In addition:
 
 - Ship in a separate repo with its own `Makefile` `install` → `~/.caddie_modules/.caddie_<name>`
 - Version independently of `CADDIE_SH_VERSION`

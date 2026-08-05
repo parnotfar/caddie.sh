@@ -903,6 +903,82 @@ function caddie_core_module_commands() {
     return 0
 }
 
+# Reload one installed module (or all modules) without re-sourcing the full bash profile.
+# Use after make install of a plugin (e.g. csv) while staying in the REPL.
+function caddie_core_module_reload() {
+    local module="${1:-}"
+    local modules_dir="${CADDIE_MODULES_DIR:-$HOME/.caddie_modules}"
+    local module_file=""
+    local commands_fn=""
+    local completion_output=""
+    local prompt_fn=""
+
+    if [ ! -d "$modules_dir" ]; then
+        caddie cli:red "Error: Modules directory not found: ${modules_dir}"
+        return 1
+    fi
+
+    # No module name → refresh every installed module in-place
+    if [ -z "$module" ]; then
+        caddie cli:title "Reloading all caddie modules"
+        unset CADDIE_CLI_LOADED
+        if ! declare -F _caddie_load_modules >/dev/null 2>&1; then
+            caddie cli:red "Error: Module loader unavailable; run 'caddie reload' instead"
+            return 1
+        fi
+        if ! _caddie_load_modules; then
+            caddie cli:red "Failed to reload modules"
+            return 1
+        fi
+        if [[ $- == *i* ]] && command -v complete >/dev/null 2>&1; then
+            complete -F _caddie_completion -o default -o nospace caddie
+        fi
+        caddie cli:check "All modules reloaded"
+        caddie cli:thought "Session env defaults (e.g. CADDIE_CSV_FILE) are preserved"
+        return 0
+    fi
+
+    module_file="${modules_dir}/.caddie_${module}"
+    if [ ! -f "$module_file" ]; then
+        caddie cli:red "Error: Module '${module}' not found at ${module_file}"
+        caddie cli:thought "Install the module, then try again (example: cd plugin-repo && make install)"
+        caddie cli:usage "caddie core:module:reload [module]"
+        return 1
+    fi
+
+    caddie cli:title "Reloading module: ${module}"
+
+    # CLI helpers are idempotent via CADDIE_CLI_LOADED; clear so a cli/core reload refreshes them
+    if [ "$module" = "cli" ] || [ "$module" = "core" ]; then
+        unset CADDIE_CLI_LOADED
+    fi
+
+    # shellcheck disable=SC1090
+    if ! source "$module_file"; then
+        caddie cli:red "Failed to source ${module_file}"
+        return 1
+    fi
+
+    caddie_modules_append "$module"
+
+    commands_fn="caddie_${module}_commands"
+    if declare -F "$commands_fn" >/dev/null 2>&1; then
+        completion_output="$($commands_fn)"
+        if [ -n "$completion_output" ]; then
+            caddie_completion_register "$module" "$completion_output"
+        fi
+    fi
+
+    prompt_fn="caddie_${module}_prompt_segment"
+    if declare -F "$prompt_fn" >/dev/null 2>&1; then
+        caddie_prompt_register_segment "$prompt_fn"
+    fi
+
+    caddie cli:check "Module '${module}' reloaded from ${module_file}"
+    caddie cli:thought "In a module-scoped prompt, 'reload' runs this for the active module"
+    return 0
+}
+
 function caddie_core_agent_exec() {
     local agent_exec=""
     local status=0
@@ -933,7 +1009,7 @@ function caddie_agent_exec() {
 
 function caddie_core_commands() {
     # caddie:lint:disable
-    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:agent:exec'
+    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:module:reload core:agent:exec'
     # caddie:lint:enable
     return 0
 }
@@ -970,6 +1046,7 @@ function caddie_core_help() {
     caddie cli:blank
     caddie cli:title "Agent / automation:"
     caddie cli:indent "module:commands <mod> Machine-readable command list (one per line)"
+    caddie cli:indent "module:reload [mod]  Re-source one module (or all) without full profile reload"
     caddie cli:indent "agent:exec <cmd>    Run caddie in a clean Bash subprocess (alias: caddie agent:exec)"
     caddie cli:blank
     caddie cli:thought "Examples:"
@@ -985,6 +1062,7 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:lint modules/"
     caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
     caddie cli:indent "caddie core:module:commands js"
+    caddie cli:indent "caddie core:module:reload csv"
     caddie cli:indent "caddie agent:exec js:project:test"
     return 0
 }

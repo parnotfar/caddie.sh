@@ -76,3 +76,10 @@ If `caddie agent:exec` fails, use native project commands (`npm test`, etc.) and
 ## Skill updates
 
 After the user upgrades caddie from the caddie.sh repo: **`make install`**, `caddie reload`, then `caddie skill:update`.
+
+After installing or updating an optional plugin in another repo (`make install`), refresh that module without leaving the shell:
+
+```bash
+caddie core:module:reload csv
+# or inside caddie|csv> type: reload
+```
