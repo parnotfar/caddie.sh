@@ -783,6 +783,51 @@ function caddie_git_merge_main() {
     return 1
 }
 
+function caddie_git_merge_in_progress_internal() {
+    local merge_head=""
+
+    if ! git rev-parse --git-dir > /dev/null 2>&1; then
+        caddie cli:red "Error: Not in a git repository"
+        return 1
+    fi
+
+    merge_head="$(git rev-parse --git-path MERGE_HEAD 2>/dev/null)"
+    if [ -z "$merge_head" ] || [ ! -f "$merge_head" ]; then
+        caddie cli:red "Error: No merge in progress"
+        return 1
+    fi
+
+    return 0
+}
+
+function caddie_git_merge_abort() {
+    if ! caddie_git_merge_in_progress_internal; then
+        return 1
+    fi
+
+    if git merge --abort; then
+        caddie cli:check "Merge aborted"
+        return 0
+    fi
+
+    caddie cli:red "Failed to abort merge"
+    return 1
+}
+
+function caddie_git_merge_continue() {
+    if ! caddie_git_merge_in_progress_internal; then
+        return 1
+    fi
+
+    if git merge --continue; then
+        caddie cli:check "Merge continued"
+        return 0
+    fi
+
+    caddie cli:red "Failed to continue merge"
+    return 1
+}
+
 
 function caddie_git_main_merge_branch() {
     local remote="origin"
@@ -1678,7 +1723,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:upstream:set git:upstream:get git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:upstream:set git:upstream:get git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:abort git:merge:continue git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1734,6 +1779,8 @@ function caddie_git_help() {
     caddie cli:indent "push:set:upstream [<remote>] [<branch>]  Push and set upstream (alias: upstream:set)"
     caddie cli:indent "upstream:set [remote]  Push current branch and track origin/<branch> (fixes name mismatch)"
     caddie cli:indent "upstream:get           Show current upstream tracking branch"
+    caddie cli:indent "merge:abort            Abort an in-progress merge"
+    caddie cli:indent "merge:continue         Continue an in-progress merge"
     caddie cli:indent "merge:main [remote]    Merge mainline into current branch"
     caddie cli:indent "main:merge:branch       Merge current branch into main and delete it"
     caddie cli:blank
@@ -1789,6 +1836,8 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"
+    caddie cli:indent "caddie git:merge:abort"
+    caddie cli:indent "caddie git:merge:continue"
     caddie cli:indent "caddie git:merge:main"
     caddie cli:indent "caddie git:main:merge:branch"
     caddie cli:indent "caddie git:worktree:add ../repo-worktree feature/analytics"
