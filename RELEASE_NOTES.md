@@ -1,5 +1,28 @@
 # Caddie.sh Release Notes
 
+## Version 10.1.0 - Git merge abort and continue
+
+**Release Date:** August 14, 2026
+
+### New commands
+
+- **`git:merge:abort`**: Abort an in-progress merge (`git merge --abort`), with a clear error when no merge is in progress.
+- **`git:merge:continue`**: Continue an in-progress merge after conflicts are resolved (`git merge --continue`).
+
+These match the existing `git:rebase:abort` / `git:rebase:continue` pair so agents do not fall back to raw git for a conflicted merge.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+caddie git:merge:abort
+caddie git:merge:continue
+```
+
+---
+
 ## Version 10.0.0 - Stop exporting module functions
 
 **Release Date:** August 4, 2026

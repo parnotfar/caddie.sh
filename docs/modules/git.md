@@ -329,6 +329,20 @@ caddie git:merge:main upstream
 
 Tip: If you previously used the `gmm` alias, use `caddie git:merge:main` instead.
 
+#### `caddie git:merge:abort`
+Abort an in-progress merge.
+
+```bash
+caddie git:merge:abort
+```
+
+#### `caddie git:merge:continue`
+Continue an in-progress merge after conflicts are resolved.
+
+```bash
+caddie git:merge:continue
+```
+
 ### Advanced Git Operations
 
 #### `caddie git:push:set:upstream [<remote>] [<branch>]`
