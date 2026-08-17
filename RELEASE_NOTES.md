@@ -13,10 +13,12 @@
 
 ### GitHub pull requests
 
-- **`git:pr:approve`**: Still approves other people's PRs. If the PR is yours, GitHub forbids self-approval, so caddie merges it instead (admin retry when required reviews block the merge).
-- **`git:pr:merge [pr]`**: Merge a pull request and delete its branch.
-- **`git:pr:merge:admin [pr]`**: Merge with admin override for required-review repos.
-- **Current branch default**: `pr:approve`, `pr:merge`, and `pr:merge:admin` use the current branch when no PR number or branch is given.
+- **`git:pr:approve`**: Still approves other people's PRs. If the PR is yours, GitHub forbids self-approval, so caddie rebase-merges it instead (admin retry when required reviews block the merge).
+- **`git:pr:merge [pr]`**: Rebase-merge a pull request and delete its branch (default, no prompt).
+- **`git:pr:merge:squash [pr]`**: Squash-merge a pull request and delete its branch.
+- **`git:pr:merge:admin [pr]`**: Rebase-merge with admin override for required-review repos.
+- **`git:pr:merge:squash:admin [pr]`**: Squash-merge with admin override.
+- **Current branch default**: `pr:approve`, `pr:merge`, `pr:merge:squash`, `pr:merge:admin`, and `pr:merge:squash:admin` use the current branch when no PR number or branch is given.
 
 ### Usage
 
@@ -27,7 +29,9 @@ caddie skill:update
 cpwd
 caddie git:pr:approve
 caddie git:pr:merge
+caddie git:pr:merge:squash
 caddie git:pr:merge:admin 16
+caddie git:pr:merge:squash:admin 16
 ```
 
 ---
