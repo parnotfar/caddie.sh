@@ -237,6 +237,8 @@ caddie git:gacp Add new feature
 
 # Create pull request
 caddie git:pr:create "Add new feature" "Description of changes"
+caddie git:pr:approve
+caddie git:pr:merge
 
 # Check status and manage remotes
 caddie git:status

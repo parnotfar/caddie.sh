@@ -1558,10 +1558,7 @@ function caddie_git_pr_create() {
     return 0
 }
 
-function caddie_git_pr_approve() {
-    local pr_identifier="$1"
-    local pr_view pr_number pr_title pr_branch pr_url
-
+function caddie_git_pr_require_github_internal() {
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         caddie cli:red "Error: Not in a git repository"
         return 1
@@ -1579,38 +1576,210 @@ function caddie_git_pr_approve() {
         return 1
     fi
 
+    return 0
+}
+
+function caddie_git_pr_resolve_identifier_internal() {
+    local pr_identifier="$1"
+    local current_branch=""
+
+    if [ -n "$pr_identifier" ]; then
+        printf '%s\n' "$pr_identifier"
+        return 0
+    fi
+
+    current_branch="$(git branch --show-current 2>/dev/null || true)"
+    if [ -z "$current_branch" ]; then
+        return 1
+    fi
+
+    printf '%s\n' "$current_branch"
+    return 0
+}
+
+function caddie_git_pr_print_details_internal() {
+    local pr_identifier="$1"
+    local pr_view=""
+    local pr_number=""
+    local pr_title=""
+    local pr_branch=""
+    local pr_url=""
+
+    pr_view=$(gh pr view "$pr_identifier" --json number,title,headRefName,url --jq '[.number, .title, .headRefName, .url] | @tsv' 2>/dev/null || true)
+    if [ -z "$pr_view" ]; then
+        return 1
+    fi
+
+    local IFS=$'\t'
+    read -r pr_number pr_title pr_branch pr_url <<< "$pr_view"
+    if [ -n "$pr_number" ] && [ -n "$pr_title" ]; then
+        caddie cli:indent "PR #${pr_number}: ${pr_title}"
+    fi
+    if [ -n "$pr_branch" ]; then
+        caddie cli:indent "Branch: ${pr_branch}"
+    fi
+    if [ -n "$pr_url" ]; then
+        caddie cli:indent "URL: ${pr_url}"
+    fi
+    return 0
+}
+
+function caddie_git_pr_is_own_internal() {
+    local pr_identifier="$1"
+    local author=""
+    local me=""
+    local author_lc=""
+    local me_lc=""
+
+    author="$(gh pr view "$pr_identifier" --json author --jq '.author.login' 2>/dev/null || true)"
+    me="$(gh api user --jq .login 2>/dev/null || true)"
+    if [ -z "$author" ] || [ -z "$me" ]; then
+        return 1
+    fi
+
+    author_lc="$(printf '%s' "$author" | tr '[:upper:]' '[:lower:]')"
+    me_lc="$(printf '%s' "$me" | tr '[:upper:]' '[:lower:]')"
+    if [ "$author_lc" = "$me_lc" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_git_pr_merge_internal() {
+    local pr_identifier="$1"
+    local mode="${2:-standard}"
+
+    if [ "$mode" = "admin" ]; then
+        if gh pr merge "$pr_identifier" --admin --delete-branch; then
+            caddie cli:check "Pull request merged (admin override)"
+            return 0
+        fi
+        caddie cli:red "Failed to merge pull request"
+        return 1
+    fi
+
+    if gh pr merge "$pr_identifier" --delete-branch; then
+        caddie cli:check "Pull request merged"
+        return 0
+    fi
+
+    caddie cli:red "Failed to merge pull request"
+    caddie cli:thought "If reviews are required, use: caddie git:pr:merge:admin ${pr_identifier}"
+    return 1
+}
+
+function caddie_git_pr_land_own_internal() {
+    local pr_identifier="$1"
+
+    caddie cli:yellow "GitHub does not allow approving your own pull request"
+    caddie cli:indent "Merging instead (solo developer workflow)"
+
+    if gh pr merge "$pr_identifier" --delete-branch; then
+        caddie cli:check "Pull request merged"
+        return 0
+    fi
+
+    caddie cli:yellow "Merge blocked; retrying with admin override"
+    if gh pr merge "$pr_identifier" --admin --delete-branch; then
+        caddie cli:check "Pull request merged (admin override)"
+        return 0
+    fi
+
+    caddie cli:red "Failed to merge pull request"
+    caddie cli:thought "Try: caddie git:pr:merge:admin ${pr_identifier}"
+    return 1
+}
+
+function caddie_git_pr_approve() {
+    local pr_identifier="$1"
+    local review_output=""
+
+    if ! caddie_git_pr_require_github_internal; then
+        return 1
+    fi
+
+    pr_identifier="$(caddie_git_pr_resolve_identifier_internal "$pr_identifier" || true)"
     if [ -z "$pr_identifier" ]; then
         caddie cli:red "Error: Please provide a pull request number or branch"
-        caddie cli:usage "caddie git:pr:approve <pr-number|branch>"
+        caddie cli:usage "caddie git:pr:approve [pr-number|branch]"
         return 1
     fi
 
     caddie cli:title "Approving pull request: $pr_identifier"
 
-    pr_view=$(gh pr view "$pr_identifier" --json number,title,headRefName,url --jq '[.number, .title, .headRefName, .url] | @tsv' 2>/dev/null || true)
-    if [ -n "$pr_view" ]; then
-        local IFS=$'\t'
-        read -r pr_number pr_title pr_branch pr_url <<< "$pr_view"
-        if [ -n "$pr_number" ] && [ -n "$pr_title" ]; then
-            caddie cli:indent "PR #${pr_number}: ${pr_title}"
-        fi
-        if [ -n "$pr_branch" ]; then
-            caddie cli:indent "Branch: ${pr_branch}"
-        fi
-        if [ -n "$pr_url" ]; then
-            caddie cli:indent "URL: ${pr_url}"
-        fi
-    else
-        caddie cli:yellow "Unable to retrieve PR details; continuing with approval"
+    if ! caddie_git_pr_print_details_internal "$pr_identifier"; then
+        caddie cli:yellow "Unable to retrieve PR details; continuing"
     fi
 
-    if gh pr review "$pr_identifier" --approve; then
+    if caddie_git_pr_is_own_internal "$pr_identifier"; then
+        caddie_git_pr_land_own_internal "$pr_identifier"
+        return $?
+    fi
+
+    if review_output="$(gh pr review "$pr_identifier" --approve 2>&1)"; then
         caddie cli:check "Pull request approved"
         return 0
     fi
 
+    if printf '%s' "$review_output" | grep -qi "own pull request"; then
+        caddie_git_pr_land_own_internal "$pr_identifier"
+        return $?
+    fi
+
+    if [ -n "$review_output" ]; then
+        caddie cli:indent "$review_output"
+    fi
     caddie cli:red "Failed to approve pull request"
     return 1
+}
+
+function caddie_git_pr_merge() {
+    local pr_identifier="$1"
+
+    if ! caddie_git_pr_require_github_internal; then
+        return 1
+    fi
+
+    pr_identifier="$(caddie_git_pr_resolve_identifier_internal "$pr_identifier" || true)"
+    if [ -z "$pr_identifier" ]; then
+        caddie cli:red "Error: Please provide a pull request number or branch"
+        caddie cli:usage "caddie git:pr:merge [pr-number|branch]"
+        return 1
+    fi
+
+    caddie cli:title "Merging pull request: $pr_identifier"
+
+    if ! caddie_git_pr_print_details_internal "$pr_identifier"; then
+        caddie cli:yellow "Unable to retrieve PR details; continuing"
+    fi
+
+    caddie_git_pr_merge_internal "$pr_identifier" "standard"
+    return $?
+}
+
+function caddie_git_pr_merge_admin() {
+    local pr_identifier="$1"
+
+    if ! caddie_git_pr_require_github_internal; then
+        return 1
+    fi
+
+    pr_identifier="$(caddie_git_pr_resolve_identifier_internal "$pr_identifier" || true)"
+    if [ -z "$pr_identifier" ]; then
+        caddie cli:red "Error: Please provide a pull request number or branch"
+        caddie cli:usage "caddie git:pr:merge:admin [pr-number|branch]"
+        return 1
+    fi
+
+    caddie cli:title "Merging pull request with admin override: $pr_identifier"
+
+    if ! caddie_git_pr_print_details_internal "$pr_identifier"; then
+        caddie cli:yellow "Unable to retrieve PR details; continuing"
+    fi
+
+    caddie_git_pr_merge_internal "$pr_identifier" "admin"
+    return $?
 }
 
 function caddie_git_pr_completion_candidates() {
@@ -1723,7 +1892,7 @@ function caddie_git_auth_login() {
 }
 
 function caddie_git_commands() {
-    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:upstream:set git:upstream:get git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:abort git:merge:continue git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
+    printf '%s\n' "git:status git:info git:branch git:branch:new git:branch:create git:branch:new:feature git:branch:new:bugfix git:branch:new:description git:branch:describe git:branch:delete git:branch:clean:merged git:add git:add:all git:diff git:diff:vim git:log:oneline git:log:graph git:fetch git:fetch:prune git:stash:pop git:stash:clear git:stash:drop git:checkout git:switch git:switch:pull git:commit git:commit:staged git:commit:all git:commit:amend git:commit:amend:all git:commit:push git:gacp git:push git:push:force git:push:set:upstream git:upstream:set git:upstream:get git:pull git:rebase git:rebase:abort git:rebase:continue git:rebase:skip git:rebase:interactive git:merge:abort git:merge:continue git:merge:main git:main:merge:branch git:clone git:auth:login git:pr:create git:pr:approve git:pr:merge git:pr:merge:admin git:remote:add git:remote:set-url git:remote:list git:remote:remove git:worktree:list git:worktree:add git:worktree:add:new git:worktree:remove git:worktree:prune git:worktree:lock git:worktree:unlock git:worktree:cd"
     return 0
 }
 
@@ -1802,7 +1971,9 @@ function caddie_git_help() {
     caddie cli:title "GitHub & PRs:"
     caddie cli:indent "auth:login            Authenticate with GitHub CLI"
     caddie cli:indent "pr:create [title] [body] [base]  Create pull request using GitHub CLI"
-    caddie cli:indent "pr:approve <pr>        Approve pull request using GitHub CLI"
+    caddie cli:indent "pr:approve [pr]        Approve a PR, or merge it when it is yours"
+    caddie cli:indent "pr:merge [pr]          Merge pull request and delete its branch"
+    caddie cli:indent "pr:merge:admin [pr]    Merge pull request with admin override"
     caddie cli:indent "clone <repo-name>      Clone repository using stored GitHub account"
     caddie cli:blank
     
@@ -1833,6 +2004,8 @@ function caddie_git_help() {
     caddie cli:indent "caddie git:gacp Quick commit and push"
     caddie cli:indent "caddie git:pr:create 'Add new feature' 'Description of changes'"
     caddie cli:indent "caddie git:pr:approve 42"
+    caddie cli:indent "caddie git:pr:merge"
+    caddie cli:indent "caddie git:pr:merge:admin 16"
     caddie cli:indent "caddie git:remote:add"
     caddie cli:indent "caddie git:push"
     caddie cli:indent "caddie git:clone my-project"

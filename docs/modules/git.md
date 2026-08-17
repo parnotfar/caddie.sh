@@ -402,6 +402,32 @@ caddie git:pr:create "Fix bug" "Resolves login timeout issue" develop
 **Prerequisites:**
 - GitHub account must be set: `caddie github:account:set <account>`
 
+#### `caddie git:pr:approve [pr-number|branch]`
+Approve someone else's pull request. GitHub cannot approve your own PR, so if you are the author this lands the PR instead (`gh pr merge`, with an admin retry if reviews are required).
+
+Omit the identifier to use the current branch.
+
+```bash
+caddie git:pr:approve 16
+caddie git:pr:approve feature/git-merge-abort
+caddie git:pr:approve
+```
+
+#### `caddie git:pr:merge [pr-number|branch]`
+Merge a pull request and delete its branch. Omit the identifier to use the current branch.
+
+```bash
+caddie git:pr:merge
+caddie git:pr:merge 16
+```
+
+#### `caddie git:pr:merge:admin [pr-number|branch]`
+Merge a pull request with an admin override (bypasses required reviews). Use this when a solo-owned repo blocks merge until another reviewer approves.
+
+```bash
+caddie git:pr:merge:admin 16
+```
+
 ### Worktrees (Multi-Agent Workflow)
 
 Use git worktrees to isolate parallel work across agents or branches.
