@@ -132,7 +132,7 @@ caddie github:account:set ""
 - Account information is stored in memory only (session variable)
 - No passwords or tokens are stored
 - Uses SSH keys for authentication (configured separately)
-- Account name is visible in terminal prompt when set
+- Account name is inspected with `caddie github:account:get` (it is not shown in the core prompt)
 
 ## Tips and Best Practices
 

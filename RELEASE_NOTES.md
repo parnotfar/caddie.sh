@@ -8,14 +8,15 @@ Caddie 11 moves git workflows out of core. In an agentic world, version control 
 
 Core caddie is the common language for toolchains, modules, and agent dispatch. Git is an excellent *plugin* for that language. It is a poor *requirement* for it.
 
-Agents inherit environments, work in sandboxes, and often should use native `git` or skip version control entirely. Shipping `caddie git:*` and a branch badge in every prompt taught humans and agents that every directory was a git workspace. That is the wrong default now.
+Agents inherit environments, work in sandboxes, and often should use native `git` or skip version control entirely. Shipping `caddie git:*`, a branch badge, and a `[gh:account]` identity in every prompt taught humans and agents that every directory was a git/GitHub workspace. That is the wrong default now.
 
 If you want the old git command family and the `(branch|+n)` prompt segment, install [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and turn the prompt on **per repository**. Everyone else gets a quieter core.
 
 ### Breaking changes
 
+- **Quiet default prompt**: Core PS1 is `[Caddie-version] path $`. No git branch, and no `[gh:account]` identity badge. `gh auth status` is no longer queried on every prompt. Optional plugin segments (for example git branch after `caddie git:prompt:on`) still append when registered.
 - **Git module removed from core**: `caddie git:*` (status, branches, gacp, PRs, worktrees, remotes) now lives in [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools). Core `make install` no longer copies it.
-- **No git branch in the default prompt**: Core PS1 is `[Caddie-version][gh:account] path $`. Branch and dirty-file status appear only when the plugin is installed **and** you run `caddie git:prompt:on` in that repository.
+- **No git branch in the default prompt**: Branch and dirty-file status appear only when the git plugin is installed **and** you run `caddie git:prompt:on` in that repository.
 - **Agents must discover git**: Do not assume `git:*` exists. Query `caddie agent:exec core:module:commands git`. If discovery fails, use native git (or skip git) and say the plugin was unavailable.
 - **GitHub stays in core**: `caddie github:*` (account, repo create/url) is identity and hosting, not a git workflow. It remains.
 
