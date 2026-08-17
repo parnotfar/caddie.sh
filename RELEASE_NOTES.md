@@ -1,6 +1,6 @@
 # Caddie.sh Release Notes
 
-## Version 10.2.0 - Prompt-friendly cpwd
+## Version 10.2.0 - Prompt-friendly cpwd and solo PR merge
 
 **Release Date:** August 17, 2026
 
@@ -11,6 +11,13 @@
 - **No branch**: Outside a git repo or on a detached HEAD, clipboard text is `[current directory: <absolute-path>]`.
 - **Unchanged**: Same `pbcopy` / `wl-copy` / `xclip` clipboard fallbacks and silent success.
 
+### GitHub pull requests
+
+- **`git:pr:approve`**: Still approves other people's PRs. If the PR is yours, GitHub forbids self-approval, so caddie merges it instead (admin retry when required reviews block the merge).
+- **`git:pr:merge [pr]`**: Merge a pull request and delete its branch.
+- **`git:pr:merge:admin [pr]`**: Merge with admin override for required-review repos.
+- **Current branch default**: `pr:approve`, `pr:merge`, and `pr:merge:admin` use the current branch when no PR number or branch is given.
+
 ### Usage
 
 ```bash
@@ -18,6 +25,9 @@ make install
 caddie reload
 caddie skill:update
 cpwd
+caddie git:pr:approve
+caddie git:pr:merge
+caddie git:pr:merge:admin 16
 ```
 
 ---
