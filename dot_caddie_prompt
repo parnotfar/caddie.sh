@@ -62,28 +62,8 @@ function __caddie_version() {
 }
 
 function set_caddie_prompt_ps1() {
-  local version github_info github_status="" module_line=""
+  local version module_line=""
   version="$(__caddie_version)"
-
-  # Prefer Caddie's configured default (caddie github:account:set) over the GitHub
-  # CLI login identity, so the prompt matches clone/repo URLs after switching accounts.
-  if [ -n "${CADDIE_GITHUB_ACCOUNT:-}" ]; then
-    github_info="[${PS_GREEN}gh:${CADDIE_GITHUB_ACCOUNT}${PS_RESET}]"
-  elif command -v gh >/dev/null 2>&1; then
-    if github_status="$(gh auth status 2>/dev/null)"; then
-      if printf '%s' "$github_status" | grep -q "Logged in to github.com account"; then
-        local account
-        account="$(printf '%s' "$github_status" | sed -n 's/.*account \([^ ]*\).*/\1/p')"
-        github_info="[${PS_GREEN}gh:${account}${PS_RESET}]"
-      else
-        github_info="[${PS_YELLOW}gh:unknown${PS_RESET}]"
-      fi
-    else
-      github_info="[${PS_RED}gh:none${PS_RESET}]"
-    fi
-  else
-    github_info="[${PS_RED}gh:missing${PS_RESET}]"
-  fi
 
   local -a prompt_segments=()
   local segment_fn segment_output
@@ -96,13 +76,12 @@ function set_caddie_prompt_ps1() {
     fi
   done
 
-  local module_line=""
   if [ ${#prompt_segments[@]} -gt 0 ]; then
     local IFS=$' '
     module_line="${prompt_segments[*]}"
   fi
 
-  local base_line="[${PS_BLUE}Caddie-${version}${PS_RESET}]${github_info}"
+  local base_line="[${PS_BLUE}Caddie-${version}${PS_RESET}]"
   if [ -n "$module_line" ]; then
     base_line+="$module_line"
   fi

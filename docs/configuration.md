@@ -18,10 +18,9 @@ Caddie.sh is designed to be highly configurable while maintaining sensible defau
 ### Current Prompt Features
 
 The current prompt automatically displays:
+- Caddie version
 - Current directory
-- Git branch and status (when in a git repository)
-- Python virtual environment (when active)
-- Basic system information
+- Optional plugin segments (for example git branch after `caddie git:prompt:on`)
 
 ### Future Customization Options
 

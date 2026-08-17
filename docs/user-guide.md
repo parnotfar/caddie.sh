@@ -360,7 +360,7 @@ caddie rust:git:clean
 
 Git is a choice, not a requirement. Core caddie does not assume every session is a git workspace.
 
-Git workflows are an optional plugin: [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools). Core still provides `caddie github:*` for account and repository helpers. The prompt does **not** show git branch status unless you install the plugin and run `caddie git:prompt:on` in that repository.
+Git workflows are an optional plugin: [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools). The prompt does **not** show git branch status or a GitHub identity badge unless a plugin registers them. After installing caddie-git-tools, run `caddie git:prompt:on` in a repository to show branch/dirty status. Use `caddie github:account:get` to see the configured GitHub account.
 
 ```bash
 # Set up GitHub account (one-time setup, core)
