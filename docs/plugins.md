@@ -1,6 +1,14 @@
 # Optional plugins (ecosystem modules)
 
-Caddie can load modules that are **not** shipped in the core [caddie.sh](https://github.com/parnotfar/caddie.sh) repository. Those live in separate repos (for example [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)).
+Caddie can load modules that are **not** shipped in the core [caddie.sh](https://github.com/parnotfar/caddie.sh) repository. Those live in separate repos (for example [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)).
+
+## Why git left core (11.0)
+
+Caddie 11 treats git as an optional plugin because **git is a choice, not a requirement**.
+
+Core caddie is the shared language for toolchains and agents. Git is one workflow in that language. Shipping it in every install — and printing branch status in every prompt — made version control look mandatory. That is a bad default for agent shells, sandboxes, and work that is not a git checkout.
+
+Install [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) when you want `caddie git:*`. Turn the prompt on per repository with `caddie git:prompt:on`. If the plugin is not installed, agents should use native git or skip it, and say so.
 
 ## Architecture
 

@@ -24,7 +24,6 @@ caddie agent:exec core:module:commands rust
 # Run workflows
 caddie agent:exec js:project:test
 caddie agent:exec rust:test:unit
-caddie agent:exec git:status
 ```
 
 See **[Core Module — Agent and automation](core.md#agent-and-automation)** for details. The skill does not include caddie.sh development rules.

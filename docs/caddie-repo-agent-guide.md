@@ -17,6 +17,7 @@ Use this reference when working **inside the `caddie.sh` repository**. It is **n
 
 - **Core modules** live in this repo under `modules/dot_caddie_*` and are installed by `make install` / `make install-dot`.
 - **Plugins** live in separate repositories. They `make install` into the same `~/.caddie_modules` directory and use the same `caddie <module>:<command>` dispatch. Do not add new plugin command docs under `docs/modules/` in this repo; document them in the plugin repo. See `docs/plugins.md`.
+- **Git is a plugin (11.0+)**: `caddie git:*` and the branch prompt live in [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools), not this repo. Git is a choice for agentic workflows, not a core requirement. `caddie github:*` remains in core.
 
 ## High-signal rules
 

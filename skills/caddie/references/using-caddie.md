@@ -27,6 +27,8 @@ caddie agent:exec <module>:<command> [args]
 
 Never assume an optional plugin is present. Never invent subcommands. Plugin-specific pitfalls belong in that plugin’s own thin skill (if it ships one), not here.
 
+As of caddie 11, **git is a choice, not a requirement.** `caddie git:*` is the [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) plugin, not core. Discover it; if it is missing, use native git (or skip git) and say so.
+
 ## Agent shells — use `caddie agent:exec`
 
 **Module-agnostic** — works for every **installed** module (core or plugin), not JavaScript only.
@@ -38,7 +40,6 @@ Illustrative core examples (not an exhaustive list):
 | `js` | `caddie agent:exec core:module:commands js` | `caddie agent:exec js:project:test` |
 | `rust` | `caddie agent:exec core:module:commands rust` | `caddie agent:exec rust:test:unit` |
 | `python` | `caddie agent:exec core:module:commands python` | `caddie agent:exec python:test` |
-| `git` | `caddie agent:exec core:module:commands git` | `caddie agent:exec git:status` |
 | `github` | `caddie agent:exec core:module:commands github` | `caddie agent:exec github:account:get` |
 | `core` | `caddie agent:exec core:module:commands core` | `caddie agent:exec core:lint` |
 
@@ -100,9 +101,8 @@ Always state when you bypass caddie.
 ## Other modules
 
 ```bash
-caddie agent:exec core:module:commands git
 caddie agent:exec core:module:commands python
-caddie agent:exec git:status
+caddie agent:exec python:test
 ```
 
 Same discovery pattern for optional plugins when the user has installed them.

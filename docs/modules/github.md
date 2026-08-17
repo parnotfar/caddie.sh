@@ -4,7 +4,7 @@ The GitHub module provides GitHub account and repository management functionalit
 
 ## Overview
 
-The GitHub module (`caddie github:<command>`) manages your GitHub account information and provides repository management capabilities. It integrates with the Git module to enable automatic URL generation and streamlined workflows.
+The GitHub module (`caddie github:<command>`) manages your GitHub account information and provides repository management capabilities. Optional git workflows (clone, PRs, worktrees) live in the [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) plugin.
 
 ## Commands
 
@@ -67,9 +67,9 @@ caddie github:repo:url
 caddie github:repo:url my-project
 ```
 
-## Integration with Git Module
+## Integration with git tools
 
-The GitHub module works seamlessly with the Git module to provide enhanced workflows:
+The GitHub module works with the optional [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) plugin:
 
 ### Complete Setup Workflow
 
@@ -182,4 +182,4 @@ caddie git:help
 The GitHub module requires:
 - GitHub CLI (`gh`) for repository creation
 - SSH keys configured with GitHub
-- Git module for integration features
+- Optional [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) for clone/PR/worktree workflows

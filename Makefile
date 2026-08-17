@@ -145,8 +145,8 @@ install-dot: backup-existing ## Install dot files to home directory
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_ruby"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_js" "$(DEST_MODULES_DIR)/.caddie_js"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_js"
-	cp "$(SRC_MODULES_DIR)/dot_caddie_git" "$(DEST_MODULES_DIR)/.caddie_git"
-	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_git"
+	echo "$(YELLOW)  →$(NC) Git workflows are now the optional caddie-git-tools plugin"
+	echo "$(CYAN)    💡$(NC) Install from that repo with $(YELLOW)make install$(NC), then $(YELLOW)caddie git:prompt:on$(NC) per repository"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_github" "$(DEST_MODULES_DIR)/.caddie_github"
 	echo "$(GREEN)    ✓$(NC) Successfully installed $(DEST_MODULES_DIR)/.caddie_github"
 	cp "$(SRC_MODULES_DIR)/dot_caddie_swift" "$(DEST_MODULES_DIR)/.caddie_swift"
@@ -305,7 +305,7 @@ setup-github: setup-homebrew ## Setup GitHub CLI for pull request management
 	gh --version
 	echo "$(GREEN)✓$(NC) GitHub CLI setup completed"
 	echo "$(CYAN)  💡$(NC) To authenticate with GitHub: $(YELLOW)gh auth login$(NC)"
-	echo "$(CYAN)  💡$(NC) To create pull requests: $(YELLOW)caddie git:pr:create$(NC)"
+	echo "$(CYAN)  💡$(NC) Git workflows live in caddie-git-tools: $(YELLOW)make install$(NC) there, then $(YELLOW)caddie git:prompt:on$(NC)"
 
 uninstall: ## Remove installed dot files (does not remove Homebrew, Python, or Rust)
 	echo "$(BLUE)🗑️$(NC) Uninstalling caddie.sh dot files..."
