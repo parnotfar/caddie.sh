@@ -38,18 +38,31 @@ function set_terminal_tab_name() {
 }
 
 function cpwd() {
+  local payload=""
+  local branch=""
+
+  if command -v git >/dev/null 2>&1; then
+    branch="$(git branch --show-current 2>/dev/null || true)"
+  fi
+
+  if [ -n "$branch" ]; then
+    payload="[branch: ${branch}] [current directory: ${PWD}]"
+  else
+    payload="[current directory: ${PWD}]"
+  fi
+
   if command -v pbcopy >/dev/null 2>&1; then
-    printf "%s" "$PWD" | pbcopy
+    printf "%s" "$payload" | pbcopy
     return 0
   fi
 
   if command -v wl-copy >/dev/null 2>&1; then
-    printf "%s" "$PWD" | wl-copy
+    printf "%s" "$payload" | wl-copy
     return 0
   fi
 
   if command -v xclip >/dev/null 2>&1; then
-    printf "%s" "$PWD" | xclip -selection clipboard
+    printf "%s" "$payload" | xclip -selection clipboard
     return 0
   fi
 
