@@ -386,6 +386,7 @@ caddie git:branch:new feature/new-feature
 caddie git:pr:create "Add new feature" "Description of changes"
 caddie git:pr:approve
 caddie git:pr:merge
+caddie git:pr:merge:squash
 ```
 
 #### iOS Distribution

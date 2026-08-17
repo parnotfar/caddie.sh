@@ -279,7 +279,7 @@ caddie git:pr:create "Add your feature" "Detailed description of changes"
 - Wait for code review when another reviewer is available
 - Address any feedback
 - Merge when approved
-- Solo developers: `caddie git:pr:approve` on your own PR merges it (GitHub cannot self-approve). Use `caddie git:pr:merge` or `caddie git:pr:merge:admin` to land it directly.
+- Solo developers: `caddie git:pr:approve` on your own PR rebase-merges it (GitHub cannot self-approve). Use `caddie git:pr:merge` (rebase) or `caddie git:pr:merge:squash` to land it directly.
 
 ## Fixing Common Issues
 
