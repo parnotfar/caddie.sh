@@ -191,13 +191,15 @@ The linter is now universal - it can lint any shell script, not just caddie modu
 
 ## Git Workflow
 
+Git is a choice, not a requirement. These commands need the optional **caddie-git-tools** plugin (`make install` in that repo, then `caddie reload`). If it is not installed, use native git.
+
 * Quick commit & push:
   ```sh
   caddie git:gacp "Add new <module> module"
   ```
 * Create and publish new branch:
   ```sh
-  caddie git:new:branch feature/new-feature
+  caddie git:branch:new feature/new-feature
   ```
 * Check status:
   ```sh

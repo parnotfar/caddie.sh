@@ -27,20 +27,18 @@ make your coding experience smooth and efficient.
 - **Rust Integration**: Cross-platform Rust development for iOS, WatchOS, and Android
 - **Cross-Platform**: Multi-language project templates and tools
 - **macOS Utilities**: Screenshot archiving and cleanup helpers
-- **Git Workflow**: Branch management, pull request creation, and GitHub integration
+- **GitHub Integration**: Account management and repository creation
 - **Profile Snippets**: Source standard or caddie custom Bash profiles (`caddie profile:source`, `caddie profile:custom:source`); idempotent PATH and export lines (`caddie path:add`, `caddie profile:add-line`)
 - **Agent Skill**: Install and update the caddie Cursor/Codex skill (`caddie skill:install:all`, `caddie skill:update`, `caddie skill:audit`)
 - **Agent execution**: Run any module command from Codex/automation shells via `caddie agent:exec` (pairs with `caddie core:module:commands` for discovery)
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Claude Code Integration**: Onboarding and CLI workflows for Claude Code teams
-- **Git Integration**: Enhanced git workflows with SSH URLs, auto-detection, GitHub integration, and branch management
-- **GitHub Integration**: Account management and repository creation with seamless Git workflow
 - **Code Quality Tools**: Comprehensive linter with flexible output (all issues or limited), variable shadowing detection, and caddie-specific standards
 - **CLI Utilities**: Rich terminal output with colors, UTF-8 characters, and semantic formatting
 - **Module Info Commands**: `caddie <module>:info` summaries for toolchain status and configuration
 - **Debug System**: Built-in debugging and logging capabilities
 - **Customizable Prompts**: Beautiful, informative shell prompts
-- **Extensible Ecosystem**: Optional modules—like [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core. Plugin repos own their docs and releases.
+- **Extensible Ecosystem**: Optional modules—like [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—slot in without modifying the core. Git is a choice, not a requirement. Plugin repos own their docs and releases.
 
 ## 🚀 Quick Start
 
@@ -75,18 +73,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-10.2.0 (update this for each release)
+caddie  # prompt shows as caddie-11.0.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-10.2.0 rust  # prompt switches to caddie[rust]-10.2.0
-caddie[rust]-10.2.0 back  # exits scope (also accepts `up` or `..`)
+caddie-11.0.0 rust  # prompt switches to caddie[rust]-11.0.0
+caddie[rust]-11.0.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-10.2.0 `ls -la`
-caddie-10.2.0 shell git status  # one-off shell command
+caddie-11.0.0 `ls -la`
+caddie-11.0.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-10.2.0 rust build
+caddie-11.0.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 
@@ -117,11 +115,11 @@ caddie-10.2.0 rust build
 - **[Codex Module](docs/modules/codex.md)** - Codex-powered review and automation helpers
 - **[Claude Module](docs/modules/claude.md)** - Claude Code onboarding and CLI helpers
 - **[Debug Module](docs/modules/debug.md)** - Debug control and output helpers
-- **[Git Module](docs/modules/git.md)** - Enhanced git workflows
+- **[GitHub Module](docs/modules/github.md)** - GitHub account and repository management
 - **[Profile Module](docs/modules/profile.md)** - Custom Bash profile snippets (PATH, exports)
 - **[Skill Module](docs/modules/skill.md)** - Agent skill install, update, and audit
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
-- External ecosystem modules—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately. See [docs/plugins.md](docs/plugins.md) for the plugin architecture; each plugin repository owns its own command docs.
+- External ecosystem modules—such as [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately. See [docs/plugins.md](docs/plugins.md) for the plugin architecture; each plugin repository owns its own command docs.
 
 ## Use Cases
 
@@ -163,7 +161,7 @@ caddie.sh/
 │   ├── dot_caddie_cross    # Cross-language features
 │   ├── dot_caddie_mac      # macOS utilities
 │   ├── dot_caddie_cursor   # IDE integration
-│   └── dot_caddie_git      # Git enhancements
+│   └── dot_caddie_github   # GitHub account and repository helpers
 ├── docs/                   # Documentation
 ├── Makefile                # Build system
 └── README.md               # Project overview
@@ -222,28 +220,23 @@ caddie rust:run
 
 ### Git Workflow
 
+Git is a choice, not a requirement. Core caddie does not ship `git:*` commands or show branch status in the prompt. In an agentic world, version control is something you install when you want it.
+
+Git commands live in the optional [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) plugin. After `make install` there and `caddie reload`:
+
 ```bash
-# Set up GitHub account
+# Set up GitHub account (core)
 caddie github:account:set parnotfar
 
-# Clone repository
+# Clone, branch, commit, and land PRs (plugin)
 caddie git:clone my-project
-
-# Create and publish new branch
 caddie git:branch:new feature/new-feature
-
-# Quick commit and push
 caddie git:gacp Add new feature
-
-# Create pull request
 caddie git:pr:create "Add new feature" "Description of changes"
-caddie git:pr:approve
 caddie git:pr:merge
-caddie git:pr:merge:squash
 
-# Check status and manage remotes
-caddie git:status
-caddie git:remote:add
+# Show branch status in the prompt for this repo only
+caddie git:prompt:on
 ```
 
 ### Project Management

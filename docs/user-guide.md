@@ -358,35 +358,23 @@ caddie rust:git:clean
 
 #### Enhanced Git Workflows
 
-Caddie.sh provides enhanced git commands with GitHub integration:
+Git is a choice, not a requirement. Core caddie does not assume every session is a git workspace.
+
+Git workflows are an optional plugin: [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools). Core still provides `caddie github:*` for account and repository helpers. The prompt does **not** show git branch status unless you install the plugin and run `caddie git:prompt:on` in that repository.
 
 ```bash
-# Set up GitHub account (one-time setup)
+# Set up GitHub account (one-time setup, core)
 caddie github:account:set parnotfar
 
-# Clone repositories with auto-detection
+# After installing caddie-git-tools:
 caddie git:clone my-project
-
-# Add remotes with auto-detection
 caddie git:remote:add
-
-# Set upstream for new repositories
-caddie git:push:set:upstream
-
-# Enhanced git operations
 caddie git:commit "Add new feature"
 caddie git:gacp Quick commit and push
-caddie git:push
-caddie git:pull
-
-# Create and manage branches
 caddie git:branch:new feature/new-feature
-
-# Create pull requests
 caddie git:pr:create "Add new feature" "Description of changes"
-caddie git:pr:approve
 caddie git:pr:merge
-caddie git:pr:merge:squash
+caddie git:prompt:on
 ```
 
 #### iOS Distribution

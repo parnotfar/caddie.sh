@@ -28,11 +28,10 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [iOS Module](modules/ios.md) - App Store and TestFlight distribution tools
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
-  - [Git Module](modules/git.md) - Enhanced git workflows
   - [GitHub Module](modules/github.md) - GitHub account and repository management
   - [Profile Module](modules/profile.md) - Bash profile sourcing and custom PATH snippets
   - [Skill Module](modules/skill.md) - Agent skill install, update, and audit
-  - Optional ecosystem modules (e.g. [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
+  - Optional ecosystem modules (e.g. [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
 
 ### Shared executables
 

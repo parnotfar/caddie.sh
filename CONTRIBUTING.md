@@ -257,7 +257,7 @@ git checkout -b feature/your-feature-name
 
 ### 4. Commit and Push
 ```bash
-# Quick commit and push
+# Quick commit and push (requires caddie-git-tools)
 caddie git:gacp "Add your feature description"
 
 # Or traditional git workflow
@@ -267,6 +267,7 @@ git push
 ```
 
 ### 5. Create Pull Request
+Requires caddie-git-tools.
 ```bash
 # Create pull request with auto-generated content
 caddie git:pr:create

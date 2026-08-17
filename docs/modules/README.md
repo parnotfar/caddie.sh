@@ -23,14 +23,13 @@ This directory contains detailed documentation for each Caddie.sh module.
 - **[Codex Module](codex.md)** - Codex-powered review and automation helpers
 - **[Claude Module](claude.md)** - Claude Code onboarding and CLI helpers
 - **[Debug Module](debug.md)** - Debug control and output helpers
-- **[Git Module](git.md)** - Enhanced git workflows and GitHub integration
 - **[GitHub Module](github.md)** - GitHub account and repository management
 - **[Profile Module](profile.md)** - Custom Bash profile snippets (PATH, exports)
 - **[Skill Module](skill.md)** - Agent skill install, update, and audit
 - **[CLI Module](cli.md)** - Color utilities and formatting functions
 
 ### Optional Ecosystem Modules
-- External modules maintained in separate repositories—such as [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities. Plugin docs and versioning live in those repositories, not in core `docs/modules/`.
+- External modules maintained in separate repositories—such as [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities. Plugin docs and versioning live in those repositories, not in core `docs/modules/`.
 - **[Plugin architecture](../plugins.md)** - How optional plugins install, load, and relate to the core skill
 - **[CSV Module](csv.md)** - Optional CSV analytics module (requires separate install; documented here as the ecosystem example)
 

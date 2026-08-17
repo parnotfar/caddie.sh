@@ -1231,8 +1231,7 @@ echo "✓ Complete golf analysis workflow completed"
 ## Related Documentation
 
 - **[Core Module](core.md)** - Basic Caddie.sh functions and debug system
-- **[Rust Module](rust.md)** - Monte Carlo simulation tools (generate data for CSV analysis)
-- **[Git Module](git.md)** - Version control for analysis results
+- **[Rust Module](rust.md)** - Monte Carlo simulation tools (generate data for analysis)
 - **[Python Module](python.md)** - Python environment that CSV module builds upon
 
 ## External Resources

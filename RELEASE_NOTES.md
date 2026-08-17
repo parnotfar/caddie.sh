@@ -1,5 +1,46 @@
 # Caddie.sh Release Notes
 
+## Version 11.0.0 - Git is a choice, not a requirement
+
+**Release Date:** August 17, 2026
+
+Caddie 11 moves git workflows out of core. In an agentic world, version control is something you opt into — not something every shell, every prompt, and every agent session should assume.
+
+Core caddie is the common language for toolchains, modules, and agent dispatch. Git is an excellent *plugin* for that language. It is a poor *requirement* for it.
+
+Agents inherit environments, work in sandboxes, and often should use native `git` or skip version control entirely. Shipping `caddie git:*` and a branch badge in every prompt taught humans and agents that every directory was a git workspace. That is the wrong default now.
+
+If you want the old git command family and the `(branch|+n)` prompt segment, install [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and turn the prompt on **per repository**. Everyone else gets a quieter core.
+
+### Breaking changes
+
+- **Git module removed from core**: `caddie git:*` (status, branches, gacp, PRs, worktrees, remotes) now lives in [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools). Core `make install` no longer copies it.
+- **No git branch in the default prompt**: Core PS1 is `[Caddie-version][gh:account] path $`. Branch and dirty-file status appear only when the plugin is installed **and** you run `caddie git:prompt:on` in that repository.
+- **Agents must discover git**: Do not assume `git:*` exists. Query `caddie agent:exec core:module:commands git`. If discovery fails, use native git (or skip git) and say the plugin was unavailable.
+- **GitHub stays in core**: `caddie github:*` (account, repo create/url) is identity and hosting, not a git workflow. It remains.
+
+### What moved with the plugin
+
+The former core git module, including the 10.2.0 PR landing commands (`git:pr:approve` on your own PR, `git:pr:merge`, `git:pr:merge:squash`, admin variants). Prompt display is opt-in via `git:prompt:on` / `git:prompt:off` / `git:prompt:get` (local git config `caddie.prompt`).
+
+### Usage
+
+```bash
+# Core 11
+make install
+caddie reload
+caddie skill:update
+
+# Optional git workflows
+cd /path/to/caddie-git-tools
+make install
+caddie reload
+caddie git:help
+caddie git:prompt:on    # this repo only
+```
+
+---
+
 ## Version 10.2.0 - Prompt-friendly cpwd and solo PR merge
 
 **Release Date:** August 17, 2026

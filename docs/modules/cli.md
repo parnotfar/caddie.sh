@@ -295,6 +295,6 @@ declare -f caddie_cli_red
 ## Related Modules
 
 - **[Core Module](core.md)** - Basic caddie functions and debug system
-- **[Git Module](git.md)** - Enhanced git workflows (uses CLI for status output)
+- **[GitHub Module](github.md)** - GitHub account helpers
 - **[Python Module](python.md)** - Python environment management (uses CLI for installation feedback)
 - **[Rust Module](rust.md)** - Rust development tools (uses CLI for build output)

@@ -61,12 +61,8 @@ function __caddie_version() {
   fi
 }
 
-function __ps1_branch() {
-  git rev-parse --abbrev-ref HEAD 2>/dev/null || return 0
-}
-
 function set_caddie_prompt_ps1() {
-  local version branch git_info github_info changes github_status="" module_line=""
+  local version github_info github_status="" module_line=""
   version="$(__caddie_version)"
 
   # Prefer Caddie's configured default (caddie github:account:set) over the GitHub
@@ -87,18 +83,6 @@ function set_caddie_prompt_ps1() {
     fi
   else
     github_info="[${PS_RED}gh:missing${PS_RESET}]"
-  fi
-
-  branch="$(__ps1_branch)"
-  if [ -n "$branch" ]; then
-    changes="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
-    if [ "${changes:-0}" -gt 0 ]; then
-      git_info=" (${PS_PURPLE}${branch}${PS_RESET}|${PS_CYAN}+${changes}${PS_RESET})"
-    else
-      git_info=" (${PS_PURPLE}${branch}${PS_RESET}|${PS_GREEN}✓${PS_RESET})"
-    fi
-  else
-    git_info=""
   fi
 
   local -a prompt_segments=()
@@ -122,7 +106,6 @@ function set_caddie_prompt_ps1() {
   if [ -n "$module_line" ]; then
     base_line+="$module_line"
   fi
-  base_line+="${git_info}"
   local path_fragment="${PS_YELLOW}\w${PS_RESET} \$ "
 
   PROMPT_DIRTRIM=3
