@@ -182,6 +182,7 @@ ns             # npm start
 r              # rails
 c              # clear
 ll             # ls -laGFH
+cpwd           # copy [branch: ...] [current directory: ...] for agent prompts
 ```
 
 **Navigation & File Management:**

@@ -1,5 +1,27 @@
 # Caddie.sh Release Notes
 
+## Version 10.2.0 - Prompt-friendly cpwd
+
+**Release Date:** August 17, 2026
+
+### Shell helpers
+
+- **`cpwd`**: Copies labeled workspace context for agent prompts instead of a bare path.
+- **Git branch when present**: On a named branch, clipboard text is `[branch: <name>] [current directory: <absolute-path>]`.
+- **No branch**: Outside a git repo or on a detached HEAD, clipboard text is `[current directory: <absolute-path>]`.
+- **Unchanged**: Same `pbcopy` / `wl-copy` / `xclip` clipboard fallbacks and silent success.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+cpwd
+```
+
+---
+
 ## Version 10.1.0 - Git merge abort and continue
 
 **Release Date:** August 14, 2026
