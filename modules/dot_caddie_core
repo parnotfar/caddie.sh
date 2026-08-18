@@ -1009,7 +1009,7 @@ function caddie_agent_exec() {
 
 function caddie_core_commands() {
     # caddie:lint:disable
-    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:module:reload core:agent:exec'
+    printf '%s\n' 'core:info core:status core:set:home core:set:app core:get:app core:help core:aliases core:alias:grep core:alias:git core:alias:docker core:alias:npm core:alias:nav core:lint core:lint:limit core:module:commands core:module:reload core:bash:login:get core:bash:login:set core:bash:launchd:get core:bash:launchd:set core:bash:launchd:unset core:agent:exec'
     # caddie:lint:enable
     return 0
 }
@@ -1044,6 +1044,13 @@ function caddie_core_help() {
     caddie cli:indent "alias:npm            Show npm-related aliases"
     caddie cli:indent "alias:nav            Show navigation aliases"
     caddie cli:blank
+    caddie cli:title "Bash (login shell and launchd):"
+    caddie cli:indent "bash:login:get      Show the Unix login shell"
+    caddie cli:indent "bash:login:set      Point the login shell at Homebrew Bash (or a path)"
+    caddie cli:indent "bash:launchd:get    Show GUI-session SHELL (macOS)"
+    caddie cli:indent "bash:launchd:set    Point launchd SHELL at Homebrew Bash (or a path)"
+    caddie cli:indent "bash:launchd:unset  Clear launchd SHELL and remove the LaunchAgent"
+    caddie cli:blank
     caddie cli:title "Agent / automation:"
     caddie cli:indent "module:commands <mod> Machine-readable command list (one per line)"
     caddie cli:indent "module:reload [mod]  Re-source one module (or all) without full profile reload"
@@ -1063,6 +1070,9 @@ function caddie_core_help() {
     caddie cli:indent "caddie core:lint:limit 5 modules/dot_caddie_ruby"
     caddie cli:indent "caddie core:module:commands js"
     caddie cli:indent "caddie core:module:reload csv"
+    caddie cli:indent "caddie core:bash:login:get"
+    caddie cli:indent "caddie core:bash:launchd:get"
+    caddie cli:indent "caddie core:bash:launchd:set"
     caddie cli:indent "caddie agent:exec js:project:test"
     return 0
 }
@@ -1071,6 +1081,547 @@ function caddie_core_description() {
     # caddie:lint:disable
     echo 'Core Caddie Functions'
     # caddie:lint:enable
+    return 0
+}
+
+function caddie_core_bash_is_modern() {
+    local bash_path="$1"
+    local major=""
+
+    if [ -z "$bash_path" ] || [ ! -x "$bash_path" ]; then
+        return 1
+    fi
+
+    major="$("$bash_path" -c 'printf %s "${BASH_VERSINFO[0]}"' 2>/dev/null)"
+    case "$major" in
+        [4-9]|[1-9][0-9]*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+function caddie_core_bash_version_string() {
+    local bash_path="$1"
+    local version=""
+
+    if [ -z "$bash_path" ] || [ ! -x "$bash_path" ]; then
+        return 1
+    fi
+
+    version="$("$bash_path" -c 'printf %s "$BASH_VERSION"' 2>/dev/null)"
+    if [ -z "$version" ]; then
+        return 1
+    fi
+
+    printf '%s\n' "$version"
+    return 0
+}
+
+function caddie_core_bash_preferred_path() {
+    local candidate=""
+
+    if declare -F caddie_homebrew_bash_path >/dev/null 2>&1; then
+        candidate="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+        if [ -n "$candidate" ] && caddie_core_bash_is_modern "$candidate"; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+function caddie_core_bash_login_path() {
+    local login_path=""
+    local user_name="${USER:-}"
+
+    if [ -z "$user_name" ]; then
+        user_name="$(id -un 2>/dev/null)"
+    fi
+
+    case "$(uname -s)" in
+        Darwin)
+            if [ -n "$user_name" ] && command -v dscl >/dev/null 2>&1; then
+                login_path="$(dscl . -read "/Users/${user_name}" UserShell 2>/dev/null | awk '{print $2}')"
+            fi
+            ;;
+        *)
+            if [ -n "$user_name" ] && command -v getent >/dev/null 2>&1; then
+                login_path="$(getent passwd "$user_name" 2>/dev/null | cut -d: -f7)"
+            fi
+            ;;
+    esac
+
+    if [ -z "$login_path" ]; then
+        login_path="${SHELL:-}"
+    fi
+
+    printf '%s\n' "$login_path"
+    return 0
+}
+
+function caddie_core_bash_current_path() {
+    if [ -n "${BASH:-}" ]; then
+        printf '%s\n' "$BASH"
+        return 0
+    fi
+
+    command -v bash 2>/dev/null
+    return $?
+}
+
+function caddie_core_bash_status() {
+    local system_path=""
+    local homebrew_path=""
+    local login_path=""
+    local current=""
+    local version=""
+
+    if declare -F caddie_system_bash_path >/dev/null 2>&1; then
+        system_path="$(caddie_system_bash_path 2>/dev/null || true)"
+    fi
+    if declare -F caddie_homebrew_bash_path >/dev/null 2>&1; then
+        homebrew_path="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+    fi
+    login_path="$(caddie_core_bash_login_path)"
+    current="$(caddie_core_bash_current_path)"
+
+    if [ -n "$system_path" ]; then
+        version="$(caddie_core_bash_version_string "$system_path" 2>/dev/null || true)"
+        if [ -n "$version" ]; then
+            caddie cli:indent "system bash: ${system_path} (${version})"
+        else
+            caddie cli:indent "system bash: ${system_path}"
+        fi
+    else
+        caddie cli:yellow "system bash: not found"
+    fi
+
+    if [ -n "$homebrew_path" ]; then
+        version="$(caddie_core_bash_version_string "$homebrew_path" 2>/dev/null || true)"
+        if [ -n "$version" ]; then
+            caddie cli:check "homebrew bash: ${homebrew_path} (${version})"
+        else
+            caddie cli:check "homebrew bash: ${homebrew_path}"
+        fi
+    else
+        caddie cli:red "homebrew bash: not found"
+        caddie cli:thought "Install with: brew install bash"
+        caddie cli:thought "Verify with: caddie homebrew:bash:get"
+    fi
+
+    if [ -n "$login_path" ]; then
+        version="$(caddie_core_bash_version_string "$login_path" 2>/dev/null || true)"
+        if [ -n "$version" ]; then
+            caddie cli:indent "login shell: ${login_path} (${version})"
+        else
+            caddie cli:indent "login shell: ${login_path}"
+        fi
+        if [ -n "$homebrew_path" ] && [ "$login_path" = "$homebrew_path" ]; then
+            caddie cli:check "login shell matches Homebrew Bash"
+        else
+            caddie cli:yellow "login shell does not match Homebrew Bash"
+            caddie cli:thought "Use: caddie core:bash:login:set"
+        fi
+    else
+        caddie cli:yellow "login shell: unknown"
+    fi
+
+    caddie_core_bash_launchd_status "$homebrew_path"
+
+    if [ -n "$current" ]; then
+        version="$(caddie_core_bash_version_string "$current" 2>/dev/null || true)"
+        if [ -n "$version" ]; then
+            caddie cli:indent "this process: ${current} (${version})"
+        else
+            caddie cli:indent "this process: ${current}"
+        fi
+    fi
+
+    return 0
+}
+
+function caddie_core_bash_is_darwin() {
+    [ "$(uname -s)" = "Darwin" ]
+    return $?
+}
+
+function caddie_core_bash_resolve_target() {
+    local dest_var="$1"
+    local requested="${2:-}"
+    local resolved=""
+
+    if [ -z "$dest_var" ]; then
+        caddie cli:red "Error: Bash target resolve requires a variable name"
+        return 1
+    fi
+
+    if [ -n "$requested" ]; then
+        resolved="$requested"
+    else
+        resolved="$(caddie_core_bash_preferred_path 2>/dev/null || true)"
+    fi
+
+    if [ -z "$resolved" ]; then
+        caddie cli:red "Error: Homebrew Bash is not installed"
+        caddie cli:thought "Install with: brew install bash"
+        caddie cli:thought "Verify with: caddie homebrew:bash:get"
+        return 1
+    fi
+
+    if [ ! -x "$resolved" ]; then
+        caddie cli:red "Error: Bash is not executable: ${resolved}"
+        return 1
+    fi
+
+    if ! caddie_core_bash_is_modern "$resolved"; then
+        caddie cli:red "Error: ${resolved} is not Bash 4+"
+        return 1
+    fi
+
+    case "$resolved" in
+        /*)
+            ;;
+        *)
+            caddie cli:red "Error: Bash path must be absolute: ${resolved}"
+            return 1
+            ;;
+    esac
+
+    case "$resolved" in
+        *['&<>"']*)
+            caddie cli:red "Error: Bash path contains unsupported characters: ${resolved}"
+            return 1
+            ;;
+    esac
+
+    printf -v "$dest_var" '%s' "$resolved"
+    return 0
+}
+
+function caddie_core_bash_login_configure() {
+    local target=""
+    local current=""
+    local shells_file="/etc/shells"
+
+    if ! caddie_core_bash_resolve_target target "${1:-}"; then
+        return 1
+    fi
+
+    current="$(caddie_core_bash_login_path)"
+    if [ "$current" = "$target" ]; then
+        caddie cli:check "Login shell already ${target}"
+        return 0
+    fi
+
+    if [ -f "$shells_file" ] && ! grep -Fxq "$target" "$shells_file"; then
+        caddie cli:yellow "${target} is not listed in ${shells_file}"
+        if [ -t 0 ] && command -v sudo >/dev/null 2>&1; then
+            if printf '%s\n' "$target" | sudo tee -a "$shells_file" >/dev/null; then
+                caddie cli:check "Added ${target} to ${shells_file}"
+            else
+                caddie cli:red "Error: Could not update ${shells_file}"
+                caddie cli:indent "printf '%s\\n' '${target}' | sudo tee -a ${shells_file}"
+                caddie cli:indent "caddie core:bash:login:set ${target}"
+                return 1
+            fi
+        else
+            caddie cli:red "Error: ${target} must be listed in ${shells_file} before chsh"
+            caddie cli:indent "printf '%s\\n' '${target}' | sudo tee -a ${shells_file}"
+            caddie cli:indent "caddie core:bash:login:set ${target}"
+            return 1
+        fi
+    fi
+
+    if chsh -s "$target"; then
+        caddie cli:check "Login shell set to ${target}"
+        caddie cli:thought "New login sessions use this shell. GUI agents also need caddie core:bash:launchd:set"
+        return 0
+    fi
+
+    caddie cli:red "Error: chsh failed"
+    caddie cli:indent "caddie core:bash:login:set ${target}"
+    return 1
+}
+
+function caddie_core_bash_login_get() {
+    local login_path=""
+    local homebrew_path=""
+    local version=""
+
+    caddie cli:title "Login shell"
+    login_path="$(caddie_core_bash_login_path)"
+    if declare -F caddie_homebrew_bash_path >/dev/null 2>&1; then
+        homebrew_path="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+    fi
+
+    if [ -z "$login_path" ]; then
+        caddie cli:yellow "login shell: unknown"
+        return 0
+    fi
+
+    version="$(caddie_core_bash_version_string "$login_path" 2>/dev/null || true)"
+    if [ -n "$version" ]; then
+        caddie cli:indent "login shell: ${login_path} (${version})"
+    else
+        caddie cli:indent "login shell: ${login_path}"
+    fi
+
+    if [ -n "$homebrew_path" ] && [ "$login_path" = "$homebrew_path" ]; then
+        caddie cli:check "login shell matches Homebrew Bash"
+    else
+        caddie cli:yellow "login shell does not match Homebrew Bash"
+        caddie cli:thought "Use: caddie core:bash:login:set"
+    fi
+
+    return 0
+}
+
+function caddie_core_bash_login_set() {
+    caddie cli:title "Login shell"
+    caddie_core_bash_login_configure "${1:-}"
+    return $?
+}
+
+function caddie_core_bash_launchd_label() {
+    printf '%s\n' 'sh.caddie.bash.shell'
+    return 0
+}
+
+function caddie_core_bash_launchd_plist_path() {
+    printf '%s\n' "${HOME}/Library/LaunchAgents/sh.caddie.bash.shell.plist"
+    return 0
+}
+
+function caddie_core_bash_launchd_current() {
+    launchctl getenv SHELL 2>/dev/null || true
+    return 0
+}
+
+function caddie_core_bash_launchd_status() {
+    local homebrew_path="${1:-}"
+    local current=""
+    local version=""
+    local plist_path=""
+
+    if ! caddie_core_bash_is_darwin; then
+        return 0
+    fi
+
+    current="$(caddie_core_bash_launchd_current)"
+    plist_path="$(caddie_core_bash_launchd_plist_path)"
+
+    if [ -n "$current" ]; then
+        version="$(caddie_core_bash_version_string "$current" 2>/dev/null || true)"
+        if [ -n "$version" ]; then
+            caddie cli:indent "launchd SHELL: ${current} (${version})"
+        else
+            caddie cli:indent "launchd SHELL: ${current}"
+        fi
+    else
+        caddie cli:yellow "launchd SHELL: not set"
+    fi
+
+    if [ -f "$plist_path" ]; then
+        caddie cli:indent "launchd plist: ${plist_path}"
+    else
+        caddie cli:indent "launchd plist: not installed"
+    fi
+
+    if [ -n "$homebrew_path" ] && [ "$current" = "$homebrew_path" ]; then
+        caddie cli:check "launchd SHELL matches Homebrew Bash"
+    else
+        caddie cli:yellow "launchd SHELL does not match Homebrew Bash"
+        caddie cli:thought "Cursor Agent and Codex use launchd SHELL, not settings.json"
+        caddie cli:thought "Use: caddie core:bash:launchd:set"
+    fi
+
+    return 0
+}
+
+function caddie_core_bash_launchd_require_darwin() {
+    if caddie_core_bash_is_darwin; then
+        return 0
+    fi
+
+    caddie cli:red "Error: launchd SHELL is macOS-only"
+    return 1
+}
+
+function caddie_core_bash_launchd_write_plist() {
+    local target="$1"
+    local plist_path="$2"
+    local label="$3"
+    local tmp_path=""
+    local plist_dir=""
+
+    plist_dir="$(dirname "$plist_path")"
+    tmp_path="${plist_path}.caddie-tmp"
+    mkdir -p "$plist_dir"
+
+    if ! cat > "$tmp_path" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>${label}</string>
+    <key>LimitLoadToSessionType</key>
+    <array>
+        <string>Aqua</string>
+    </array>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/launchctl</string>
+        <string>setenv</string>
+        <string>SHELL</string>
+        <string>${target}</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+EOF
+    then
+        caddie cli:red "Error: Could not write LaunchAgent plist"
+        rm -f "$tmp_path"
+        return 1
+    fi
+
+    if ! mv "$tmp_path" "$plist_path"; then
+        caddie cli:red "Error: Could not install LaunchAgent plist"
+        rm -f "$tmp_path"
+        return 1
+    fi
+
+    return 0
+}
+
+function caddie_core_bash_launchd_apply() {
+    local target=""
+    local current=""
+    local plist_path=""
+    local label=""
+    local uid=""
+    local domain=""
+    local service=""
+    local bootstrap_status=0
+
+    if ! caddie_core_bash_launchd_require_darwin; then
+        return 1
+    fi
+
+    if ! caddie_core_bash_resolve_target target "${1:-}"; then
+        return 1
+    fi
+
+    plist_path="$(caddie_core_bash_launchd_plist_path)"
+    label="$(caddie_core_bash_launchd_label)"
+    uid="$(id -u)"
+    domain="gui/${uid}"
+    service="${domain}/${label}"
+
+    if ! caddie_core_bash_launchd_write_plist "$target" "$plist_path" "$label"; then
+        return 1
+    fi
+
+    launchctl bootout "$service" >/dev/null 2>&1 || true
+    launchctl bootstrap "$domain" "$plist_path"
+    bootstrap_status=$?
+    if [ "$bootstrap_status" -ne 0 ]; then
+        caddie cli:yellow "Could not bootstrap LaunchAgent now; it will load at next GUI login"
+        caddie cli:indent "plist: ${plist_path}"
+    else
+        caddie cli:check "LaunchAgent installed: ${plist_path}"
+    fi
+
+    if ! launchctl setenv SHELL "$target"; then
+        caddie cli:red "Error: launchctl setenv SHELL failed"
+        return 1
+    fi
+
+    current="$(caddie_core_bash_launchd_current)"
+    if [ "$current" = "$target" ]; then
+        caddie cli:check "launchd SHELL set to ${target}"
+    else
+        caddie cli:yellow "launchctl getenv SHELL is ${current:-empty}; GUI apps may still see the old value until relaunch"
+    fi
+
+    caddie cli:thought "Fully quit Cursor and Codex (Cmd+Q) and reopen so Agent terminals inherit it"
+    return 0
+}
+
+function caddie_core_bash_launchd_get() {
+    local homebrew_path=""
+
+    if ! caddie_core_bash_launchd_require_darwin; then
+        return 1
+    fi
+
+    caddie cli:title "Launchd SHELL"
+    if declare -F caddie_homebrew_bash_path >/dev/null 2>&1; then
+        homebrew_path="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+    fi
+    caddie_core_bash_launchd_status "$homebrew_path"
+    return 0
+}
+
+function caddie_core_bash_launchd_set() {
+    if ! caddie_core_bash_launchd_require_darwin; then
+        return 1
+    fi
+
+    caddie cli:title "Launchd SHELL"
+    caddie_core_bash_launchd_apply "${1:-}"
+    return $?
+}
+
+function caddie_core_bash_launchd_unset() {
+    local plist_path=""
+    local label=""
+    local uid=""
+    local service=""
+    local current=""
+    local had_plist=0
+    local had_shell=0
+
+    if ! caddie_core_bash_launchd_require_darwin; then
+        return 1
+    fi
+
+    caddie cli:title "Launchd SHELL"
+    plist_path="$(caddie_core_bash_launchd_plist_path)"
+    label="$(caddie_core_bash_launchd_label)"
+    uid="$(id -u)"
+    service="gui/${uid}/${label}"
+    current="$(caddie_core_bash_launchd_current)"
+
+    if [ -f "$plist_path" ]; then
+        had_plist=1
+    fi
+    if [ -n "$current" ]; then
+        had_shell=1
+    fi
+
+    if [ "$had_plist" -eq 0 ] && [ "$had_shell" -eq 0 ]; then
+        caddie cli:yellow "No launchd SHELL was set"
+        return 0
+    fi
+
+    launchctl bootout "$service" >/dev/null 2>&1 || true
+    launchctl unsetenv SHELL >/dev/null 2>&1 || true
+
+    if [ -f "$plist_path" ]; then
+        if ! rm -f "$plist_path"; then
+            caddie cli:red "Error: Could not remove LaunchAgent plist"
+            caddie cli:indent "${plist_path}"
+            return 1
+        fi
+    fi
+
+    caddie cli:check "launchd SHELL unset"
     return 0
 }
 

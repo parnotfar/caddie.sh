@@ -980,6 +980,343 @@ EOF
     return 0
 }
 
+function caddie_cursor_user_settings_path() {
+    local darwin_path="$HOME/Library/Application Support/Cursor/User/settings.json"
+    local linux_path="$HOME/.config/Cursor/User/settings.json"
+    local legacy_path="$HOME/.cursor/User/settings.json"
+
+    case "$(uname -s)" in
+        Darwin)
+            printf '%s\n' "$darwin_path"
+            ;;
+        Linux)
+            if [ -f "$linux_path" ]; then
+                printf '%s\n' "$linux_path"
+            elif [ -f "$legacy_path" ]; then
+                printf '%s\n' "$legacy_path"
+            else
+                printf '%s\n' "$linux_path"
+            fi
+            ;;
+        *)
+            if [ -f "$legacy_path" ]; then
+                printf '%s\n' "$legacy_path"
+            else
+                printf '%s\n' "$linux_path"
+            fi
+            ;;
+    esac
+    return 0
+}
+
+function caddie_cursor_terminal_profile_platform() {
+    case "$(uname -s)" in
+        Darwin)
+            printf '%s\n' "osx"
+            ;;
+        *)
+            printf '%s\n' "linux"
+            ;;
+    esac
+    return 0
+}
+
+function caddie_cursor_bash_python() {
+    if command -v python3 >/dev/null 2>&1; then
+        command -v python3
+        return 0
+    fi
+
+    if [ -x "/usr/bin/python3" ]; then
+        printf '%s\n' "/usr/bin/python3"
+        return 0
+    fi
+
+    return 1
+}
+
+function caddie_cursor_bash_settings_query() {
+    local settings_path="$1"
+    local platform="$2"
+    local python_bin=""
+
+    python_bin="$(caddie_cursor_bash_python)" || return 1
+
+    "$python_bin" - "$settings_path" "$platform" <<'PY'
+import json
+import re
+import sys
+
+settings_path, platform = sys.argv[1], sys.argv[2]
+profile_name = "Caddie Bash"
+
+def load(text):
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        stripped = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+        stripped = re.sub(r"(^|\s)//.*?$", "", stripped, flags=re.M)
+        return json.loads(stripped)
+
+with open(settings_path, encoding="utf-8") as handle:
+    data = load(handle.read())
+
+profiles = data.get("terminal.integrated.profiles." + platform) or {}
+default_profile = data.get("terminal.integrated.defaultProfile." + platform) or ""
+automation = data.get("terminal.integrated.automationProfile." + platform) or {}
+
+profile = {}
+if isinstance(profiles, dict):
+    if default_profile in profiles and isinstance(profiles[default_profile], dict):
+        profile = profiles[default_profile]
+    elif profile_name in profiles and isinstance(profiles[profile_name], dict):
+        profile = profiles[profile_name]
+    elif "bash" in profiles and isinstance(profiles["bash"], dict):
+        profile = profiles["bash"]
+
+profile_path = ""
+if isinstance(profile, dict):
+    profile_path = profile.get("path") or ""
+
+automation_path = ""
+automation_shape = "missing"
+if isinstance(automation, dict):
+    if automation.get("path"):
+        automation_path = automation.get("path") or ""
+        automation_shape = "profile"
+    elif isinstance(automation.get("bash"), dict):
+        automation_path = automation["bash"].get("path") or ""
+        automation_shape = "nested"
+
+caddie_path = ""
+if isinstance(profiles, dict) and isinstance(profiles.get(profile_name), dict):
+    caddie_path = profiles[profile_name].get("path") or ""
+
+print("default_profile\t" + str(default_profile))
+print("profile_path\t" + str(profile_path))
+print("automation_path\t" + str(automation_path))
+print("automation_shape\t" + automation_shape)
+print("caddie_profile_path\t" + str(caddie_path))
+PY
+    return $?
+}
+
+function caddie_cursor_bash_settings_write() {
+    local settings_path="$1"
+    local bash_path="$2"
+    local platform="$3"
+    local python_bin=""
+    local settings_dir=""
+    local backup_path=""
+
+    python_bin="$(caddie_cursor_bash_python)"
+    if [ -z "$python_bin" ]; then
+        caddie cli:red "Error: python3 is required to update Cursor settings.json"
+        return 1
+    fi
+
+    settings_dir="$(dirname "$settings_path")"
+    mkdir -p "$settings_dir"
+
+    if [ -f "$settings_path" ]; then
+        backup_path="${settings_path}.caddie-bak.$(date +%Y%m%d%H%M%S)"
+        if ! cp "$settings_path" "$backup_path"; then
+            caddie cli:red "Error: Could not backup Cursor settings"
+            return 1
+        fi
+        caddie cli:indent "backup: ${backup_path}"
+    fi
+
+    "$python_bin" - "$settings_path" "$bash_path" "$platform" <<'PY'
+import json
+import os
+import re
+import sys
+
+settings_path, bash_path, platform = sys.argv[1], sys.argv[2], sys.argv[3]
+profile_name = "Caddie Bash"
+
+def load(text):
+    if not text.strip():
+        return {}
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        stripped = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+        stripped = re.sub(r"(^|\s)//.*?$", "", stripped, flags=re.M)
+        return json.loads(stripped)
+
+if os.path.exists(settings_path):
+    with open(settings_path, encoding="utf-8") as handle:
+        data = load(handle.read())
+else:
+    data = {}
+
+if not isinstance(data, dict):
+    raise SystemExit("Cursor settings.json is not a JSON object")
+
+profiles_key = "terminal.integrated.profiles." + platform
+default_key = "terminal.integrated.defaultProfile." + platform
+auto_key = "terminal.integrated.automationProfile." + platform
+
+profiles = data.get(profiles_key)
+if not isinstance(profiles, dict):
+    profiles = {}
+
+profiles[profile_name] = {
+    "path": bash_path,
+    "args": ["-l"],
+    "icon": "terminal-bash",
+}
+
+data[profiles_key] = profiles
+data[default_key] = profile_name
+data[auto_key] = {
+    "path": bash_path,
+    "args": ["--login"],
+}
+
+tmp_path = settings_path + ".caddie-tmp"
+with open(tmp_path, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=4)
+    handle.write("\n")
+os.replace(tmp_path, settings_path)
+PY
+    if [ $? -ne 0 ]; then
+        caddie cli:red "Error: Failed to write Cursor settings.json"
+        return 1
+    fi
+
+    caddie cli:check "Cursor integrated terminal profile set to ${bash_path}"
+    return 0
+}
+
+function caddie_cursor_bash_get() {
+    local settings_path=""
+    local platform=""
+    local default_profile=""
+    local profile_path=""
+    local automation_path=""
+    local automation_shape=""
+    local caddie_profile_path=""
+    local key=""
+    local value=""
+
+    settings_path="$(caddie_cursor_user_settings_path)"
+    platform="$(caddie_cursor_terminal_profile_platform)"
+
+    caddie cli:title "Cursor Bash"
+    caddie_core_bash_status
+    caddie cli:blank
+    caddie cli:indent "settings: ${settings_path}"
+
+    if [ ! -f "$settings_path" ]; then
+        caddie cli:yellow "Cursor settings.json not found"
+        caddie cli:thought "Run: caddie cursor:bash:configure"
+        return 0
+    fi
+
+    if ! caddie_cursor_bash_python >/dev/null 2>&1; then
+        caddie cli:yellow "python3 not found; cannot read terminal profile keys"
+        return 0
+    fi
+
+    while IFS=$'\t' read -r key value; do
+        case "$key" in
+            default_profile)
+                default_profile="$value"
+                ;;
+            profile_path)
+                profile_path="$value"
+                ;;
+            automation_path)
+                automation_path="$value"
+                ;;
+            automation_shape)
+                automation_shape="$value"
+                ;;
+            caddie_profile_path)
+                caddie_profile_path="$value"
+                ;;
+        esac
+    done < <(caddie_cursor_bash_settings_query "$settings_path" "$platform")
+
+    if [ -n "$default_profile" ]; then
+        caddie cli:indent "default profile: ${default_profile}"
+    else
+        caddie cli:yellow "default profile: not set"
+    fi
+
+    if [ -n "$profile_path" ]; then
+        caddie cli:indent "profile path: ${profile_path}"
+    else
+        caddie cli:yellow "profile path: not set"
+    fi
+
+    if [ -n "$caddie_profile_path" ]; then
+        caddie cli:indent "caddie profile: ${caddie_profile_path}"
+    fi
+
+    if [ -n "$automation_path" ]; then
+        caddie cli:indent "automation path: ${automation_path}"
+    else
+        caddie cli:yellow "automation path: not set"
+    fi
+
+    if [ "$automation_shape" = "nested" ]; then
+        caddie cli:yellow "automationProfile is a nested map; Cursor expects a single profile object"
+        caddie cli:thought "caddie cursor:bash:configure rewrites it to an absolute Bash path"
+    fi
+
+    caddie cli:blank
+    caddie cli:thought "The integrated terminal uses settings.json. Cursor Agent terminals use launchd SHELL on macOS."
+    return 0
+}
+
+function caddie_cursor_bash_configure() {
+    local bash_path=""
+    local settings_path=""
+    local platform=""
+    local settings_status=0
+    local login_status=0
+    local launchd_status=0
+
+    if ! caddie_homebrew_bash_prepare bash_path; then
+        return 1
+    fi
+
+    settings_path="$(caddie_cursor_user_settings_path)"
+    platform="$(caddie_cursor_terminal_profile_platform)"
+
+    caddie cli:title "Configuring Cursor Bash"
+    caddie cli:indent "bash: ${bash_path}"
+    caddie cli:indent "settings: ${settings_path}"
+    caddie cli:blank
+
+    caddie_cursor_bash_settings_write "$settings_path" "$bash_path" "$platform"
+    settings_status=$?
+
+    caddie cli:blank
+    caddie_core_bash_login_configure "$bash_path"
+    login_status=$?
+
+    if caddie_core_bash_is_darwin; then
+        caddie cli:blank
+        caddie_core_bash_launchd_apply "$bash_path"
+        launchd_status=$?
+    fi
+
+    caddie cli:blank
+    if [ "$settings_status" -eq 0 ] && [ "$login_status" -eq 0 ] && [ "$launchd_status" -eq 0 ]; then
+        caddie cli:check "Cursor Bash configuration complete"
+        caddie cli:thought "Open a new integrated terminal, and fully quit Cursor (Cmd+Q) so Agent terminals inherit launchd SHELL"
+        return 0
+    fi
+
+    caddie cli:yellow "Cursor Bash configuration finished with issues"
+    return 1
+}
+
 # Function to display Cursor module help
 function caddie_cursor_help() {
     caddie cli:title "Cursor IDE Integration"
@@ -1020,6 +1357,10 @@ function caddie_cursor_help() {
     caddie cli:indent "config:sync        Sync Cursor settings"
     caddie cli:indent "config:optimize    Optimize Cursor for performance"
     caddie cli:blank
+    caddie cli:title "Bash (Homebrew vs system):"
+    caddie cli:indent "bash:get           Show settings, login, launchd, and Cursor terminal Bash paths"
+    caddie cli:indent "bash:configure     Point Cursor terminals and launchd SHELL at Homebrew Bash"
+    caddie cli:blank
     caddie cli:title "Cursor Plugin (Marketplace):"
     caddie cli:indent "plugin:new <name> [dir]  Scaffold a new Cursor plugin"
     caddie cli:indent "plugin:validate [dir]    Run Cursor plugin validator (requires Node)"
@@ -1030,6 +1371,10 @@ function caddie_cursor_help() {
     caddie cli:indent "caddie cursor:ai:explain src/main.py"
     caddie cli:indent "caddie cursor:ext:install ms-python.python"
     caddie cli:indent "caddie cursor:config:backup"
+    caddie cli:indent "caddie system:bash:get"
+    caddie cli:indent "caddie homebrew:bash:get"
+    caddie cli:indent "caddie cursor:bash:get"
+    caddie cli:indent "caddie cursor:bash:configure"
     caddie cli:indent "caddie cursor:plugin:new my-plugin ."
     caddie cli:indent "caddie cursor:plugin:validate"
     caddie cli:blank
@@ -1037,7 +1382,7 @@ function caddie_cursor_help() {
 }
 
 function caddie_cursor_commands() {
-    printf '%s\n' "cursor:info cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:plugin:new cursor:plugin:validate cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize cursor:help"
+    printf '%s\n' "cursor:info cursor:detect cursor:setup cursor:verify cursor:open cursor:new cursor:workspace cursor:recent cursor:switch cursor:ai:explain cursor:ai:refactor cursor:ai:test cursor:ai:docs cursor:ai:review cursor:plugin:new cursor:plugin:validate cursor:ext:install cursor:ext:list cursor:ext:update cursor:ext:sync cursor:ext:recommend cursor:config:show cursor:config:backup cursor:config:restore cursor:config:sync cursor:config:optimize cursor:bash:get cursor:bash:configure cursor:help"
     return 0
 }
 

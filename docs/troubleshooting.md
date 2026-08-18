@@ -369,15 +369,18 @@ caddie core:debug status
 2. **Check shell type:**
    ```bash
    echo $SHELL
-   # Should be /bin/bash or /opt/homebrew/bin/bash
+   # Should be /opt/homebrew/bin/bash (Bash 4+), not Apple /bin/bash 3.2
    ```
 
 3. **Set default shell:**
    ```bash
-   chsh -s /bin/bash
-   # or
+   caddie cursor:bash:configure
+   caddie codex:bash:configure
+   # or:
    chsh -s /opt/homebrew/bin/bash
    ```
+
+   Then fully quit Cursor and Codex so agent terminals inherit launchd `SHELL`. Inspect paths with `caddie cursor:bash:get`, `caddie codex:bash:get`, and `caddie core:bash:launchd:get`.
 
 4. **Check terminal settings:**
    - Ensure terminal is set to use bash

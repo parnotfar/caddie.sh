@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Homebrew tool paths
+# This file reports Homebrew-provided binaries (not Apple /bin or PATH overlays)
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_homebrew_description() {
+    printf '%s\n' 'Homebrew tool paths and versions'
+    return 0
+}
+
+function caddie_homebrew_prefix() {
+    local prefix=""
+    local candidate=""
+
+    if command -v brew >/dev/null 2>&1; then
+        prefix="$(brew --prefix 2>/dev/null)"
+        if [ -n "$prefix" ] && [ -d "$prefix" ]; then
+            printf '%s\n' "$prefix"
+            return 0
+        fi
+    fi
+
+    for candidate in "/opt/homebrew" "/usr/local" "/home/linuxbrew/.linuxbrew"; do
+        if [ -x "${candidate}/bin/brew" ] || [ -d "${candidate}/Cellar" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+function caddie_homebrew_bash_path() {
+    local formula_prefix=""
+    local prefix=""
+    local candidate=""
+    local system_path=""
+    local -a candidates=()
+
+    if declare -F caddie_system_bash_path >/dev/null 2>&1; then
+        system_path="$(caddie_system_bash_path 2>/dev/null || true)"
+    fi
+
+    prefix="$(caddie_homebrew_prefix 2>/dev/null || true)"
+    if [ -n "$prefix" ]; then
+        candidates+=("${prefix}/bin/bash")
+    fi
+
+    candidates+=(
+        "/opt/homebrew/bin/bash"
+        "/usr/local/bin/bash"
+        "/home/linuxbrew/.linuxbrew/bin/bash"
+    )
+
+    if command -v brew >/dev/null 2>&1; then
+        formula_prefix="$(brew --prefix bash 2>/dev/null)"
+        if [ -n "$formula_prefix" ]; then
+            candidates+=("${formula_prefix}/bin/bash")
+        fi
+    fi
+
+    for candidate in "${candidates[@]}"; do
+        if [ -z "$candidate" ] || [ ! -x "$candidate" ]; then
+            continue
+        fi
+        if [ -n "$system_path" ] && [ "$candidate" = "$system_path" ]; then
+            continue
+        fi
+        printf '%s\n' "$candidate"
+        return 0
+    done
+
+    return 1
+}
+
+function caddie_homebrew_bash_get() {
+    local bash_path=""
+
+    bash_path="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+    if [ -z "$bash_path" ]; then
+        caddie cli:red "Error: Homebrew Bash is not installed"
+        caddie cli:thought "Install with: brew install bash"
+        return 1
+    fi
+
+    caddie cli:green "$bash_path"
+    return 0
+}
+
+function caddie_homebrew_bash_version() {
+    local bash_path=""
+    local version=""
+
+    bash_path="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+    if [ -z "$bash_path" ]; then
+        caddie cli:red "Error: Homebrew Bash is not installed"
+        caddie cli:thought "Install with: brew install bash"
+        return 1
+    fi
+
+    version="$(caddie_core_bash_version_string "$bash_path" 2>/dev/null || true)"
+    if [ -z "$version" ]; then
+        caddie cli:red "Error: Could not read Homebrew Bash version"
+        caddie cli:indent "path: ${bash_path}"
+        return 1
+    fi
+
+    caddie cli:green "$version"
+    caddie cli:indent "path: ${bash_path}"
+    return 0
+}
+
+function caddie_homebrew_bash_prepare() {
+    local dest_var="$1"
+    local resolved=""
+
+    if [ -z "$dest_var" ]; then
+        caddie cli:red "Error: Homebrew Bash prepare requires a variable name"
+        return 1
+    fi
+
+    resolved="$(caddie_homebrew_bash_path 2>/dev/null || true)"
+    if [ -z "$resolved" ]; then
+        caddie cli:red "Error: Homebrew Bash is not installed"
+        caddie cli:thought "Install with: brew install bash"
+        caddie cli:thought "Verify with: caddie homebrew:bash:get"
+        return 1
+    fi
+
+    if ! caddie_core_bash_is_modern "$resolved"; then
+        caddie cli:red "Error: Homebrew Bash is not version 4+: ${resolved}"
+        caddie cli:thought "Upgrade with: brew upgrade bash"
+        caddie cli:thought "Check with: caddie homebrew:bash:version"
+        return 1
+    fi
+
+    printf -v "$dest_var" '%s' "$resolved"
+    return 0
+}
+
+function caddie_homebrew_help() {
+    caddie cli:title "Homebrew Commands"
+    caddie cli:usage "caddie homebrew:<command>"
+    caddie cli:blank
+    caddie cli:title "Bash:"
+    caddie cli:indent "bash:get           Show the Homebrew Bash path"
+    caddie cli:indent "bash:version       Show the Homebrew Bash version"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie homebrew:bash:get"
+    caddie cli:indent "caddie homebrew:bash:version"
+    caddie cli:blank
+    caddie cli:thought "Cursor and Codex configure commands use this Homebrew Bash path"
+    return 0
+}
+
+function caddie_homebrew_commands() {
+    printf '%s\n' "homebrew:bash:get homebrew:bash:version homebrew:help"
+    return 0
+}

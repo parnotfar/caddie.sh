@@ -51,6 +51,8 @@ Codex and similar tools often inherit a broken Bash environment. The public entr
 caddie agent:exec <module:command> [args...]
 ```
 
+On macOS, Cursor Agent and Codex use launchd `SHELL`, not Cursor `settings.json`. After Homebrew Bash is installed, run `caddie cursor:bash:configure` (and/or `caddie codex:bash:configure`), then fully quit the app. Inspect with `caddie core:bash:launchd:get`.
+
 `~/bin/caddie` dispatches `agent:exec` to a clean subprocess before loading caddie in the parent shell. Do **not** use internal `~/.caddie_modules/bin/` paths.
 
 Caddie 10+ does **not** export module functions into the environment. Child shells must source caddie or use `caddie agent:exec` / `~/bin/caddie` — do not expect inherited `caddie_*` functions.

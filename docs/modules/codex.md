@@ -17,6 +17,8 @@ Use this module to:
 ### Core Codex CLI
 
 - `caddie codex:info` - Show CLI path/version, defaults, and review state
+- `caddie codex:bash:get` - Show system Bash, Homebrew Bash, login shell, and launchd SHELL
+- `caddie codex:bash:configure` - Point the login shell and launchd SHELL at `caddie homebrew:bash:get`
 - `caddie codex:run [prompt]` - Start Codex (or run one prompt)
 - `caddie codex:exec <prompt> [exec-options...]` - Run a non-interactive task
 - `caddie codex:resume [session-id]` - Resume a previous session
@@ -74,6 +76,8 @@ codex exec --full-auto __PROMPT__
 ```bash
 # Day-to-day CLI usage
 caddie codex:run
+caddie codex:bash:get
+caddie codex:bash:configure
 caddie codex:exec "Summarize the current branch risk"
 caddie codex:model:set gpt-5.3-codex
 caddie codex:approval:set on-request
@@ -87,6 +91,7 @@ caddie codex:review:command:set "codex exec --full-auto __PROMPT__"
 
 ## Notes
 
+- Codex has no Unix shell-path key in `config.toml`. On macOS, Codex agents use launchd `SHELL`; on Linux they use the login shell. Use `caddie codex:bash:configure` and fully quit Codex afterward. Inspect with `caddie core:bash:launchd:get`.
 - Merge commits are skipped by design.
 - Reviews are written to `~/.caddie_state/codex/reviews/<repo-id>/review.log`.
 - Hook execution is asynchronous and logs start/end markers for stream parsing.

@@ -1,5 +1,85 @@
 # Caddie.sh Release Notes
 
+## Version 11.2.0 - Launchd SHELL for Cursor and Codex agents
+
+**Release Date:** August 18, 2026
+
+Cursor Agent and Codex ignore `settings.json` and do not reliably inherit `chsh`. On macOS they use the GUI-session `$SHELL` from launchd. 11.1.0 wrote Cursor terminal profiles and the login shell; 11.2.0 also sets launchd `SHELL` and installs a LaunchAgent so Dock-launched apps keep Homebrew Bash after logout.
+
+```bash
+caddie core:bash:login:get
+caddie core:bash:login:set
+caddie core:bash:launchd:get
+caddie core:bash:launchd:set
+caddie core:bash:launchd:unset
+caddie cursor:bash:configure
+caddie codex:bash:configure
+```
+
+- **`core:bash:login:get` / `core:bash:login:set`**: Inspect and set the Unix login shell (`chsh`) to Homebrew Bash 4+.
+- **`core:bash:launchd:get` / `core:bash:launchd:set` / `core:bash:launchd:unset`**: Inspect, set, and clear GUI-session `SHELL` via `launchctl setenv` plus `~/Library/LaunchAgents/sh.caddie.bash.shell.plist`. macOS-only.
+- **`cursor:bash:configure`**: Still writes Cursor `settings.json`, then runs login-shell and launchd configure.
+- **`codex:bash:configure`**: Runs login-shell and launchd configure. Codex still has no Unix shell-path key in `config.toml`.
+- **`cursor:bash:get` / `codex:bash:get`**: Show launchd `SHELL` next to system, Homebrew, login, and this-process paths.
+
+Fully quit Cursor and Codex after configure. The running app does not pick up a new launchd `SHELL`.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+caddie core:bash:launchd:get
+caddie cursor:bash:configure
+caddie cursor:bash:get
+```
+
+---
+
+## Version 11.1.0 - Homebrew Bash for Cursor and Codex
+
+**Release Date:** August 17, 2026
+
+Cursor's integrated terminal and Cursor/Codex agent terminals do not share a Bash. The visible terminal can follow `settings.json`; Agent and Codex sessions follow the macOS/Linux login shell. Apple `/bin/bash` 3.2 then fails to import Homebrew Bash 5 `BASH_FUNC_*` values.
+
+These commands pin both surfaces to Homebrew Bash 4+:
+
+```bash
+caddie system:bash:get
+caddie system:bash:version
+caddie homebrew:bash:get
+caddie homebrew:bash:version
+caddie cursor:bash:get
+caddie cursor:bash:configure
+caddie codex:bash:get
+caddie codex:bash:configure
+```
+
+- **`system:bash:get` / `system:bash:version`**: OS Bash (`/bin/bash` on macOS, Apple 3.2).
+- **`homebrew:bash:get` / `homebrew:bash:version`**: Homebrew Bash path and version. Cursor and Codex configure use this path; they never guess from PATH.
+- **`cursor:bash:configure`**: Writes a `Caddie Bash` profile with that Homebrew path into Cursor `settings.json` (integrated terminal + automation profile) and sets the login shell with `chsh`.
+- **`codex:bash:configure`**: Sets the login shell only. Codex has no Unix `shell_path` key; agent shells use the login shell.
+- **`cursor:bash:get` / `codex:bash:get`**: Show system Bash, Homebrew Bash, login shell, this process, and (for Cursor) the configured terminal paths.
+
+Quit Cursor and Codex fully after `chsh` so new agent terminals inherit the login shell.
+
+### Usage
+
+```bash
+make install
+caddie reload
+caddie skill:update
+caddie system:bash:get
+caddie homebrew:bash:get
+caddie cursor:bash:configure
+caddie codex:bash:configure
+caddie cursor:bash:get
+caddie codex:bash:get
+```
+
+---
+
 ## Version 11.0.0 - Git is a choice, not a requirement
 
 **Release Date:** August 17, 2026

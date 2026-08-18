@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+# Caddie.sh - Operating system tool paths
+# This file reports OS-provided binaries (not Homebrew or PATH overlays)
+
+source "$HOME/.caddie_modules/.caddie_cli"
+
+function caddie_system_description() {
+    printf '%s\n' 'Operating system tool paths and versions'
+    return 0
+}
+
+function caddie_system_bash_path() {
+    local candidate=""
+
+    case "$(uname -s)" in
+        Darwin)
+            if [ -x "/bin/bash" ]; then
+                printf '%s\n' "/bin/bash"
+                return 0
+            fi
+            ;;
+        *)
+            for candidate in "/bin/bash" "/usr/bin/bash"; do
+                if [ -x "$candidate" ]; then
+                    printf '%s\n' "$candidate"
+                    return 0
+                fi
+            done
+            ;;
+    esac
+
+    return 1
+}
+
+function caddie_system_bash_get() {
+    local bash_path=""
+
+    bash_path="$(caddie_system_bash_path 2>/dev/null || true)"
+    if [ -z "$bash_path" ]; then
+        caddie cli:red "Error: System Bash was not found"
+        return 1
+    fi
+
+    caddie cli:green "$bash_path"
+    return 0
+}
+
+function caddie_system_bash_version() {
+    local bash_path=""
+    local version=""
+
+    bash_path="$(caddie_system_bash_path 2>/dev/null || true)"
+    if [ -z "$bash_path" ]; then
+        caddie cli:red "Error: System Bash was not found"
+        return 1
+    fi
+
+    version="$(caddie_core_bash_version_string "$bash_path" 2>/dev/null || true)"
+    if [ -z "$version" ]; then
+        caddie cli:red "Error: Could not read system Bash version"
+        caddie cli:indent "path: ${bash_path}"
+        return 1
+    fi
+
+    caddie cli:green "$version"
+    caddie cli:indent "path: ${bash_path}"
+    return 0
+}
+
+function caddie_system_help() {
+    caddie cli:title "System Commands"
+    caddie cli:usage "caddie system:<command>"
+    caddie cli:blank
+    caddie cli:title "Bash:"
+    caddie cli:indent "bash:get           Show the OS Bash path (/bin/bash on macOS)"
+    caddie cli:indent "bash:version       Show the OS Bash version"
+    caddie cli:blank
+    caddie cli:title "Examples:"
+    caddie cli:indent "caddie system:bash:get"
+    caddie cli:indent "caddie system:bash:version"
+    caddie cli:blank
+    return 0
+}
+
+function caddie_system_commands() {
+    printf '%s\n' "system:bash:get system:bash:version system:help"
+    return 0
+}

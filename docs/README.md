@@ -28,6 +28,8 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [iOS Module](modules/ios.md) - App Store and TestFlight distribution tools
   - [Cross Module](modules/cross.md) - Multi-language templates
   - [Cursor Module](modules/cursor.md) - IDE integration
+  - [System Module](modules/system.md) - OS Bash path and version
+  - [Homebrew Module](modules/homebrew.md) - Homebrew Bash path and version
   - [GitHub Module](modules/github.md) - GitHub account and repository management
   - [Profile Module](modules/profile.md) - Bash profile sourcing and custom PATH snippets
   - [Skill Module](modules/skill.md) - Agent skill install, update, and audit

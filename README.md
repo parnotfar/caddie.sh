@@ -48,7 +48,7 @@ make your coding experience smooth and efficient.
 - Homebrew on macOS (installed automatically if missing)
 - macOS 10.15+ recommended; Linux is supported but may require minor manual tweaks depending on your distro
 
-> **macOS Terminal configuration (after install)**: If you want to use Homebrew Bash, configure your Terminal profile to run `/opt/homebrew/bin/bash --login` after Homebrew is installed. See the [Installation Guide](docs/installation.md#macos-terminal-configuration) for details.
+> **macOS Terminal configuration (after install)**: If you want to use Homebrew Bash, configure your Terminal profile to run `/opt/homebrew/bin/bash --login` after Homebrew is installed. For Cursor and Codex agent terminals, run `caddie cursor:bash:configure` and `caddie codex:bash:configure` (settings.json + login shell + launchd SHELL). See the [Installation Guide](docs/installation.md#macos-terminal-configuration) for details.
 
 ### Installation
 
@@ -73,18 +73,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-11.0.0 (update this for each release)
+caddie  # prompt shows as caddie-11.2.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-11.0.0 rust  # prompt switches to caddie[rust]-11.0.0
-caddie[rust]-11.0.0 back  # exits scope (also accepts `up` or `..`)
+caddie-11.2.0 rust  # prompt switches to caddie[rust]-11.2.0
+caddie[rust]-11.2.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-11.0.0 `ls -la`
-caddie-11.0.0 shell git status  # one-off shell command
+caddie-11.2.0 `ls -la`
+caddie-11.2.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-11.0.0 rust build
+caddie-11.2.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 

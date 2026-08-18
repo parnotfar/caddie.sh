@@ -35,6 +35,31 @@ This guide covers installation on macOS (primary) and Linux (best effort).
 
 This ensures you're using the latest Bash version with full `mapfile` support, which is required for Caddie.sh's tab completion functionality.
 
+### Cursor and Codex Bash
+
+Terminal.app is only the human tab. Cursor's Ctrl+` terminal uses `settings.json`. Cursor Agent and Codex on macOS use **launchd `SHELL`**, not that profile. The Unix login shell (`chsh`) is still required for new login sessions.
+
+After Homebrew Bash is installed:
+
+```bash
+caddie cursor:bash:configure
+caddie codex:bash:configure
+caddie cursor:bash:get
+caddie codex:bash:get
+caddie core:bash:launchd:get
+```
+
+`cursor:bash:configure` writes the path from `caddie homebrew:bash:get` into Cursor's user `settings.json`, sets the login shell with `chsh`, and on macOS sets launchd `SHELL` (plus a LaunchAgent). `codex:bash:configure` does the login-shell and launchd steps (Codex has no Unix shell-path key). Fully quit Cursor and Codex after configure so Agent terminals inherit launchd `SHELL`.
+
+Inspect the two Bash binaries first:
+
+```bash
+caddie system:bash:get
+caddie system:bash:version
+caddie homebrew:bash:get
+caddie homebrew:bash:version
+```
+
 ## `make install` vs `make install-dot`
 
 | Target | Use when |

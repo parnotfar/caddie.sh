@@ -248,6 +248,54 @@ reload
 **Requirements:**
 - Module must already be installed under `~/.caddie_modules/`
 
+### Bash (login shell and launchd)
+
+Unix login shells (`chsh`) and macOS GUI agents (Cursor Agent, Codex) are different surfaces. `settings.json` only affects Cursor's Ctrl+` terminal.
+
+#### `caddie core:bash:login:get`
+
+Show the directory-service login shell and whether it matches Homebrew Bash.
+
+```bash
+caddie core:bash:login:get
+```
+
+#### `caddie core:bash:login:set [path]`
+
+Point the login shell at Homebrew Bash 4+ (`caddie homebrew:bash:get`), or at an absolute Bash 4+ path.
+
+```bash
+caddie core:bash:login:set
+caddie core:bash:login:set /opt/homebrew/bin/bash
+```
+
+#### `caddie core:bash:launchd:get`
+
+Show the GUI-session `SHELL` from `launchctl getenv` and whether the caddie LaunchAgent plist is installed. macOS-only.
+
+```bash
+caddie core:bash:launchd:get
+```
+
+#### `caddie core:bash:launchd:set [path]`
+
+Set launchd `SHELL` immediately and install `~/Library/LaunchAgents/sh.caddie.bash.shell.plist` so Dock-launched apps keep the path after logout. macOS-only. Fully quit Cursor and Codex afterward.
+
+```bash
+caddie core:bash:launchd:set
+caddie core:bash:launchd:set /opt/homebrew/bin/bash
+```
+
+#### `caddie core:bash:launchd:unset`
+
+Clear launchd `SHELL` and remove the LaunchAgent. macOS-only.
+
+```bash
+caddie core:bash:launchd:unset
+```
+
+`caddie cursor:bash:configure` and `caddie codex:bash:configure` call these helpers. Prefer those orchestrators unless you need to inspect or fix one surface.
+
 ### Agent and automation
 
 These commands support **all installed modules** (`js`, `python`, `rust`, `ruby`, `git`, `github`, `core`, …). They are not JavaScript-specific.

@@ -1403,6 +1403,66 @@ function caddie_codex_review_watch_status() {
     return 1
 }
 
+function caddie_codex_config_path() {
+    printf '%s\n' "${HOME}/.codex/config.toml"
+    return 0
+}
+
+function caddie_codex_bash_get() {
+    local config_path=""
+
+    config_path="$(caddie_codex_config_path)"
+
+    caddie cli:title "Codex Bash"
+    caddie_core_bash_status
+    caddie cli:blank
+    caddie cli:indent "config: ${config_path}"
+
+    if [ -f "$config_path" ]; then
+        caddie cli:check "Codex config.toml found"
+    else
+        caddie cli:yellow "Codex config.toml not found"
+    fi
+
+    caddie cli:blank
+    caddie cli:thought "Codex has no Unix shell-path setting in config.toml"
+    caddie cli:thought "On macOS, Codex agents use launchd SHELL. On Linux, they use the login shell."
+    return 0
+}
+
+function caddie_codex_bash_configure() {
+    local bash_path=""
+    local login_status=0
+    local launchd_status=0
+
+    if ! caddie_homebrew_bash_prepare bash_path; then
+        return 1
+    fi
+
+    caddie cli:title "Configuring Codex Bash"
+    caddie cli:indent "bash: ${bash_path}"
+    caddie cli:blank
+
+    caddie_core_bash_login_configure "$bash_path"
+    login_status=$?
+
+    if caddie_core_bash_is_darwin; then
+        caddie cli:blank
+        caddie_core_bash_launchd_apply "$bash_path"
+        launchd_status=$?
+    fi
+
+    caddie cli:blank
+    if [ "$login_status" -eq 0 ] && [ "$launchd_status" -eq 0 ]; then
+        caddie cli:check "Codex Bash configuration complete"
+        caddie cli:thought "Fully quit Codex and reopen so Agent terminals inherit launchd SHELL"
+        return 0
+    fi
+
+    caddie cli:yellow "Codex Bash configuration finished with issues"
+    return 1
+}
+
 function caddie_codex_info() {
     local cli_path=""
     local cli_version=""
@@ -1469,6 +1529,8 @@ function caddie_codex_help() {
     caddie cli:blank
     caddie cli:title "CLI Commands"
     caddie cli:indent "info                           Show Codex CLI and review config"
+    caddie cli:indent "bash:get                       Show preferred, login, and launchd Bash paths"
+    caddie cli:indent "bash:configure                 Point login shell and launchd SHELL at Homebrew Bash"
     caddie cli:indent "run [prompt]                   Start Codex (or run one prompt)"
     caddie cli:indent "exec <prompt> [opts...]        Run non-interactive Codex task"
     caddie cli:indent "resume [session-id]            Resume a prior Codex session"
@@ -1500,6 +1562,10 @@ function caddie_codex_help() {
     caddie cli:blank
     caddie cli:title "Examples"
     caddie cli:indent "caddie codex:run"
+    caddie cli:indent "caddie system:bash:get"
+    caddie cli:indent "caddie homebrew:bash:get"
+    caddie cli:indent "caddie codex:bash:get"
+    caddie cli:indent "caddie codex:bash:configure"
     caddie cli:indent "caddie codex:exec 'summarize this repo'"
     caddie cli:indent "caddie codex:model:set gpt-5.3-codex"
     caddie cli:indent "caddie codex:approval:set on-request"
@@ -1515,7 +1581,7 @@ function caddie_codex_description() {
 }
 
 function caddie_codex_commands() {
-    printf '%s\n' "codex:info codex:run codex:exec codex:resume codex:status codex:auth:login codex:auth:logout codex:mcp codex:cloud codex:completion codex:model:set codex:model:get codex:model:unset codex:approval:set codex:approval:get codex:approval:unset codex:sandbox:set codex:sandbox:get codex:sandbox:unset codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:terminal:debug codex:review:terminal:script codex:review:terminal:open codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
+    printf '%s\n' "codex:info codex:run codex:exec codex:resume codex:status codex:auth:login codex:auth:logout codex:mcp codex:cloud codex:completion codex:model:set codex:model:get codex:model:unset codex:approval:set codex:approval:get codex:approval:unset codex:sandbox:set codex:sandbox:get codex:sandbox:unset codex:bash:get codex:bash:configure codex:review codex:review:watch codex:review:watch:stop codex:review:watch:status codex:review:tail codex:review:terminal:debug codex:review:terminal:script codex:review:terminal:open codex:review:command:set codex:review:command:append codex:review:command:get codex:review:command:unset"
     return 0
 }
 

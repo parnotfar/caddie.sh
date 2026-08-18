@@ -47,8 +47,9 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`ios`**: App Store and TestFlight distribution tools
 - **`cross`**: Multi-language project templates and tools
 - **`mac`**: macOS workflow helpers and utilities
+- **`system`**: OS Bash path and version (`caddie system:bash:get`)
+- **`homebrew`**: Homebrew Bash path and version (`caddie homebrew:bash:get`)
 - **`cursor`**: IDE integration and AI-powered development
-- **`git`**: Enhanced git workflows with SSH URLs, auto-detection, and GitHub integration
 - **`github`**: GitHub account and repository management
 - **`profile`**: Bash profile sourcing and caddie-managed custom snippets (`path:add`, `profile:custom:source`)
 - **`skill`**: Install and audit the caddie agent skill for Cursor and Codex
@@ -629,6 +630,19 @@ caddie cursor:ext:update
 caddie cursor:ext:sync
 ```
 
+#### Bash (Homebrew vs system)
+
+```bash
+caddie system:bash:get
+caddie system:bash:version
+caddie homebrew:bash:get
+caddie homebrew:bash:version
+caddie cursor:bash:get
+caddie cursor:bash:configure
+caddie core:bash:launchd:get
+caddie core:bash:launchd:set
+```
+
 ### Profile and Shell Snippets
 
 Use the profile module to source Bash files and append idempotent lines to caddie-managed custom snippets (without hand-editing `~/.bash_profile` for every project setup doc).
@@ -675,7 +689,7 @@ caddie reload
 caddie skill:update
 ```
 
-**Agent / Codex shells:** When the parent shell cannot load caddie, use **`caddie agent:exec`** for any module — not JavaScript-only:
+**Agent / Codex shells:** When the parent shell cannot load caddie, use **`caddie agent:exec`** for any module — not JavaScript-only. Point Cursor and Codex at Homebrew Bash with `caddie cursor:bash:configure` and `caddie codex:bash:configure` (see `caddie cursor:bash:get` / `caddie core:bash:launchd:get`).
 
 ```bash
 caddie agent:exec core:module:commands python
