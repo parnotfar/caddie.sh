@@ -98,6 +98,8 @@ Release-visible changes should keep the shipped skill in sync with caddie:
 
 The canonical install path is `~/.caddie_modules/skills/caddie`. User installs are symlinks via `caddie skill:install:*`. See **[Skill Module](modules/skill.md)** and root **`AGENTS.md`**.
 
+Use [Agent skill architecture](skill-architecture.md) before adding a per-module skill. A module skill is optional and should contain only domain policy, safety, sequencing, and agent-specific pitfalls that live CLI discovery cannot express.
+
 ## Development Workflow
 
 ### Branch Strategy

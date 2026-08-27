@@ -29,7 +29,7 @@ make your coding experience smooth and efficient.
 - **macOS Utilities**: Screenshot archiving and cleanup helpers
 - **GitHub Integration**: Account management and repository creation
 - **Profile Snippets**: Source standard or caddie custom Bash profiles (`caddie profile:source`, `caddie profile:custom:source`); idempotent PATH and export lines (`caddie path:add`, `caddie profile:add-line`)
-- **Agent Skill**: Install and update the caddie Cursor/Codex skill (`caddie skill:install:all`, `caddie skill:update`, `caddie skill:audit`)
+- **Agent Skill**: Install and update the caddie Cursor, Codex, and Claude skill (`caddie skill:install:all`, `caddie skill:update`, `caddie skill:audit`)
 - **Agent execution**: Run any module command from Codex/automation shells via `caddie agent:exec` (pairs with `caddie core:module:commands` for discovery)
 - **IDE Integration**: Cursor IDE integration with AI-powered development
 - **Claude Code Integration**: Onboarding and CLI workflows for Claude Code teams
@@ -73,18 +73,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-11.2.0 (update this for each release)
+caddie  # prompt shows as caddie-11.3.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-11.2.0 rust  # prompt switches to caddie[rust]-11.2.0
-caddie[rust]-11.2.0 back  # exits scope (also accepts `up` or `..`)
+caddie-11.3.0 rust  # prompt switches to caddie[rust]-11.3.0
+caddie[rust]-11.3.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-11.2.0 `ls -la`
-caddie-11.2.0 shell git status  # one-off shell command
+caddie-11.3.0 `ls -la`
+caddie-11.3.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-11.2.0 rust build
+caddie-11.3.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 
@@ -118,6 +118,8 @@ caddie-11.2.0 rust build
 - **[GitHub Module](docs/modules/github.md)** - GitHub account and repository management
 - **[Profile Module](docs/modules/profile.md)** - Custom Bash profile snippets (PATH, exports)
 - **[Skill Module](docs/modules/skill.md)** - Agent skill install, update, and audit
+- **[Agent Skill Architecture](docs/skill-architecture.md)** - Core language contract and optional thin module skills
+- **[Agent Skill Audit](docs/skill-audit-2026-08-27.md)** - Current core and ecosystem decisions
 - **[CLI Module](docs/modules/cli.md)** - Color utilities and formatting functions
 - External ecosystem modules—such as [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—provide additional capabilities when installed separately. See [docs/plugins.md](docs/plugins.md) for the plugin architecture; each plugin repository owns its own command docs.
 

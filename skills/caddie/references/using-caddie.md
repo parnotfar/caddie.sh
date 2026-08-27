@@ -27,6 +27,19 @@ caddie agent:exec <module>:<command> [args]
 
 Never assume an optional plugin is present. Never invent subcommands. Plugin-specific pitfalls belong in that plugin’s own thin skill (if it ships one), not here.
 
+## Core skill and module skills
+
+The core `caddie` skill defines the common execution protocol. A `caddie-<module>` skill is optional and should exist only when the module has non-obvious domain semantics, safety constraints, workflow sequencing, or agent-specific pitfalls.
+
+Module skills do not replace live discovery and are not command catalogs. Even when a module skill is active:
+
+1. Discover the installed module.
+2. Run only commands exposed by the CLI.
+3. Apply the module skill's domain and safety rules.
+4. Fall back to repo-native tooling when the module is unavailable.
+
+Plugin installers should install their thin skill for Cursor, Codex, and Claude when one is justified. Simple tooling wrappers should rely on this core skill instead.
+
 As of caddie 11, **git is a choice, not a requirement.** `caddie git:*` is the [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) plugin, not core. Discover it; if it is missing, use native git (or skip git) and say so.
 
 ## Agent shells — use `caddie agent:exec`

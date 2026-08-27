@@ -1,7 +1,7 @@
 ---
 name: caddie
 description: Use the caddie CLI to keep development commands consistent across projects. The skill is usage guidance only — never treat it as the command list. Discover commands with caddie core:module:commands or caddie module:help. In agent shells use caddie agent:exec. Prefer caddie module:command over ad-hoc npm/cargo/git when wrappers exist. Optional plugins use the same discovery pattern when installed.
-caddie-version: "11.2.0"
+caddie-version: "11.3.0"
 ---
 
 # Caddie — command workspace
@@ -44,6 +44,20 @@ caddie agent:exec <module>:help
 If the module is not installed, discovery fails — fall back to the project's native commands (Make, CLI, etc.) and state that the caddie module was unavailable.
 
 Plugin-specific agent pitfalls (when needed) belong in a **separate** thin skill shipped by that plugin — not in this core skill.
+
+## Module skill contract
+
+The core `caddie` skill is the shared language contract. A separate `caddie-<module>` skill is justified only when a module needs domain semantics, safety rules, required sequencing, or agent-specific pitfalls that command help cannot express reliably.
+
+Module skills compose with this skill; they do not replace it or inherit commands from it. A conforming module skill must:
+
+1. Tell agents to discover the installed module before running commands.
+2. Treat CLI help and `core:module:commands` as authoritative.
+3. Use `caddie agent:exec` in agent shells.
+4. Define only module-specific policy, safety, sequencing, and fallbacks.
+5. Version independently with its owning plugin and install for every supported agent.
+
+Simple wrappers should rely on this core skill plus live CLI discovery instead of shipping redundant skills.
 
 ## Agent / Codex shells (all modules)
 

@@ -52,7 +52,7 @@ Caddie.sh is built around modules, each handling a specific development area:
 - **`cursor`**: IDE integration and AI-powered development
 - **`github`**: GitHub account and repository management
 - **`profile`**: Bash profile sourcing and caddie-managed custom snippets (`path:add`, `profile:custom:source`)
-- **`skill`**: Install and audit the caddie agent skill for Cursor and Codex
+- **`skill`**: Install and audit the caddie agent skill for Cursor, Codex, and Claude
 - **`cli`**: Color utilities and formatting functions
 
 ### Data Structures
@@ -670,18 +670,21 @@ caddie profile:add-line 'export EDITOR=vim'
 
 See **[Profile Module](modules/profile.md)** for all targets and subcommands.
 
-### Agent Skill (Cursor / Codex)
+### Agent Skill (Cursor / Codex / Claude)
 
 Install the caddie skill so agents use **`caddie <module>:<command>`** consistently across projects. Skill version matches `caddie --version`.
 
 ```bash
-# User-level (Cursor + Codex)
+# User-level (Cursor + Codex + Claude)
 caddie skill:install:all
 caddie skill:audit
 
-# Project-local (.cursor/skills/caddie in current directory)
+# Project-local Cursor compatibility default
 cd ~/work/my-project
 caddie skill:install
+
+# Project-local Cursor + Codex + Claude
+caddie skill:install:project:all
 
 # After upgrading caddie (from caddie.sh repo)
 make install

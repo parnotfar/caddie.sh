@@ -54,7 +54,7 @@ Avoid:
 2. Add `caddie_<module>_description`.
 3. Add `caddie_<module>_help`.
 4. Add the command functions.
-5. Export public functions.
+5. Do not export functions; modules are sourced and child shells use `caddie agent:exec`.
 6. Update `Makefile` install targets so the module is copied into `~/.caddie_modules`.
 7. Update `skills/caddie/` when **user-facing command usage** for agents changes (same version as `dot_caddie_version`). Do not put caddie development rules in the shipped skill.
 8. Expose completion with `caddie_<module>_commands()` or `caddie_completion_register`.

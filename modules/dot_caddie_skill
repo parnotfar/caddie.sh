@@ -476,6 +476,11 @@ function caddie_skill_install() {
 }
 
 function caddie_skill_install_project() {
+    caddie_skill_install_project_cursor
+    return $?
+}
+
+function caddie_skill_install_project_cursor() {
     local link_path=""
     local status=0
 
@@ -493,6 +498,77 @@ function caddie_skill_install_project() {
     fi
 
     return "$status"
+}
+
+function caddie_skill_install_project_codex() {
+    local link_path=""
+    local status=0
+
+    if ! _caddie_skill_refresh_canonical; then
+        return 1
+    fi
+
+    link_path="$(pwd)/.codex/skills/${CADDIE_SKILL_NAME}"
+    _caddie_skill_install_link "$link_path" "codex" "project"
+    status=$?
+
+    if [ "$status" -eq 0 ]; then
+        caddie cli:blank
+        caddie cli:thought "Project skill is local; add .codex/skills/caddie to .gitignore if you do not commit it"
+    fi
+
+    return "$status"
+}
+
+function caddie_skill_install_project_claude() {
+    local link_path=""
+    local status=0
+
+    if ! _caddie_skill_refresh_canonical; then
+        return 1
+    fi
+
+    link_path="$(pwd)/.claude/skills/${CADDIE_SKILL_NAME}"
+    _caddie_skill_install_link "$link_path" "claude" "project"
+    status=$?
+
+    if [ "$status" -eq 0 ]; then
+        caddie cli:blank
+        caddie cli:thought "Project skill is local; add .claude/skills/caddie to .gitignore if you do not commit it"
+    fi
+
+    return "$status"
+}
+
+function caddie_skill_install_project_all() {
+    local project_root=""
+    local canonical=""
+    local overall=0
+
+    project_root="$(pwd)"
+
+    if ! _caddie_skill_refresh_canonical; then
+        return 1
+    fi
+
+    canonical="$(_caddie_skill_canonical_dir)"
+    if ! _caddie_skill_install_link "${project_root}/.cursor/skills/${CADDIE_SKILL_NAME}" "cursor" "project"; then
+        overall=1
+    fi
+    if ! _caddie_skill_install_link "${project_root}/.codex/skills/${CADDIE_SKILL_NAME}" "codex" "project"; then
+        overall=1
+    fi
+    if ! _caddie_skill_install_link "${project_root}/.claude/skills/${CADDIE_SKILL_NAME}" "claude" "project"; then
+        overall=1
+    fi
+
+    if [ "$overall" -eq 0 ]; then
+        caddie cli:blank
+        caddie cli:thought "Project skills are local; ignore or commit the three agent skill links intentionally"
+        caddie cli:indent "canonical: ${canonical}"
+    fi
+
+    return "$overall"
 }
 
 function caddie_skill_install_cursor() {
@@ -517,6 +593,17 @@ function caddie_skill_install_codex() {
     return $?
 }
 
+function caddie_skill_install_claude() {
+    local link_path="$HOME/.claude/skills/${CADDIE_SKILL_NAME}"
+
+    if ! _caddie_skill_refresh_canonical; then
+        return 1
+    fi
+
+    _caddie_skill_install_link "$link_path" "claude" "user"
+    return $?
+}
+
 function caddie_skill_install_all() {
     local status=0
     local overall=0
@@ -532,6 +619,12 @@ function caddie_skill_install_all() {
     fi
 
     caddie_skill_install_codex
+    status=$?
+    if [ "$status" -ne 0 ]; then
+        overall=1
+    fi
+
+    caddie_skill_install_claude
     status=$?
     if [ "$status" -ne 0 ]; then
         overall=1
@@ -722,12 +815,18 @@ function caddie_skill_audit() {
         issues=1
     fi
 
+    _caddie_skill_audit_expected_user_path "$HOME/.claude/skills/${CADDIE_SKILL_NAME}" "claude" "user" "caddie skill:install:claude" "$canonical_resolved" "$registry_version"
+    install_issues=$?
+    if [ "$install_issues" -ne 0 ]; then
+        issues=1
+    fi
+
     caddie cli:title "Discovered symlinks (not in registry)"
     local discovered=0
     local search_dir=""
     local link_path=""
 
-    for search_dir in "$HOME/.cursor/skills" "$HOME/.codex/skills"; do
+    for search_dir in "$HOME/.cursor/skills" "$HOME/.codex/skills" "$HOME/.claude/skills"; do
         if [ ! -d "$search_dir" ]; then
             continue
         fi
@@ -790,7 +889,7 @@ function caddie_skill_info() {
 }
 
 function caddie_skill_commands() {
-    printf '%s\n' 'skill:install skill:install:project skill:install:cursor skill:install:codex skill:install:all skill:update skill:audit skill:info skill:help'
+    printf '%s\n' 'skill:install skill:install:project skill:install:project:cursor skill:install:project:codex skill:install:project:claude skill:install:project:all skill:install:cursor skill:install:codex skill:install:claude skill:install:all skill:update skill:audit skill:info skill:help'
     return 0
 }
 
@@ -801,10 +900,15 @@ function caddie_skill_help() {
     caddie cli:blank
     caddie cli:title "Install (symlink → canonical):"
     caddie cli:indent "install                  Link .cursor/skills/caddie in current directory (default)"
-    caddie cli:indent "install:project          Same as install"
+    caddie cli:indent "install:project          Same as install (project Cursor, preserved for compatibility)"
+    caddie cli:indent "install:project:cursor   Link project .cursor/skills/caddie"
+    caddie cli:indent "install:project:codex    Link project .codex/skills/caddie"
+    caddie cli:indent "install:project:claude   Link project .claude/skills/caddie"
+    caddie cli:indent "install:project:all      Link all three project skill paths"
     caddie cli:indent "install:cursor           Link ~/.cursor/skills/caddie"
     caddie cli:indent "install:codex            Link ~/.codex/skills/caddie (backs up an existing skill directory)"
-    caddie cli:indent "install:all              User cursor + codex installs"
+    caddie cli:indent "install:claude           Link ~/.claude/skills/caddie (backs up an existing skill directory)"
+    caddie cli:indent "install:all              User Cursor + Codex + Claude installs"
     caddie cli:blank
     caddie cli:title "Maintenance:"
     caddie cli:indent "update                   Refresh canonical from installed caddie package"
@@ -823,4 +927,3 @@ function caddie_skill_help() {
     caddie cli:blank
     return 0
 }
-

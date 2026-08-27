@@ -33,6 +33,8 @@ Welcome to the comprehensive documentation for Caddie.sh, the ultimate developme
   - [GitHub Module](modules/github.md) - GitHub account and repository management
   - [Profile Module](modules/profile.md) - Bash profile sourcing and custom PATH snippets
   - [Skill Module](modules/skill.md) - Agent skill install, update, and audit
+  - [Agent Skill Architecture](skill-architecture.md) - Core and thin module skill contract
+  - [Agent Skill Audit](skill-audit-2026-08-27.md) - Current module and plugin decisions
   - Optional ecosystem modules (e.g. [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)) can be installed separately
 
 ### Shared executables

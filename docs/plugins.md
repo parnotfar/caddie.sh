@@ -40,6 +40,8 @@ The **core** skill teaches *how* to discover and run modules. It does **not** ca
 
 Plugin-specific agent pitfalls belong in a thin skill shipped by that plugin (when needed).
 
+The decision is intentional, not automatic. Use the [agent skill architecture](skill-architecture.md) to decide whether a plugin needs a skill, and record ecosystem-wide decisions in the [agent skill audit](skill-audit-2026-08-27.md).
+
 ## Writing a plugin
 
 Follow the same module conventions as core (`caddie_<module>_*`, `caddie cli:*`, `caddie_<module>_commands`). Do **not** `export -f` module functions (caddie 10.0+): they are available once the module is sourced, and child shells should use `caddie` / `caddie agent:exec`. In addition:

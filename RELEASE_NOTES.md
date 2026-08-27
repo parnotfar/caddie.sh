@@ -1,5 +1,26 @@
 # Caddie.sh Release Notes
 
+## Version 11.3.0 - Cross-agent skill contract
+
+**Release Date:** August 27, 2026
+
+- Claude is now a first-class core skill target through `skill:install:claude`, `skill:install:all`, and `skill:audit`.
+- `skill:install:all` now installs the canonical Caddie skill for Cursor, Codex, and Claude.
+- The core skill now defines the thin module-skill contract: live CLI discovery remains authoritative, while optional `caddie-<module>` skills own only domain policy, safety, sequencing, and fallbacks.
+- Added a repository-wide core and ecosystem skill audit with explicit decisions about which modules justify separate skills.
+- Corrected contributor guidance so Caddie 10+ modules are sourced and never exported through `export -f`.
+
+---
+
+## Version 11.2.1 - Scoped module versions
+
+**Release Date:** August 24, 2026
+
+- Bare `version` in a module-scoped prompt now reports both the Caddie.sh core version and the active module version.
+- Root-prompt and direct `caddie version` behavior remains unchanged.
+
+---
+
 ## Version 11.2.0 - Launchd SHELL for Cursor and Codex agents
 
 **Release Date:** August 18, 2026

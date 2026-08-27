@@ -164,7 +164,7 @@ caddie python:create test-env
 
 ### Step 5: Install the Agent Skill (Recommended)
 
-Caddie ships an agent skill for Cursor and Codex. After **`make install`**, install user-level symlinks:
+Caddie ships an agent skill for Cursor, Codex, and Claude. After **`make install`**, install user-level symlinks:
 
 ```bash
 caddie reload
@@ -172,11 +172,12 @@ caddie skill:install:all
 caddie skill:audit
 ```
 
-For a single repository (project-local Cursor skill):
+For a single repository, install one agent target or all three:
 
 ```bash
 cd /path/to/your/project
 caddie skill:install
+caddie skill:install:project:all
 ```
 
 See **[Skill Module](modules/skill.md)** for details. Skill version matches `caddie --version`; run `caddie skill:update` after upgrading caddie.

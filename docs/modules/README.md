@@ -33,6 +33,8 @@ This directory contains detailed documentation for each Caddie.sh module.
 ### Optional Ecosystem Modules
 - External modules maintained in separate repositories—such as [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) and [caddie-csv-tools](https://github.com/parnotfar/caddie-csv-tools)—can be installed alongside the core set when you need additional capabilities. Plugin docs and versioning live in those repositories, not in core `docs/modules/`.
 - **[Plugin architecture](../plugins.md)** - How optional plugins install, load, and relate to the core skill
+- **[Agent skill architecture](../skill-architecture.md)** - When modules need thin skills and how they compose with core
+- **[Agent skill audit](../skill-audit-2026-08-27.md)** - Current core and ecosystem decisions
 - **[CSV Module](csv.md)** - Optional CSV analytics module (requires separate install; documented here as the ecosystem example)
 
 #### Prompt & Completion APIs

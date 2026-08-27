@@ -62,7 +62,7 @@ function caddie_help() {
     caddie cli:blank
     caddie cli:title "General Commands:"
     caddie cli:indent "help                     Show this overview"
-    caddie cli:indent "version                  Show caddie version"
+    caddie cli:indent "version                  Show caddie and active module versions"
             caddie cli:indent "reload                   Reload caddie (or active module in a scoped prompt)"
     caddie cli:indent "agent:exec <cmd>         Run a command in a clean Bash subprocess (agent/Codex shells)"
     caddie cli:indent "(no args)                Launch interactive caddie prompt"
@@ -78,11 +78,23 @@ function caddie_help() {
 
 # Function to show caddie version
 function caddie_version() {
+    local active_module="${1:-}"
+    local module_version_function=""
+
     if [ -f "$HOME/.caddie_version" ]; then
         source "$HOME/.caddie_version"
         caddie cli:package "Caddie.sh version: $CADDIE_SH_VERSION"
     else
         caddie cli:warning "Caddie.sh version: unknown"
+    fi
+
+    if [ -n "$active_module" ]; then
+        module_version_function="caddie_${active_module//-/_}_version"
+        if declare -F "$module_version_function" >/dev/null 2>&1; then
+            "$module_version_function"
+        else
+            caddie cli:warning "${active_module} module version: unknown"
+        fi
     fi
     return 0
 }
@@ -507,7 +519,15 @@ function _caddie_repl_normalize() {
             fi
             return 0
             ;;
-        version|--version|-v|go:home)
+        version|--version|-v)
+            if [ -n "$active_module" ] && [ "$active_module" != "shell" ]; then
+                printf '%s\n' "__SCOPED_VERSION__:${active_module}"
+            else
+                printf '%s\n' "$line"
+            fi
+            return 0
+            ;;
+        go:home)
             printf '%s\n' "$line"
             return 0
             ;;
@@ -784,6 +804,11 @@ function _caddie_repl() {
                 caddie cli:indent "Use backticks or 'shell <cmd>' for one-offs, or enter the scope with 'shell'."
                 caddie cli:indent "Leave the shell scope with 'back', 'up', or '..'."
                 caddie cli:indent "Jump to another module with 'switch <module>'."
+                continue
+                ;;
+            __SCOPED_VERSION__*)
+                caddie_version "${normalized#__SCOPED_VERSION__:}"
+                status=$?
                 continue
                 ;;
             "__SWITCH_MODULE__")
