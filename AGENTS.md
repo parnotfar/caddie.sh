@@ -2,8 +2,8 @@
 
 ## Project Overview
 
-* **Project Name**: Par Not Far — *caddie*
-* **Description**: A modular Bash-based development environment manager for the Par Not Far platform and applications. It provides a common language for tasks, unifies tooling across languages (Rust, Python, JS, iOS, etc.), and is fully extensible with new modules.
+* **Project Name**: ParNotFar — *caddie*
+* **Description**: A modular Bash-based development environment manager for the ParNotFar platform and applications. It provides a common language for tasks, unifies tooling across languages (Rust, Python, JS, iOS, etc.), and is fully extensible with new modules.
 * **Design Principles**:
   * **Modular**: Features are organized into modules (e.g., `rust`, `git`, `python`)
   * **Composable**: Common interface for commands across modules
