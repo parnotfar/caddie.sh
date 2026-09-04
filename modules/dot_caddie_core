@@ -884,16 +884,15 @@ function caddie_core_module_commands() {
     fi
 
     commands_fn="caddie_${module}_commands"
-    if declare -F "$commands_fn" >/dev/null 2>&1; then
+    if declare -F _caddie_module_command_list >/dev/null 2>&1; then
+        output="$(_caddie_module_command_list "$module")"
+    elif declare -F "$commands_fn" >/dev/null 2>&1; then
         output="$($commands_fn)"
-    else
-        caddie cli:red "Error: No command list for module '${module}'"
-        caddie cli:thought "Try: caddie ${module}:help"
-        return 1
     fi
 
     if [ -z "$output" ]; then
-        caddie cli:yellow "No commands registered for module '${module}'"
+        caddie cli:red "Error: No command list for module '${module}'"
+        caddie cli:thought "Try: caddie ${module}:help"
         return 1
     fi
 
@@ -1630,4 +1629,3 @@ if [ -f "$CADDIE_HOME_FILE" ]; then
     caddie_home=$(cat "$CADDIE_HOME_FILE")
     export CADDIE_HOME="$caddie_home"
 fi
-

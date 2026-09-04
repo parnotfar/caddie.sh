@@ -9,6 +9,9 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 # shellcheck disable=SC1090
 source "$ROOT/dot_caddie"
+# dot_caddie loads the installed core first; replace it with the repository
+# implementation so this regression test covers the pending core changes.
+source "$ROOT/modules/dot_caddie_core"
 
 function caddie_dispatchtest_run() {
     printf '%s\n' "$*" > "$MARKER"
@@ -34,6 +37,19 @@ function caddie_dispatchtest_command_help() {
     esac
     return 0
 }
+
+function caddie_fallbacktest_run() {
+    printf '%s\n' "$*" > "$MARKER"
+    printf '%s\n' "fallback-ran:$*"
+    return 0
+}
+
+function caddie_fallbacktest_help() {
+    printf '%s\n' "fallback module help"
+    return 0
+}
+
+caddie_completion_register "fallbacktest" "fallbacktest:run fallbacktest:group:list fallbacktest:help"
 
 output="$(caddie dispatchtest:run --help)"
 [ "$output" = "Usage: caddie dispatchtest:run" ]
@@ -61,5 +77,24 @@ output="$(caddie dispatchtest:group --help)"
 
 output="$(caddie dispatchtest:group:help)"
 [ "$output" = "Usage: caddie dispatchtest:group:<command>" ]
+
+rm -f "$MARKER"
+output="$(caddie fallbacktest:run --help)"
+[[ "$output" == *"Usage:"* ]]
+[[ "$output" == *"caddie fallbacktest:run"* ]]
+[ ! -e "$MARKER" ]
+
+suffix_output="$(caddie fallbacktest:run:help)"
+[ "$output" = "$suffix_output" ]
+
+namespace_output="$(caddie fallbacktest:group --help)"
+[[ "$namespace_output" == *"caddie fallbacktest:group:list"* ]]
+[ "$namespace_output" = "$(caddie fallbacktest:group:help)" ]
+
+commands_output="$(caddie core:module:commands fallbacktest)"
+[ "$commands_output" = $'fallbacktest:run\nfallbacktest:group:list\nfallbacktest:help' ]
+
+output="$(caddie fallbacktest:help --help)"
+[ "$output" = "fallback module help" ]
 
 printf '%s\n' 'PASS command-level help dispatch'

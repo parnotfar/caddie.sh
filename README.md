@@ -73,18 +73,18 @@ caddie reload
 caddie help
 
 # Enter interactive prompt
-caddie  # prompt shows as caddie-11.4.0 (update this for each release)
+caddie  # prompt shows as caddie-11.5.0 (update this for each release)
 
 # Narrow the prompt to a module scope
-caddie-11.4.0 rust  # prompt switches to caddie[rust]-11.4.0
-caddie[rust]-11.4.0 back  # exits scope (also accepts `up` or `..`)
+caddie-11.5.0 rust  # prompt switches to caddie[rust]-11.5.0
+caddie[rust]-11.5.0 back  # exits scope (also accepts `up` or `..`)
 
 # Run shell commands without leaving the REPL
-caddie-11.4.0 `ls -la`
-caddie-11.4.0 shell git status  # one-off shell command
+caddie-11.5.0 `ls -la`
+caddie-11.5.0 shell git status  # one-off shell command
 
 # Cancel a long-running command without leaving the REPL
-caddie-11.4.0 rust build
+caddie-11.5.0 rust build
 # press Ctrl+C → command stops and prompt stays open
 ```
 

@@ -70,8 +70,6 @@ function cpwd() {
   return 1
 }
 
-export -f cpwd
-
 # Handy functions
 function blanks() {
   local default=5 
@@ -86,13 +84,9 @@ function blanks() {
   done
 }
 
-export -f blanks
-
 function path() {
   echo $PATH | tr ':' "\n"
 }
-
-export -f path
 
 function take() {
   local use_dir=$1
@@ -107,8 +101,6 @@ function take() {
   cd $use_dir
 }
 
-export -f take
- 
 function lessdown() {
   command -v pandoc || brew install pandoc
 
@@ -121,8 +113,6 @@ function lessdown() {
   pandoc -s -f markdown -t man $mdfile | groff -T utf8 -man | less
 }
 
-export -f lessdown
-
 alias readless="lessdown"
 
 function hg() {
@@ -130,8 +120,6 @@ function hg() {
 
   history | grep -Ei "$regex"
 }
-
-export -f hg
 
 function ag() {
   local keyword="$1"
@@ -145,7 +133,8 @@ function ag() {
   alias | grep -i "$keyword"
 }
 
-export -f ag
+# Keep shell helpers source-local. Exported Bash functions leak BASH_FUNC_* state
+# into child processes; interactive shells source this file and receive them normally.
 
 # a fancy way of selecting branches to delete from a list
 

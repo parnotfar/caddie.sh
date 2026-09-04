@@ -1,5 +1,18 @@
 # Caddie.sh Release Notes
 
+## Version 11.5.0 - Universal subcommand help
+
+**Release Date:** September 4, 2026
+
+- Every installed module with registered command metadata now receives read-only command help through both `module:command --help` and `module:command:help`.
+- Every valid command namespace receives the same symmetric forms and a generated list of its advertised descendants.
+- Module-specific `caddie_<module>_command_help` hooks remain authoritative overrides for richer domain guidance.
+- `core:module:commands` now falls back to the completion registry, so legacy core modules participate in discovery and help without maintaining duplicate catalogs.
+- Updated the core skill and contributor documentation to remove the obsolete warning that nested namespace help does not exist.
+- Stopped exporting interactive shell helpers into child processes, eliminating inherited `BASH_FUNC_*` pollution.
+
+---
+
 ## Version 11.4.0 - Command-level help dispatch
 
 **Release Date:** September 3, 2026

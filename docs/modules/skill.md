@@ -10,7 +10,7 @@ The skill version **matches `CADDIE_SH_VERSION`**. When you release caddie, upda
 
 The shipped skill teaches agents **how to use caddie** — the module/plugin pattern, discovery, `caddie <module>:<command>`, prefer caddie wrappers for workspace consistency, and fall back to direct tools when needed. It does **not** catalog every module or optional plugin, and it does **not** include caddie.sh development guidelines (those live in repo `AGENTS.md` and `docs/caddie-repo-agent-guide.md` for contributors only).
 
-Agents discover subcommands with `caddie <module>:help` or `caddie agent:exec core:module:commands <module>` (not nested forms like `js:project:help`). Optional ecosystem plugins use the same discovery pattern when installed; if a module is missing, agents should use repo-native tools and say so. Plugin-specific pitfalls belong in a thin skill shipped by that plugin, not in the core skill.
+Agents discover subcommands with `caddie <module>:help` or `caddie agent:exec core:module:commands <module>`. They can inspect a command with `<command> --help` or `<command>:help`, and inspect a namespace with forms such as `js:project --help` or `js:project:help`. Optional ecosystem plugins use the same discovery pattern when installed; if a module is missing, agents should use repo-native tools and say so. Plugin-specific pitfalls belong in a thin skill shipped by that plugin, not in the core skill.
 
 See [Agent skill architecture](../skill-architecture.md) for the thin-skill contract and [Agent skill audit](../skill-audit-2026-08-27.md) for current module decisions.
 

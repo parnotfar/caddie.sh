@@ -913,6 +913,74 @@ function _caddie_repl() {
     return $status
 }
 
+function _caddie_module_command_list() {
+    local module="$1"
+    local commands_function="caddie_${module}_commands"
+    local commands=""
+
+    if declare -F "$commands_function" >/dev/null 2>&1; then
+        commands="$($commands_function)"
+    elif declare -F _caddie_completion_commands_for_module >/dev/null 2>&1; then
+        commands="$(_caddie_completion_commands_for_module "$module")"
+    fi
+
+    printf '%s\n' "$commands"
+    return 0
+}
+
+function _caddie_default_command_help() {
+    local command="${1:-}"
+    local module="${command%%:*}"
+    local commands=""
+    local advertised=""
+    local found=0
+    local namespace=0
+
+    if [ -z "$command" ] || [ "$module" = "$command" ]; then
+        return 1
+    fi
+
+    commands="$(_caddie_module_command_list "$module")"
+    if [ -z "$commands" ]; then
+        return 1
+    fi
+
+    for advertised in $commands; do
+        if [ "$advertised" = "$command" ]; then
+            found=1
+        elif [[ "$advertised" == "${command}:"* ]]; then
+            namespace=1
+        fi
+    done
+
+    if [ "$found" -eq 0 ] && [ "$namespace" -eq 0 ]; then
+        return 1
+    fi
+
+    caddie cli:title "$command"
+    if [ "$namespace" -eq 1 ] && [ "$found" -eq 0 ]; then
+        caddie cli:usage "caddie ${command}:<command>"
+        caddie cli:blank
+        caddie cli:title "Available commands"
+        for advertised in $commands; do
+            if [[ "$advertised" == "${command}:"* ]]; then
+                caddie cli:indent "caddie ${advertised}"
+            fi
+        done
+    else
+        caddie cli:usage "caddie ${command} [arguments]"
+        caddie cli:blank
+        caddie cli:indent "Run the ${command#*:} command from the ${module} module."
+    fi
+
+    caddie cli:blank
+    caddie cli:title "Help forms"
+    caddie cli:indent "caddie ${command} --help"
+    caddie cli:indent "caddie ${command}:help"
+    caddie cli:indent "Module overview: caddie ${module}:help"
+    return 0
+}
+
 # Main caddie function - directly executes commands and exposes REPL when no args
 function caddie() {
     if [ $# -eq 0 ]; then
@@ -1003,6 +1071,8 @@ function caddie() {
                 if command -v "$command_help_function" >/dev/null 2>&1; then
                     "$command_help_function" "$command"
                     return $?
+                elif [[ "$command" != *:help ]] && _caddie_default_command_help "$command"; then
+                    return 0
                 fi
                 ;;
         esac
@@ -1022,6 +1092,9 @@ function caddie() {
                 "$command_help_function" "$command"
                 return $?
             fi
+            if _caddie_default_command_help "$command"; then
+                return 0
+            fi
             ;;
     esac
 
@@ -1029,6 +1102,13 @@ function caddie() {
         local documented_command="${command%:help}"
         "$command_help_function" "$documented_command"
         return $?
+    fi
+
+    if [[ "$command" == *:help ]]; then
+        local documented_command="${command%:help}"
+        if _caddie_default_command_help "$documented_command"; then
+            return 0
+        fi
     fi
 
     caddie cli:red "Error: Unknown command '$command'"

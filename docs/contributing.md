@@ -438,8 +438,10 @@ function caddie_module_help() {
     echo 'bar - Performs bar task'
 }
 
-# Optional command-level help hook. The dispatcher uses this for both
-# `caddie module:foo --help` and `caddie module:foo:help`.
+# Registered commands automatically receive read-only command and namespace
+# help from core. An optional command-level hook replaces that generated output.
+# The dispatcher uses the hook for both `caddie module:foo --help` and
+# `caddie module:foo:help`.
 function caddie_module_command_help() {
     local command="$1"
     case "$command" in

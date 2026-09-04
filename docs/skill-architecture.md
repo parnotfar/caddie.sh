@@ -7,11 +7,13 @@ Caddie uses one shared agent language and optional domain-specific guidance. Ski
 | Layer | Owner | Responsibility |
 |---|---|---|
 | Core `caddie` skill | `caddie.sh` | Discovery, `agent:exec`, CLI authority, fallback policy |
-| Module CLI and help | Owning module repository | Current commands, arguments, and basic usage |
+| Module CLI and help | Core harness plus owning module repository | Core generates command and namespace help from registered metadata; a module may override it with richer current usage |
 | Thin `caddie-<module>` skill | Owning plugin repository | Domain semantics, safety, sequencing, and agent pitfalls |
 | `AGENTS.md` | Repository being changed | Contributor and implementation rules |
 
-There is no cross-agent skill inheritance mechanism that behaves consistently across Cursor, Codex, and Claude. Module skills therefore **compose** with the core skill and repeat only its critical execution guardrails.
+There is no cross-agent skill inheritance mechanism that behaves consistently across Cursor, Codex, and Claude. Module skills therefore **compose** with the core skill and repeat only its critical execution guardrails. This is composition, not inheritance: the core skill owns the shared command structure, while an installed module skill supplies only its domain layer.
+
+Caddie 11.5 generates baseline help for every registered command and namespace. Both `<command> --help` and `<command>:help` are valid. An optional `caddie_<module>_command_help` hook can replace that baseline with richer authoritative output, as PNF does.
 
 ## When a module needs a skill
 

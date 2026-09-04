@@ -38,6 +38,17 @@ Module skills do not replace live discovery and are not command catalogs. Even w
 3. Apply the module skill's domain and safety rules.
 4. Fall back to repo-native tooling when the module is unavailable.
 
+Every installed module with registered command metadata supports symmetric command and namespace help:
+
+```bash
+caddie agent:exec js:project:build --help
+caddie agent:exec js:project:build:help
+caddie agent:exec js:project --help
+caddie agent:exec js:project:help
+```
+
+A module may override the core-generated reference with richer domain-specific help. Both forms remain read-only and must not run the underlying operation.
+
 Plugin installers should install their thin skill for Cursor, Codex, and Claude when one is justified. Simple tooling wrappers should rely on this core skill instead.
 
 As of caddie 11, **git is a choice, not a requirement.** `caddie git:*` is the [caddie-git-tools](https://github.com/parnotfar/caddie-git-tools) plugin, not core. Discover it; if it is missing, use native git (or skip git) and say so.
@@ -87,9 +98,9 @@ caddie agent:exec core:module:commands js   # best in agent shells
 caddie js:help                              # when caddie loads normally
 ```
 
-**Wrong:** `js:project:help`, `js:build`, `js:dev`, `js:init`.
+**Wrong commands:** `js:build`, `js:dev`, `js:init`.
 
-**Right:** `js:project:build`, `js:project:test`, `js:package:run build`.
+**Right commands:** `js:project:build`, `js:project:test`, `js:package:run build`. Use `js:project:help` to inspect the namespace.
 
 ## JavaScript workflows
 

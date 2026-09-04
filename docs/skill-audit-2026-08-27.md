@@ -1,4 +1,4 @@
-# Agent skill audit — August 27, 2026
+# Agent skill audit — August 27, 2026 (updated September 4, 2026)
 
 This audit applies the [agent skill architecture](skill-architecture.md) to the core modules and locally available ecosystem repositories. “No separate skill” is an intentional compliant outcome when live CLI discovery is sufficient.
 
@@ -24,25 +24,27 @@ All core modules are covered by the shared `caddie` skill. None currently justif
 |---|---|---|
 | `caddie-pnf` / `pnf` | Keep thin skill | Conforms: substantial environment, production, migration, and data-safety semantics |
 | `caddie-canada` / `canada` | Keep thin skill | Conforms: publish safety and workspace-specific ownership boundaries |
-| `caddie-checkpt` / `ckpt` | Keep thin skill | Conforms: product/command boundary and production publish policy |
 | `caddie-weeve` / `weeve` | Keep thin skill | Conforms: multi-process sequencing, database ownership, Redis, and secret handling |
-| `caddie-git-tools` / `git` | Keep and normalize skill | Aligned in 1.1.0: canonical Cursor, Codex, and Claude installation lifecycle |
-| `caddie-cavad` / `cavad` | Keep and normalize skill | Aligned in 0.2.0: version metadata, Codex support, and canonical directory links |
-| `caddie-cloudflare-plugin` / `cloudflare` | Add thin skill | Added in 1.1.0 for production publish, pinned Wrangler, build verification, and live verification policy |
-| `caddie-supabase-plugin` / `supabase` | Add thin skill | Added in 2.3.0 for destructive rebuilds, hosted operations, migration identity, and explicit noninteractive forms |
-| `caddie-ledger` / `ledger` | Skill required before release | Agent-state restore/sync semantics justify a skill, but repository is an in-progress core fork and must first become a versioned plugin package |
+| `caddie-git-tools` / `git` | Keep thin skill | Aligned in 1.2.0 with the core 11.5 help harness; skill remains Git-policy-only |
+| `caddie-cavad` / `cavad` | Keep thin skill | Aligned locally in 0.3.0 with canonical workspace paths and the core 11.5 help harness |
+| `caddie-cloudflare-plugin` / `cloudflare` | Keep thin skill | Aligned in 1.2.0; skill owns production publish and verification policy, not command discovery |
+| `caddie-supabase-plugin` / `supabase` | Keep thin skill | Aligned in 2.4.0; skill owns destructive and hosted-operation safeguards, not command discovery |
+| `caddie-checkpt` / `ckpt` | Keep thin skill | Local 1.1.0 copy aligned with the core 11.5 help harness and canonical `/Users/wes/work/caddie` path |
 | `caddie-docker-plugin` / `docker` | No separate skill | Runtime setup/start/stop is explicit and local; README intentionally documents the boundary |
 | `caddie-csv-tools` / `csv` | No separate skill | Interactive analytics commands are discoverable and non-production |
 | `caddie-video-tools` / `capture` | No separate skill | Local media-export wrapper; no additional agent policy |
-| `caddie-sh-markdown-preview` / `doc` | No separate skill | Historical worktree/fork, not a separately released skill owner |
-| `caddie-cursor-plugin` | Replace stale bundled guidance | Aligned in 0.2.0: bundled skills now use live discovery and no longer present optional modules as core |
+| `caddie-markdown-preview` / `doc` | No separate skill or release | Historical worktree with stale Git metadata; audit-only until deliberately restored |
+| `caddie.sh-debian` | No separate skill or release | Historical worktree with stale Git metadata; audit-only until deliberately restored |
+| `caddie-cursor-plugin` | Keep bundled core guidance | Aligned in 0.3.0 with core 11.5 help while preserving live discovery and supplemental module skills |
+
+The former `caddie-ledger` workspace was retired; Checkpt is its successor. Ledger is not an active subproject or release target.
 
 ## Release actions
 
-- Caddie core 11.3.0: cross-agent contract and Claude installation/audit support.
-- Git 1.1.0, Cavad 0.2.0, Cloudflare 1.1.0, and Supabase 2.3.0: skill lifecycle or new thin skills.
-- Cursor marketplace plugin 0.2.0: live-discovery replacement for its stale command catalog.
-- PNF, Canada, Checkpt, and Weeve: no skill-only release required from this audit because their existing skills already conform.
-- Ledger: no release until plugin extraction and version ownership are resolved.
+- Caddie core 11.5.0 owns generated command and namespace help from registered module metadata.
+- Active module repositories adopt the common help hook; PNF keeps its richer authoritative override.
+- Git 1.2.0, Cavad 0.3.0, Checkpt 1.1.0, Cloudflare 1.2.0, CSV 2.5, Docker 1.1.0, PNF 2.19.0, Supabase 2.4.0, and Video 0.2.0 carry the aligned contract.
+- Cursor marketplace plugin 0.3.0 documents the same live-discovery and composed-skill model.
+- Historical stale worktrees are not release targets. Local Cavad and Checkpt copies cannot be committed or pushed until they have valid Git repositories/remotes.
 
 Re-run this audit whenever a module adds production mutation, noninteractive behavior, or a workflow whose correctness depends on domain knowledge beyond CLI help.
