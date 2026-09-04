@@ -1,5 +1,17 @@
 # Caddie.sh Release Notes
 
+## Version 11.4.0 - Command-level help dispatch
+
+**Release Date:** September 3, 2026
+
+- Modules may expose `caddie_<module>_command_help <full-command>` once and use it for their complete command surface.
+- Commands in participating modules respond consistently to both `caddie module:command --help` (or `-h`) and `caddie module:command:help`.
+- Namespace help is symmetric too: when `module:namespace:help` exists, `module:namespace --help` and `-h` invoke it.
+- Modules may generate help for any valid command namespace through the same command-help hook; a dedicated namespace function is not required.
+- Explicit help commands remain authoritative, and modules without the optional hook retain their existing behavior.
+
+---
+
 ## Version 11.3.0 - Cross-agent skill contract
 
 **Release Date:** August 27, 2026

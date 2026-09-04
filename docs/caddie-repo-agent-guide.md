@@ -52,7 +52,7 @@ Avoid:
 
 1. Create `modules/dot_caddie_<module>`.
 2. Add `caddie_<module>_description`.
-3. Add `caddie_<module>_help`.
+3. Add `caddie_<module>_help`. For command-specific usage, optionally add one `caddie_<module>_command_help <full-command>` hook; the dispatcher routes both `<command> --help` and `<command>:help` to it.
 4. Add the command functions.
 5. Do not export functions; modules are sourced and child shells use `caddie agent:exec`.
 6. Update `Makefile` install targets so the module is copied into `~/.caddie_modules`.

@@ -438,6 +438,27 @@ function caddie_module_help() {
     echo 'bar - Performs bar task'
 }
 
+# Optional command-level help hook. The dispatcher uses this for both
+# `caddie module:foo --help` and `caddie module:foo:help`.
+function caddie_module_command_help() {
+    local command="$1"
+    case "$command" in
+        module:foo) echo 'Usage: caddie module:foo <argument>' ;;
+        module:bar) echo 'Usage: caddie module:bar <argument>' ;;
+        *) return 1 ;;
+    esac
+}
+
+# A namespace may also provide only an explicit help command. The dispatcher
+# routes `caddie module:group --help` and `-h` to this function automatically.
+function caddie_module_group_help() {
+    echo 'Usage: caddie module:group:<command>'
+}
+
+# Alternatively, the command-help hook may recognize `module:group` as a
+# namespace and generate a list of the advertised commands beneath it. The
+# dispatcher sends both `module:group --help` and `module:group:help` there.
+
 # Main command functions
 function caddie_module_foo() {
     local argument="$1"

@@ -989,15 +989,51 @@ function caddie() {
     esac
 
     local function_name="caddie_${command//:/_}"
+    local module_name="${command%%:*}"
+    local command_help_function="caddie_${module_name}_command_help"
 
+    # Modules may provide command-specific usage through a single
+    # caddie_<module>_command_help <full-command> hook. Keep explicit help
+    # commands authoritative, while allowing every other command to use either
+    # `command --help` / `command -h` or `command:help`. A namespace may expose
+    # only an explicit `command:help`; route `command --help` there as well.
     if command -v "$function_name" >/dev/null 2>&1; then
+        case "${1:-}" in
+            --help|-h)
+                if command -v "$command_help_function" >/dev/null 2>&1; then
+                    "$command_help_function" "$command"
+                    return $?
+                fi
+                ;;
+        esac
+
         eval "$function_name \"\$@\""
         return $?
-    else
-        caddie cli:red "Error: Unknown command '$command'"
-        caddie_help
-        return 1
     fi
+
+    case "${1:-}" in
+        --help|-h)
+            local explicit_help_function="caddie_${command//:/_}_help"
+            if command -v "$explicit_help_function" >/dev/null 2>&1; then
+                "$explicit_help_function"
+                return $?
+            fi
+            if command -v "$command_help_function" >/dev/null 2>&1; then
+                "$command_help_function" "$command"
+                return $?
+            fi
+            ;;
+    esac
+
+    if [[ "$command" == *:help ]] && command -v "$command_help_function" >/dev/null 2>&1; then
+        local documented_command="${command%:help}"
+        "$command_help_function" "$documented_command"
+        return $?
+    fi
+
+    caddie cli:red "Error: Unknown command '$command'"
+    caddie_help
+    return 1
 }
 
 # --- completion setup ---

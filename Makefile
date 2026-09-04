@@ -13,7 +13,7 @@ WHITE := \033[0;37m
 NC := \033[0m # No Color
 
 # Default target
-.PHONY: all install help pull-if-main
+.PHONY: all install help pull-if-main test
 .DEFAULT_GOAL := help
 .SILENT:
 
@@ -38,6 +38,7 @@ help: ## Show this help message
 	echo "  make backup-existing - Backup existing bash files only"
 	echo "  make restore-backup - Restore from backup files"
 	echo "  make status         - Check installation status"
+	echo "  make test           - Run command-dispatch regression tests"
 	echo "  make uninstall      - Remove caddie files (keeps backups)"
 	echo ""
 	echo "$(CYAN)Safety Features:$(NC)"
@@ -48,6 +49,9 @@ help: ## Show this help message
 	echo "$(CYAN)Directory Structure:$(NC)"
 	echo "  • Source modules: $(SRC_MODULES_DIR)"
 	echo "  • Destination modules: $(DEST_MODULES_DIR)"
+
+test: ## Run command-dispatch regression tests
+	bash tests/command_help_test.sh
 
 all: install ## Alias for install
 
